@@ -1,5 +1,11 @@
-*.pdf
+node_modules/
+dist/
 .claude/
 .agents/
 .venv/
 .firebase/
+.tmp-sim/
+
+tmp_*
+*.log
+*.pdf
