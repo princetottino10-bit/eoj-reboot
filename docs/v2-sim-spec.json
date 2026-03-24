@@ -1,0 +1,977 @@
+{
+  "meta": {
+    "name": "EoJ Reboot v2 Simulation Spec",
+    "status": "draft_for_sim_implementation",
+    "language": "ja",
+    "notes": [
+      "このJSONはClaudeCodeに読ませてv2案を実装・シミュレーションするための仕様ドラフト",
+      "既存案を消さずに別ファイルとして保持する",
+      "数値は初稿。シミュレーション結果に応じて再調整する"
+    ]
+  },
+  "rules": {
+    "board": {
+      "size": "3x3",
+      "character_limit": 5
+    },
+    "turn": {
+      "base_summons_per_turn": 1,
+      "extra_summon": {
+        "enabled": true,
+        "max_total_summons_per_turn": 2,
+        "extra_mana_cost": 1
+      }
+    },
+    "victory": {
+      "vp_target": 15,
+      "territory_control_target": 5,
+      "territory_win_timing": "end_of_turn",
+      "timeout_turn": 50
+    },
+    "vp_scoring": {
+      "kill_vp": {
+        "cost_1_2": 1,
+        "cost_3_4": 2,
+        "cost_5_6": 3
+      }
+    },
+    "control_debuff_statuses": [
+      "atk_down",
+      "action_tax",
+      "brainwashed"
+    ]
+  },
+  "aceConditions": {
+    "aggro": "このターン攻撃した味方数",
+    "tank": "カバーしている味方数",
+    "control": "atk_down/action_tax/brainwashed 状態の敵数",
+    "synergy": "マーカーを持つ味方数",
+    "snipe": "味方に反撃できない敵数",
+    "trick": "相手キャラのB位置にいる味方数"
+  },
+  "factions": {
+    "aggro": {
+      "win_profile": "5マス寄り両対応",
+      "identity": "接敵と総攻勢を回収して押し切る",
+      "cards": [
+        {
+          "id": "aggro_v2_01",
+          "name": "烈刃のライ",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、ATK+1を得る。"
+        },
+        {
+          "id": "aggro_v2_02",
+          "name": "念連のナギ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "ターン開始時、手札を1枚捨ててもよい。そうしたならマナ+1。"
+        },
+        {
+          "id": "aggro_v2_03",
+          "name": "烈火のカグラ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [
+            "quickness"
+          ],
+          "effect": "召喚時、手札を1枚捨ててもよい。そうしたなら敵1体を1マス押し出す。"
+        },
+        {
+          "id": "aggro_v2_04",
+          "name": "蝕牙のドク",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "敵を撃破した時、ATK+1を得る。"
+        },
+        {
+          "id": "aggro_v2_05",
+          "name": "連撃のハヤテ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "L_SHAPE",
+          "attackType": "physical",
+          "keywords": [
+            "quickness"
+          ],
+          "effect": "先制でL字攻撃する軽量アタッカー。"
+        },
+        {
+          "id": "aggro_v2_06",
+          "name": "爆裂のノヴァ",
+          "cost": 3,
+          "activateCost": 3,
+          "hp": 4,
+          "atk": 3,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、手札を2枚まで捨てる。捨てた枚数だけ敵1体にダメージ。"
+        },
+        {
+          "id": "aggro_v2_07",
+          "name": "破軍のレオ",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "このターン攻撃しているならATK+1。"
+        },
+        {
+          "id": "aggro_v2_08",
+          "name": "紅蓮のヒカリ",
+          "cost": 3,
+          "activateCost": 2,
+          "hp": 4,
+          "atk": 3,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "破壊時、隣接味方を2回復しATK+1を与える。"
+        },
+        {
+          "id": "aggro_v2_09",
+          "name": "圧殺のセラ",
+          "cost": 4,
+          "activateCost": 3,
+          "hp": 5,
+          "atk": 3,
+          "range": "ROW",
+          "attackType": "physical",
+          "keywords": [
+            "piercing"
+          ],
+          "effect": "攻撃した時、マナ+1。"
+        },
+        {
+          "id": "aggro_v2_10",
+          "name": "断空のゼロ",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、1ドローし、その後手札を1枚捨てる。"
+        },
+        {
+          "id": "aggro_v2_11",
+          "name": "覇王のカイザー",
+          "cost": 6,
+          "activateCost": 3,
+          "hp": 7,
+          "atk": 4,
+          "range": "F1_F2",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "このターン攻撃した味方1体につきこのカードのコスト-1。最低2。3体以上なら召喚時ATK+2。"
+        },
+        {
+          "id": "aggro_v2_12",
+          "name": "終焉のガルド",
+          "cost": 5,
+          "activateCost": 3,
+          "hp": 6,
+          "atk": 4,
+          "range": "ROW",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "このターン攻撃した味方が4体以上なら、再行動コスト-2。"
+        }
+      ]
+    },
+    "tank": {
+      "win_profile": "5マス主軸",
+      "identity": "守ってきた陣形を固定して勝つ",
+      "cards": [
+        {
+          "id": "tank_v2_01",
+          "name": "堅壁のガルド",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 3,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [
+            "protection"
+          ],
+          "effect": "正面受けの基礎壁。"
+        },
+        {
+          "id": "tank_v2_02",
+          "name": "護輪のイヴ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 3,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、隣接味方に防護を与える。"
+        },
+        {
+          "id": "tank_v2_03",
+          "name": "鋼盾のロア",
+          "cost": 2,
+          "activateCost": 2,
+          "hp": 4,
+          "atk": 2,
+          "range": "F2",
+          "attackType": "physical",
+          "keywords": [
+            "cover"
+          ],
+          "effect": "低コストのカバー役。"
+        },
+        {
+          "id": "tank_v2_04",
+          "name": "不落のミナ",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "自属性マスに召喚されたならHP+2を得る。"
+        },
+        {
+          "id": "tank_v2_05",
+          "name": "聖壁のノエル",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 3,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、隣接味方を2回復する。"
+        },
+        {
+          "id": "tank_v2_06",
+          "name": "鉄陣のヴァル",
+          "cost": 3,
+          "activateCost": 2,
+          "hp": 5,
+          "atk": 3,
+          "range": "F2",
+          "attackType": "physical",
+          "keywords": [
+            "protection"
+          ],
+          "effect": "隣接味方がいるならATK+1。"
+        },
+        {
+          "id": "tank_v2_07",
+          "name": "護角のバルク",
+          "cost": 3,
+          "activateCost": 2,
+          "hp": 5,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [
+            "anchor"
+          ],
+          "effect": "押し出されない防衛線の要。"
+        },
+        {
+          "id": "tank_v2_08",
+          "name": "聖盾のルミナ",
+          "cost": 5,
+          "activateCost": 3,
+          "hp": 6,
+          "atk": 4,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [
+            "cover"
+          ],
+          "effect": "味方をカバーするたび、その味方はATK+1を得る。"
+        },
+        {
+          "id": "tank_v2_09",
+          "name": "障壁のセルマ",
+          "cost": 4,
+          "activateCost": 2,
+          "hp": 6,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、味方全体に防護を与える。"
+        },
+        {
+          "id": "tank_v2_10",
+          "name": "虚鎮のナギサ",
+          "cost": 5,
+          "activateCost": 3,
+          "hp": 6,
+          "atk": 4,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [
+            "fortress",
+            "cover"
+          ],
+          "effect": "要塞兼カバー役。破壊時、味方全体はATK+1。"
+        },
+        {
+          "id": "tank_v2_11",
+          "name": "守護のアーク",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、味方1体を正面向きにする。"
+        },
+        {
+          "id": "tank_v2_12",
+          "name": "天城のバスティア",
+          "cost": 6,
+          "activateCost": 3,
+          "hp": 8,
+          "atk": 4,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、カバーしている味方1体につき、その味方を2回復し防護を与える。2体以上なら味方全体は正面からの物理ダメージ-1。"
+        }
+      ]
+    },
+    "control": {
+      "win_profile": "VP寄り",
+      "identity": "デバフと再行動阻害で相手の効率を落とす",
+      "cards": [
+        {
+          "id": "control_v2_01",
+          "name": "鈍刃のレン",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、敵1体にATK-1を与える。"
+        },
+        {
+          "id": "control_v2_02",
+          "name": "遅滞のユキ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、敵1体に action_tax を与える。"
+        },
+        {
+          "id": "control_v2_03",
+          "name": "蝕印のメア",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "デバフ状態の敵を攻撃する時、ATK+1。"
+        },
+        {
+          "id": "control_v2_04",
+          "name": "時鈍のクロノ",
+          "cost": 4,
+          "activateCost": 3,
+          "hp": 4,
+          "atk": 2,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、敵1体に action_tax を与える。"
+        },
+        {
+          "id": "control_v2_05",
+          "name": "転律のエコー",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、敵1体を90度回転させる。"
+        },
+        {
+          "id": "control_v2_06",
+          "name": "侵心のリラ",
+          "cost": 3,
+          "activateCost": 2,
+          "hp": 3,
+          "atk": 2,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、敵1体にATK-2を与える。"
+        },
+        {
+          "id": "control_v2_07",
+          "name": "洗脳のセツナ",
+          "cost": 4,
+          "activateCost": 2,
+          "hp": 3,
+          "atk": 2,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "条件を満たす敵1体に brainwashed を与える。派閥内では希少な強効果枠。"
+        },
+        {
+          "id": "control_v2_08",
+          "name": "黒幕のヴェラ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 3,
+          "atk": 1,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、1ドロー。"
+        },
+        {
+          "id": "control_v2_09",
+          "name": "搾取のオルド",
+          "cost": 5,
+          "activateCost": 3,
+          "hp": 5,
+          "atk": 3,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、相手のマナ-1、自分のマナ+1。"
+        },
+        {
+          "id": "control_v2_10",
+          "name": "蝕心のミスズ",
+          "cost": 6,
+          "activateCost": 3,
+          "hp": 6,
+          "atk": 4,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、デバフ状態の敵1体につき敵1体に1ダメージ。3体以上なら敵全体にATK-1。"
+        },
+        {
+          "id": "control_v2_11",
+          "name": "沈黙のノア",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "相手アイテムの使用コストを+1するオーラを持つ。"
+        },
+        {
+          "id": "control_v2_12",
+          "name": "支配のイデア",
+          "cost": 5,
+          "activateCost": 3,
+          "hp": 5,
+          "atk": 4,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "デバフ状態の敵が2体以上ならターン終了時に1ドロー。"
+        }
+      ]
+    },
+    "synergy": {
+      "win_profile": "両対応",
+      "identity": "場に残った準備を集約して爆発させる",
+      "cards": [
+        {
+          "id": "synergy_v2_01",
+          "name": "刻印のアルト",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、味方1体に防護マーカーを与える。"
+        },
+        {
+          "id": "synergy_v2_02",
+          "name": "迅符のミウ",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、味方1体に先制マーカーを与える。"
+        },
+        {
+          "id": "synergy_v2_03",
+          "name": "穿符のレオナ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、味方1体に貫通マーカーを与える。"
+        },
+        {
+          "id": "synergy_v2_04",
+          "name": "避符のシロ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、味方1体に回避マーカーを与える。"
+        },
+        {
+          "id": "synergy_v2_05",
+          "name": "共鳴のセナ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "隣接味方1体につきATK+1。"
+        },
+        {
+          "id": "synergy_v2_06",
+          "name": "継承のユラ",
+          "cost": 3,
+          "activateCost": 2,
+          "hp": 3,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "味方が破壊された時、そのマーカー1つを継承する。"
+        },
+        {
+          "id": "synergy_v2_07",
+          "name": "連環のフィオ",
+          "cost": 3,
+          "activateCost": 2,
+          "hp": 3,
+          "atk": 3,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "マーカーを持つ味方全体はATK+1。"
+        },
+        {
+          "id": "synergy_v2_08",
+          "name": "結晶のアム",
+          "cost": 4,
+          "activateCost": 2,
+          "hp": 4,
+          "atk": 3,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、マーカーを持つ味方を2回復する。"
+        },
+        {
+          "id": "synergy_v2_09",
+          "name": "触媒のレム",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、1ドロー。"
+        },
+        {
+          "id": "synergy_v2_10",
+          "name": "統合のアリア",
+          "cost": 5,
+          "activateCost": 3,
+          "hp": 5,
+          "atk": 4,
+          "range": "F2",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "マーカーを持つ味方数に応じて追加効果を得る中継エース。"
+        },
+        {
+          "id": "synergy_v2_11",
+          "name": "集星のアルス",
+          "cost": 6,
+          "activateCost": 3,
+          "hp": 6,
+          "atk": 4,
+          "range": "F2",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、マーカーを持つ味方1体につき、味方1体を1回復するかATK+1。3体以上なら味方全体はATK+1。"
+        },
+        {
+          "id": "synergy_v2_12",
+          "name": "共振のイリス",
+          "cost": 5,
+          "activateCost": 2,
+          "hp": 4,
+          "atk": 4,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "マーカーを持つ味方が3体以上なら追加恩恵を得るVP補助札。"
+        }
+      ]
+    },
+    "snipe": {
+      "win_profile": "VP寄り",
+      "identity": "安全に撃てる敵を増やして処刑する",
+      "cards": [
+        {
+          "id": "snipe_v2_01",
+          "name": "照準のユウ",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、敵1体をマークする。"
+        },
+        {
+          "id": "snipe_v2_02",
+          "name": "遠雷のシグ",
+          "cost": 2,
+          "activateCost": 2,
+          "hp": 2,
+          "atk": 2,
+          "range": "F2",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "直線射撃。"
+        },
+        {
+          "id": "snipe_v2_03",
+          "name": "透視のミナト",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "B位置の敵を攻撃する時、ATK+1。"
+        },
+        {
+          "id": "snipe_v2_04",
+          "name": "狙撃のハル",
+          "cost": 2,
+          "activateCost": 2,
+          "hp": 2,
+          "atk": 2,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "マークされた敵を攻撃する時、ATK+1。"
+        },
+        {
+          "id": "snipe_v2_05",
+          "name": "偏差のレイ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、味方1体を回転させる。"
+        },
+        {
+          "id": "snipe_v2_06",
+          "name": "鷹眼のトワ",
+          "cost": 3,
+          "activateCost": 2,
+          "hp": 3,
+          "atk": 2,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "遠距離ヒット時、その敵を再マークする。"
+        },
+        {
+          "id": "snipe_v2_07",
+          "name": "断空のキリ",
+          "cost": 3,
+          "activateCost": 2,
+          "hp": 3,
+          "atk": 3,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "四隅にいるならATK+1。"
+        },
+        {
+          "id": "snipe_v2_08",
+          "name": "追尾のナオ",
+          "cost": 4,
+          "activateCost": 2,
+          "hp": 4,
+          "atk": 3,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "マークされた敵に追加1ダメージ。"
+        },
+        {
+          "id": "snipe_v2_09",
+          "name": "虚眼のゼクス",
+          "cost": 5,
+          "activateCost": 3,
+          "hp": 4,
+          "atk": 2,
+          "range": "ALL",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "異なる敵2体を攻撃できる。"
+        },
+        {
+          "id": "snipe_v2_10",
+          "name": "滅線のアイン",
+          "cost": 6,
+          "activateCost": 3,
+          "hp": 5,
+          "atk": 4,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、味方に反撃できない敵1体につき、敵1体に1ダメージ。2体以上なら追加で異なる2体を攻撃できる。"
+        },
+        {
+          "id": "snipe_v2_11",
+          "name": "観測のソラ",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、1ドロー。"
+        },
+        {
+          "id": "snipe_v2_12",
+          "name": "天測のロギア",
+          "cost": 5,
+          "activateCost": 3,
+          "hp": 4,
+          "atk": 4,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [
+            "piercing"
+          ],
+          "effect": "味方に反撃できない敵が3体以上なら貫通を得る。"
+        }
+      ]
+    },
+    "trick": {
+      "win_profile": "5マス主軸",
+      "identity": "B位置を作り、盤面を崩して勝つ",
+      "cards": [
+        {
+          "id": "trick_v2_01",
+          "name": "旋風のツバキ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、敵1体を90度回転させる。"
+        },
+        {
+          "id": "trick_v2_02",
+          "name": "瞬光のハク",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、1ドロー。"
+        },
+        {
+          "id": "trick_v2_03",
+          "name": "虚遁のカイト",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、手札を1枚捨ててもよい。そうしたならマナ+1。"
+        },
+        {
+          "id": "trick_v2_04",
+          "name": "瞬転のリップル",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "召喚時、味方1体と位置を入れ替える。"
+        },
+        {
+          "id": "trick_v2_05",
+          "name": "幻影のシノブ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [
+            "dodge"
+          ],
+          "effect": "B位置の敵を攻撃する時、ATK+1。"
+        },
+        {
+          "id": "trick_v2_06",
+          "name": "策謀のルシア",
+          "cost": 2,
+          "activateCost": 2,
+          "hp": 2,
+          "atk": 1,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、敵1体を1マス押し出す。"
+        },
+        {
+          "id": "trick_v2_07",
+          "name": "光遁のミラージュ",
+          "cost": 3,
+          "activateCost": 2,
+          "hp": 3,
+          "atk": 2,
+          "range": "F1_L",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "B位置の敵に追加1ダメージ。"
+        },
+        {
+          "id": "trick_v2_08",
+          "name": "拳舞のシュラ",
+          "cost": 2,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 2,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "このターン位置入れ替えを行っているならATK+1。"
+        },
+        {
+          "id": "trick_v2_09",
+          "name": "虚幻のジョーカー",
+          "cost": 5,
+          "activateCost": 3,
+          "hp": 5,
+          "atk": 3,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、敵2体の位置か向きを崩す。"
+        },
+        {
+          "id": "trick_v2_10",
+          "name": "迷陣のアオイ",
+          "cost": 4,
+          "activateCost": 2,
+          "hp": 4,
+          "atk": 3,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "空きマスが多いほど強くなる中継札。"
+        },
+        {
+          "id": "trick_v2_11",
+          "name": "裏界のカレン",
+          "cost": 1,
+          "activateCost": 1,
+          "hp": 2,
+          "atk": 1,
+          "range": "F1",
+          "attackType": "physical",
+          "keywords": [],
+          "effect": "B位置の敵を攻撃した時、1ドロー。"
+        },
+        {
+          "id": "trick_v2_12",
+          "name": "転界のオボロ",
+          "cost": 6,
+          "activateCost": 3,
+          "hp": 5,
+          "atk": 4,
+          "range": "MAGIC",
+          "attackType": "magic",
+          "keywords": [],
+          "effect": "召喚時、相手キャラのB位置にいる味方1体につき、敵1体を回転させるか押し出す。3体以上なら、このキャラはB位置の敵に反撃されない。"
+        }
+      ]
+    }
+  }
+}

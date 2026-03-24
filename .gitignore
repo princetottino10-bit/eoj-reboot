@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.claude/
+.tmp-sim/
+
+tmp_*
+*.log
