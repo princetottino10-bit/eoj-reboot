@@ -19,7 +19,7 @@ const aggro_v2: CharacterCard[] = [
     hp: 2, atk: 1, manaCost: 1, activateCost: 1,
     attackRange: 'front1', attackType: 'physical', keywords: [],
     effects: [
-      { trigger: 'on_summon', target: 'self', effect: 'buff_atk', value: 1, description: '召喚時、ATK+1を得る。' },
+        { trigger: 'on_summon', target: 'self', effect: 'buff_atk', value: 1, description: '召喚時、このキャラのATKを+1する。' },
     ],
   },
   {
@@ -39,7 +39,7 @@ const aggro_v2: CharacterCard[] = [
     attackRange: 'front1', attackType: 'physical', keywords: ['quickness'],
     effects: [
       { trigger: 'on_summon', target: 'adjacent_enemy', effect: 'push', value: 1, handCost: 1,
-        description: '召喚時、手札を1枚捨ててもよい。そうしたなら敵1体を1マス押し出す。' },
+          description: '召喚時、手札を1枚捨ててもよい。捨てたなら隣接する敵1体を1マス押し出す。' },
     ],
   },
   {
@@ -50,7 +50,7 @@ const aggro_v2: CharacterCard[] = [
     effects: [
       // 敵撃破時ATK+1
       { trigger: 'on_kill', target: 'self', effect: 'buff_atk', value: 1,
-        description: '敵を撃破した時、ATK+1を得る。' },
+          description: 'このキャラが敵を撃破した時、このキャラのATKを+1する。' },
     ],
   },
   {
@@ -67,7 +67,7 @@ const aggro_v2: CharacterCard[] = [
     attackRange: 'front1', attackType: 'physical', keywords: [],
     effects: [
       { trigger: 'on_summon', target: 'adjacent_enemy', effect: 'damage', value: 2, handCost: 2,
-        description: '召喚時、手札を2枚まで捨てる。捨てた枚数だけ敵1体にダメージ。' },
+          description: '召喚時、手札を0〜2枚捨てる。捨てた枚数と同じ値のダメージを、隣接する敵1体に与える。' },
     ],
   },
   {
@@ -79,7 +79,7 @@ const aggro_v2: CharacterCard[] = [
       // このターン攻撃しているならATK+1（再行動時ボーナス）
       { trigger: 'on_attack', target: 'self', effect: 'buff_atk', value: 1,
         condition: { type: 'has_acted_this_turn' },
-        description: 'このターン既に攻撃済みならATK+1。' },
+          description: 'このターン、すでにこのキャラが攻撃しているなら、攻撃時にATKを+1する。' },
     ],
   },
   {
@@ -89,9 +89,9 @@ const aggro_v2: CharacterCard[] = [
     attackRange: 'front1', attackType: 'physical', keywords: [],
     effects: [
       { trigger: 'on_destroyed', target: 'adjacent_allies', effect: 'heal', value: 2,
-        description: '破壊時、隣接味方を2回復。' },
+          description: 'このキャラが破壊された時、隣接する味方すべてのHPを2回復する。' },
       { trigger: 'on_destroyed', target: 'adjacent_allies', effect: 'buff_atk', value: 1,
-        description: '破壊時、隣接味方にATK+1。' },
+          description: 'このキャラが破壊された時、隣接する味方すべてのATKを+1する。' },
     ],
   },
   {
@@ -101,7 +101,7 @@ const aggro_v2: CharacterCard[] = [
     attackRange: 'front_row', attackType: 'physical', keywords: ['piercing'],
     effects: [
       { trigger: 'on_attack', target: 'self', effect: 'gain_mana', value: 1,
-        description: '攻撃した時、マナ+1。' },
+          description: 'このキャラが攻撃した時、マナを+1する。' },
     ],
   },
   {
@@ -111,7 +111,7 @@ const aggro_v2: CharacterCard[] = [
     attackRange: 'front1', attackType: 'physical', keywords: [],
     effects: [
       { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
-        description: '召喚時、1ドローし、その後手札を1枚捨てる。' },
+          description: '召喚時、カードを1枚引き、その後手札を1枚捨てる。' },
     ],
   },
   {
@@ -122,13 +122,13 @@ const aggro_v2: CharacterCard[] = [
     effects: [
       // 無条件: 召喚時に隣接敵に3ダメージ（即時価値）
       { trigger: 'on_summon', target: 'adjacent_enemies', effect: 'damage', value: 3,
-        description: '召喚時、隣接する敵に3ダメージ。' },
+          description: '召喚時、隣接する敵それぞれに3ダメージを与える。' },
       { trigger: 'on_summon', target: 'self', effect: 'buff_atk', value: 1,
-        description: '召喚時、ATK+1。' },
-      // エース条件: 3体以上ならさらにATK+2
+          description: '召喚時、このキャラのATKを+1する。' },
+        // このターン攻撃した味方が3体以上ならさらにATK+2
       { trigger: 'on_summon', target: 'self', effect: 'buff_atk', value: 2,
         condition: { type: 'ace_condition_gte', value: 3 },
-        description: 'このターン攻撃した味方が3体以上なら召喚時ATK+2。' },
+          description: 'このターン攻撃した味方が3体以上なら、さらにこのキャラのATKを+2する。' },
     ],
   },
   {
@@ -137,10 +137,10 @@ const aggro_v2: CharacterCard[] = [
     hp: 6, atk: 4, manaCost: 5, activateCost: 3,
     attackRange: 'front_row', attackType: 'physical', keywords: [],
     effects: [
-      // エース条件: 攻撃した味方4体以上なら再行動コスト-2
+        // このターン攻撃した味方が4体以上なら再行動コスト-2
       { trigger: 'on_summon', target: 'self', effect: 'reduce_activate_cost', value: 2,
         condition: { type: 'ace_condition_gte', value: 4 },
-        description: 'エース条件4以上で再行動コスト-2。' },
+          description: 'このターン攻撃した味方が4体以上なら、このキャラの再行動コストを2下げる。' },
     ],
   },
 ];
@@ -268,13 +268,13 @@ const tank_v2: CharacterCard[] = [
         description: '召喚時、隣接味方を1回復。' },
       { trigger: 'on_summon', target: 'self', effect: 'grant_protection', value: 1,
         description: '召喚時、自身に防護を与える。' },
-      // エース条件: カバー味方2体以上で隣接味方を追加回復+防護
-      { trigger: 'on_summon', target: 'adjacent_allies', effect: 'heal', value: 1,
-        condition: { type: 'ace_condition_gte', value: 2 },
-        description: 'エース条件2以上で隣接味方をさらに1回復。' },
-      { trigger: 'on_summon', target: 'adjacent_allies', effect: 'grant_protection', value: 1,
-        condition: { type: 'ace_condition_gte', value: 2 },
-        description: 'エース条件2以上で隣接味方に防護を与える。' },
+        // 2体以上をカバーしているなら隣接味方を追加回復+防護
+        { trigger: 'on_summon', target: 'adjacent_allies', effect: 'heal', value: 1,
+          condition: { type: 'ace_condition_gte', value: 2 },
+          description: 'このキャラが2体以上をカバーしているなら、隣接する味方をさらに1回復する。' },
+        { trigger: 'on_summon', target: 'adjacent_allies', effect: 'grant_protection', value: 1,
+          condition: { type: 'ace_condition_gte', value: 2 },
+          description: 'このキャラが2体以上をカバーしているなら、隣接する味方に防護を与える。' },
     ],
   },
 ];
@@ -394,10 +394,10 @@ const control_v2: CharacterCard[] = [
         description: '召喚時、敵全体にATK-1。' },
       { trigger: 'on_summon', target: 'adjacent_enemy', effect: 'action_tax', value: 1,
         description: '召喚時、隣接する敵1体にaction_taxを与える。' },
-      // エース条件: デバフ敵2体以上で追加ダメージ
-      { trigger: 'on_summon', target: 'adjacent_enemy', effect: 'damage', value: 3,
-        condition: { type: 'ace_condition_gte', value: 2 },
-        description: 'エース条件2以上で敵1体に3ダメージ。' },
+        // デバフ状態の敵が2体以上なら追加ダメージ
+        { trigger: 'on_summon', target: 'adjacent_enemy', effect: 'damage', value: 3,
+          condition: { type: 'ace_condition_gte', value: 2 },
+          description: 'ATK低下・再行動コスト増加・洗脳のいずれかを受けている敵が2体以上いるなら、隣接する敵1体に3ダメージを与える。' },
     ],
   },
   {
@@ -417,10 +417,10 @@ const control_v2: CharacterCard[] = [
     hp: 5, atk: 4, manaCost: 4, activateCost: 3,
     attackRange: 'magic', attackType: 'magic', keywords: [],
     effects: [
-      // エース条件: デバフ敵2体以上でターン終了時ドロー
-      { trigger: 'on_turn_end', target: 'self', effect: 'draw', value: 1,
-        condition: { type: 'ace_condition_gte', value: 2 },
-        description: 'エース条件2以上でターン終了時に1ドロー。' },
+        // デバフ状態の敵が2体以上ならターン終了時ドロー
+        { trigger: 'on_turn_end', target: 'self', effect: 'draw', value: 1,
+          condition: { type: 'ace_condition_gte', value: 2 },
+          description: 'ATK低下・再行動コスト増加・洗脳のいずれかを受けている敵が2体以上いるなら、ターン終了時に1ドローする。' },
     ],
   },
 ];
@@ -553,10 +553,10 @@ const synergy_v2: CharacterCard[] = [
         description: '召喚時、味方全体に貫通を付与。' },
       { trigger: 'on_summon', target: 'all_allies', effect: 'heal', value: 1,
         description: '召喚時、味方全体を1回復。' },
-      // エース条件: マーカー味方3体以上で味方全体ATK+1
-      { trigger: 'on_summon', target: 'all_allies', effect: 'buff_atk', value: 1,
-        condition: { type: 'ace_condition_gte', value: 3 },
-        description: 'エース条件3以上で味方全体はATK+1。' },
+        // マーカーを持つ味方が3体以上なら味方全体ATK+1
+        { trigger: 'on_summon', target: 'all_allies', effect: 'buff_atk', value: 1,
+          condition: { type: 'ace_condition_gte', value: 3 },
+          description: 'マーカーを持つ味方が3体以上いるなら、味方全体のATKを+1する。' },
     ],
   },
   {
@@ -565,13 +565,13 @@ const synergy_v2: CharacterCard[] = [
     hp: 4, atk: 4, manaCost: 5, activateCost: 2,
     attackRange: 'front1', attackType: 'physical', keywords: [],
     effects: [
-      // エース条件: マーカー味方3体以上でATK+1+ドロー
-      { trigger: 'on_summon', target: 'self', effect: 'buff_atk', value: 1,
-        condition: { type: 'ace_condition_gte', value: 3 },
-        description: 'エース条件3以上でATK+1。' },
-      { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
-        condition: { type: 'ace_condition_gte', value: 3 },
-        description: 'エース条件3以上で1ドロー。' },
+        // マーカーを持つ味方が3体以上ならATK+1+ドロー
+        { trigger: 'on_summon', target: 'self', effect: 'buff_atk', value: 1,
+          condition: { type: 'ace_condition_gte', value: 3 },
+          description: 'マーカーを持つ味方が3体以上いるなら、このキャラのATKを+1する。' },
+        { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
+          condition: { type: 'ace_condition_gte', value: 3 },
+          description: 'マーカーを持つ味方が3体以上いるなら、カードを1枚引く。' },
     ],
   },
 ];
@@ -687,13 +687,13 @@ const snipe_v2: CharacterCard[] = [
         description: '召喚時、敵1体に3ダメージ。' },
       { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
         description: '召喚時、1ドロー。' },
-      // エース条件: 反撃不能敵2体以上で追加マーク+ドロー
-      { trigger: 'on_summon', target: 'adjacent_enemy', effect: 'mark', value: 1,
-        condition: { type: 'ace_condition_gte', value: 2 },
-        description: 'エース条件2以上で敵1体にマークを付与。' },
-      { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
-        condition: { type: 'ace_condition_gte', value: 2 },
-        description: 'エース条件2以上で1ドロー。' },
+        // 味方に反撃できない敵が2体以上なら追加マーク+ドロー
+        { trigger: 'on_summon', target: 'adjacent_enemy', effect: 'mark', value: 1,
+          condition: { type: 'ace_condition_gte', value: 2 },
+          description: '味方に反撃できない敵が2体以上いるなら、隣接する敵1体にマークを付与する。' },
+        { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
+          condition: { type: 'ace_condition_gte', value: 2 },
+          description: '味方に反撃できない敵が2体以上いるなら、カードを1枚引く。' },
     ],
   },
   {
@@ -714,13 +714,13 @@ const snipe_v2: CharacterCard[] = [
     effects: [
       { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
         description: '召喚時、1ドロー。' },
-      // エース条件: 反撃不能敵3体以上で貫通付与+ATK+1
-      { trigger: 'on_summon', target: 'self', effect: 'grant_piercing', value: 1,
-        condition: { type: 'ace_condition_gte', value: 3 },
-        description: 'エース条件3以上で貫通を得る。' },
-      { trigger: 'on_summon', target: 'self', effect: 'buff_atk', value: 1,
-        condition: { type: 'ace_condition_gte', value: 3 },
-        description: 'エース条件3以上でATK+1。' },
+        // 味方に反撃できない敵が3体以上なら貫通付与+ATK+1
+        { trigger: 'on_summon', target: 'self', effect: 'grant_piercing', value: 1,
+          condition: { type: 'ace_condition_gte', value: 3 },
+          description: '味方に反撃できない敵が3体以上いるなら、このキャラは貫通を得る。' },
+        { trigger: 'on_summon', target: 'self', effect: 'buff_atk', value: 1,
+          condition: { type: 'ace_condition_gte', value: 3 },
+          description: '味方に反撃できない敵が3体以上いるなら、このキャラのATKを+1する。' },
     ],
   },
 ];
@@ -870,10 +870,10 @@ const trick_v2: CharacterCard[] = [
         description: '召喚時、敵1体を押し出す（壁なら2ダメージ）。' },
       { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
         description: '召喚時、1ドロー。' },
-      // エース条件: 3体以上でさらに1ドロー
-      { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
-        condition: { type: 'ace_condition_gte', value: 3 },
-        description: 'エース条件3以上で1ドロー。' },
+        // 相手キャラのB位置にいる味方が3体以上ならさらに1ドロー
+        { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
+          condition: { type: 'ace_condition_gte', value: 3 },
+          description: '相手キャラのB位置にいる味方が3体以上いるなら、カードを1枚引く。' },
     ],
   },
 ];
