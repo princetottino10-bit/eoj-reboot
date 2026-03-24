@@ -1,6 +1,7 @@
 import { ALL_ITEMS, ITEM_SETS } from '../data/cards';
 import { V2_CHARACTERS } from '../data/cards-v2';
-import type { Card, CharacterCard, Element, Faction, ItemCard, SchoolClass } from '../types/card';
+import { CARD_REVIEW_OVERRIDES } from '../data/review-overrides';
+import type { Card, CharacterCard, Element, EffectType, Faction, ItemCard, SchoolClass } from '../types/card';
 
 type ReviewRecord = {
   rating: number;
@@ -26,6 +27,7 @@ type ReviewCard = {
   attackType?: string;
   keywords: string[];
   effectDescriptions: string[];
+  effectGlossary: string[];
   itemSets: string[];
 };
 
@@ -82,6 +84,61 @@ const RANGE_LABELS: Record<string, string> = {
   front_right: '前右',
 };
 
+const KEYWORD_LABELS: Record<string, string> = {
+  protection: '防護: 受ける物理ダメージを1減らす。',
+  dodge: '回避: 物理攻撃を受けない。魔法と貫通は受ける。',
+  quickness: '先制: 攻撃時、先にダメージ処理を行う。',
+  fortress: '要塞: 自分から攻撃できず、反撃のみ行う。',
+  piercing: '貫通: protection を無視してダメージを与える。',
+  summoning_lock: '召喚制限: 自分の盤面が4体以上の時だけ召喚できる。',
+  reflect: '反射: 受けた魔法ダメージを攻撃側に返す。',
+  anchor: '固定: push / pull / move で移動しない。',
+  damage_link: 'ダメージ分散: 受けたダメージの半分を隣接味方へ分散する。',
+  cover: 'カバー: 隣接味方への攻撃を代わりに受ける。',
+  stealth: '潜伏: 攻撃が常にブラインド扱いになる。',
+  pressure: '圧力: 隣接する敵の再行動コストを+1する。',
+};
+
+const EFFECT_LABELS: Partial<Record<EffectType, string>> = {
+  damage: 'ダメージ: 対象のHPを指定値ぶん減らす。',
+  heal: '回復: 対象のHPを指定値ぶん回復する。',
+  buff_atk: 'ATK上昇: 対象のATKを指定値ぶん上げる。',
+  debuff_atk: 'ATK低下: 対象のATKを指定値ぶん下げる。',
+  rotate: '回転: 対象の向きを90度回す。',
+  move: '移動: 対象を別のマスへ移す。',
+  swap: '位置入替: 自分と対象、または対象同士の位置を入れ替える。',
+  push: '押し出し: 対象を1マス遠ざける。端なら壁ダメージを受ける。',
+  pull: '引き寄せ: 対象を1マス近づける。',
+  draw: 'ドロー: 山札からカードを引く。',
+  gain_mana: 'マナ獲得: 自分のマナを増やす。',
+  steal_mana: 'マナ奪取: 相手のマナを減らし、自分のマナを増やす。',
+  brainwash: '洗脳: 対象を行動済み・回転済みにし、洗脳状態にする。',
+  freeze: '凍結: 次のターン、攻撃と回転ができなくなる。',
+  direction_lock: '向き固定: 対象は回転できなくなる。',
+  action_tax: '再行動コスト増加: 対象の再行動コストを上げる。',
+  mark: 'マーク: スナイプ系カードが参照する目印を付与する。',
+  grant_dodge: '回避付与: 回避キーワードを与える。',
+  grant_protection: '防護付与: 防護キーワードを与える。',
+  grant_piercing: '貫通付与: 貫通キーワードを与える。',
+  grant_quickness: '先制付与: 先制キーワードを与える。',
+  consume_markers: 'マーカー消費: 味方のマーカーを取り除いて効果を発動する。',
+  discard_draw: '手札交換: 手札を捨てて引き直す。',
+  skip_draw: 'ドロースキップ: ターン開始時の通常ドローを飛ばす。',
+  reduce_activate_cost: '再行動コスト軽減: そのターンの再行動コストを下げる。',
+  range_expand: '射程拡張: 条件を満たすと攻撃範囲が広がる。',
+  exhaust_attack: '攻撃不能: このターンは攻撃できない。',
+  field_quake: '属性反転: 盤面の属性を入れ替える。',
+  field_swap: '属性交換: 2つのマスの属性を入れ替える。',
+  element_corrupt: '属性汚染: 対象マスの属性を崩す。',
+  piercing_damage: '貫通ダメージ: 防護を無視してダメージを与える。',
+  discard_random: 'ランダム捨て札: 相手の手札をランダムに捨てさせる。',
+  seal: '封印: 対象の能力を無効化する。',
+  destroy_self: '自壊: 自分を破壊する。',
+  copy_atk: 'ATKコピー: 対象のATKを自分に写す。',
+  hp_swap: 'HP交換: 自分と対象の現在HPを入れ替える。',
+  swap_enemies: '敵同士入替: 敵2体の位置を入れ替える。',
+};
+
 function isCharacter(card: Card): card is CharacterCard {
   return card.type === 'character';
 }
@@ -120,11 +177,20 @@ function collectReviewCards(): ReviewCard[] {
   const activeItems = ALL_ITEMS.filter((item) => itemSetMap.has(item.id));
 
   const normalizeCard = (card: Card): ReviewCard => {
+    const override = CARD_REVIEW_OVERRIDES[card.id];
+    const effectGlossary = Array.from(
+      new Set(
+        card.effects
+          .map((effect) => EFFECT_LABELS[effect.effect])
+          .filter((label): label is string => Boolean(label)),
+      ),
+    );
+
     if (isCharacter(card)) {
       return {
         id: card.id,
         card,
-        name: card.name,
+        name: override?.name ?? card.name,
         type: 'character',
         manaCost: card.manaCost,
         faction: card.faction,
@@ -136,23 +202,25 @@ function collectReviewCards(): ReviewCard[] {
         attackRange: RANGE_LABELS[card.attackRange] ?? card.attackRange,
         attackType: card.attackType === 'physical' ? '物理' : '魔法',
         keywords: card.keywords,
-        effectDescriptions: card.effects.map((effect) => effect.description || `${effect.trigger}:${effect.effect}`),
+        effectDescriptions: override?.effectDescriptions ?? card.effects.map((effect) => effect.description || `${effect.trigger}:${effect.effect}`),
+        effectGlossary: override?.effectGlossary ?? effectGlossary,
         itemSets: [],
       };
     }
 
     const itemCard = card as ItemCard;
-    return {
-      id: itemCard.id,
-      card: itemCard,
-      name: itemCard.name,
-      type: 'item',
-      manaCost: itemCard.manaCost,
-      keywords: [],
-      effectDescriptions: itemCard.effects.map((effect) => effect.description || `${effect.trigger}:${effect.effect}`),
-      itemSets: itemSetMap.get(itemCard.id) ?? [],
+      return {
+        id: itemCard.id,
+        card: itemCard,
+        name: override?.name ?? itemCard.name,
+        type: 'item',
+        manaCost: itemCard.manaCost,
+        keywords: [],
+        effectDescriptions: override?.effectDescriptions ?? itemCard.effects.map((effect) => effect.description || `${effect.trigger}:${effect.effect}`),
+        effectGlossary: override?.effectGlossary ?? effectGlossary,
+        itemSets: itemSetMap.get(itemCard.id) ?? [],
+      };
     };
-  };
 
   return [...V2_CHARACTERS.map(normalizeCard), ...activeItems.map(normalizeCard)].sort((left, right) => {
     if (left.type !== right.type) return left.type === 'character' ? -1 : 1;
@@ -379,8 +447,11 @@ export class CardReviewApp {
           ['採用セット', card.itemSets.map((setKey) => ITEM_SET_LABELS[setKey] ?? setKey).join(' / ') || '-'],
         ];
 
-    const keywords = card.keywords.length ? card.keywords : ['なし'];
+    const keywords = card.keywords.length
+      ? card.keywords.map((keyword) => KEYWORD_LABELS[keyword] ?? keyword)
+      : ['なし'];
     const effects = card.effectDescriptions.length ? card.effectDescriptions : ['効果なし'];
+    const effectGlossary = card.effectGlossary.length ? card.effectGlossary : ['なし'];
 
     return `
       <div class="review-detail-card">
@@ -432,6 +503,10 @@ export class CardReviewApp {
           <section class="review-section">
             <h3>キーワード</h3>
             <ul>${keywords.map((keyword) => `<li>${escapeHtml(keyword)}</li>`).join('')}</ul>
+          </section>
+          <section class="review-section">
+            <h3>効果語の意味</h3>
+            <ul>${effectGlossary.map((label) => `<li>${escapeHtml(label)}</li>`).join('')}</ul>
           </section>
           <section class="review-section">
             <h3>効果</h3>
