@@ -5,6 +5,7 @@ import { ALL_CHARACTERS, ALL_ITEMS, ITEM_SETS } from '../data/cards';
 import { createGameState, drawCards } from '../engine/state';
 import { startTurn, executeSummon, executeAttack, executeRotate, executeItem, endTurn, getAttackTargets } from '../engine/actions';
 import { getAdjacentPositions } from '../engine/utils';
+import { getActionTaxTotal } from '../engine/rules';
 import { GameRenderer } from './renderer';
 import { runAiTurn } from './simple-ai';
 
@@ -253,7 +254,7 @@ export class GameController {
         this.renderer.showMessage('このキャラクターは既に行動済みです');
         return;
       }
-      const activateCost = cell.character.card.activateCost ?? 3;
+      const activateCost = (cell.character.card.activateCost ?? 3) + getActionTaxTotal(this.state, cell.character);
       if (this.state.players[pid].mana < activateCost) {
         this.renderer.showMessage(`マナ不足（再行動コスト: 💎${activateCost}）`);
         return;
@@ -302,11 +303,6 @@ export class GameController {
     try {
       this.state = executeSummon(this.state, cardId, pos, dir);
       this.mode = { type: 'idle' };
-
-      // Summoning always ends the turn
-      if (this.state.phase !== 'game_over') {
-        this.state = endTurn(this.state);
-      }
       this.renderState();
     } catch (e: any) {
       this.renderer.showMessage(e.message || 'エラーが発生しました');

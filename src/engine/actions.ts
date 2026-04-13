@@ -18,6 +18,7 @@ import {
   MAX_CHARACTERS_PER_PLAYER,
   MAX_SUMMONS_PER_TURN,
   getAceEffectiveCost,
+  getActionTaxTotal,
   getKillVpForManaCost,
 } from './rules';
 
@@ -247,6 +248,18 @@ function removeCharacter(state: GameState, pos: Position, killer?: BoardCharacte
     }
   }
 
+  // action_tax 付与元が退場した場合、その再行動コスト増加を解除する
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      const ch = state.board[r][c].character;
+      if (ch && ch.buffs.some(b => b.type === 'action_tax' && b.grantedBy === destroyedCardId)) {
+        const cleaned = ch.buffs.filter(b => !(b.type === 'action_tax' && b.grantedBy === destroyedCardId));
+        state = setCharacterOnCell(state, { row: r, col: c }, { ...ch, buffs: cleaned as any });
+        state = addLog(state, `${ch.card.name} の再行動コスト増加が解除された（術者 ${char2.card.name} 退場）`);
+      }
+    }
+  }
+
   // ミスズ等が死亡した場合、相手の洗脳バフを全解除
   if (char2.card.effects.some(e => e.effect === 'brainwash')) {
     const enemyId: PlayerId = owner === 0 ? 1 : 0;
@@ -314,14 +327,10 @@ function calculateDamage(
     damage += 1;
   }
 
-  // Protection: reduce physical damage by 1 (ignored by piercing)
+  // Protection: 物理・魔法問わずダメージ-1（最低0）。消費しない。貫通で無視。
   const hasProtection = defenderChar.card.keywords.includes('protection') || defenderChar.buffs.some(b => b.type === 'has_protection');
   const hasPiercing = attackerChar.card.keywords.includes('piercing') || attackerChar.buffs.some(b => b.type === 'has_piercing');
-  if (
-    hasProtection &&
-    attackerChar.card.attackType === 'physical' &&
-    !hasPiercing
-  ) {
+  if (hasProtection && !hasPiercing) {
     damage = Math.max(0, damage - 1);
   }
 
@@ -392,7 +401,7 @@ function resolveAttack(
       }
     }
 
-    // Dodge: 回避マーカーがあれば物理攻撃を無効化（魔法・貫通は通る）
+    // Dodge: 回避マーカーがあれば物理攻撃を1回無効化（消費。魔法は通る。貫通で無視）
     const defHasDodge = defender.card.keywords.includes('dodge') || defender.buffs.some(b => b.type === 'has_dodge');
     const atkHasPiercing = currentAttacker.card.keywords.includes('piercing') || currentAttacker.buffs.some(b => b.type === 'has_piercing');
     if (defHasDodge && currentAttacker.card.attackType === 'physical' && !atkHasPiercing) {
@@ -438,6 +447,10 @@ function resolveAttack(
 
     let atkValue = getEffectiveAtk(atkAfterCounter);
 
+    // 照準ボーナス: 照準が付いた敵を攻撃時 ATK+1
+    const targetIsMarked = defender.buffs.some(b => b.type === 'marked');
+    if (targetIsMarked) atkValue += 1;
+
     // Main attack
     const damage = calculateDamage(
       atkValue,
@@ -446,9 +459,10 @@ function resolveAttack(
       blindSpot,
     );
 
+    const markedTag = targetIsMarked ? ' (照準!)' : '';
     state = addLog(
       state,
-      `${atkAfterCounter.card.name} attacks ${defender.card.name} for ${damage} damage${blindSpot ? ' (blind spot!)' : ''}`,
+      `${atkAfterCounter.card.name} attacks ${defender.card.name} for ${damage} damage${blindSpot ? ' (blind spot!)' : ''}${markedTag}`,
     );
 
     const newDefHp = defender.currentHp - damage;
@@ -492,8 +506,18 @@ function resolveAttack(
       }
     }
 
-    // Counter-attack (if not blind spot and not already done via quickness)
-    if (!blindSpot && !hasQuickness) {
+    // 照準(marked)消費: スナイプ派閥のキャラが攻撃した時のみ消費
+    // (他派閥は照準ボーナスを得るが消費しない → 将来の混合デッキでの"ただ乗り消費"を防止)
+    const markedDefender = getCell(state, actualTargetPos).character;
+    if (markedDefender && markedDefender.buffs.some(b => b.type === 'marked') && currentAttacker.card.faction === 'snipe') {
+      const cleanedBuffs = markedDefender.buffs.filter(b => b.type !== 'marked');
+      state = setCharacterOnCell(state, actualTargetPos, { ...markedDefender, buffs: cleanedBuffs as any });
+      state = addLog(state, `${markedDefender.card.name} の照準が消えた`);
+    }
+
+    // Counter-attack (if not blind spot, not quickness done, not marked)
+    const wasMarked = defender.buffs.some(b => b.type === 'marked');
+    if (!blindSpot && !hasQuickness && !wasMarked) {
       const survivingDefender = getCell(state, actualTargetPos).character;
       if (!survivingDefender) continue;
 
@@ -530,12 +554,6 @@ function resolveAttack(
       if (consumedBuffs.length !== postAtkChar.buffs.length) {
         state = setCharacterOnCell(state, attackerPos, { ...postAtkChar, buffs: consumedBuffs as any });
       }
-    }
-    // Consume protection marker from defender if it reduced damage
-    const postDefChar = getCell(state, actualTargetPos).character;
-    if (postDefChar && postDefChar.buffs.some(b => b.type === 'has_protection')) {
-      const cleanedDef = postDefChar.buffs.filter(b => b.type !== 'has_protection');
-      state = setCharacterOnCell(state, actualTargetPos, { ...postDefChar, buffs: cleanedDef as any });
     }
   }
 
@@ -793,6 +811,13 @@ export function executeSummon(
   const winner = checkWinCondition(state, false);
   if (winner !== null) {
     state = { ...state, winner, winnerReason: getWinnerReason(state, winner, false), phase: 'game_over' };
+    return state;
+  }
+
+  // v2: 2体目を召喚したらそのままターン終了
+  if (state.summonCountThisTurn >= MAX_SUMMONS_PER_TURN) {
+    state = addLog(state, `Player ${pid} reached the summon cap and their turn ends`);
+    return endTurn(state);
   }
 
   return state;
@@ -827,9 +852,7 @@ export function executeAttack(state: GameState, position: Position, targetPos?: 
   }
   activateCost = Math.max(0, activateCost);
   // v2: action_tax: 攻撃コスト+value（各action_taxバフごと）
-  for (const b of cell.character.buffs) {
-    if (b.type === 'action_tax') activateCost += b.value;
-  }
+  activateCost += getActionTaxTotal(state, cell.character);
   // pressure: 隣接に敵のpressure持ちがいれば再行動コスト+1
   const adjPos = getAdjacentPositions(position);
   for (const ap of adjPos) {
@@ -1130,16 +1153,17 @@ export function endTurn(state: GameState): GameState {
   state = cloneState(state);
   const pid = state.currentPlayer;
   const player = state.players[pid];
+  const checkTerritoryThisEnd = pid === 1;
 
   state = addLog(state, `Player ${pid} ends their turn`);
 
   // on_turn_end エフェクト解決
   state = resolveGlobalTrigger(state, 'on_turn_end', pid);
 
-  // v2: ターン終了時 — VP + 5マス占拠の両方をチェック
-  const winnerAfterEnd = checkWinCondition(state, true);
+  // v2: territory はラウンド終了時のみ判定し、P0/P1の手番数を揃える
+  const winnerAfterEnd = checkWinCondition(state, checkTerritoryThisEnd);
   if (winnerAfterEnd !== null) {
-    return { ...state, winner: winnerAfterEnd, winnerReason: getWinnerReason(state, winnerAfterEnd, true), phase: 'game_over' };
+    return { ...state, winner: winnerAfterEnd, winnerReason: getWinnerReason(state, winnerAfterEnd, checkTerritoryThisEnd), phase: 'game_over' };
   }
 
   // Hand limit: discard down to 7 (from end of hand)
@@ -1154,10 +1178,10 @@ export function endTurn(state: GameState): GameState {
     state = addLog(state, `Player ${pid} discards ${excess.length} card(s) to hand limit`);
   }
 
-  // v2: Check win condition again (VP + territory)
-  const winner = checkWinCondition(state, true);
+  // v2: Check win condition again (territory only at round end)
+  const winner = checkWinCondition(state, checkTerritoryThisEnd);
   if (winner !== null) {
-    return { ...state, winner, winnerReason: getWinnerReason(state, winner, true), phase: 'game_over' };
+    return { ...state, winner, winnerReason: getWinnerReason(state, winner, checkTerritoryThisEnd), phase: 'game_over' };
   }
 
   // Switch current player

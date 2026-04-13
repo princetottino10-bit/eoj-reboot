@@ -76,7 +76,7 @@ const RANGE_LABELS: Record<string, string> = {
   front1: '前1',
   front_back: '前後',
   front2_line: '前2直線',
-  front_row: '前列',
+  front_row: '相手側の列',
   magic: '魔法',
   snipe: '狙撃',
   cross: '十字',
@@ -85,18 +85,18 @@ const RANGE_LABELS: Record<string, string> = {
 };
 
 const KEYWORD_LABELS: Record<string, string> = {
-  protection: '防護: 受ける物理ダメージを1減らす。',
-  dodge: '回避: 物理攻撃を受けない。魔法と貫通は受ける。',
+  protection: '防護: 受けるダメージを1減らす。消えない。貫通は防げない。',
+  dodge: '回避: 物理攻撃を1回無効化する。1回使うと失う。魔法と貫通は防げない。',
   quickness: '先制: 攻撃時、先にダメージ処理を行う。',
   fortress: '要塞: 自分から攻撃できず、反撃のみ行う。',
-  piercing: '貫通: protection を無視してダメージを与える。',
+  piercing: '貫通: 防護と回避を無視してダメージを与える。',
   summoning_lock: '召喚制限: 自分の盤面が4体以上の時だけ召喚できる。',
   reflect: '反射: 受けた魔法ダメージを攻撃側に返す。',
   anchor: '固定: push / pull / move で移動しない。',
   damage_link: 'ダメージ分散: 受けたダメージの半分を隣接味方へ分散する。',
   cover: 'カバー: 隣接味方への攻撃を代わりに受ける。',
-  stealth: '潜伏: 攻撃が常にブラインド扱いになる。',
-  pressure: '圧力: 隣接する敵の再行動コストを+1する。',
+  stealth: '潜伏: このキャラの攻撃に対して、敵は反撃できない。',
+  pressure: '圧力: 隣接する敵の再行動コストを1上げる。',
 };
 
 const EFFECT_LABELS: Partial<Record<EffectType, string>> = {
@@ -107,16 +107,16 @@ const EFFECT_LABELS: Partial<Record<EffectType, string>> = {
   rotate: '回転: 対象の向きを90度回す。',
   move: '移動: 対象を別のマスへ移す。',
   swap: '位置入替: 自分と対象、または対象同士の位置を入れ替える。',
-  push: '押し出し: 対象を1マス遠ざける。端なら壁ダメージを受ける。',
+  push: '押し出し: この効果を使ったキャラと同じ行か列にいる対象を、そのキャラから遠ざかる方向へ1マス動かす。盤面の外に出るか、押し出し先に別のキャラがいるなら動かない。斜めにいる対象は押し出せない。',
   pull: '引き寄せ: 対象を1マス近づける。',
   draw: 'ドロー: 山札からカードを引く。',
   gain_mana: 'マナ獲得: 自分のマナを増やす。',
   steal_mana: 'マナ奪取: 相手のマナを減らし、自分のマナを増やす。',
-  brainwash: '洗脳: 対象を行動済み・回転済みにし、洗脳状態にする。',
+  brainwash: '洗脳: 対象を洗脳状態にする。洗脳状態の敵は行動と回転ができない。術者が退場すると解除される。',
   freeze: '凍結: 次のターン、攻撃と回転ができなくなる。',
   direction_lock: '向き固定: 対象は回転できなくなる。',
-  action_tax: '再行動コスト増加: 対象の再行動コストを上げる。',
-  mark: 'マーク: スナイプ系カードが参照する目印を付与する。',
+  action_tax: '再行動コスト増加: この効果を与えたキャラが盤面にいる間、対象の再行動コストを上げる。',
+  mark: '照準付与: 対象に照準を付ける。照準が付いた敵への攻撃はATK+1かつ反撃を受けない。攻撃後に照準は消える。',
   grant_dodge: '回避付与: 回避キーワードを与える。',
   grant_protection: '防護付与: 防護キーワードを与える。',
   grant_piercing: '貫通付与: 貫通キーワードを与える。',
@@ -130,7 +130,7 @@ const EFFECT_LABELS: Partial<Record<EffectType, string>> = {
   field_quake: '属性反転: 盤面の属性を入れ替える。',
   field_swap: '属性交換: 2つのマスの属性を入れ替える。',
   element_corrupt: '属性汚染: 対象マスの属性を崩す。',
-  piercing_damage: '貫通ダメージ: 防護を無視してダメージを与える。',
+  piercing_damage: '貫通ダメージ: 防護と回避を無視してダメージを与える。',
   discard_random: 'ランダム捨て札: 相手の手札をランダムに捨てさせる。',
   seal: '封印: 対象の能力を無効化する。',
   destroy_self: '自壊: 自分を破壊する。',
@@ -138,6 +138,9 @@ const EFFECT_LABELS: Partial<Record<EffectType, string>> = {
   hp_swap: 'HP交換: 自分と対象の現在HPを入れ替える。',
   swap_enemies: '敵同士入替: 敵2体の位置を入れ替える。',
 };
+
+const DEBUFF_STATE_LABEL =
+  'デバフ状態: このゲームでは、ATK低下・再行動コスト増加・洗脳のいずれかを受けている状態を指す。';
 
 function isCharacter(card: Card): card is CharacterCard {
   return card.type === 'character';
@@ -178,6 +181,8 @@ function collectReviewCards(): ReviewCard[] {
 
   const normalizeCard = (card: Card): ReviewCard => {
     const override = CARD_REVIEW_OVERRIDES[card.id];
+    const effectDescriptions =
+      override?.effectDescriptions ?? card.effects.map((effect) => effect.description || `${effect.trigger}:${effect.effect}`);
     const effectGlossary = Array.from(
       new Set(
         card.effects
@@ -185,6 +190,13 @@ function collectReviewCards(): ReviewCard[] {
           .filter((label): label is string => Boolean(label)),
       ),
     );
+    const referencesDebuffState =
+      effectDescriptions.some((text) => text.includes('デバフ状態')) ||
+      effectDescriptions.some((text) => text.includes('ATK低下・再行動コスト増加・洗脳')) ||
+      card.effects.some((effect) => ['debuff_atk', 'action_tax', 'brainwash'].includes(effect.effect));
+    if (referencesDebuffState) {
+      effectGlossary.unshift(DEBUFF_STATE_LABEL);
+    }
 
     if (isCharacter(card)) {
       return {
@@ -202,7 +214,7 @@ function collectReviewCards(): ReviewCard[] {
         attackRange: RANGE_LABELS[card.attackRange] ?? card.attackRange,
         attackType: card.attackType === 'physical' ? '物理' : '魔法',
         keywords: card.keywords,
-        effectDescriptions: override?.effectDescriptions ?? card.effects.map((effect) => effect.description || `${effect.trigger}:${effect.effect}`),
+        effectDescriptions,
         effectGlossary: override?.effectGlossary ?? effectGlossary,
         itemSets: [],
       };
@@ -216,7 +228,7 @@ function collectReviewCards(): ReviewCard[] {
         type: 'item',
         manaCost: itemCard.manaCost,
         keywords: [],
-        effectDescriptions: override?.effectDescriptions ?? itemCard.effects.map((effect) => effect.description || `${effect.trigger}:${effect.effect}`),
+        effectDescriptions,
         effectGlossary: override?.effectGlossary ?? effectGlossary,
         itemSets: itemSetMap.get(itemCard.id) ?? [],
       };

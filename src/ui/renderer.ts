@@ -2,6 +2,7 @@ import type { AttackRange, AttackType, BlindPattern, Direction, Element } from '
 import { isCharacter } from '../types/card';
 import type { GameState, Position, PlayerId, BoardCharacter } from '../types/game';
 import { getValidTargetCells, getBlindPositions, getEffectiveBlindPattern, getRangeOffsets } from '../engine/range';
+import { getActionTaxTotal } from '../engine/rules';
 import { describeKeywords, describeEffects, getCardTooltip } from './card-text';
 
 const ELEMENT_COLORS: Record<Element, string> = {
@@ -239,7 +240,7 @@ export class GameRenderer {
         cellEl.appendChild(elemIcon);
 
         if (cell.character) {
-          cellEl.appendChild(this.renderBoardCharacter(cell.character));
+          cellEl.appendChild(this.renderBoardCharacter(state, cell.character));
           cellEl.style.borderColor = PLAYER_COLORS[cell.character.owner];
           cellEl.classList.add(`owner-p${cell.character.owner}`);
           this.attachCellTooltip(cellEl, cell.character);
@@ -266,7 +267,7 @@ export class GameRenderer {
     return boardWrap;
   }
 
-  private renderBoardCharacter(ch: BoardCharacter): HTMLElement {
+  private renderBoardCharacter(state: GameState, ch: BoardCharacter): HTMLElement {
     const wrap = document.createElement('div');
     wrap.className = 'board-char';
     if (ch.hasActedThisTurn) wrap.classList.add('char-acted');
@@ -312,7 +313,7 @@ export class GameRenderer {
     dir.className = 'char-direction';
     dir.textContent = DIRECTION_ARROWS[ch.direction];
     bottomRow.appendChild(dir);
-    const reactCost = ch.card.activateCost ?? 3;
+    const reactCost = (ch.card.activateCost ?? 3) + getActionTaxTotal(state, ch);
     const reactSpan = document.createElement('span');
     reactSpan.className = 'char-react-cost';
     reactSpan.textContent = `💎${reactCost}`;

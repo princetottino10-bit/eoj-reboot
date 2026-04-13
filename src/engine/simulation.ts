@@ -11,11 +11,41 @@ import { startTurn, executeSummon, executeAttack, executeItem, endTurn, getAttac
 import { getAdjacentPositions, calculateHpBonus } from './utils';
 import { getValidTargetCells, getAttackTargets as getRangeTargets, isBlindSpot } from './range';
 import { runMinimaxTurn } from './minimax-ai';
+import { getActionTaxTotal } from './rules';
 
 const DIRECTIONS: Direction[] = ['up', 'right', 'down', 'left'];
 
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function createSeededRandom(seed: number): () => number {
+  let t = seed >>> 0;
+  return () => {
+    t += 0x6D2B79F5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function withSeededRandom<T>(seed: number, fn: () => T): T {
+  const originalRandom = Math.random;
+  Math.random = createSeededRandom(seed);
+  try {
+    return fn();
+  } finally {
+    Math.random = originalRandom;
+  }
+}
+
+function shuffleWithMathRandom<T>(arr: readonly T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
 }
 
 function getValidSummonPositions(state: GameState): Position[] {
@@ -216,8 +246,8 @@ function runAiTurnSim(state: GameState): GameState {
         let cost = candidate.char.card.activateCost ?? 3;
         for (const buff of candidate.char.buffs) {
           if (buff.type === 'atk_cost_reduction') cost -= buff.value;
-          if (buff.type === 'action_tax') cost += buff.value;
         }
+        cost += getActionTaxTotal(state, candidate.char);
         cost = Math.max(0, cost);
         const adjPosE = getAdjacentPositions(candidate.pos);
         for (const ap of adjPosE) {
@@ -301,8 +331,8 @@ function runAiTurnSim(state: GameState): GameState {
       let cost = candidate.char.card.activateCost ?? 3;
       for (const buff of candidate.char.buffs) {
         if (buff.type === 'atk_cost_reduction') cost -= buff.value;
-        if (buff.type === 'action_tax') cost += buff.value;
       }
+      cost += getActionTaxTotal(state, candidate.char);
       cost = Math.max(0, cost);
       // pressure: 隣接に敵のpressure持ちがいればコスト+1
       const adjPosS = getAdjacentPositions(candidate.pos);
@@ -746,6 +776,158 @@ export function runSampledSimulation(totalGames: number = 200, characterPool?: C
     itemSetWinRates: Object.fromEntries(Object.entries(itemStats).map(([k, v]) => [k, calcRate(v)])),
     cardStats,
   };
+}
+
+export function runBalancedSampledSimulation(
+  totalGames: number = 200,
+  characterPool?: CharacterCard[],
+  seed: number = 20260331,
+): FullSimResult {
+  return withSeededRandom(seed, () => {
+    const factions = ['aggro', 'tank', 'control', 'synergy', 'snipe', 'trick'];
+    const itemSetKeys = ['A', 'B', 'C', 'D'];
+
+    const decks: DeckConfig[] = [];
+    for (let i = 0; i < factions.length; i++) {
+      for (let j = i + 1; j < factions.length; j++) {
+        for (const itemKey of itemSetKeys) {
+          decks.push({ factions: [factions[i], factions[j]], itemSet: itemKey });
+        }
+      }
+    }
+
+    const results: SimulationResult[] = [];
+    const deckStats: Record<string, { wins: number; losses: number; draws: number }> = {};
+    const factionStats: Record<string, { wins: number; losses: number; draws: number }> = {};
+    const itemStats: Record<string, { wins: number; losses: number; draws: number }> = {};
+
+    for (const d of decks) {
+      deckStats[`${d.factions[0]}+${d.factions[1]}_${d.itemSet}`] = { wins: 0, losses: 0, draws: 0 };
+    }
+    for (const f of factions) factionStats[f] = { wins: 0, losses: 0, draws: 0 };
+    for (const k of itemSetKeys) itemStats[k] = { wins: 0, losses: 0, draws: 0 };
+
+    const allPairs: Array<[number, number]> = [];
+    for (let i = 0; i < decks.length; i++) {
+      for (let j = i + 1; j < decks.length; j++) {
+        allPairs.push([i, j]);
+      }
+    }
+
+    let shuffledPairs = shuffleWithMathRandom(allPairs);
+    let pairIndex = 0;
+
+    while (results.length < totalGames) {
+      if (pairIndex >= shuffledPairs.length) {
+        shuffledPairs = shuffleWithMathRandom(allPairs);
+        pairIndex = 0;
+      }
+
+      const [i, j] = shuffledPairs[pairIndex++];
+      for (let g = 0; g < 2; g++) {
+        if (results.length >= totalGames) break;
+        const swap = g % 2 === 1;
+        const p0 = swap ? decks[j] : decks[i];
+        const p1 = swap ? decks[i] : decks[j];
+        const kP0 = `${p0.factions[0]}+${p0.factions[1]}_${p0.itemSet}`;
+        const kP1 = `${p1.factions[0]}+${p1.factions[1]}_${p1.itemSet}`;
+
+        const result = simulateGame(p0.factions, p1.factions, p0.itemSet, p1.itemSet, 50, characterPool);
+        results.push(result);
+
+        if (result.winner === 0) {
+          deckStats[kP0].wins++; deckStats[kP1].losses++;
+          factionStats[p0.factions[0]].wins++; factionStats[p0.factions[1]].wins++;
+          factionStats[p1.factions[0]].losses++; factionStats[p1.factions[1]].losses++;
+          itemStats[p0.itemSet].wins++; itemStats[p1.itemSet].losses++;
+        } else if (result.winner === 1) {
+          deckStats[kP1].wins++; deckStats[kP0].losses++;
+          factionStats[p1.factions[0]].wins++; factionStats[p1.factions[1]].wins++;
+          factionStats[p0.factions[0]].losses++; factionStats[p0.factions[1]].losses++;
+          itemStats[p1.itemSet].wins++; itemStats[p0.itemSet].losses++;
+        } else {
+          deckStats[kP0].draws++; deckStats[kP1].draws++;
+          factionStats[p0.factions[0]].draws++; factionStats[p0.factions[1]].draws++;
+          factionStats[p1.factions[0]].draws++; factionStats[p1.factions[1]].draws++;
+          itemStats[p0.itemSet].draws++; itemStats[p1.itemSet].draws++;
+        }
+      }
+    }
+
+    const cardStats: Record<string, CardStats> = {};
+    const ensureCard = (name: string, faction: string, cost: number) => {
+      if (!cardStats[name]) {
+        cardStats[name] = {
+          cardId: name,
+          cardName: name,
+          faction,
+          manaCost: cost,
+          summons: 0,
+          kills: 0,
+          deaths: 0,
+          survivedTurns: 0,
+          inWinningDeck: 0,
+          inLosingDeck: 0,
+          summonWins: 0,
+          summonLosses: 0,
+        };
+      }
+    };
+
+    const charPool = characterPool || ALL_CHARACTERS;
+    for (const r of results) {
+      const p0Facs = r.p0Faction.split('+');
+      const p1Facs = r.p1Faction.split('+');
+      const p0Cards = charPool.filter(c => p0Facs.includes(c.faction));
+      const p1Cards = charPool.filter(c => p1Facs.includes(c.faction));
+      for (const c of p0Cards) {
+        ensureCard(c.name, c.faction, c.manaCost);
+        if (r.winner === 0) cardStats[c.name].inWinningDeck++;
+        else if (r.winner === 1) cardStats[c.name].inLosingDeck++;
+      }
+      for (const c of p1Cards) {
+        ensureCard(c.name, c.faction, c.manaCost);
+        if (r.winner === 1) cardStats[c.name].inWinningDeck++;
+        else if (r.winner === 0) cardStats[c.name].inLosingDeck++;
+      }
+
+      const summonedByOwner = new Map<PlayerId, Set<string>>();
+      summonedByOwner.set(0, new Set());
+      summonedByOwner.set(1, new Set());
+
+      for (const ev of r.cardEvents) {
+        ensureCard(ev.cardName, ev.faction, ev.manaCost);
+        if (ev.event === 'summon') {
+          cardStats[ev.cardName].summons++;
+          summonedByOwner.get(ev.owner)!.add(ev.cardName);
+        } else if (ev.event === 'kill') {
+          cardStats[ev.cardName].kills++;
+        } else if (ev.event === 'death') {
+          cardStats[ev.cardName].deaths++;
+        }
+      }
+
+      for (const [owner, cards] of summonedByOwner) {
+        for (const cardName of cards) {
+          if (r.winner === owner) cardStats[cardName].summonWins++;
+          else if (r.winner !== null) cardStats[cardName].summonLosses++;
+        }
+      }
+    }
+
+    const calcRate = (s: { wins: number; losses: number; draws: number }) => ({
+      ...s,
+      rate: s.wins + s.losses > 0 ? Math.round((s.wins / (s.wins + s.losses)) * 1000) / 10 : 0,
+    });
+
+    return {
+      results,
+      deckWinRates: Object.fromEntries(Object.entries(deckStats).map(([k, v]) => [k, calcRate(v)])),
+      factionWinRates: Object.fromEntries(Object.entries(factionStats).map(([k, v]) => [k, calcRate(v)])),
+      itemSetWinRates: Object.fromEntries(Object.entries(itemStats).map(([k, v]) => [k, calcRate(v)])),
+      cardStats,
+    };
+  });
 }
 
 /**

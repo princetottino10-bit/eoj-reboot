@@ -5,7 +5,7 @@ import { getAdjacentPositions } from './utils';
 export const MAX_CHARACTERS_PER_PLAYER = 5;
 export const MAX_SUMMONS_PER_TURN = 2;
 export const EXTRA_SUMMON_MANA_COST = 1;
-export const VP_TARGET = 13;
+export const VP_TARGET = 15;
 export const TERRITORY_CONTROL_TARGET = 5;
 
 export function getKillVpForManaCost(manaCost: number): number {
@@ -14,8 +14,35 @@ export function getKillVpForManaCost(manaCost: number): number {
   return 3;
 }
 
-export function isControlDebuff(buff: Buff): boolean {
-  return buff.type === 'atk_down' || buff.type === 'action_tax' || buff.type === 'brainwashed';
+function hasSourceCharacter(state: GameState, sourceCardId: string): boolean {
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.character?.card.id === sourceCardId) return true;
+    }
+  }
+  return false;
+}
+
+export function isBuffActive(state: GameState, buff: Buff): boolean {
+  if (buff.type === 'action_tax' && buff.grantedBy) {
+    return hasSourceCharacter(state, buff.grantedBy);
+  }
+  return true;
+}
+
+export function getActionTaxTotal(state: GameState, character: BoardCharacter): number {
+  let total = 0;
+  for (const buff of character.buffs) {
+    if (buff.type === 'action_tax' && isBuffActive(state, buff)) {
+      total += buff.value;
+    }
+  }
+  return total;
+}
+
+export function isControlDebuff(state: GameState, buff: Buff): boolean {
+  if (buff.type === 'action_tax') return isBuffActive(state, buff);
+  return buff.type === 'atk_down' || buff.type === 'brainwashed';
 }
 
 // ========================================
@@ -96,7 +123,7 @@ export function countControlAceCondition(state: GameState, pid: PlayerId): numbe
     for (const cell of row) {
       const ch = cell.character;
       if (!ch || ch.owner !== enemyId) continue;
-      if (ch.buffs.some(b => isControlDebuff(b))) count++;
+      if (ch.buffs.some(b => isControlDebuff(state, b))) count++;
     }
   }
   return count;
@@ -115,31 +142,15 @@ export function countSynergyAceCondition(state: GameState, pid: PlayerId): numbe
   return count;
 }
 
-/** スナイプ: 味方に反撃できない敵の数（味方の攻撃範囲外にいる or マーク済み） */
+/** スナイプ: 照準が付いた敵の数 */
 export function countSnipeAceCondition(state: GameState, pid: PlayerId): number {
-  const enemyId: PlayerId = pid === 0 ? 1 : 0;
-  // 自分の味方の位置を収集
-  const myUnits: { pos: Position; ch: BoardCharacter }[] = [];
-  const enemyUnits: { pos: Position; ch: BoardCharacter }[] = [];
+  let count = 0;
   for (let r = 0; r < 3; r++) {
     for (let c = 0; c < 3; c++) {
       const ch = state.board[r][c].character;
-      if (!ch) continue;
-      if (ch.owner === pid) myUnits.push({ pos: { row: r, col: c }, ch });
-      else enemyUnits.push({ pos: { row: r, col: c }, ch });
+      if (!ch || ch.owner === pid) continue;
+      if (ch.buffs.some(b => b.type === 'marked')) count++;
     }
-  }
-
-  let count = 0;
-  for (const enemy of enemyUnits) {
-    // この敵が「味方のいずれかに反撃できない」= ブラインドスポットにいる味方がいる
-    // → 逆: 味方のうち誰かがこの敵のブラインドにいるか
-    const cannotCounterAny = myUnits.some(ally =>
-      isBlindSpot(enemy.pos, enemy.ch, ally.pos)
-    );
-    // マーク済みも対象
-    const isMarked = enemy.ch.buffs.some(b => b.type === 'marked');
-    if (cannotCounterAny || isMarked) count++;
   }
   return count;
 }

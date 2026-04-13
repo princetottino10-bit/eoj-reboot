@@ -18,7 +18,7 @@ import { countControlledCells } from './state';
 import { startTurn, executeSummon, executeAttack, executeItem, executeSkipDraw, endTurn, getAttackTargets } from './actions';
 import { getAdjacentPositions, calculateHpBonus } from './utils';
 import { getValidTargetCells, isBlindSpot, isInAttackRange, getEffectiveBlindPattern, getBlindPositions } from './range';
-import { getAceConditionCount, getAceEffectiveCost } from './rules';
+import { getAceConditionCount, getAceEffectiveCost, getActionTaxTotal } from './rules';
 
 const DIRECTIONS: Direction[] = ['up', 'right', 'down', 'left'];
 const FORMER_C6_ACE_IDS = new Set([
@@ -340,8 +340,8 @@ export function evaluate(state: GameState, pid: PlayerId): number {
           score -= sign * 40;
           break;
         case 'marked':
-          // マーク = スナイプから追加ダメージ
-          score -= sign * 10;
+          // 照準 = 反撃不可 + ATK+1 (ブラインド相当以上の価値)
+          score -= sign * 25;
           break;
       }
     }
@@ -727,8 +727,8 @@ function generateActions(state: GameState): AIAction[] {
       // atk_cost_reduction/action_tax を攻撃コストへ反映
       for (const b of ch.buffs) {
         if (b.type === 'atk_cost_reduction') cost -= b.value;
-        if (b.type === 'action_tax') cost += b.value;
       }
+      cost += getActionTaxTotal(state, ch);
       cost = Math.max(0, cost);
       // 威圧コスト加算
       const adjP = getAdjacentPositions({ row: r, col: c });

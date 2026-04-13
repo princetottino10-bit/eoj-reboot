@@ -1330,7 +1330,8 @@ const item03: ItemCard = {
   type: 'item',
   manaCost: 1,
   effects: [
-    { trigger: 'on_use', target: 'target_ally', effect: 'heal', value: 3 },
+    { trigger: 'on_use', target: 'target_ally', effect: 'heal', value: 3,
+      description: '味方1体のHP3回復' },
   ],
 };
 
@@ -1341,7 +1342,8 @@ const item04: ItemCard = {
   type: 'item',
   manaCost: 1,
   effects: [
-    { trigger: 'on_use', target: 'target_ally', effect: 'buff_atk', value: 2 },
+    { trigger: 'on_use', target: 'target_ally', effect: 'buff_atk', value: 2,
+      description: '味方1体のATK+2' },
   ],
 };
 
@@ -1352,7 +1354,8 @@ const item05: ItemCard = {
   type: 'item',
   manaCost: 1,
   effects: [
-    { trigger: 'on_use', target: 'target_enemy', effect: 'debuff_atk', value: 2 },
+    { trigger: 'on_use', target: 'target_enemy', effect: 'debuff_atk', value: 2,
+      description: '敵1体のATK-2' },
   ],
 };
 
@@ -1363,7 +1366,8 @@ const item06: ItemCard = {
   type: 'item',
   manaCost: 1,
   effects: [
-    { trigger: 'on_use', target: 'target_enemy', effect: 'damage', value: 2 },
+    { trigger: 'on_use', target: 'target_enemy', effect: 'damage', value: 2,
+      description: '敵1体に2ダメージ' },
   ],
 };
 
@@ -1456,8 +1460,10 @@ const item14: ItemCard = {
   type: 'item',
   manaCost: 2,
   effects: [
-    { trigger: 'on_use', target: 'target_enemy', effect: 'rotate', value: 2 },
-    { trigger: 'on_use', target: 'target_enemy', effect: 'direction_lock', value: 1 },
+    { trigger: 'on_use', target: 'target_enemy', effect: 'rotate', value: 2,
+      description: '敵1体を180°回転' },
+    { trigger: 'on_use', target: 'target_enemy', effect: 'direction_lock', value: 1,
+      description: '1ターン向き固定' },
   ],
 };
 
