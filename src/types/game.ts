@@ -13,6 +13,7 @@ export interface BoardCharacter {
 export interface Buff {
   type:
     | 'atk_up'
+    | 'hp_up'
     | 'atk_down'
     | 'sealed'
     | 'frozen'

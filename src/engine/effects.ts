@@ -63,6 +63,12 @@ export function findCharacters(state: GameState, owner: PlayerId): { pos: Positi
 
 const MARKER_TYPES = ['has_protection', 'has_dodge', 'has_piercing', 'has_quickness'] as const;
 
+function getHpBonus(char: BoardCharacter): number {
+  return char.buffs
+    .filter(b => b.type === 'hp_up')
+    .reduce((sum, b) => sum + b.value, 0);
+}
+
 /** キャラクターがいずれかのマーカーを持っているか */
 function hasAnyMarker(char: BoardCharacter): boolean {
   return char.buffs.some(b => (MARKER_TYPES as readonly string[]).includes(b.type));
@@ -145,11 +151,11 @@ export function evaluateCondition(
     case 'enemy_count_gte':
       return enemies.length >= condition.value;
     case 'hp_pct_lte': {
-      const pct = (ctx.sourceChar.currentHp / ctx.sourceChar.card.hp) * 100;
+      const pct = (ctx.sourceChar.currentHp / (ctx.sourceChar.card.hp + getHpBonus(ctx.sourceChar))) * 100;
       return pct <= condition.value;
     }
     case 'hp_pct_gte': {
-      const pct = (ctx.sourceChar.currentHp / ctx.sourceChar.card.hp) * 100;
+      const pct = (ctx.sourceChar.currentHp / (ctx.sourceChar.card.hp + getHpBonus(ctx.sourceChar))) * 100;
       return pct >= condition.value;
     }
     case 'blind_spot':
@@ -259,6 +265,20 @@ function applyHeal(state: GameState, pos: Position, amount: number): GameState {
 }
 
 /** ATKバフ付与 */
+function applyBuffHp(state: GameState, pos: Position, value: number): GameState {
+  const cell = getCell(state, pos);
+  if (!cell.character) return state;
+  const char = cell.character;
+  const newBuffs = [...char.buffs, { type: 'hp_up' as const, value }];
+  state = setCharacterOnCell(state, pos, {
+    ...char,
+    currentHp: char.currentHp + value,
+    buffs: newBuffs,
+  });
+  state = addLog(state, `${char.card.name} HP上限+${value} / 現在HP+${value}`);
+  return state;
+}
+
 function applyBuffAtk(state: GameState, pos: Position, value: number): GameState {
   const cell = getCell(state, pos);
   if (!cell.character) return state;
@@ -414,8 +434,8 @@ function applySwap(state: GameState, sourcePos: Position, targetPos: Position): 
   return state;
 }
 
-/** 押し出し: ソースから離れる方向に1マス。端なら壁ダメージ */
-function applyPush(state: GameState, sourcePos: Position, targetPos: Position, wallDamage: number): GameState {
+/** 押し出し: ソースと同じ行か列にいる対象を、ソースから遠ざかる方向へ1マス動かす。動けないならその場に残る */
+function applyPush(state: GameState, sourcePos: Position, targetPos: Position): GameState {
   const cell = getCell(state, targetPos);
   if (!cell.character) return state;
   if (cell.character.card.keywords.includes('anchor')) {
@@ -425,6 +445,12 @@ function applyPush(state: GameState, sourcePos: Position, targetPos: Position, w
   const char = cell.character;
   const dr = targetPos.row - sourcePos.row;
   const dc = targetPos.col - sourcePos.col;
+  // 斜め方向には押し出せない
+  if (dr !== 0 && dc !== 0) {
+    state = addLog(state, `${char.card.name} は斜め方向には押し出せない`);
+    return state;
+  }
+
   // 押す方向（0の場合はそのまま=押せない）
   const pushR = dr === 0 ? 0 : (dr > 0 ? 1 : -1);
   const pushC = dc === 0 ? 0 : (dc > 0 ? 1 : -1);
@@ -433,18 +459,16 @@ function applyPush(state: GameState, sourcePos: Position, targetPos: Position, w
   const destRow = targetPos.row + pushR;
   const destCol = targetPos.col + pushC;
 
-  // 盤外 = 壁に衝突
+  // 盤外 = 動けない
   if (destRow < 0 || destRow > 2 || destCol < 0 || destCol > 2) {
-    state = applyDamage(state, targetPos, wallDamage);
-    state = addLog(state, `${char.card.name} が壁に衝突！ ${wallDamage}ダメージ`);
+    state = addLog(state, `${char.card.name} はこれ以上押し出されない`);
     return state;
   }
 
   const destCell = getCell(state, { row: destRow, col: destCol });
   if (destCell.character) {
-    // 移動先にキャラがいる = 壁ダメージ
-    state = applyDamage(state, targetPos, wallDamage);
-    state = addLog(state, `${char.card.name} は押し出せない！ ${wallDamage}ダメージ`);
+    // 移動先にキャラがいる = 動けない
+    state = addLog(state, `${char.card.name} は押し出せない`);
     return state;
   }
 
@@ -544,6 +568,12 @@ function resolveTargets(
       const idx = Math.floor(Math.random() * allies.length);
       return [allies[idx].pos];
     }
+    case 'adjacent_ally': {
+      const allies = findAdjacentAllies(state, ctx.sourcePos, owner);
+      if (allies.length === 0) return [];
+      const idx = Math.floor(Math.random() * allies.length);
+      return [allies[idx].pos];
+    }
     case 'all_enemies':
       return findEnemies(state, owner).map(e => e.pos);
     case 'all_allies':
@@ -617,6 +647,12 @@ function applySingleEffect(
       }
       break;
 
+    case 'buff_hp':
+      for (const pos of targets) {
+        state = applyBuffHp(state, pos, effect.value);
+      }
+      break;
+
     case 'buff_atk':
       for (const pos of targets) {
         state = applyBuffAtk(state, pos, effect.value);
@@ -640,7 +676,15 @@ function applySingleEffect(
       for (const pos of targets) {
         const ch = state.board[pos.row][pos.col].character;
         if (ch) {
-          const newBuffs = [...ch.buffs, { type: 'action_tax' as const, value: effect.value, duration: undefined }];
+          const newBuffs = [
+            ...ch.buffs,
+            {
+              type: 'action_tax' as const,
+              value: effect.value,
+              duration: undefined,
+              grantedBy: ctx.sourceChar.card.id,
+            },
+          ];
           const newBoard = state.board.map((row, r) =>
             row.map((cell, c) => r === pos.row && c === pos.col ? { ...cell, character: { ...ch, buffs: newBuffs } } : cell)
           );
@@ -793,9 +837,9 @@ function applySingleEffect(
     }
 
     case 'push': {
-      // ソースから離れる方向に1マス押し出す。端なら壁ダメージ
+      // ソースから離れる方向に1マス押し出す。動けないならその場に残る
       for (const pos of targets) {
-        state = applyPush(state, ctx.sourcePos, pos, effect.value || 2);
+        state = applyPush(state, ctx.sourcePos, pos);
       }
       break;
     }
@@ -1190,6 +1234,11 @@ export function resolveItemEffects(
       case 'heal':
         for (const pos of targets) {
           state = applyHeal(state, pos, effect.value);
+        }
+        break;
+      case 'buff_hp':
+        for (const pos of targets) {
+          state = applyBuffHp(state, pos, effect.value);
         }
         break;
       case 'buff_atk':

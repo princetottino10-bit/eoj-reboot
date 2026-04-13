@@ -46,6 +46,7 @@ const EFFECT_LABELS: Record<string, string> = {
   brainwash:   '洗脳',
   freeze:      '凍結',
   direction_lock:'向き固定',
+  action_tax:  '再行動コスト増加',
   element_corrupt:'属性汚染',
   piercing_damage:'貫通ダメージ',
   swap_enemies:'敵位置入替',
@@ -57,18 +58,18 @@ const EFFECT_LABELS: Record<string, string> = {
 };
 
 const KEYWORD_LABELS: Record<Keyword, string> = {
-  protection:     '防護(物理ダメージ-1)',
-  dodge:          '回避(物理攻撃を受けない。魔法・貫通は通る)',
+  protection:     '防護(受けるダメージ-1)',
+  dodge:          '回避(物理攻撃を1回無効化。魔法・貫通は通る)',
   quickness:      '先制(先に攻撃)',
   fortress:       '要塞(反撃のみ可)',
-  piercing:       '貫通(防護を無視)',
+  piercing:       '貫通(防護・回避を無視)',
   summoning_lock: '召喚制限',
   reflect:        '反射(受ダメを返す)',
   anchor:         '不動(移動不可)',
   damage_link:    '分散(隣接味方と分割)',
   cover:          'カバー(隣接味方への攻撃を代わりに受ける)',
-  stealth:        '隠密(常にブラインド攻撃)',
-  pressure:       '威圧(周囲敵の再行動+1)',
+  stealth:        '潜伏(敵は反撃できない)',
+  pressure:       '圧力(隣接敵の再行動コスト+1)',
 };
 
 /**
@@ -161,7 +162,7 @@ export function getCardTooltip(card: Card): string {
       front1: '正面1',
       front_back: '前後2',
       front2_line: '正面2直線',
-      front_row: '正面行',
+      front_row: '相手側の列',
       magic: '魔法全域',
       snipe: '狙撃(前左右)',
       cross: '十字(前後左右)',

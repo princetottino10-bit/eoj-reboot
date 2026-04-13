@@ -5,6 +5,7 @@ import { executeSummon, executeAttack, executeItem, endTurn, getAttackTargets } 
 import { getAdjacentPositions, calculateHpBonus } from '../engine/utils';
 import { getValidTargetCells, isBlindSpot } from '../engine/range';
 import { countControlledCells } from '../engine/state';
+import { getActionTaxTotal } from '../engine/rules';
 
 const DIRECTIONS: Direction[] = ['up', 'right', 'down', 'left'];
 
@@ -232,7 +233,7 @@ export function runAiTurn(state: GameState): GameState {
     const attackCandidates = getAttackCandidates(state, pid);
     for (const candidate of attackCandidates) {
       if (state.phase === 'game_over') return state;
-      const cost = candidate.char.card.activateCost ?? 3;
+      const cost = (candidate.char.card.activateCost ?? 3) + getActionTaxTotal(state, candidate.char);
       if (mana() < cost) continue;
 
       const isLowCostReact = cost <= 1;

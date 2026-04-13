@@ -128,6 +128,7 @@ export type EffectTarget =
   | 'target_enemy'
   | 'adjacent_enemy'
   | 'target_ally'
+  | 'adjacent_ally'
   | 'all_enemies'
   | 'all_allies'
   | 'adjacent_allies'
@@ -139,6 +140,7 @@ export type EffectTarget =
 export type EffectType =
   | 'damage'
   | 'heal'
+  | 'buff_hp'
   | 'buff_atk'
   | 'debuff_atk'
   | 'field_quake'       // 属性反転
@@ -146,7 +148,7 @@ export type EffectType =
   | 'rotate'            // 向き回転
   | 'move'              // 位置移動（ランダム空きマスへ）
   | 'swap'              // 位置入替（自分と対象を入れ替え）
-  | 'push'              // 押し出し（ソースから離れる方向に1マス、端なら2ダメージ）
+  | 'push'              // 押し出し（ソースと同じ行か列にいる対象を、ソースから遠ざかる方向へ1マス。動けないならその場に残る）
   | 'pull'              // 引き寄せ（ソースに向かって1マス移動）
   | 'draw'              // ドロー
   | 'gain_mana'         // マナ獲得

@@ -5,18 +5,19 @@
  * 結果は sim-results-v2.json に保存される
  */
 import { writeFileSync } from 'fs';
-import { runSampledSimulation } from './engine/simulation';
+import { runBalancedSampledSimulation } from './engine/simulation';
 import { VP_TARGET } from './engine/rules';
 import { V2_CHARACTERS } from './data/cards-v2';
 
 const sampleSize = parseInt(process.argv[2] || '200', 10);
+const seed = parseInt(process.argv[3] || '20260331', 10);
 
 console.log('=== 異能学園総選挙 v2 バランス評価レポート ===');
-console.log(`モード: ランダム抽出（${sampleSize}試合 / 先後入替あり）`);
+console.log(`モード: バランス抽出（${sampleSize}試合 / 先後入替あり / seed=${seed}）`);
 console.log(`カードプール: v2 (${V2_CHARACTERS.length}枚)\n`);
 
 const start = Date.now();
-const { results, deckWinRates, factionWinRates, itemSetWinRates, cardStats } = runSampledSimulation(sampleSize, V2_CHARACTERS);
+const { results, deckWinRates, factionWinRates, itemSetWinRates, cardStats } = runBalancedSampledSimulation(sampleSize, V2_CHARACTERS, seed);
 const elapsed = ((Date.now() - start) / 1000).toFixed(1);
 
 console.log(`実行時間: ${elapsed}秒 / 全${results.length}試合\n`);
@@ -186,7 +187,8 @@ const jsonPath = 'sim-results-v2.json';
 writeFileSync(jsonPath, JSON.stringify({
   timestamp: new Date().toISOString(),
   version: 'v2',
-  mode: 'sampled',
+  mode: 'balanced_sampled',
+  seed,
   totalGames: results.length,
   elapsedSeconds: parseFloat(elapsed),
   results,
