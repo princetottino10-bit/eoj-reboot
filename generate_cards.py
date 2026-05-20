@@ -26,8 +26,9 @@ GRID_W          = GRID_COLS * CELL   # 9 mm
 GRID_GAP        = 4              # gap between side-by-side grids (mm)
 GRID_BOTTOM_PAD = 3              # breathing room below grids (mm)
 
-# Characters forbidden at line beginning (行頭禁則)
+# Characters forbidden at line beginning / end (行頭・行末禁則)
 KINSOKU_START = frozenset("、。，．・：；？！）］｝」』】〉》〕～…‥ヽヾゝゞ々ー")
+KINSOKU_END   = frozenset("「『（【〈《〔")
 
 # ── font candidates (regular, bold) ──────────────────────────────────────────
 FONT_REGULAR = [
@@ -92,6 +93,9 @@ class CardPDF(FPDF):
 
         # Name (right of attribute circle)
         self.jp(8, bold=True)
+        if self.get_string_width(card["name"]) > 27:
+            print(f"[warn] name may truncate: {card.get('id', card['name'])!r}",
+                  file=sys.stderr)
         self.set_xy(x + 8, y + 1.5)
         self.cell(27, 4.5, card["name"])
 
@@ -160,7 +164,9 @@ class CardPDF(FPDF):
         if card["effect"] and text_y < max_y:
             self.jp(5.8)
             self.set_xy(x + 1.5, text_y)
-            self._multi_cell_j(tw, 3.2, card["effect"])
+            if not self._multi_cell_j(tw, 3.2, card["effect"], max_y=max_y):
+                print(f"[warn] effect clipped: {card.get('id', card['name'])!r}",
+                      file=sys.stderr)
             text_y = min(self.get_y(), max_y)
 
         if card["ult"] and text_y + 4 < max_y:
@@ -178,7 +184,9 @@ class CardPDF(FPDF):
             if text_y < max_y:
                 self.jp(5.5)
                 self.set_xy(x + 1.5, text_y)
-                self._multi_cell_j(tw, 3.0, ult["effect"])
+                if not self._multi_cell_j(tw, 3.0, ult["effect"], max_y=max_y):
+                    print(f"[warn] ult clipped: {card.get('id', card['name'])!r}",
+                          file=sys.stderr)
 
         # ── grids (bottom, side by side) ──
         self.set_draw_color(180, 180, 180)
@@ -197,10 +205,54 @@ class CardPDF(FPDF):
         self._draw_grid(card.get("weakness_cells", [[-1, 0]]),
                         is_attack=False, gx=weakness_gx, gy=weakness_start_y + 3)
 
+    # ── item card ─────────────────────────────────────────────────────────
+    def draw_item_card(self, card: dict, x: float, y: float):
+        self.set_draw_color(0, 0, 0)
+        self.rect(x, y, CARD_W, CARD_H)
+        self._item_header(card, x, y)
+        self._item_body(card, x, y)
+
+    def _item_header(self, card, x, y):
+        self.jp(5)
+        self.set_xy(x + 1.5, y + 1.5)
+        self.cell(CARD_W - 16, 3, "アイテム")
+
+        self.jp(8, bold=True)
+        self.set_xy(x + 1.5, y + 4.5)
+        self.cell(CARD_W - 16, 4, card["name"])
+
+        self.jp(10, bold=True)
+        self.set_xy(x + CARD_W - 13, y + 1.5)
+        self.cell(11, 5, str(card["cost"]), border=1, align="C")
+
+    def _item_body(self, card, x, y):
+        top   = y + HEADER_H
+        tw    = CARD_W - 3
+        max_y = y + CARD_H - 2
+
+        # Sets
+        self.jp(5.5)
+        self.set_xy(x + 1.5, top + 1)
+        sets_str = "  ".join(f"[{s}]" for s in card["sets"])
+        self.cell(tw, 3.5, f"セット: {sets_str}")
+
+        text_y = top + 5
+        self.set_draw_color(180, 180, 180)
+        self.line(x + 1, text_y - 0.5, x + CARD_W - 1, text_y - 0.5)
+        self.set_draw_color(0, 0, 0)
+
+        if card["effect"] and text_y < max_y:
+            self.jp(5.8)
+            self.set_xy(x + 1.5, text_y)
+            if not self._multi_cell_j(tw, 3.2, card["effect"], max_y=max_y):
+                print(f"[warn] item effect clipped: {card.get('id', card['name'])!r}",
+                      file=sys.stderr)
+
     # ── kinsoku-aware text rendering ─────────────────────────────────────
     def _wrap_kinsoku(self, text: str, width: float) -> list[str]:
-        """Line-wrap with Japanese 追い出し kinsoku: a line-start-prohibited
-        character pulls the previous character with it onto the next line."""
+        """Line-wrap with Japanese 追い出し kinsoku.
+        行頭禁則: a start-prohibited char pulls the previous char to the next line.
+        行末禁則: an end-prohibited char at line end is pushed to the next line."""
         lines = []
         for para in text.split("\n"):
             if not para:
@@ -212,6 +264,11 @@ class CardPDF(FPDF):
                     line += ch
                 else:
                     if ch in KINSOKU_START and len(line) > 1:
+                        # 行頭禁則: pull last char + prohibited char to next line
+                        lines.append(line[:-1])
+                        line = line[-1] + ch
+                    elif line and line[-1] in KINSOKU_END and len(line) > 1:
+                        # 行末禁則: push end-prohibited char to next line
                         lines.append(line[:-1])
                         line = line[-1] + ch
                     else:
@@ -222,13 +279,24 @@ class CardPDF(FPDF):
                 lines.append(line)
         return lines
 
-    def _multi_cell_j(self, tw: float, line_h: float, text: str) -> None:
-        """Drop-in for multi_cell with kinsoku line-breaking."""
+    def _multi_cell_j(self, tw: float, line_h: float, text: str,
+                       max_y: float | None = None) -> bool:
+        """Drop-in for multi_cell with kinsoku line-breaking.
+        Returns False and appends … if text was clipped by max_y."""
         x = self.get_x()
         for line in self._wrap_kinsoku(text, tw):
+            if max_y is not None and self.get_y() + line_h > max_y:
+                truncated = line
+                while truncated and self.get_string_width(truncated + "…") > tw:
+                    truncated = truncated[:-1]
+                self.set_xy(x, self.get_y())
+                self.cell(tw, line_h, truncated + "…")
+                self.set_y(self.get_y() + line_h)
+                return False
             self.set_xy(x, self.get_y())
             self.cell(tw, line_h, line)
             self.set_y(self.get_y() + line_h)
+        return True
 
     # ── range grids ───────────────────────────────────────────────────────
     def _attack_rows(self, card) -> int:
@@ -282,6 +350,7 @@ class CardPDF(FPDF):
 def generate(cards_path: Path, out_path: Path):
     data = json.loads(cards_path.read_text(encoding="utf-8"))
     characters = data["characters"]
+    items      = data.get("items", [])
 
     pdf = CardPDF(unit="mm", format="A4")
     pdf.set_auto_page_break(False)
@@ -293,9 +362,17 @@ def generate(cards_path: Path, out_path: Path):
         for i, card in enumerate(characters[start: start + per_page]):
             pdf.draw_card(card, *card_pos(i))
 
+    for start in range(0, len(items), per_page):
+        pdf.add_page()
+        for i, card in enumerate(items[start: start + per_page]):
+            pdf.draw_item_card(card, *card_pos(i))
+
     pdf.output(str(out_path))
-    pages = (len(characters) + per_page - 1) // per_page
-    print(f"Generated: {out_path}  ({len(characters)} cards, {pages} pages)")
+    char_pages = (len(characters) + per_page - 1) // per_page
+    item_pages = (len(items) + per_page - 1) // per_page
+    print(f"Generated: {out_path}  "
+          f"({len(characters)} chars/{char_pages}p, "
+          f"{len(items)} items/{item_pages}p)")
 
 
 if __name__ == "__main__":
