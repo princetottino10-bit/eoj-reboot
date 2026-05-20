@@ -26,6 +26,9 @@ GRID_W          = GRID_COLS * CELL   # 9 mm
 GRID_GAP        = 4              # gap between side-by-side grids (mm)
 GRID_BOTTOM_PAD = 3              # breathing room below grids (mm)
 
+# Characters forbidden at line beginning (行頭禁則)
+KINSOKU_START = frozenset("、。，．・：；？！）］｝」』】〉》〕～…‥ヽヾゝゞ々ー")
+
 # ── font candidates (regular, bold) ──────────────────────────────────────────
 FONT_REGULAR = [
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
@@ -157,7 +160,7 @@ class CardPDF(FPDF):
         if card["effect"] and text_y < max_y:
             self.jp(5.8)
             self.set_xy(x + 1.5, text_y)
-            self.multi_cell(tw, 3.2, card["effect"])
+            self._multi_cell_j(tw, 3.2, card["effect"])
             text_y = min(self.get_y(), max_y)
 
         if card["ult"] and text_y + 4 < max_y:
@@ -175,7 +178,7 @@ class CardPDF(FPDF):
             if text_y < max_y:
                 self.jp(5.5)
                 self.set_xy(x + 1.5, text_y)
-                self.multi_cell(tw, 3.0, ult["effect"])
+                self._multi_cell_j(tw, 3.0, ult["effect"])
 
         # ── grids (bottom, side by side) ──
         self.set_draw_color(180, 180, 180)
@@ -193,6 +196,39 @@ class CardPDF(FPDF):
         self.cell(GRID_W, 3, "弱点", align="C")
         self._draw_grid(card.get("weakness_cells", [[-1, 0]]),
                         is_attack=False, gx=weakness_gx, gy=weakness_start_y + 3)
+
+    # ── kinsoku-aware text rendering ─────────────────────────────────────
+    def _wrap_kinsoku(self, text: str, width: float) -> list[str]:
+        """Line-wrap with Japanese 追い出し kinsoku: a line-start-prohibited
+        character pulls the previous character with it onto the next line."""
+        lines = []
+        for para in text.split("\n"):
+            if not para:
+                lines.append("")
+                continue
+            line = ""
+            for ch in para:
+                if self.get_string_width(line + ch) <= width:
+                    line += ch
+                else:
+                    if ch in KINSOKU_START and len(line) > 1:
+                        lines.append(line[:-1])
+                        line = line[-1] + ch
+                    else:
+                        if line:
+                            lines.append(line)
+                        line = ch
+            if line:
+                lines.append(line)
+        return lines
+
+    def _multi_cell_j(self, tw: float, line_h: float, text: str) -> None:
+        """Drop-in for multi_cell with kinsoku line-breaking."""
+        x = self.get_x()
+        for line in self._wrap_kinsoku(text, tw):
+            self.set_xy(x, self.get_y())
+            self.cell(tw, line_h, line)
+            self.set_y(self.get_y() + line_h)
 
     # ── range grids ───────────────────────────────────────────────────────
     def _attack_rows(self, card) -> int:
