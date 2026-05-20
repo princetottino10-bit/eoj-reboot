@@ -210,6 +210,7 @@ class CardPDF(FPDF):
         self.set_draw_color(0, 0, 0)
         self.rect(x, y, CARD_W, CARD_H)
         self._item_header(card, x, y)
+        self._graphic(x, y)
         self._item_body(card, x, y)
 
     def _item_header(self, card, x, y):
@@ -226,7 +227,7 @@ class CardPDF(FPDF):
         self.cell(11, 5, str(card["cost"]), border=1, align="C")
 
     def _item_body(self, card, x, y):
-        top   = y + HEADER_H
+        top   = y + HEADER_H + GRAPHIC_H
         tw    = CARD_W - 3
         max_y = y + CARD_H - 2
 
