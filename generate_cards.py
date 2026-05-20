@@ -19,7 +19,7 @@ H_GAP = (A4_W - COLS * CARD_W) / (COLS + 1)   # ~5.25 mm
 V_GAP = (A4_H - ROWS * CARD_H) / (ROWS + 1)   # ~8.25 mm
 
 HEADER_H  = 8
-GRAPHIC_H = 32
+GRAPHIC_H = 38
 CELL      = 3.0   # range-grid cell size (mm)
 GRID_COLS       = 3              # grids are always 3 columns wide
 GRID_W          = GRID_COLS * CELL   # 9 mm
@@ -78,7 +78,7 @@ class CardPDF(FPDF):
         self._graphic(x, y)
         self._lower(card, x, y)
 
-    # ── header (attribute ○ | name / cost | reactivation) ──────────────
+    # ── header (attribute ○ | name  faction / cost | reactivation) ─────
     def _header(self, card, x, y):
         # Attribute circle (top-left)
         self.set_draw_color(0, 0, 0)
@@ -90,16 +90,21 @@ class CardPDF(FPDF):
         # Name (right of attribute circle)
         self.jp(8, bold=True)
         self.set_xy(x + 8, y + 1.5)
-        self.cell(CARD_W - 23, 5, card["name"])
+        self.cell(27, 4.5, card["name"])
 
-        # cost (left) | reactivation (right) — side by side box
+        # Faction (right of name, smaller)
+        self.jp(5.5)
+        self.set_xy(x + 36, y + 2)
+        self.cell(11, 4, card["faction"])
+
+        # cost (left) | reactivation (right) — side by side box, 2 mm from card edge
         self.jp(10, bold=True)
-        self.set_xy(x + CARD_W - 14, y + 0.5)
-        self.cell(7, 7, str(card["cost"]), border="LTB", align="C")
+        self.set_xy(x + CARD_W - 15, y + 1.5)
+        self.cell(8, 5, str(card["cost"]), border="LTB", align="C")
 
         self.jp(6)
-        self.set_xy(x + CARD_W - 7, y + 0.5)
-        self.cell(6, 7, f"再{card['reactivation_cost']}", border="RTB", align="C")
+        self.set_xy(x + CARD_W - 7, y + 1.5)
+        self.cell(5, 5, f"再{card['reactivation_cost']}", border="RTB", align="C")
 
     # ── graphic placeholder ───────────────────────────────────────────────
     def _graphic(self, x, y):
