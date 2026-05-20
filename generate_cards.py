@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-# /// script
-# requires-python = ">=3.11"
-# dependencies = [
-#   "fpdf2",
-#   "fonttools",
-# ]
-# ///
 """
 Generate printable card PDF from cards.json.
 Usage:  uv run generate_cards.py [output.pdf]
