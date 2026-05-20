@@ -23,7 +23,7 @@ GRAPHIC_H = 28
 CELL      = 3.0   # range-grid cell size (mm)
 GRID_COLS = 3     # grids are always 3 columns wide
 GRID_W    = GRID_COLS * CELL   # 9 mm
-GRID_AREA = GRID_W + 1         # 10 mm (grid + right margin)
+GRID_GAP  = 4                  # gap between side-by-side attack/weakness grids (mm)
 
 # ── font candidates (regular, bold) ──────────────────────────────────────────
 FONT_REGULAR = [
@@ -95,12 +95,20 @@ class CardPDF(FPDF):
 
     # ── lower half ────────────────────────────────────────────────────────
     def _lower(self, card, x, y):
-        top   = y + HEADER_H + GRAPHIC_H
-        max_y = y + CARD_H - 1            # hard bottom of this card
-        gx    = x + CARD_W - GRID_AREA    # right-side grid column x
-        tw    = CARD_W - 1.5 - GRID_AREA  # left text area width (~51 mm)
+        top = y + HEADER_H + GRAPHIC_H
+        tw  = CARD_W - 3          # full text width
 
-        # ── stats (left) ──
+        # ── grid geometry (anchored to bottom) ──
+        attack_rows = self._attack_rows(card)
+        grid_pair_h = 3 + max(attack_rows, 3) * CELL
+        grid_y      = y + CARD_H - 1 - grid_pair_h
+        max_y       = grid_y - 1  # text must stay above grids
+
+        total_gw    = 2 * GRID_W + GRID_GAP
+        attack_gx   = x + (CARD_W - total_gw) / 2
+        weakness_gx = attack_gx + GRID_W + GRID_GAP
+
+        # ── stats ──
         self.jp(6.5, bold=True)
         self.set_xy(x + 1.5, top + 1)
         self.cell(tw, 4, f"HP {card['hp']}  ATK {card['atk']}")
@@ -110,26 +118,7 @@ class CardPDF(FPDF):
         self.cell(tw, 3.5,
                   f"再{card['reactivation_cost']}  {card['attribute']}  {card['attack_type']}")
 
-        # ── attack grid (right, top) ──
-        gy = top + 0.5
-        self.jp(4, bold=True)
-        self.set_xy(gx, gy)
-        self.cell(GRID_W, 3, "攻撃", align="C")
-        gy += 3
-        self._draw_grid(card.get("attack_cells"), is_attack=True, gx=gx, gy=gy)
-        gy += self._attack_rows(card) * CELL + 1.5
-
-        # ── weakness grid (right, below attack) ──
-        self.jp(4, bold=True)
-        self.set_xy(gx, gy)
-        self.cell(GRID_W, 3, "弱点", align="C")
-        gy += 3
-        self._draw_grid(card.get("weakness_cells", [[-1, 0]]),
-                        is_attack=False, gx=gx, gy=gy)
-
-        # ── keywords / effect / ult (left, below stats) ──
-        # All cells use tw to stay clear of the right grid column.
-        # Each block checks max_y before drawing to prevent overflow.
+        # ── keywords / effect / ult ──
         text_y = top + 10
 
         if card["keywords"] and text_y < max_y:
@@ -165,11 +154,30 @@ class CardPDF(FPDF):
                 self.set_xy(x + 1.5, text_y)
                 self.multi_cell(tw, 2.8, ult["effect"])
 
+        # ── grids (bottom, side by side) ──
+        self.set_draw_color(180, 180, 180)
+        self.line(x + 1, grid_y - 0.5, x + CARD_W - 1, grid_y - 0.5)
+        self.set_draw_color(0, 0, 0)
+
+        self.jp(4, bold=True)
+        self.set_xy(attack_gx, grid_y)
+        self.cell(GRID_W, 3, "攻撃", align="C")
+        self._draw_grid(card.get("attack_cells"), is_attack=True,
+                        gx=attack_gx, gy=grid_y + 3)
+
+        self.jp(4, bold=True)
+        self.set_xy(weakness_gx, grid_y)
+        self.cell(GRID_W, 3, "弱点", align="C")
+        self._draw_grid(card.get("weakness_cells", [[-1, 0]]),
+                        is_attack=False, gx=weakness_gx, gy=grid_y + 3)
+
     # ── range grids ───────────────────────────────────────────────────────
     def _attack_rows(self, card) -> int:
         """Number of rows needed for the attack grid."""
         attack = card.get("attack_cells")
-        if attack in ("all", None):
+        if attack == "all":
+            return 1  # 全域 draws as a single cell
+        if attack is None:
             return 3
         rows = [r for r, _ in attack] + [0]
         return max(1, max(rows)) - min(-1, min(rows)) + 1
