@@ -68,7 +68,7 @@ class CardPDF(FPDF):
             )
         self.add_font("jp", fname=regular)
         self.add_font("jp", style="B", fname=bold if bold else regular)
-        self.set_font("jp", size=8)
+        self.set_font("jp", size=9)
 
     def jp(self, size: float, bold: bool = False):
         self.set_font("jp", style="B" if bold else "", size=size)
@@ -86,26 +86,26 @@ class CardPDF(FPDF):
         # Attribute circle (top-left)
         self.set_draw_color(0, 0, 0)
         self.ellipse(x + 1, y + 1, 6, 6)
-        self.jp(8, bold=True)
+        self.jp(9, bold=True)
         self.set_xy(x + 1, y + 1)
         self.cell(6, 6, card["attribute"], align="C")
 
         # Name (right of attribute circle)
-        self.jp(8, bold=True)
+        self.jp(9, bold=True)
         self.set_xy(x + 8, y + 1.5)
         self.cell(27, 4.5, card["name"])
 
         # Faction (right of name, smaller)
-        self.jp(5.5)
+        self.jp(6.5)
         self.set_xy(x + 36, y + 2)
         self.cell(11, 4, card["faction"])
 
         # cost (left) | reactivation (right) — side by side box, 2 mm from card edge
-        self.jp(10, bold=True)
+        self.jp(11, bold=True)
         self.set_xy(x + CARD_W - 15, y + 1.5)
         self.cell(8, 5, str(card["cost"]), border="LTB", align="C")
 
-        self.jp(6)
+        self.jp(7)
         self.set_xy(x + CARD_W - 7, y + 1.5)
         self.cell(5, 5, f"再{card['reactivation_cost']}", border="RTB", align="C")
 
@@ -140,7 +140,7 @@ class CardPDF(FPDF):
             weakness_start_y = grid_bottom - (3 + 3 * CELL)
 
         # ── stats ──
-        self.jp(7.5, bold=True)
+        self.jp(8.5, bold=True)
         self.set_xy(x + 1.5, top + 1)
         self.cell(tw, 4, f"HP {card['hp']}  ATK {card['atk']}  {card['attack_type']}")
 
@@ -148,7 +148,7 @@ class CardPDF(FPDF):
         text_y = top + 6
 
         if card["keywords"] and text_y < max_y:
-            self.jp(6.5, bold=True)
+            self.jp(7.5, bold=True)
             self.set_xy(x + 1.5, text_y)
             self.cell(tw, 3.5, "【" + "  ".join(card["keywords"]) + "】")
             text_y += 4
@@ -158,9 +158,9 @@ class CardPDF(FPDF):
         self.set_draw_color(0, 0, 0)
 
         if card["effect"] and text_y < max_y:
-            self.jp(5.8)
+            self.jp(6.8)
             self.set_xy(x + 1.5, text_y)
-            self._multi_cell_j(tw, 3.2, card["effect"])
+            self._multi_cell_j(tw, 3.5, card["effect"])
             text_y = min(self.get_y(), max_y)
 
         if card["ult"] and text_y + 4 < max_y:
@@ -169,29 +169,29 @@ class CardPDF(FPDF):
             self.line(x + 1, text_y + 0.3, x + CARD_W - 1, text_y + 0.3)
             self.set_draw_color(0, 0, 0)
 
-            self.jp(6, bold=True)
+            self.jp(7, bold=True)
             self.set_xy(x + 1.5, text_y + 1)
             self.cell(tw, 3.2,
                       f"Ult: {ult['name']}  {ult['vp_cost']}VP / {ult['timing']}")
             text_y += 1 + 3.2   # cell() は y を進めないので手動で加算
 
             if text_y < max_y:
-                self.jp(5.5)
+                self.jp(6.5)
                 self.set_xy(x + 1.5, text_y)
-                self._multi_cell_j(tw, 3.0, ult["effect"])
+                self._multi_cell_j(tw, 3.3, ult["effect"])
 
         # ── grids (bottom, side by side) ──
         self.set_draw_color(180, 180, 180)
         self.line(x + 1, grid_y - 0.5, x + CARD_W - 1, grid_y - 0.5)
         self.set_draw_color(0, 0, 0)
 
-        self.jp(5, bold=True)
+        self.jp(6, bold=True)
         self.set_xy(attack_gx, attack_start_y)
         self.cell(GRID_W, 3, "攻撃", align="C")
         self._draw_grid(card.get("attack_cells"), is_attack=True,
                         gx=attack_gx, gy=attack_start_y + 3)
 
-        self.jp(5, bold=True)
+        self.jp(6, bold=True)
         self.set_xy(weakness_gx, weakness_start_y)
         self.cell(GRID_W, 3, "弱点", align="C")
         self._draw_grid(card.get("weakness_cells", [[-1, 0]]),
@@ -245,7 +245,7 @@ class CardPDF(FPDF):
         """Draw one 3-column grid for either attack or weakness cells."""
         if is_attack and cells == "all":
             self.set_fill_color(255, 210, 210)
-            self.jp(6)
+            self.jp(7)
             self.set_xy(gx, gy)
             self.cell(GRID_W, CELL, "全域", border=1, fill=True, align="C")
             return
@@ -273,7 +273,7 @@ class CardPDF(FPDF):
                     label, rgb = "", (255, 255, 255)
 
                 self.set_fill_color(*rgb)
-                self.jp(5.5)
+                self.jp(6.5)
                 self.set_xy(cx, cy)
                 self.cell(CELL, CELL, label, border=1, fill=True, align="C")
 
