@@ -19,7 +19,7 @@ H_GAP = (A4_W - COLS * CARD_W) / (COLS + 1)   # ~5.25 mm
 V_GAP = (A4_H - ROWS * CARD_H) / (ROWS + 1)   # ~8.25 mm
 
 HEADER_H  = 8
-GRAPHIC_H = 28
+GRAPHIC_H = 32
 CELL      = 3.0   # range-grid cell size (mm)
 GRID_COLS       = 3              # grids are always 3 columns wide
 GRID_W          = GRID_COLS * CELL   # 9 mm
@@ -78,11 +78,19 @@ class CardPDF(FPDF):
         self._graphic(x, y)
         self._lower(card, x, y)
 
-    # ── header (name / cost | reactivation) ────────────────────────────
+    # ── header (attribute ○ | name / cost | reactivation) ──────────────
     def _header(self, card, x, y):
+        # Attribute circle (top-left)
+        self.set_draw_color(0, 0, 0)
+        self.ellipse(x + 1, y + 1, 6, 6)
         self.jp(8, bold=True)
-        self.set_xy(x + 1.5, y + 1.5)
-        self.cell(CARD_W - 17, 5, card["name"])
+        self.set_xy(x + 1, y + 1)
+        self.cell(6, 6, card["attribute"], align="C")
+
+        # Name (right of attribute circle)
+        self.jp(8, bold=True)
+        self.set_xy(x + 8, y + 1.5)
+        self.cell(CARD_W - 23, 5, card["name"])
 
         # cost (left) | reactivation (right) — side by side box
         self.jp(10, bold=True)
@@ -126,14 +134,10 @@ class CardPDF(FPDF):
         # ── stats ──
         self.jp(7.5, bold=True)
         self.set_xy(x + 1.5, top + 1)
-        self.cell(tw, 4, f"HP {card['hp']}  ATK {card['atk']}")
-
-        self.jp(6.5)
-        self.set_xy(x + 1.5, top + 5.5)
-        self.cell(tw, 3.5, f"{card['attribute']}  {card['attack_type']}")
+        self.cell(tw, 4, f"HP {card['hp']}  ATK {card['atk']}  {card['attack_type']}")
 
         # ── keywords / effect / ult ──
-        text_y = top + 10
+        text_y = top + 6
 
         if card["keywords"] and text_y < max_y:
             self.jp(6.5, bold=True)
