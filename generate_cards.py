@@ -21,9 +21,10 @@ V_GAP = (A4_H - ROWS * CARD_H) / (ROWS + 1)   # ~8.25 mm
 HEADER_H  = 8
 GRAPHIC_H = 28
 CELL      = 3.0   # range-grid cell size (mm)
-GRID_COLS = 3     # grids are always 3 columns wide
-GRID_W    = GRID_COLS * CELL   # 9 mm
-GRID_GAP  = 4                  # gap between side-by-side attack/weakness grids (mm)
+GRID_COLS       = 3              # grids are always 3 columns wide
+GRID_W          = GRID_COLS * CELL   # 9 mm
+GRID_GAP        = 4              # gap between side-by-side grids (mm)
+GRID_BOTTOM_PAD = 3              # breathing room below grids (mm)
 
 # ── font candidates (regular, bold) ──────────────────────────────────────────
 FONT_REGULAR = [
@@ -77,15 +78,19 @@ class CardPDF(FPDF):
         self._graphic(x, y)
         self._lower(card, x, y)
 
-    # ── header (name / cost) ─────────────────────────────────────────────
+    # ── header (name / cost / reactivation) ─────────────────────────────
     def _header(self, card, x, y):
         self.jp(7, bold=True)
         self.set_xy(x + 1.5, y + 1.5)
         self.cell(CARD_W - 13, 5, card["name"])
 
         self.jp(9, bold=True)
-        self.set_xy(x + CARD_W - 10.5, y + 1)
-        self.cell(9, 6, str(card["cost"]), border=1, align="C")
+        self.set_xy(x + CARD_W - 10.5, y + 0.5)
+        self.cell(9, 4.5, str(card["cost"]), border="LTR", align="C")
+
+        self.jp(5)
+        self.set_xy(x + CARD_W - 10.5, y + 5)
+        self.cell(9, 2.5, f"再{card['reactivation_cost']}", border="LBR", align="C")
 
     # ── graphic placeholder ───────────────────────────────────────────────
     def _graphic(self, x, y):
@@ -101,12 +106,17 @@ class CardPDF(FPDF):
         # ── grid geometry (anchored to bottom) ──
         attack_rows = self._attack_rows(card)
         grid_pair_h = 3 + max(attack_rows, 3) * CELL
-        grid_y      = y + CARD_H - 1 - grid_pair_h
+        grid_y      = y + CARD_H - GRID_BOTTOM_PAD - grid_pair_h
         max_y       = grid_y - 1  # text must stay above grids
 
         total_gw    = 2 * GRID_W + GRID_GAP
         attack_gx   = x + (CARD_W - total_gw) / 2
         weakness_gx = attack_gx + GRID_W + GRID_GAP
+
+        # bottom-aligned grid start positions
+        grid_bottom      = grid_y + grid_pair_h
+        attack_start_y   = grid_bottom - (3 + attack_rows * CELL)
+        weakness_start_y = grid_bottom - (3 + 3 * CELL)
 
         # ── stats ──
         self.jp(6.5, bold=True)
@@ -115,8 +125,7 @@ class CardPDF(FPDF):
 
         self.jp(5.5)
         self.set_xy(x + 1.5, top + 5.5)
-        self.cell(tw, 3.5,
-                  f"再{card['reactivation_cost']}  {card['attribute']}  {card['attack_type']}")
+        self.cell(tw, 3.5, f"{card['attribute']}  {card['attack_type']}")
 
         # ── keywords / effect / ult ──
         text_y = top + 10
@@ -160,16 +169,16 @@ class CardPDF(FPDF):
         self.set_draw_color(0, 0, 0)
 
         self.jp(4, bold=True)
-        self.set_xy(attack_gx, grid_y)
+        self.set_xy(attack_gx, attack_start_y)
         self.cell(GRID_W, 3, "攻撃", align="C")
         self._draw_grid(card.get("attack_cells"), is_attack=True,
-                        gx=attack_gx, gy=grid_y + 3)
+                        gx=attack_gx, gy=attack_start_y + 3)
 
         self.jp(4, bold=True)
-        self.set_xy(weakness_gx, grid_y)
+        self.set_xy(weakness_gx, weakness_start_y)
         self.cell(GRID_W, 3, "弱点", align="C")
         self._draw_grid(card.get("weakness_cells", [[-1, 0]]),
-                        is_attack=False, gx=weakness_gx, gy=grid_y + 3)
+                        is_attack=False, gx=weakness_gx, gy=weakness_start_y + 3)
 
     # ── range grids ───────────────────────────────────────────────────────
     def _attack_rows(self, card) -> int:
