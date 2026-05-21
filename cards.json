@@ -5,11 +5,17 @@
       "name": "烈刃のライ",
       "faction": "aggro",
       "cost": 1,
+      "vp": 1,
       "hp": 1,
       "atk": 2,
       "reactivation_cost": 1,
       "attribute": "拳",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "",
@@ -20,13 +26,47 @@
       "name": "奔流のナギ",
       "faction": "aggro",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 2,
       "attribute": "念",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "ターン開始時、手札を1枚捨ててもよい。そうしたならマナ+1。",
       "ult": null
@@ -36,13 +76,21 @@
       "name": "烈火のカグラ",
       "faction": "aggro",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "光",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
-      "keywords": ["先制"],
+      "keywords": [
+        "先制"
+      ],
       "effect": "召喚時、手札を1枚捨ててもよい。捨てたなら隣接する敵1体を1マス後退させる(後退できない場合は発動しない、後退時の向きはそのまま)。",
       "ult": null
     },
@@ -51,11 +99,17 @@
       "name": "蝕牙のドク",
       "faction": "aggro",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "闇",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "このキャラが敵を撃破した時、このキャラのATKを+1する。",
@@ -66,13 +120,25 @@
       "name": "蒼刃のハヤテ",
       "faction": "aggro",
       "cost": 2,
+      "vp": 1,
       "hp": 3,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "虚",
-      "attack_cells": [[1, 0], [0, -1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
       "attack_type": "物理",
-      "keywords": ["先制"],
+      "keywords": [
+        "先制"
+      ],
       "effect": "",
       "ult": null
     },
@@ -81,11 +147,29 @@
       "name": "爆裂のノヴァ",
       "faction": "aggro",
       "cost": 3,
+      "vp": 2,
       "hp": 4,
       "atk": 4,
       "reactivation_cost": 2,
       "attribute": "拳",
-      "attack_cells": [[1, 0], [-1, 0], [0, -1], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "",
@@ -96,11 +180,17 @@
       "name": "破軍のレオ",
       "faction": "aggro",
       "cost": 1,
+      "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "念",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "このターン、他の味方が1体以上攻撃しているなら、攻撃時にATKを+1する。",
@@ -111,11 +201,21 @@
       "name": "紅蓮のヒカリ",
       "faction": "aggro",
       "cost": 3,
+      "vp": 2,
       "hp": 4,
       "atk": 3,
       "reactivation_cost": 2,
       "attribute": "光",
-      "attack_cells": [[1, 0], [-1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "このキャラが破壊された時、隣接する味方すべてのHPを2回復する。このキャラが破壊された時、隣接する味方すべてのATKを+1する。",
@@ -126,11 +226,25 @@
       "name": "穿陣のセラ",
       "faction": "aggro",
       "cost": 4,
+      "vp": 2,
       "hp": 3,
       "atk": 4,
       "reactivation_cost": 4,
       "attribute": "闇",
-      "attack_cells": [[1, -1], [1, 0], [1, 1]],
+      "attack_cells": [
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "このキャラは反撃できない。",
@@ -146,13 +260,47 @@
       "name": "雷閃のゼロ",
       "faction": "aggro",
       "cost": 1,
+      "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "光",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "召喚時、カードを1枚引き、その後手札を1枚捨てる。",
       "ult": null
@@ -162,11 +310,21 @@
       "name": "覇王のカイザー",
       "faction": "aggro",
       "cost": 4,
+      "vp": 2,
       "hp": 6,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "拳",
-      "attack_cells": [[1, 0], [2, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する敵それぞれに3ダメージを与える。このターン攻撃した味方が2体以上なら、このキャラのATKを+2する。",
@@ -177,11 +335,25 @@
       "name": "終焉のジーク",
       "faction": "aggro",
       "cost": 5,
+      "vp": 3,
       "hp": 6,
       "atk": 5,
       "reactivation_cost": 3,
       "attribute": "念",
-      "attack_cells": [[1, -1], [1, 0], [1, 1]],
+      "attack_cells": [
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "このターン攻撃した味方が3体以上なら、このキャラの再行動コストを2下げる。",
@@ -197,13 +369,21 @@
       "name": "磐石のガルド",
       "faction": "tank",
       "cost": 1,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "拳",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
-      "keywords": ["防護"],
+      "keywords": [
+        "防護"
+      ],
       "effect": "",
       "ult": null
     },
@@ -212,13 +392,47 @@
       "name": "黎明のイヴ",
       "faction": "tank",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "光",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "召喚時、隣接味方に防護を与える。",
       "ult": null
@@ -228,13 +442,25 @@
       "name": "剛槍のロア",
       "faction": "tank",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 2,
       "attribute": "光",
-      "attack_cells": [[1, 0], [2, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
       "attack_type": "物理",
-      "keywords": ["防護"],
+      "keywords": [
+        "防護"
+      ],
       "effect": "",
       "ult": null
     },
@@ -243,11 +469,17 @@
       "name": "地脈のミナ",
       "faction": "tank",
       "cost": 1,
+      "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "闇",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "自属性マスに召喚されたならHP+1を得る。",
@@ -258,13 +490,47 @@
       "name": "慈光のノエル",
       "faction": "tank",
       "cost": 2,
+      "vp": 1,
       "hp": 3,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "光",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "召喚時、隣接味方を1回復する。",
       "ult": null
@@ -274,13 +540,25 @@
       "name": "豪陣のヴァル",
       "faction": "tank",
       "cost": 3,
+      "vp": 2,
       "hp": 3,
       "atk": 3,
       "reactivation_cost": 2,
       "attribute": "拳",
-      "attack_cells": [[1, 0], [2, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
       "attack_type": "物理",
-      "keywords": ["防護"],
+      "keywords": [
+        "防護"
+      ],
       "effect": "隣接味方が2体以上いるならATK+1。",
       "ult": null
     },
@@ -289,13 +567,33 @@
       "name": "憤怒のバルク",
       "faction": "tank",
       "cost": 3,
+      "vp": 2,
       "hp": 4,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "念",
-      "attack_cells": [[1, 0], [-1, 0], [0, -1], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "attack_type": "物理",
-      "keywords": ["不動"],
+      "keywords": [
+        "不動"
+      ],
       "effect": "ダメージを受けた時、ATK+1。",
       "ult": null
     },
@@ -304,13 +602,21 @@
       "name": "誓盾のルミナ",
       "faction": "tank",
       "cost": 5,
+      "vp": 3,
       "hp": 5,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "念",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
-      "keywords": ["カバー"],
+      "keywords": [
+        "カバー"
+      ],
       "effect": "味方をカバーするため、隣接味方はATK+1を得る。",
       "ult": {
         "name": "絶対盾",
@@ -324,13 +630,21 @@
       "name": "聖域のセルマ",
       "faction": "tank",
       "cost": 4,
+      "vp": 2,
       "hp": 5,
       "atk": 3,
       "reactivation_cost": 2,
       "attribute": "虚",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
-      "keywords": ["カバー"],
+      "keywords": [
+        "カバー"
+      ],
       "effect": "召喚時、自分と隣接する味方に防護(受けるダメージ-1)を付与する。召喚時、隣接する味方をHP1回復する。",
       "ult": null
     },
@@ -339,14 +653,35 @@
       "name": "不動のナギサ",
       "faction": "tank",
       "cost": 5,
+      "vp": 3,
       "hp": 7,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "虚",
-      "attack_cells": [[1, 0], [-1, 0], [0, -1], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "weakness_cells": [],
       "attack_type": "物理",
-      "keywords": ["要塞", "カバー"],
+      "keywords": [
+        "要塞",
+        "カバー"
+      ],
       "effect": "前後左右どこから攻撃されても反撃できる(カバー時も含む)。破壊時、隣接する味方全体のATK+1。",
       "ult": {
         "name": "不動の聖域",
@@ -360,11 +695,17 @@
       "name": "導陣のアーク",
       "faction": "tank",
       "cost": 2,
+      "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "拳",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、味方1体を好きな方向に向ける。",
@@ -375,13 +716,25 @@
       "name": "凱城のバスティア",
       "faction": "tank",
       "cost": 4,
+      "vp": 2,
       "hp": 4,
       "atk": 3,
       "reactivation_cost": 3,
       "attribute": "闇",
-      "attack_cells": [[1, 0], [-1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
       "attack_type": "物理",
-      "keywords": ["カバー"],
+      "keywords": [
+        "カバー"
+      ],
       "effect": "召喚時、隣接する味方を2回復する。召喚時、このキャラに防護を与える。",
       "ult": null
     },
@@ -390,13 +743,47 @@
       "name": "錯声のレン",
       "faction": "control",
       "cost": 1,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "虚",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "召喚時、隣接する敵1体のATK-1。",
       "ult": null
@@ -406,11 +793,17 @@
       "name": "凍夜のユキ",
       "faction": "control",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "闇",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する敵1体の再行動コスト+1。",
@@ -421,11 +814,17 @@
       "name": "蝕影のメア",
       "faction": "control",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "闇",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する敵1体のATK-2。",
@@ -436,11 +835,21 @@
       "name": "刻鎖のクロト",
       "faction": "control",
       "cost": 3,
+      "vp": 2,
       "hp": 5,
       "atk": 3,
       "reactivation_cost": 2,
       "attribute": "虚",
-      "attack_cells": [[1, 0], [2, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する敵1体の再行動コスト+1。",
@@ -451,13 +860,47 @@
       "name": "歪律のエコー",
       "faction": "control",
       "cost": 1,
+      "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "拳",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "召喚時、隣接する敵1体を90°回転させる。",
       "ult": null
@@ -467,11 +910,17 @@
       "name": "断弦のリラ",
       "faction": "control",
       "cost": 3,
+      "vp": 2,
       "hp": 3,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "拳",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "",
@@ -482,11 +931,17 @@
       "name": "幻惑のセツナ",
       "faction": "control",
       "cost": 4,
+      "vp": 2,
       "hp": 4,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "念",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、敵1体を洗脳(行動不能にする)する。召喚時、隣接する敵1体のATK-1。",
@@ -497,11 +952,17 @@
       "name": "暗影のヴェラ",
       "faction": "control",
       "cost": 2,
+      "vp": 1,
       "hp": 3,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "闇",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する敵1体を90°回転させる。",
@@ -512,11 +973,21 @@
       "name": "簒奪のオルド",
       "faction": "control",
       "cost": 5,
+      "vp": 3,
       "hp": 6,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "虚",
-      "attack_cells": [[1, 0], [2, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、相手のマナを2奪う。攻撃時、隣接する敵1体の再行動コスト+1。",
@@ -532,11 +1003,29 @@
       "name": "崩心のミスズ",
       "faction": "control",
       "cost": 4,
+      "vp": 2,
       "hp": 6,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "念",
-      "attack_cells": [[1, 0], [-1, 0], [0, -1], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する敵1体のATK-1。召喚時、デバフ持ちの敵が1体以上いるなら、カードを1枚引く。召喚時、デバフ持ちの敵が3体以上いるなら、隣接する敵1体に1ダメージを与える。",
@@ -552,11 +1041,17 @@
       "name": "禁域のノア",
       "faction": "control",
       "cost": 1,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "光",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する敵1体の再行動コスト+1。",
@@ -567,11 +1062,29 @@
       "name": "掌握のイデア",
       "faction": "control",
       "cost": 4,
+      "vp": 2,
       "hp": 5,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "光",
-      "attack_cells": [[1, 0], [-1, 0], [0, -1], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "デバフ持ちの敵が2体以上いるなら、カードを1枚引く。デバフ持ちの敵が3体以上いるなら、マナ+1。",
@@ -582,11 +1095,17 @@
       "name": "護刻のアルト",
       "faction": "synergy",
       "cost": 1,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "拳",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、味方1体に防護(受けるダメージ-1)を付与。",
@@ -597,13 +1116,47 @@
       "name": "風刻のミウ",
       "faction": "synergy",
       "cost": 1,
+      "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "念",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "召喚時、隣接する味方1体に回避(物理攻撃を1回無効化)を付与。",
       "ult": null
@@ -613,11 +1166,17 @@
       "name": "穿光のレオン",
       "faction": "synergy",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "光",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する味方1体に貫通(防護・回避を無視)を付与。",
@@ -628,11 +1187,17 @@
       "name": "霞纏のシロ",
       "faction": "synergy",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "闇",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、味方1体に回避(物理攻撃を1回無効化)を付与。",
@@ -643,11 +1208,29 @@
       "name": "律動のセツ",
       "faction": "synergy",
       "cost": 2,
+      "vp": 1,
       "hp": 3,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "念",
-      "attack_cells": [[1, 0], [-1, 0], [0, -1], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "マーカーバフ持ちの味方が3体以上いるなら、攻撃時ATK+1。マーカーバフ持ちの味方が4体以上いるなら、ターン終了時、隣接味方を1回復。",
@@ -658,11 +1241,17 @@
       "name": "遺志のユラ",
       "faction": "synergy",
       "cost": 3,
+      "vp": 2,
       "hp": 3,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "念",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "味方が破壊された時、自分に防護を得る。(防護=次に受けるダメージを-1。重ねがけ可。)",
@@ -673,11 +1262,17 @@
       "name": "凱歌のフィオ",
       "faction": "synergy",
       "cost": 3,
+      "vp": 2,
       "hp": 2,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "拳",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する味方全体のATK+1。",
@@ -688,11 +1283,21 @@
       "name": "凝光のアム",
       "faction": "synergy",
       "cost": 4,
+      "vp": 2,
       "hp": 4,
       "atk": 4,
       "reactivation_cost": 2,
       "attribute": "光",
-      "attack_cells": [[1, 0], [2, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する味方全体を1回復。マーカーバフ持ちの味方が3体以上いるなら、隣接する味方全体のATK+1。",
@@ -703,13 +1308,47 @@
       "name": "残影のレム",
       "faction": "synergy",
       "cost": 1,
+      "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "闇",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "召喚時、隣接する味方1体のHP+1。",
       "ult": null
@@ -719,11 +1358,21 @@
       "name": "調和のアリア",
       "faction": "synergy",
       "cost": 5,
+      "vp": 3,
       "hp": 5,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "虚",
-      "attack_cells": [[1, 0], [2, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "マーカーバフ持ちの味方が2体以上いるなら、自分のATK+1。マーカーバフ持ちの味方が3体以上いるなら、隣接味方全体を1回復。",
@@ -739,11 +1388,21 @@
       "name": "星導のアルス",
       "faction": "synergy",
       "cost": 4,
+      "vp": 2,
       "hp": 5,
       "atk": 4,
       "reactivation_cost": 4,
       "attribute": "拳",
-      "attack_cells": [[1, 0], [-1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する味方全体を1回復。マーカーバフ持ちの味方が3体以上いるなら、隣接する味方全体のATK+1。",
@@ -754,11 +1413,21 @@
       "name": "輝陣のイリス",
       "faction": "synergy",
       "cost": 5,
+      "vp": 3,
       "hp": 5,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "光",
-      "attack_cells": [[1, 0], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する味方全体のATK+1。",
@@ -774,11 +1443,17 @@
       "name": "痛覚のソウ",
       "faction": "snipe",
       "cost": 1,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "拳",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、自分に1ダメージを受けてもよい。受けたなら追加で1ダメージを与える。",
@@ -789,13 +1464,47 @@
       "name": "残光のニコラ",
       "faction": "snipe",
       "cost": 1,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "虚",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "攻撃時、手札を1枚捨ててもよい。捨てたなら追加で1ダメージを与える。",
       "ult": null
@@ -805,13 +1514,47 @@
       "name": "燼炎のミュウ",
       "faction": "snipe",
       "cost": 1,
+      "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "念",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "攻撃時、手札を1枚捨ててもよい。捨てたなら追加で1ダメージを与える。",
       "ult": null
@@ -821,11 +1564,21 @@
       "name": "業火のシラ",
       "faction": "snipe",
       "cost": 2,
+      "vp": 1,
       "hp": 3,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "拳",
-      "attack_cells": [[1, 0], [2, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、自分に1ダメージを受けてもよい。受けたなら攻撃は貫通(防護・回避を無視)する。",
@@ -836,11 +1589,21 @@
       "name": "凶弾のフィカ",
       "faction": "snipe",
       "cost": 2,
+      "vp": 1,
       "hp": 3,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "闇",
-      "attack_cells": [[1, 0], [0, -1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、自分に1ダメージを受けてもよい。受けたなら追加で2ダメージを与える。",
@@ -851,11 +1614,21 @@
       "name": "散華のルカ",
       "faction": "snipe",
       "cost": 2,
+      "vp": 1,
       "hp": 3,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "光",
-      "attack_cells": [[1, 0], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、手札を1枚捨ててもよい。捨てたなら追加で2ダメージを与える。",
@@ -866,11 +1639,17 @@
       "name": "透徹のクオン",
       "faction": "snipe",
       "cost": 3,
+      "vp": 2,
       "hp": 4,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "念",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、手札を1枚捨ててもよい。捨てたならカードを2枚引く。",
@@ -881,11 +1660,21 @@
       "name": "死線のヴァル",
       "faction": "snipe",
       "cost": 3,
+      "vp": 2,
       "hp": 4,
       "atk": 3,
       "reactivation_cost": 2,
       "attribute": "闇",
-      "attack_cells": [[1, 0], [-1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、自分に1ダメージを受けてもよい。受けたなら追加で1ダメージを与え、攻撃は貫通(防護・回避を無視)する。",
@@ -896,11 +1685,21 @@
       "name": "狂咲のシュリ",
       "faction": "snipe",
       "cost": 4,
+      "vp": 2,
       "hp": 4,
       "atk": 3,
       "reactivation_cost": 3,
       "attribute": "光",
-      "attack_cells": [[1, 0], [0, -1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、手札を1枚捨ててもよい。捨てたなら追加で3ダメージを与える。",
@@ -916,11 +1715,21 @@
       "name": "絶弾のサクラ",
       "faction": "snipe",
       "cost": 4,
+      "vp": 2,
       "hp": 5,
       "atk": 3,
       "reactivation_cost": 3,
       "attribute": "拳",
-      "attack_cells": [[1, 0], [2, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、自分に1ダメージを受け、かつ手札を1枚捨ててもよい。両方払ったなら追加で3ダメージを与え、攻撃は貫通(防護・回避を無視)する。",
@@ -931,11 +1740,29 @@
       "name": "虚弾のヴェル",
       "faction": "snipe",
       "cost": 4,
+      "vp": 2,
       "hp": 5,
       "atk": 3,
       "reactivation_cost": 3,
       "attribute": "念",
-      "attack_cells": [[1, 0], [-1, 0], [0, -1], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、マナを1払ってもよい。払ったなら追加で2ダメージを与える。",
@@ -946,11 +1773,21 @@
       "name": "終末のロギア",
       "faction": "snipe",
       "cost": 5,
+      "vp": 3,
       "hp": 5,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "闇",
-      "attack_cells": [[1, 0], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、自分に1ダメージを受けてもよい。受けたなら追加で2ダメージを与え、攻撃は貫通(防護・回避を無視)する。",
@@ -966,11 +1803,17 @@
       "name": "凜風のツバキ",
       "faction": "trick",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "念",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、敵1体を90度回転させる。",
@@ -981,11 +1824,17 @@
       "name": "細波のハク",
       "faction": "trick",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "念",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する敵1体を90度回転させる。",
@@ -996,11 +1845,17 @@
       "name": "空蝉のカイト",
       "faction": "trick",
       "cost": 1,
+      "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 2,
       "attribute": "虚",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、手札を1枚捨ててもよい。そうしたならマナ+1。",
@@ -1011,11 +1866,17 @@
       "name": "転位のリップル",
       "faction": "trick",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "闇",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、味方1体と位置を入れ替える(両者の向きはそのまま)。",
@@ -1026,13 +1887,21 @@
       "name": "幻影のシノブ",
       "faction": "trick",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "虚",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
-      "keywords": ["回避"],
+      "keywords": [
+        "回避"
+      ],
       "effect": "攻撃時、攻撃対象のB位置にいる場合、ATK+1。",
       "ult": null
     },
@@ -1041,13 +1910,47 @@
       "name": "詭計のルシア",
       "faction": "trick",
       "cost": 2,
+      "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 2,
       "attribute": "闇",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "召喚時、隣接する敵1体を1マス後退させる(後退できない場合は発動しない、後退時の向きはそのまま)。",
       "ult": null
@@ -1057,11 +1960,21 @@
       "name": "灼影のミラージュ",
       "faction": "trick",
       "cost": 3,
+      "vp": 2,
       "hp": 3,
       "atk": 4,
       "reactivation_cost": 2,
       "attribute": "光",
-      "attack_cells": [[1, 0], [0, -1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、攻撃対象のB位置にいる場合、追加で1ダメージを与える。",
@@ -1072,11 +1985,17 @@
       "name": "転刃のシュラ",
       "faction": "trick",
       "cost": 2,
+      "vp": 1,
       "hp": 3,
       "atk": 2,
       "reactivation_cost": 1,
       "attribute": "拳",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "攻撃時、攻撃対象を任意の方向に回転させる。",
@@ -1087,11 +2006,29 @@
       "name": "狂宴のジョーカー",
       "faction": "trick",
       "cost": 5,
+      "vp": 3,
       "hp": 5,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "拳",
-      "attack_cells": [[1, 0], [-1, 0], [0, -1], [0, 1]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接する敵1体を任意の方向に回転させる。",
@@ -1107,11 +2044,17 @@
       "name": "霧中のアオイ",
       "faction": "trick",
       "cost": 4,
+      "vp": 2,
       "hp": 5,
       "atk": 3,
       "reactivation_cost": 2,
       "attribute": "念",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "空きマスが5個以上ならATK+1。",
@@ -1122,13 +2065,47 @@
       "name": "暗転のカレン",
       "faction": "trick",
       "cost": 1,
+      "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "闇",
       "attack_cells": "all",
       "attack_type": "魔法",
-      "weakness_cells": [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]],
+      "weakness_cells": [
+        [
+          -1,
+          -1
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          -1,
+          1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
       "keywords": [],
       "effect": "攻撃時、攻撃対象のB位置にいる場合、カードを1枚引く。",
       "ult": null
@@ -1138,11 +2115,17 @@
       "name": "静謐のサヤ",
       "faction": "trick",
       "cost": 4,
+      "vp": 2,
       "hp": 4,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "光",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、敵1体を任意の方向に回転させる。相手キャラのB位置にいる味方が3体以上いるなら、カードを1枚引く。",
@@ -1159,99 +2142,151 @@
       "id": "item_01",
       "name": "緊急補給",
       "cost": 0,
+      "vp": 1,
       "effect": "2枚ドロー",
-      "sets": ["A", "B", "C", "D"]
+      "sets": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
     },
     {
       "id": "item_02",
       "name": "マナ結晶",
       "cost": 0,
+      "vp": 1,
       "effect": "マナ+1",
-      "sets": ["A", "B", "C", "D"]
+      "sets": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
     },
     {
       "id": "item_03",
       "name": "応急キット",
       "cost": 1,
+      "vp": 1,
       "effect": "味方1体のHP3回復",
-      "sets": ["D"]
+      "sets": [
+        "D"
+      ]
     },
     {
       "id": "item_04",
       "name": "強化弾",
       "cost": 1,
+      "vp": 1,
       "effect": "このターン、味方1体のATK+2",
-      "sets": ["A", "B"]
+      "sets": [
+        "A",
+        "B"
+      ]
     },
     {
       "id": "item_05",
       "name": "弱体化ガス",
       "cost": 1,
+      "vp": 1,
       "effect": "敵1体のATK-2",
-      "sets": ["B", "D"]
+      "sets": [
+        "B",
+        "D"
+      ]
     },
     {
       "id": "item_06",
       "name": "手榴弾",
       "cost": 1,
+      "vp": 1,
       "effect": "敵1体に2ダメージ",
-      "sets": ["A", "C"]
+      "sets": [
+        "A",
+        "C"
+      ]
     },
     {
       "id": "item_14",
       "name": "拘束鎖",
       "cost": 2,
+      "vp": 1,
       "effect": "敵1体を180°回転 / 1ターン【向き固定（回転できなくなる）】",
-      "sets": ["C"]
+      "sets": [
+        "C"
+      ]
     },
     {
       "id": "item_20",
       "name": "混乱ガス",
       "cost": 1,
+      "vp": 1,
       "effect": "敵1体の向きを90°回転",
-      "sets": ["A"]
+      "sets": [
+        "A"
+      ]
     },
     {
       "id": "item_bounce_enemy",
       "name": "帰還の風",
       "cost": 2,
+      "vp": 1,
       "effect": "敵C2以下のキャラを持ち主の手札に戻す",
-      "sets": ["C"]
+      "sets": [
+        "C"
+      ]
     },
     {
       "id": "item_element_swap",
       "name": "属性召喚",
       "cost": 2,
+      "vp": 1,
       "effect": "属性一致で手札のキャラと場のキャラを入替える",
-      "sets": ["A", "D"]
+      "sets": [
+        "A",
+        "D"
+      ]
     },
     {
       "id": "item_grant_piercing",
       "name": "貫通の矢",
       "cost": 1,
+      "vp": 1,
       "effect": "味方1体に【貫通（防護・回避を無視）】を付与",
-      "sets": ["B"]
+      "sets": [
+        "B"
+      ]
     },
     {
       "id": "item_grant_protection",
       "name": "加護の紋章",
       "cost": 1,
+      "vp": 1,
       "effect": "味方1体に【防護（受けるダメージ-1）】を付与",
-      "sets": ["B"]
+      "sets": [
+        "B"
+      ]
     },
     {
       "id": "item_reactivate",
       "name": "次元歪曲",
       "cost": 1,
+      "vp": 1,
       "effect": "味方1体を再行動可能にする",
-      "sets": ["C"]
+      "sets": [
+        "C"
+      ]
     },
     {
       "id": "item_self_bounce",
       "name": "再起の印",
       "cost": 1,
+      "vp": 1,
       "effect": "味方1体を手札に戻す（再召喚で効果再発動）",
-      "sets": ["D"]
+      "sets": [
+        "D"
+      ]
     }
   ]
 }

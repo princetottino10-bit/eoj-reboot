@@ -205,6 +205,20 @@ class CardPDF(FPDF):
         self._draw_grid(card.get("weakness_cells", [[-1, 0]]),
                         is_attack=False, gx=weakness_gx, gy=weakness_start_y + 3)
 
+        self._vp_box(card, x, y)
+
+    # ── VP box (bottom-right corner, shared by character and item) ───────
+    def _vp_box(self, card: dict, x: float, y: float):
+        """Draw a VP label+number box anchored to the card bottom-right."""
+        vp_x = x + CARD_W - 11.5
+        vp_y = y + CARD_H - GRID_BOTTOM_PAD - 10
+        self.jp(4.5, bold=True)
+        self.set_xy(vp_x, vp_y)
+        self.cell(10, 4, "VP", border="LTR", align="C")
+        self.jp(9, bold=True)
+        self.set_xy(vp_x, vp_y + 4)
+        self.cell(10, 6, str(card["vp"]), border="LBR", align="C")
+
     # ── item card ─────────────────────────────────────────────────────────
     def draw_item_card(self, card: dict, x: float, y: float):
         self.set_draw_color(0, 0, 0)
@@ -248,6 +262,8 @@ class CardPDF(FPDF):
             if not self._multi_cell_j(tw, 3.2, card["effect"], max_y=max_y):
                 print(f"[warn] item effect clipped: {card.get('id', card['name'])!r}",
                       file=sys.stderr)
+
+        self._vp_box(card, x, y)
 
     # ── kinsoku-aware text rendering ─────────────────────────────────────
     def _wrap_kinsoku(self, text: str, width: float) -> list[str]:

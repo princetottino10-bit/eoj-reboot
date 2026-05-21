@@ -24,13 +24,14 @@
     },
     "Character": {
       "type": "object",
-      "required": ["id", "name", "faction", "cost", "hp", "atk", "reactivation_cost", "attribute", "attack_cells", "attack_type", "keywords", "effect", "ult"],
+      "required": ["id", "name", "faction", "cost", "vp", "hp", "atk", "reactivation_cost", "attribute", "attack_cells", "attack_type", "keywords", "effect", "ult"],
       "additionalProperties": false,
       "properties": {
         "id":               { "type": "string", "pattern": "^[a-z_]+_v2_[0-9]{2}$" },
         "name":             { "type": "string" },
         "faction":          { "type": "string", "enum": ["aggro", "tank", "control", "synergy", "snipe", "trick"] },
         "cost":             { "type": "integer", "minimum": 0 },
+        "vp":               { "type": "integer", "minimum": 1 },
         "hp":               { "type": "integer", "minimum": 1 },
         "atk":              { "type": "integer", "minimum": 0 },
         "reactivation_cost":{ "type": "integer", "minimum": 1 },
@@ -79,12 +80,13 @@
     },
     "Item": {
       "type": "object",
-      "required": ["id", "name", "cost", "effect", "sets"],
+      "required": ["id", "name", "cost", "vp", "effect", "sets"],
       "additionalProperties": false,
       "properties": {
         "id":     { "type": "string" },
         "name":   { "type": "string" },
         "cost":   { "type": "integer", "minimum": 0 },
+        "vp":     { "type": "integer", "minimum": 1 },
         "effect": { "type": "string" },
         "sets": {
           "type": "array",
