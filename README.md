@@ -31,15 +31,24 @@ uv run generate_cards.py path/to/output.pdf
 
 生成されるPDFはA4サイズで、1ページあたり3×3枚（63×88mm）のカードを配置します。
 
+```bash
+# cards.md を生成（カードリスト Markdown）
+uv run generate_card_md.py
+
+# 出力先を指定する場合
+uv run generate_card_md.py path/to/output.md
+```
+
 ## ファイル構成
 
 | ファイル | 説明 |
 |---|---|
-| `generate_cards.py` | PDF生成スクリプト |
+| `generate_cards.py` | 印刷用PDF生成スクリプト |
+| `generate_card_md.py` | カードリストMarkdown生成スクリプト |
 | `cards.json` | カードデータ（キャラクター・アイテム） |
 | `cards.schema.json` | `cards.json` のJSONスキーマ |
 | `EOJR_Rulebook.md` | 公式ルールブック |
-| `EOJR_Card.md` | カードリスト（全カードのテキスト） |
+| `cards.md` | カードリスト（`generate_card_md.py` で生成） |
 
 ## カードデータの編集
 
