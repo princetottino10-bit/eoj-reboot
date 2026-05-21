@@ -1,4 +1,12 @@
 {
+  "faction_names": {
+    "aggro":   "紅蓮",
+    "tank":    "蒼盾",
+    "control": "紫闇",
+    "synergy": "翠光",
+    "snipe":   "銀眼",
+    "trick":   "鉛影"
+  },
   "keyword_effects": {
     "先制": "反撃時、攻撃側より先にダメージ",
     "防護": "受けるダメージ-1（最低0）",

@@ -102,7 +102,7 @@ class CardPDF(FPDF):
         # Faction (right of name, smaller)
         self.jp(5.5)
         self.set_xy(x + 36, y + 2)
-        self.cell(11, 4, card["faction"])
+        self.cell(11, 4, self.faction_names.get(card["faction"], card["faction"]))
 
         # cost (left) | reactivation (right) — side by side box, 2 mm from card edge
         self.jp(10, bold=True)
@@ -374,6 +374,7 @@ def generate(cards_path: Path, out_path: Path):
     pdf = CardPDF(unit="mm", format="A4")
     pdf.set_auto_page_break(False)
     pdf.init_font(find_font(FONT_REGULAR), find_font(FONT_BOLD))
+    pdf.faction_names   = data.get("faction_names", {})
     pdf.keyword_effects = data.get("keyword_effects", {})
 
     per_page = COLS * ROWS
