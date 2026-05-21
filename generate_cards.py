@@ -19,7 +19,7 @@ H_GAP = (A4_W - COLS * CARD_W) / (COLS + 1)   # ~5.25 mm
 V_GAP = (A4_H - ROWS * CARD_H) / (ROWS + 1)   # ~8.25 mm
 
 HEADER_H  = 8
-GRAPHIC_H = 38
+GRAPHIC_H = 36
 CELL      = 3.0   # range-grid cell size (mm)
 GRID_COLS       = 3              # grids are always 3 columns wide
 GRID_W          = GRID_COLS * CELL   # 9 mm

@@ -1,0 +1,70 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project overview
+
+This repo generates a printable card PDF for a 2-player tabletop card game called **異能学園総選挙** (Inō Gakuen Sōsenkyo). The sole script reads `cards.json` and renders A4 sheets (3×3 grid of 63×88mm cards) using fpdf2.
+
+## Commands
+
+```bash
+# Install dependencies
+uv sync
+
+# Generate the PDF (output: cards.pdf)
+uv run generate_cards.py
+
+# Generate to a custom path
+uv run generate_cards.py output/my_cards.pdf
+```
+
+**Font requirement (Linux/WSL):** Japanese text rendering requires Noto CJK fonts.
+
+```bash
+sudo apt install fonts-noto-cjk
+```
+
+## Architecture
+
+Everything lives in two files:
+
+- **`generate_cards.py`** — the entire PDF renderer, implemented as a single `CardPDF(FPDF)` subclass
+- **`cards.json`** — the data source; must conform to `cards.schema.json`
+
+### Data model (`cards.json`)
+
+Top-level keys:
+- `keyword_effects` — `{keyword: short_description}` dict used to render keyword lines on cards
+- `characters` — array of `Character` objects (rendered with attack/weakness grids)
+- `items` — array of `Item` objects (rendered with a simpler layout)
+
+**Character ID pattern:** `^[a-z_]+_v2_[0-9]{2}$` (e.g. `aggro_v2_01`)
+
+**`attack_cells`** is one of:
+- `"all"` — 全域 (area-of-effect magic), rendered as a single labeled cell
+- `null` — cannot attack
+- `[[row, col], ...]` — relative coordinates; row positive = forward, col positive = right
+
+**`weakness_cells`** defaults to `[[-1, 0]]` (directly behind) when omitted.
+
+Valid factions: `aggro`, `tank`, `control`, `synergy`, `snipe`, `trick`  
+Valid attributes: `拳`, `念`, `光`, `闇`, `虚`  
+Valid keywords: `先制`, `防護`, `不動`, `カバー`, `要塞`, `回避`, `貫通`
+
+### Card rendering flow
+
+`generate_cards.py` draws each card via `draw_card()` (characters) or `draw_item_card()` (items):
+
+1. **Header** — attribute circle, name, faction, cost, reactivation cost
+2. **Graphic** — gray placeholder rectangle
+3. **Lower half** — stats line, keywords, effect text, ult block, attack/weakness grids, VP box
+
+Text overflow is handled by `_multi_cell_j()` which uses kinsoku (行頭・行末禁則) line-breaking. Warnings are printed to stderr when text is clipped or a name is too wide.
+
+Grid geometry anchors to the card bottom; the attack grid height varies by the number of rows needed (`_attack_rows()`), while the weakness grid is always 3 rows.
+
+## Game reference
+
+`EOJR_Rulebook.md` — complete rules  
+`EOJR_Card.md` — full card list with stats and effects
