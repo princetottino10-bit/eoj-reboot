@@ -209,15 +209,12 @@ class CardPDF(FPDF):
 
     # ── VP box (bottom-right corner, shared by character and item) ───────
     def _vp_box(self, card: dict, x: float, y: float):
-        """Draw a VP label+number box anchored to the card bottom-right."""
-        vp_x = x + CARD_W - 11.5
-        vp_y = y + CARD_H - GRID_BOTTOM_PAD - 10
-        self.jp(4.5, bold=True)
+        """Draw a compact VP box anchored to the card bottom-right."""
+        self.jp(5)
+        vp_x = x + CARD_W - 12
+        vp_y = y + CARD_H - GRID_BOTTOM_PAD - 5
         self.set_xy(vp_x, vp_y)
-        self.cell(10, 4, "VP", border="LTR", align="C")
-        self.jp(9, bold=True)
-        self.set_xy(vp_x, vp_y + 4)
-        self.cell(10, 6, str(card["vp"]), border="LBR", align="C")
+        self.cell(10, 4, f"VP {card['vp']}", border=1, align="C")
 
     # ── item card ─────────────────────────────────────────────────────────
     def draw_item_card(self, card: dict, x: float, y: float):
