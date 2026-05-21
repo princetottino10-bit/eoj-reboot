@@ -2,9 +2,14 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "EOJ Reboot Card Data",
   "type": "object",
-  "required": ["characters", "items"],
+  "required": ["keyword_effects", "characters", "items"],
   "additionalProperties": false,
   "properties": {
+    "keyword_effects": {
+      "type": "object",
+      "description": "Keyword name → short effect description for card rendering.",
+      "additionalProperties": { "type": "string" }
+    },
     "characters": {
       "type": "array",
       "items": { "$ref": "#/definitions/Character" }

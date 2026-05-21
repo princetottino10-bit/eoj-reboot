@@ -151,11 +151,16 @@ class CardPDF(FPDF):
         # ── keywords / effect / ult ──
         text_y = top + 6
 
-        if card["keywords"] and text_y < max_y:
-            self.jp(6.5, bold=True)
+        for kw in card["keywords"]:
+            if text_y >= max_y:
+                break
+            desc = self.keyword_effects.get(kw, "")
+            self.jp(5.5, bold=True)
             self.set_xy(x + 1.5, text_y)
-            self.cell(tw, 3.5, "【" + "  ".join(card["keywords"]) + "】")
-            text_y += 4
+            self.cell(tw, 3.5, f"【{kw}】{desc}")
+            text_y += 3.5
+        if card["keywords"]:
+            text_y += 0.5  # gap after keywords block
 
         self.set_draw_color(180, 180, 180)
         self.line(x + 1, text_y - 0.5, x + CARD_W - 1, text_y - 0.5)
@@ -369,6 +374,7 @@ def generate(cards_path: Path, out_path: Path):
     pdf = CardPDF(unit="mm", format="A4")
     pdf.set_auto_page_break(False)
     pdf.init_font(find_font(FONT_REGULAR), find_font(FONT_BOLD))
+    pdf.keyword_effects = data.get("keyword_effects", {})
 
     per_page = COLS * ROWS
     for start in range(0, len(characters), per_page):
