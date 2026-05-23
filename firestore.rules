@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // allowlist チェック: auth.token.email が allowed_users に存在するか
+    function isAllowedUser() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/allowed_users/$(request.auth.token.email));
+    }
+
+    // ルームは許可ユーザーのみ読み書き可
+    match /rooms/{roomId} {
+      allow read, write: if isAllowedUser();
+    }
+
+    // 自分のメールアドレスのドキュメントのみ読み取り可（クライアント側の allowlist 確認用）
+    // 書き込みは Firebase Console からのみ（管理者が手動で招待）
+    match /allowed_users/{email} {
+      allow read: if request.auth != null && request.auth.token.email == email;
+      allow write: if false;
+    }
+  }
+}

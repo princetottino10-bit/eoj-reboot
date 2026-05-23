@@ -114,13 +114,25 @@ export function renderGame(state: GameState, ui: GameUiExtra): HTMLElement {
   div.appendChild(logSection);
 
   // ── Controls ──
+  const { online, myPlayerIndex } = getState();
+  const isMyTurn = !online || state.active === myPlayerIndex;
+
   const controls = document.createElement('div');
   controls.className = 'game-controls';
-  const endTurnBtn = document.createElement('button');
-  endTurnBtn.className = 'btn';
-  endTurnBtn.textContent = 'ターン終了';
-  endTurnBtn.addEventListener('click', () => onEndTurn(state));
-  controls.appendChild(endTurnBtn);
+
+  if (online && !isMyTurn) {
+    const waitLabel = document.createElement('div');
+    waitLabel.className = 'action-label';
+    waitLabel.style.cssText = 'width:100%;text-align:center;color:#888;padding:8px;';
+    waitLabel.textContent = `P${state.active + 1}のターン（相手が操作中）`;
+    controls.appendChild(waitLabel);
+  } else {
+    const endTurnBtn = document.createElement('button');
+    endTurnBtn.className = 'btn';
+    endTurnBtn.textContent = 'ターン終了';
+    endTurnBtn.addEventListener('click', () => onEndTurn(state));
+    controls.appendChild(endTurnBtn);
+  }
   div.appendChild(controls);
 
   // ── Overlays ──
@@ -231,6 +243,9 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
   handCards.className = 'hand-cards';
   const isDiscardMode = ui.mode === 'discard_pending';
 
+  const { online: isOnline, myPlayerIndex } = getState();
+  const isMyTurn = !isOnline || myPlayerIndex === active;
+
   state.players[active].hand.forEach((cardId, idx) => {
     const cost = getCardCost(cardId);
     const canAfford = state.players[active].mana >= cost;
@@ -261,10 +276,10 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
         <div class="card-effect">${def?.effect ?? ''}</div>
       `;
     }
-    if (isDiscardMode) {
+    if (isDiscardMode && isMyTurn) {
       cardEl.style.borderColor = '#ff6b6b';
       cardEl.addEventListener('click', () => onDiscardCardClick(state, ui, idx));
-    } else if (canAfford) {
+    } else if (canAfford && isMyTurn) {
       cardEl.addEventListener('click', () => onHandCardClick(state, idx));
     }
     handCards.appendChild(cardEl);
@@ -320,7 +335,10 @@ function buildCell(state: GameState, ui: GameUiExtra, idx: CellIndex): HTMLEleme
     cell.appendChild(charDiv);
   }
 
-  cell.addEventListener('click', () => onCellClick(state, ui, idx));
+  const { online: cellOnline, myPlayerIndex: cellMyIdx } = getState();
+  if (!cellOnline || state.active === cellMyIdx) {
+    cell.addEventListener('click', () => onCellClick(state, ui, idx));
+  }
   return cell;
 }
 
@@ -576,7 +594,13 @@ function onEndTurn(state: GameState): void {
   newState = applyVictoryCheck(newState, null);
   if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
 
-  setState({ gameState: newState, screen: 'pass', passForPlayer: newState.active, gameUiExtra: resetGameUiExtra() });
+  const { online } = getState();
+  if (online) {
+    // オンラインモード: パス画面不要。Firestore 経由で相手に通知
+    setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+  } else {
+    setState({ gameState: newState, screen: 'pass', passForPlayer: newState.active, gameUiExtra: resetGameUiExtra() });
+  }
 }
 
 // ============================================================

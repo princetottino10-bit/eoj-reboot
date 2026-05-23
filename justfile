@@ -37,3 +37,7 @@ test-watch:
 # プロダクションビルド
 build:
     cd game && npm run build
+
+# Firebase にデプロイ（ビルド済みでなければビルドしてから）
+deploy: build
+    firebase deploy
