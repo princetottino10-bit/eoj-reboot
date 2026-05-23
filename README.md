@@ -48,7 +48,11 @@ eoj-reboot/
 │   ├── src/engine/         # ゲームロジック（TypeScript）
 │   ├── src/ui/             # ブラウザ UI
 │   └── tests/              # vitest テスト
-├── EOJR_Rulebook.md        # 公式ルールブック
+├── data/
+│   └── rulebook.md         # ゲームエンジン向けルール抜粋
+├── docs/
+│   ├── EOJR_Rulebook.md    # 公式ルールブック（全文）
+│   └── cards.md            # カードリスト（生成済み）
 └── justfile                # タスクランナー定義
 ```
 
