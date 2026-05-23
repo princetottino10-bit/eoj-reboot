@@ -81,6 +81,8 @@ export interface GameState {
   winner: 0 | 1 | -1 | null; // -1=引き分け
   winReason: string;
   ui: UiState;
+  /** チームダメージ軽減フラグ（ルミナウルト）: [P0のキャラがDR, P1のキャラがDR] */
+  teamDR: [boolean, boolean];
 }
 
 export interface LogEntry {
