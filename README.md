@@ -1,12 +1,16 @@
-# 異能学園総選挙 (eoj-reboot)
+# 異能学園総選挙 Reboot
 
-異能を持つ高校生たちが「票」を奪い合う、2人用対戦カードゲーム **異能学園総選挙** の印刷用カードPDFを生成するツールです。
+異能を持つ高校生たちが「票」を奪い合う、2人用対戦カードゲーム **異能学園総選挙** のリポジトリです。
+
+- **`card-gen/`** — 印刷用カードPDFを生成するツール（Python + fpdf2）
+- **`game/`** — ブラウザで遊べるゲーム実装（TypeScript + Vite）
 
 ## 必要環境
 
-- Python 3.12+
-- [uv](https://docs.astral.sh/uv/)
-- Noto CJK フォント（日本語表示に必要）
+- [just](https://github.com/casey/just)（タスクランナー）
+- [uv](https://docs.astral.sh/uv/)（Python パッケージマネージャ）
+- Node.js 18+
+- Noto CJK フォント（PDF生成時の日本語表示に必要）
 
 ```bash
 # Linux / WSL
@@ -16,43 +20,45 @@ sudo apt install fonts-noto-cjk
 ## セットアップ
 
 ```bash
-uv sync
+just setup
 ```
 
-## 使い方
+## よく使うコマンド
 
 ```bash
-# cards.pdf を生成（デフォルト出力先）
-uv run generate_cards.py
-
-# 出力先を指定する場合
-uv run generate_cards.py path/to/output.pdf
+just dev        # ブラウザゲームの開発サーバーを起動 (http://localhost:5173)
+just test       # テストを実行
+just pdf        # 印刷用PDFを生成 (card-gen/cards.pdf)
+just md         # カードリストMarkdownを生成 (data/cards.md)
 ```
 
-生成されるPDFはA4サイズで、1ページあたり3×3枚（63×88mm）のカードを配置します。
-
-```bash
-# cards.md を生成（カードリスト Markdown）
-uv run generate_card_md.py
-
-# 出力先を指定する場合
-uv run generate_card_md.py path/to/output.md
-```
+`just` だけで全コマンド一覧を表示します。
 
 ## ファイル構成
 
-| ファイル | 説明 |
-|---|---|
-| `generate_cards.py` | 印刷用PDF生成スクリプト |
-| `generate_card_md.py` | カードリストMarkdown生成スクリプト |
-| `cards.json` | カードデータ（キャラクター・アイテム） |
-| `cards.schema.json` | `cards.json` のJSONスキーマ |
-| `EOJR_Rulebook.md` | 公式ルールブック |
-| `cards.md` | カードリスト（`generate_card_md.py` で生成） |
+```
+eoj-reboot/
+├── data/
+│   ├── cards.json          # カードデータ（キャラクター・アイテム）
+│   └── cards.schema.json   # cards.json の JSON スキーマ
+├── card-gen/
+│   ├── generate_cards.py   # 印刷用 PDF 生成スクリプト
+│   └── generate_card_md.py # カードリスト Markdown 生成スクリプト
+├── game/
+│   ├── src/engine/         # ゲームロジック（TypeScript）
+│   ├── src/ui/             # ブラウザ UI
+│   └── tests/              # vitest テスト
+├── data/
+│   └── rulebook.md         # ゲームエンジン向けルール抜粋
+├── docs/
+│   ├── EOJR_Rulebook.md    # 公式ルールブック（全文）
+│   └── cards.md            # カードリスト（生成済み）
+└── justfile                # タスクランナー定義
+```
 
 ## カードデータの編集
 
-`cards.json` を編集してカードを追加・変更できます。スキーマ定義は `cards.schema.json` を参照してください。
+`data/cards.json` を編集してカードを追加・変更できます。スキーマ定義は `data/cards.schema.json` を参照してください。
 
 **キャラクターID形式:** `{faction}_v2_{連番2桁}` （例: `aggro_v2_01`）
 
