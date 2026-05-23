@@ -39,11 +39,19 @@ export function renderLobby(): HTMLElement {
 
   div.querySelector('#btn-create')!.addEventListener('click', async () => {
     const btn = div.querySelector('#btn-create') as HTMLButtonElement;
+    const errEl = div.querySelector('#join-error') as HTMLElement;
     btn.disabled = true;
     btn.textContent = '作成中...';
-    const roomId = await createRoom();
-    startOnlineRoom(roomId, 0);
-    setState({ screen: 'waiting', online: true, roomId, myPlayerIndex: 0 });
+    try {
+      const roomId = await createRoom();
+      startOnlineRoom(roomId, 0);
+      setState({ screen: 'waiting', online: true, roomId, myPlayerIndex: 0 });
+    } catch (e) {
+      console.error('createRoom failed:', e);
+      errEl.textContent = `エラー: ${e instanceof Error ? e.message : String(e)}`;
+      btn.disabled = false;
+      btn.textContent = '部屋を作る';
+    }
   });
 
   div.querySelector('#btn-join')!.addEventListener('click', async () => {
@@ -57,28 +65,26 @@ export function renderLobby(): HTMLElement {
     btn.disabled = true;
     btn.textContent = '参加中...';
 
-    const result = await joinRoom(code);
-    if (result === 'not_found') {
-      (div.querySelector('#join-error') as HTMLElement).textContent = 'その部屋は存在しません';
-      btn.disabled = false;
-      btn.textContent = '部屋に入る';
-      return;
+    try {
+      const result = await joinRoom(code);
+      if (result === 'not_found') {
+        errEl.textContent = 'その部屋は存在しません';
+        btn.disabled = false; btn.textContent = '部屋に入る';
+        return;
+      }
+      if (result === 'full') {
+        errEl.textContent = 'その部屋はすでに満員です';
+        btn.disabled = false; btn.textContent = '部屋に入る';
+        return;
+      }
+      // ok → P1 として draft 開始
+      startOnlineRoom(code, 1);
+      setState({ screen: 'draft', online: true, roomId: code, myPlayerIndex: 1, draftUi: initialDraftUi() });
+    } catch (e) {
+      console.error('joinRoom failed:', e);
+      errEl.textContent = `エラー: ${e instanceof Error ? e.message : String(e)}`;
+      btn.disabled = false; btn.textContent = '部屋に入る';
     }
-    if (result === 'full') {
-      (div.querySelector('#join-error') as HTMLElement).textContent = 'その部屋はすでに満員です';
-      btn.disabled = false;
-      btn.textContent = '部屋に入る';
-      return;
-    }
-    // ok → P1 として draft 開始
-    startOnlineRoom(code, 1);
-    setState({
-      screen: 'draft',
-      online: true,
-      roomId: code,
-      myPlayerIndex: 1,
-      draftUi: initialDraftUi(),
-    });
   });
 
   div.querySelector('#btn-back')!.addEventListener('click', () => {
