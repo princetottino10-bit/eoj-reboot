@@ -32,7 +32,9 @@ export function renderDraft(ui: DraftUiState): HTMLElement {
   const div = document.createElement('div');
   div.className = 'screen-draft';
 
+  const { online, myPlayerIndex } = getState();
   const picker = currentPicker(ui);
+  const isMyTurn = !online || myPlayerIndex === picker;
   const isItemPhase = ui.pickIndex >= 4;
   const pickerLabel = `プレイヤー${picker + 1}`;
   const pickerClass = picker === 0 ? 'p0-color' : 'p1-color';
@@ -99,11 +101,18 @@ export function renderDraft(ui: DraftUiState): HTMLElement {
     `;
   }
 
+  const waitingBanner = !isMyTurn
+    ? `<div class="waiting-banner">P${picker + 1}が選択中...</div>`
+    : '';
+
   div.innerHTML = `
     <h2>ドラフト</h2>
+    ${waitingBanner}
     ${summaryHtml}
     ${stepHtml}
   `;
+
+  if (!isMyTurn) return div; // 相手のターン中はクリック無効
 
   // Faction click handlers
   const factionGrid = div.querySelector('#faction-grid');
@@ -185,10 +194,11 @@ function startGame(ui: DraftUiState): void {
   gameState = startTurnPhase(gameState);
   gameState = drawStep(gameState);
 
-  setState({
-    screen: 'pass',
-    gameState,
-    passForPlayer: gameState.active,
-    gameUiExtra: resetGameUiExtra(),
-  });
+  const { online } = getState();
+  if (online) {
+    // オンラインモード: パス画面不要、直接ゲームへ
+    setState({ screen: 'game', gameState, gameUiExtra: resetGameUiExtra() });
+  } else {
+    setState({ screen: 'pass', gameState, passForPlayer: gameState.active, gameUiExtra: resetGameUiExtra() });
+  }
 }

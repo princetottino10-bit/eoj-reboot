@@ -69,7 +69,7 @@ export interface PlayerState {
   discard: string[];
 }
 
-export type GameScreen = 'title' | 'draft' | 'pass' | 'game' | 'over';
+export type GameScreen = 'title' | 'lobby' | 'waiting' | 'draft' | 'pass' | 'game' | 'over';
 
 export interface GameState {
   turn: number;

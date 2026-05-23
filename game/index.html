@@ -307,6 +307,52 @@
       margin-bottom: 8px;
     }
 
+    /* ── Lobby Screen ── */
+    .screen-lobby {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .screen-lobby h2 { font-size: 1.6rem; color: #f0c040; margin-bottom: 32px; }
+    .lobby-section { margin-bottom: 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .room-code-input {
+      padding: 10px 14px;
+      font-size: 1.2rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      background: #16213e;
+      border: 2px solid #444;
+      border-radius: 6px;
+      color: #e0e0e0;
+      width: 180px;
+      text-align: center;
+    }
+    .room-code-input:focus { outline: none; border-color: #f0c040; }
+    .join-error { color: #ff6b6b; font-size: 0.8rem; min-height: 1.2em; }
+
+    /* Room code display (waiting screen) */
+    .room-code-display {
+      background: #16213e;
+      border: 2px solid #f0c040;
+      border-radius: 10px;
+      padding: 16px 40px;
+      margin: 20px auto;
+      display: inline-block;
+    }
+    .room-code-label { font-size: 0.75rem; color: #888; margin-bottom: 4px; }
+    .room-code-value { font-size: 2.4rem; font-weight: bold; color: #f0c040; letter-spacing: 0.25em; }
+
+    /* Draft waiting banner */
+    .waiting-banner {
+      background: #1a2a1a;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 8px 16px;
+      color: #888;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
     /* Over Screen */
     .screen-over {
       text-align: center;
