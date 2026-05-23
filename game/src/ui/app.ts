@@ -6,7 +6,9 @@ import { renderDraft, type DraftUiState } from './draft.js';
 import { renderPass } from './pass.js';
 import { renderGame, type GameUiExtra } from './game.js';
 import { renderOver } from './over.js';
+import { renderLogin } from './login.js';
 import { subscribeRoom, writeRoomState, type RoomDoc } from '../firebase/room.js';
+import { onAuthStateChanged, type User } from '../firebase/auth.js';
 
 export interface AppState {
   screen: GameScreen;
@@ -18,6 +20,9 @@ export interface AppState {
   online: boolean;
   roomId: string | null;
   myPlayerIndex: 0 | 1 | null;
+  // Auth
+  currentUser: User | null;
+  authError: string | null;
 }
 
 const INITIAL_DRAFT_UI: DraftUiState = {
@@ -45,7 +50,7 @@ const INITIAL_GAME_UI_EXTRA: GameUiExtra = {
 };
 
 let state: AppState = {
-  screen: 'title',
+  screen: 'login',
   draftUi: { ...INITIAL_DRAFT_UI },
   gameState: null,
   gameUiExtra: { ...INITIAL_GAME_UI_EXTRA },
@@ -53,6 +58,8 @@ let state: AppState = {
   online: false,
   roomId: null,
   myPlayerIndex: null,
+  currentUser: null,
+  authError: null,
 };
 
 let firestoreUnsub: (() => void) | null = null;
@@ -148,8 +155,11 @@ export function stopOnlineRoom(): void {
 function render(): void {
   root.innerHTML = '';
   switch (state.screen) {
+    case 'login':
+      root.appendChild(renderLogin(state.authError));
+      break;
     case 'title':
-      root.appendChild(renderTitle());
+      root.appendChild(renderTitle(state.currentUser));
       break;
     case 'lobby':
       root.appendChild(renderLobby());
@@ -173,5 +183,17 @@ function render(): void {
 }
 
 export function startApp(): void {
-  render();
+  root.innerHTML = '<div class="loading">読み込み中…</div>';
+
+  onAuthStateChanged((user, authError) => {
+    if (!user) {
+      state = { ...state, screen: 'login', currentUser: null, authError: authError ?? null };
+      render();
+    } else if (!state.currentUser) {
+      state = { ...state, screen: 'title', currentUser: user, authError: null };
+      render();
+    } else {
+      state = { ...state, currentUser: user };
+    }
+  });
 }
