@@ -2,18 +2,40 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // allowlist チェック: auth.token.email が allowed_users に存在するか
     function isAllowedUser() {
       return request.auth != null &&
              exists(/databases/$(database)/documents/allowed_users/$(request.auth.token.email));
     }
 
-    // ルームは許可ユーザーのみ読み書き可
     match /rooms/{roomId} {
-      allow read, write: if isAllowedUser();
+      // 参加済みの参加者か（作成者 or 参加者）
+      function isParticipant() {
+        return request.auth.uid == resource.data.createdBy
+            || (resource.data.joinedBy != null && request.auth.uid == resource.data.joinedBy);
+      }
+
+      // 空きルームへの参加操作（joinedBy を自分の uid に設定する）
+      function isJoining() {
+        return resource.data.joinedBy == null
+            && request.resource.data.joinedBy == request.auth.uid
+            && request.resource.data.createdBy == resource.data.createdBy;
+      }
+
+      // 未参加のルームも読める（参加トランザクション内の get に必要）
+      allow read: if isAllowedUser() && (isParticipant() || resource.data.joinedBy == null);
+
+      // 作成: createdBy を自分の uid に、joinedBy は null のみ許可
+      allow create: if isAllowedUser()
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.joinedBy == null;
+
+      // 更新: 参加者か、参加操作のみ
+      allow update: if isAllowedUser() && (isParticipant() || isJoining());
+
+      allow delete: if false;
     }
 
-    // 自分のメールアドレスのドキュメントのみ読み取り可（クライアント側の allowlist 確認用）
+    // 自分のメールアドレスのドキュメントのみ読み取り可（招待確認用）
     // 書き込みは Firebase Console からのみ（管理者が手動で招待）
     match /allowed_users/{email} {
       allow read: if request.auth != null && request.auth.token.email == email;

@@ -1,4 +1,4 @@
-import { setState, startOnlineRoom } from './app.js';
+import { getState, setState, startOnlineRoom } from './app.js';
 import { createRoom, joinRoom } from '../firebase/room.js';
 import { createDraftState } from '../engine/draft.js';
 
@@ -43,7 +43,7 @@ export function renderLobby(): HTMLElement {
     btn.disabled = true;
     btn.textContent = '作成中...';
     try {
-      const roomId = await createRoom();
+      const roomId = await createRoom(getState().currentUser!.uid);
       startOnlineRoom(roomId, 0);
       setState({ screen: 'waiting', online: true, roomId, myPlayerIndex: 0 });
     } catch (e) {
@@ -62,11 +62,12 @@ export function renderLobby(): HTMLElement {
       return;
     }
     const btn = div.querySelector('#btn-join') as HTMLButtonElement;
+    const errEl = div.querySelector('#join-error') as HTMLElement;
     btn.disabled = true;
     btn.textContent = '参加中...';
 
     try {
-      const result = await joinRoom(code);
+      const result = await joinRoom(code, getState().currentUser!.uid);
       if (result === 'not_found') {
         errEl.textContent = 'その部屋は存在しません';
         btn.disabled = false; btn.textContent = '部屋に入る';
