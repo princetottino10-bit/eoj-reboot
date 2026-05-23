@@ -1,6 +1,27 @@
-import type { GameState } from './types.js';
+import type { GameState, CellIndex } from './types.js';
 
 export const HAND_LIMIT = 7;
+
+// ============================================================
+// 再行動マナ消費
+// ============================================================
+
+/**
+ * 再行動（攻撃または回転）のマナコストを消費する。
+ * 総コスト = baseCost + char.status.actionTax
+ */
+export function spendReactivationMana(
+  state: GameState,
+  charIdx: CellIndex,
+  baseCost: number,
+): GameState {
+  const active = state.active;
+  const char = state.board[charIdx];
+  const totalCost = baseCost + (char?.status.actionTax ?? 0);
+  const newPlayers = [{ ...state.players[0] }, { ...state.players[1] }] as typeof state.players;
+  newPlayers[active] = { ...newPlayers[active], mana: newPlayers[active].mana - totalCost };
+  return { ...state, players: newPlayers };
+}
 
 // ============================================================
 // ターン開始フェーズ

@@ -11,7 +11,7 @@ import {
 import { resolveAttack } from '../engine/combat.js';
 import { createCharInstance, attributeHpBonus } from '../engine/gamestate.js';
 import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect } from '../engine/effects.js';
-import { startTurnPhase, drawStep, endTurnCleanup } from '../engine/turn.js';
+import { startTurnPhase, drawStep, endTurnCleanup, spendReactivationMana } from '../engine/turn.js';
 import { evalVictory } from '../engine/victory.js';
 
 export interface GameUiExtra {
@@ -496,14 +496,17 @@ function onRotateClick(state: GameState, ui: GameUiExtra, newDir: Direction): vo
   if (ui.selectedBoardIdx === null) return;
   const char = state.board[ui.selectedBoardIdx];
   if (!char) return;
+  const def = getCharDef(char.cardId);
+  if (!def) return;
 
   const newBoard = [...state.board] as Board;
   newBoard[ui.selectedBoardIdx] = { ...char, dir: newDir, hasRotated: true };
-  const newState = appendLog(
+  let newState = appendLog(
     { ...state, board: newBoard },
     `${getCardName(char.cardId)} が ${DIR_ARROWS[newDir]} を向いた`,
     'info',
   );
+  newState = spendReactivationMana(newState, ui.selectedBoardIdx, def.reactivation_cost);
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
@@ -738,7 +741,7 @@ function doAttack(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void
   // Mark attacker as acted
   if (workBoard[attackerIdx]) workBoard[attackerIdx] = { ...workBoard[attackerIdx]!, hasActed: true };
 
-  let newState = { ...state, board: workBoard };
+  let newState = spendReactivationMana({ ...state, board: workBoard }, attackerIdx, def.reactivation_cost);
   const atkName = getCardName(attacker.cardId);
   const defName = getCardName(targetChar.cardId);
 

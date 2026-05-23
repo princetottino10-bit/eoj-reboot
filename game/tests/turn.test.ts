@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { startTurnPhase, drawStep, endTurnCleanup, HAND_LIMIT } from '../src/engine/turn.js';
+import { startTurnPhase, drawStep, endTurnCleanup, spendReactivationMana, HAND_LIMIT } from '../src/engine/turn.js';
 import type { GameState, PlayerState, CharInstance } from '../src/engine/types.js';
 
 // ============================================================
@@ -241,6 +241,76 @@ describe('endTurnCleanup: 手札上限', () => {
     const next = endTurnCleanup(state);
     expect(next.players[1].hand).toHaveLength(7);
     expect(next.players[0].hand).toHaveLength(0);
+  });
+});
+
+// ============================================================
+// spendReactivationMana
+// ============================================================
+describe('spendReactivationMana: マナ消費', () => {
+  it('baseCost 分のマナを消費する（actionTax=0）', () => {
+    const board = Array(9).fill(null);
+    board[0] = makeChar(0);
+    const state = makeState({ players: [makePlayer({ mana: 5 }), makePlayer()], board });
+    const next = spendReactivationMana(state, 0, 2);
+    expect(next.players[0].mana).toBe(3);
+  });
+
+  it('actionTax 分が追加コストとして加算される', () => {
+    const board = Array(9).fill(null);
+    board[0] = makeChar(0, {
+      status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 1, dirLocked: 0, immune: 0 },
+    });
+    const state = makeState({ players: [makePlayer({ mana: 5 }), makePlayer()], board });
+    const next = spendReactivationMana(state, 0, 2);
+    expect(next.players[0].mana).toBe(2); // 5 − (2+1)
+  });
+
+  it('actionTax=2 の場合も正しく計算', () => {
+    const board = Array(9).fill(null);
+    board[0] = makeChar(0, {
+      status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 2, dirLocked: 0, immune: 0 },
+    });
+    const state = makeState({ players: [makePlayer({ mana: 6 }), makePlayer()], board });
+    const next = spendReactivationMana(state, 0, 1);
+    expect(next.players[0].mana).toBe(3); // 6 − (1+2)
+  });
+
+  it('相手のマナは変わらない', () => {
+    const board = Array(9).fill(null);
+    board[0] = makeChar(0);
+    const state = makeState({ players: [makePlayer({ mana: 5 }), makePlayer({ mana: 3 })], board });
+    const next = spendReactivationMana(state, 0, 1);
+    expect(next.players[1].mana).toBe(3);
+  });
+
+  it('P1のターンはP1のマナを消費する', () => {
+    const board = Array(9).fill(null);
+    board[3] = makeChar(1);
+    const state = makeState({
+      active: 1,
+      players: [makePlayer({ mana: 4 }), makePlayer({ mana: 5 })],
+      board,
+    });
+    const next = spendReactivationMana(state, 3, 2);
+    expect(next.players[1].mana).toBe(3);
+    expect(next.players[0].mana).toBe(4);
+  });
+
+  it('baseCost=0 の場合マナは変化しない', () => {
+    const board = Array(9).fill(null);
+    board[0] = makeChar(0);
+    const state = makeState({ players: [makePlayer({ mana: 5 }), makePlayer()], board });
+    const next = spendReactivationMana(state, 0, 0);
+    expect(next.players[0].mana).toBe(5);
+  });
+
+  it('元のstateを変更しない（immutability）', () => {
+    const board = Array(9).fill(null);
+    board[0] = makeChar(0);
+    const state = makeState({ players: [makePlayer({ mana: 5 }), makePlayer()], board });
+    spendReactivationMana(state, 0, 2);
+    expect(state.players[0].mana).toBe(5);
   });
 });
 
