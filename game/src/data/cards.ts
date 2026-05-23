@@ -1,4 +1,4 @@
-import cardsJson from '../../../cards.json';
+import cardsJson from '../../../data/cards.json';
 import type { CharCardDef, ItemCardDef, CardDatabase } from '../engine/gamestate.js';
 
 export interface FullCardDatabase extends CardDatabase {

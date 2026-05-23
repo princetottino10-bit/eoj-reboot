@@ -398,5 +398,6 @@ def generate(cards_path: Path, out_path: Path):
 
 if __name__ == "__main__":
     root = Path(__file__).parent
+    data = root.parent / "data"
     out  = Path(sys.argv[1]) if len(sys.argv) > 1 else root / "cards.pdf"
-    generate(root / "cards.json", out)
+    generate(data / "cards.json", out)
