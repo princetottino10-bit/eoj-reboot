@@ -638,10 +638,8 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
 
   // Auto effects
   const effect = getSummonEffect(cardId);
-  if (effect.autoEffects.length > 0) {
-    const r = applyAutoEffects(newState.board, newState.players, cellIdx, active, effect.autoEffects);
-    newState = { ...newState, board: r.board, players: r.players };
-  }
+  const r = applyAutoEffects(newState, cellIdx, active, effect.clauses, def.attribute);
+  newState = { ...newState, board: r.board, players: r.players };
 
   // Auto attack
   const { board: boardAfterAtk, results } = resolveSummonAutoAttack(

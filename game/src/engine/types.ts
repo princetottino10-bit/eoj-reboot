@@ -27,6 +27,8 @@ export interface Markers {
   quickness: number;  // 先制マーカー枚数
 }
 
+export type MarkerKey = keyof Markers;
+
 export interface StatusEffects {
   brainwashedTurns: number;  // 洗脳残りターン数（0=解除済み）
   brainwashedBy: string | null; // 洗脳付与者のカードID

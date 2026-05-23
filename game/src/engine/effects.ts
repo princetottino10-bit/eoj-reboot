@@ -1,7 +1,9 @@
-import type { Board, CharInstance, CellIndex } from './types.js';
+import type { Board, CharInstance, CellIndex, GameState } from './types.js';
 import type { PlayerState } from './types.js';
 import type { CharCardDef } from './gamestate.js';
 import type { AttackResult } from './combat.js';
+import type { EffectClause, EffectAtom, EffectTarget, EffectCondition } from './effectSpecs.js';
+import { getEffectSpec, clauseHasPendingEffects, needsTargetSelection } from './effectSpecs.js';
 import { getAdjacentCells, getAttackCells } from './board.js';
 import { resolveAttack } from './combat.js';
 
@@ -9,133 +11,24 @@ import { resolveAttack } from './combat.js';
 // 型
 // ============================================================
 
-export type MarkerKey = 'protection' | 'evasion' | 'piercing' | 'quickness';
-
-/** auto-resolve 可能な召喚時エフェクト原子 */
-export type AutoEffect =
-  | { tag: 'give_marker_adj_allies'; marker: MarkerKey }
-  | { tag: 'give_marker_self_and_adj_allies'; marker: MarkerKey }
-  | { tag: 'give_marker_self'; marker: MarkerKey }
-  | { tag: 'heal_adj_allies'; amount: number }
-  | { tag: 'atk_delta_adj_allies'; delta: number }
-  | { tag: 'damage_adj_enemies'; amount: number }
-  | { tag: 'steal_mana'; amount: number }
-  | { tag: 'cond_marker_ally_gte'; minAllies: number; then: AutoEffect };
-
-export interface SummonEffectSpec {
-  /** 即時適用できるエフェクト列 */
-  autoEffects: AutoEffect[];
-  /** true = UI側でターゲット選択が必要なエフェクトを持つ */
+export interface SummonEffectResult {
+  clauses: EffectClause[];
   hasPending: boolean;
 }
 
 // ============================================================
-// カードID → 召喚エフェクト対応表
+// ルックアップ
 // ============================================================
 
-const NONE: SummonEffectSpec = { autoEffects: [], hasPending: false };
-const PENDING: SummonEffectSpec = { autoEffects: [], hasPending: true };
-
-const SUMMON_EFFECT_TABLE: Record<string, SummonEffectSpec> = {
-  // ---- Tank ----
-  'tank_v2_02': {
-    autoEffects: [{ tag: 'give_marker_adj_allies', marker: 'protection' }],
-    hasPending: false,
-  },
-  'tank_v2_05': {
-    autoEffects: [{ tag: 'heal_adj_allies', amount: 1 }],
-    hasPending: false,
-  },
-  'tank_v2_09': {
-    autoEffects: [
-      { tag: 'give_marker_self_and_adj_allies', marker: 'protection' },
-      { tag: 'heal_adj_allies', amount: 1 },
-    ],
-    hasPending: false,
-  },
-  'tank_v2_11': PENDING,  // 味方1体の向きを選択
-  'tank_v2_12': {
-    autoEffects: [
-      { tag: 'heal_adj_allies', amount: 2 },
-      { tag: 'give_marker_self', marker: 'protection' },
-    ],
-    hasPending: false,
-  },
-
-  // ---- Synergy ----
-  'synergy_v2_01': PENDING,  // 味方1体に防護
-  'synergy_v2_02': PENDING,  // 隣接味方1体に回避
-  'synergy_v2_03': PENDING,  // 隣接味方1体に貫通
-  'synergy_v2_04': PENDING,  // 味方1体に回避
-  'synergy_v2_07': {
-    autoEffects: [{ tag: 'atk_delta_adj_allies', delta: 1 }],
-    hasPending: false,
-  },
-  'synergy_v2_08': {
-    autoEffects: [
-      { tag: 'heal_adj_allies', amount: 1 },
-      { tag: 'cond_marker_ally_gte', minAllies: 3, then: { tag: 'atk_delta_adj_allies', delta: 1 } },
-    ],
-    hasPending: false,
-  },
-  'synergy_v2_09': PENDING,  // 隣接味方1体のHP+1
-  'synergy_v2_11': {
-    autoEffects: [
-      { tag: 'heal_adj_allies', amount: 1 },
-      { tag: 'cond_marker_ally_gte', minAllies: 3, then: { tag: 'atk_delta_adj_allies', delta: 1 } },
-    ],
-    hasPending: false,
-  },
-  'synergy_v2_12': {
-    autoEffects: [{ tag: 'atk_delta_adj_allies', delta: 1 }],
-    hasPending: false,
-  },
-
-  // ---- Aggro ----
-  'aggro_v2_03': PENDING,  // optional: 手札捨て→隣接敵を後退
-  'aggro_v2_10': PENDING,  // 1ドロー後1捨て（捨て選択が必要）
-  'aggro_v2_11': {
-    autoEffects: [{ tag: 'damage_adj_enemies', amount: 3 }],
-    hasPending: false,
-  },
-
-  // ---- Control ----
-  'control_v2_01': PENDING,
-  'control_v2_02': PENDING,
-  'control_v2_03': PENDING,
-  'control_v2_04': PENDING,
-  'control_v2_05': PENDING,
-  'control_v2_07': PENDING,
-  'control_v2_08': PENDING,
-  'control_v2_09': {
-    autoEffects: [{ tag: 'steal_mana', amount: 2 }],
-    hasPending: false,
-  },
-  'control_v2_10': PENDING,
-  'control_v2_11': PENDING,
-
-  // ---- Trick ----
-  'trick_v2_01': PENDING,
-  'trick_v2_02': PENDING,
-  'trick_v2_03': PENDING,  // optional discard for mana
-  'trick_v2_04': PENDING,  // 味方1体と位置入替
-  'trick_v2_06': PENDING,
-  'trick_v2_09': PENDING,
-  'trick_v2_12': PENDING,
-
-  // ---- Snipe ----
-  'snipe_v2_07': PENDING,  // optional: 手札捨て→2ドロー
-};
-
-export function getSummonEffect(cardId: string): SummonEffectSpec {
-  return SUMMON_EFFECT_TABLE[cardId] ?? NONE;
+export function getSummonEffect(cardId: string): SummonEffectResult {
+  const spec = getEffectSpec(cardId);
+  return { clauses: spec.clauses, hasPending: needsTargetSelection(spec.clauses, 'on_summon') };
 }
 
 // ============================================================
 // ユーティリティ
 // ============================================================
 
-/** マーカーバフ（消費型マーカーまたは永続キーワード）を保持しているか */
 function hasMarkerBuff(char: CharInstance): boolean {
   return (
     char.markers.protection > 0 || char.markers.evasion > 0 ||
@@ -145,12 +38,10 @@ function hasMarkerBuff(char: CharInstance): boolean {
   );
 }
 
-/** オーナーのマーカーバフ持ち味方の数（全盤面） */
 function countMarkerAllies(board: Board, owner: 0 | 1): number {
   return board.filter(c => c !== null && c.owner === owner && hasMarkerBuff(c)).length;
 }
 
-/** Board を深くコピーする（resolveAttack がin-place変更するため） */
 function deepCopyBoard(board: Board): Board {
   return board.map(c =>
     c === null ? null : {
@@ -163,7 +54,67 @@ function deepCopyBoard(board: Board): Board {
 }
 
 // ============================================================
-// AutoEffect の適用（内部）
+// ターゲット解決
+// ============================================================
+
+function resolveTargets(
+  target: EffectTarget,
+  board: Board,
+  summonIdx: CellIndex,
+  owner: 0 | 1,
+): CellIndex[] {
+  const opp = (1 - owner) as 0 | 1;
+  const adjIdxs = getAdjacentCells(summonIdx);
+  switch (target) {
+    case 'self': return [summonIdx];
+    case 'adj_allies': return adjIdxs.filter(i => board[i]?.owner === owner);
+    case 'adj_enemies': return adjIdxs.filter(i => board[i]?.owner === opp);
+    case 'self_and_adj_allies': return [summonIdx, ...adjIdxs.filter(i => board[i]?.owner === owner)];
+    case 'all_allies': return board.map((_, i) => i).filter(i => board[i]?.owner === owner);
+    case 'all_enemies': return board.map((_, i) => i).filter(i => board[i]?.owner === opp);
+    default: return [];
+  }
+}
+
+// ============================================================
+// 条件評価
+// ============================================================
+
+function evalCondition(
+  cond: EffectCondition,
+  board: Board,
+  summonIdx: CellIndex,
+  owner: 0 | 1,
+  boardAttrs: string[],
+  charAttr?: string,
+): boolean {
+  const opp = (1 - owner) as 0 | 1;
+  switch (cond.type) {
+    case 'ally_count_gte':
+      return board.filter(c => c?.owner === owner).length >= cond.min;
+    case 'marker_ally_count_gte':
+      return countMarkerAllies(board, owner) >= cond.min;
+    case 'attacked_ally_count_gte':
+      return board.filter(c => c?.owner === owner && c.hasActed).length >= cond.min;
+    case 'debuffed_enemy_count_gte': {
+      const count = board.filter(c =>
+        c?.owner === opp && (
+          c.status.brainwashedTurns > 0 ||
+          c.status.actionTax > 0 ||
+          c.atk < c.baseAtk
+        ),
+      ).length;
+      return count >= cond.min;
+    }
+    case 'on_matching_attr_cell':
+      return charAttr != null && boardAttrs[summonIdx] === charAttr;
+    default:
+      return false;
+  }
+}
+
+// ============================================================
+// エフェクト原子の適用（内部）
 // ============================================================
 
 function applyAtom(
@@ -171,78 +122,67 @@ function applyAtom(
   players: [PlayerState, PlayerState],
   summonIdx: CellIndex,
   owner: 0 | 1,
-  atom: AutoEffect,
+  atom: EffectAtom,
 ): { board: Board; players: [PlayerState, PlayerState] } {
   const opp = (1 - owner) as 0 | 1;
-  const adjIdxs = getAdjacentCells(summonIdx);
   let nb = [...board] as Board;
   let np: [PlayerState, PlayerState] = [{ ...players[0] }, { ...players[1] }];
 
-  switch (atom.tag) {
-    case 'give_marker_adj_allies': {
-      for (const idx of adjIdxs) {
+  switch (atom.type) {
+    case 'give_marker': {
+      const idxs = resolveTargets(atom.target, nb, summonIdx, owner);
+      for (const idx of idxs) {
         const c = nb[idx];
-        if (c != null && c.owner === owner) {
+        if (c != null) {
           nb[idx] = { ...c, markers: { ...c.markers, [atom.marker]: c.markers[atom.marker] + 1 } };
         }
       }
       break;
     }
-    case 'give_marker_self_and_adj_allies': {
-      for (const idx of [summonIdx, ...adjIdxs]) {
+    case 'heal': {
+      const idxs = resolveTargets(atom.target, nb, summonIdx, owner);
+      for (const idx of idxs) {
         const c = nb[idx];
-        if (c != null && c.owner === owner) {
-          nb[idx] = { ...c, markers: { ...c.markers, [atom.marker]: c.markers[atom.marker] + 1 } };
-        }
-      }
-      break;
-    }
-    case 'give_marker_self': {
-      const c = nb[summonIdx];
-      if (c != null) {
-        nb[summonIdx] = { ...c, markers: { ...c.markers, [atom.marker]: c.markers[atom.marker] + 1 } };
-      }
-      break;
-    }
-    case 'heal_adj_allies': {
-      for (const idx of adjIdxs) {
-        const c = nb[idx];
-        if (c != null && c.owner === owner) {
+        if (c != null) {
           nb[idx] = { ...c, hp: Math.min(c.hp + atom.amount, c.maxHp) };
         }
       }
       break;
     }
-    case 'atk_delta_adj_allies': {
-      for (const idx of adjIdxs) {
+    case 'atk_delta': {
+      const idxs = resolveTargets(atom.target, nb, summonIdx, owner);
+      for (const idx of idxs) {
         const c = nb[idx];
-        if (c != null && c.owner === owner) {
+        if (c != null) {
           nb[idx] = { ...c, atk: Math.max(0, c.atk + atom.delta) };
         }
       }
       break;
     }
-    case 'damage_adj_enemies': {
-      for (const idx of adjIdxs) {
+    case 'hp_delta': {
+      const idxs = resolveTargets(atom.target, nb, summonIdx, owner);
+      for (const idx of idxs) {
         const c = nb[idx];
-        if (c != null && c.owner === opp) {
-          const newHp = c.hp - atom.amount;
+        if (c != null) {
+          const newHp = c.hp + atom.amount;
           nb[idx] = newHp <= 0 ? null : { ...c, hp: newHp };
         }
       }
       break;
     }
-    case 'steal_mana': {
+    case 'mana_steal': {
       const stolen = Math.min(atom.amount, np[opp].mana);
       np[opp] = { ...np[opp], mana: np[opp].mana - stolen };
       np[owner] = { ...np[owner], mana: np[owner].mana + stolen };
       break;
     }
-    case 'cond_marker_ally_gte': {
-      if (countMarkerAllies(nb, owner) >= atom.minAllies) {
-        const r = applyAtom(nb, np, summonIdx, owner, atom.then);
-        nb = r.board;
-        np = r.players;
+    case 'draw': {
+      for (let i = 0; i < atom.count; i++) {
+        const deck = np[owner].deck;
+        if (deck.length > 0) {
+          const card = deck[deck.length - 1]!;
+          np[owner] = { ...np[owner], deck: deck.slice(0, -1), hand: [...np[owner].hand, card] };
+        }
       }
       break;
     }
@@ -255,22 +195,33 @@ function applyAtom(
 // 公開 API
 // ============================================================
 
-/** AutoEffect リストを順番に適用し、新しい board と players を返す。 */
+/**
+ * on_summon 節のうち pending でないものを順番に適用し、新しい board と players を返す。
+ * charAttr は on_matching_attr_cell 条件の評価に使用。
+ */
 export function applyAutoEffects(
-  board: Board,
-  players: [PlayerState, PlayerState],
+  state: GameState,
   summonIdx: CellIndex,
   owner: 0 | 1,
-  effects: AutoEffect[],
+  clauses: EffectClause[],
+  charAttr?: string,
 ): { board: Board; players: [PlayerState, PlayerState] } {
-  let b = board;
-  let p = players;
-  for (const atom of effects) {
-    const r = applyAtom(b, p, summonIdx, owner, atom);
-    b = r.board;
-    p = r.players;
+  let board = [...state.board] as Board;
+  let players: [PlayerState, PlayerState] = [{ ...state.players[0] }, { ...state.players[1] }];
+
+  for (const clause of clauses) {
+    if (clause.trigger !== 'on_summon') continue;
+    if (clauseHasPendingEffects(clause)) continue;
+    if (clause.condition && !evalCondition(clause.condition, board, summonIdx, owner, state.boardAttrs, charAttr)) continue;
+
+    for (const atom of clause.effects) {
+      const r = applyAtom(board, players, summonIdx, owner, atom);
+      board = r.board;
+      players = r.players;
+    }
   }
-  return { board: b, players: p };
+
+  return { board, players };
 }
 
 export interface AutoAttackResult {
@@ -290,7 +241,6 @@ export function resolveSummonAutoAttack(
   teamDR: [boolean, boolean],
   getDefenderCost: (cardId: string) => number,
 ): { board: Board; results: AutoAttackResult[] } {
-  // resolveAttack はin-place変更するためコピーして作業する
   const workBoard = deepCopyBoard(board);
 
   const summoned = workBoard[summonIdx];
@@ -301,7 +251,6 @@ export function resolveSummonAutoAttack(
   const weaknessCells = charDef.weakness_cells as [number, number][] | undefined;
   const attackType = charDef.attack_type === '魔法' ? 'magic' as const : 'physical' as const;
 
-  // 攻撃対象インデックスを収集
   let targetIdxs: CellIndex[];
   if (charDef.attack_cells === 'all') {
     targetIdxs = workBoard
@@ -319,8 +268,8 @@ export function resolveSummonAutoAttack(
 
   const results: AutoAttackResult[] = [];
   for (const targetIdx of targetIdxs) {
-    if (workBoard[summonIdx] == null) break;   // 攻撃者が撃破済み
-    if (workBoard[targetIdx] == null) continue; // 対象が既に撃破済み
+    if (workBoard[summonIdx] == null) break;
+    if (workBoard[targetIdx] == null) continue;
 
     const defenderCost = getDefenderCost(workBoard[targetIdx]!.cardId);
     const result = resolveAttack(workBoard, summonIdx, targetIdx, {
