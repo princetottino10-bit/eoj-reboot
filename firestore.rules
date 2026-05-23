@@ -14,11 +14,23 @@ service cloud.firestore {
             || (resource.data.joinedBy != null && request.auth.uid == resource.data.joinedBy);
       }
 
-      // 空きルームへの参加操作（joinedBy を自分の uid に設定する）
+      // 参加者が変更してはならない識別フィールドが不変であることを保証
+      function participantFieldsImmutable() {
+        return request.resource.data.createdBy == resource.data.createdBy
+            && request.resource.data.joinedBy  == resource.data.joinedBy
+            && request.resource.data.createdAt == resource.data.createdAt;
+      }
+
+      // 空きルームへの参加操作
+      // 変更可能なのは joinedBy（自分の uid）と phase（'draft' 固定）のみ
       function isJoining() {
         return resource.data.joinedBy == null
-            && request.resource.data.joinedBy == request.auth.uid
-            && request.resource.data.createdBy == resource.data.createdBy;
+            && request.resource.data.joinedBy  == request.auth.uid
+            && request.resource.data.createdBy == resource.data.createdBy
+            && request.resource.data.phase     == 'draft'
+            && request.resource.data.gameState == resource.data.gameState
+            && request.resource.data.draftUi   == resource.data.draftUi
+            && request.resource.data.createdAt == resource.data.createdAt;
       }
 
       // 未参加のルームも読める（参加トランザクション内の get に必要）
@@ -27,10 +39,13 @@ service cloud.firestore {
       // 作成: createdBy を自分の uid に、joinedBy は null のみ許可
       allow create: if isAllowedUser()
           && request.resource.data.createdBy == request.auth.uid
-          && request.resource.data.joinedBy == null;
+          && request.resource.data.joinedBy  == null;
 
-      // 更新: 参加者か、参加操作のみ
-      allow update: if isAllowedUser() && (isParticipant() || isJoining());
+      // 更新: 参加者は識別フィールド不変の条件下で可、または参加操作のみ
+      allow update: if isAllowedUser() && (
+        (isParticipant() && participantFieldsImmutable())
+        || isJoining()
+      );
 
       allow delete: if false;
     }
