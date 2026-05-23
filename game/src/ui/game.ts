@@ -242,11 +242,25 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
     if (isSelected || isItemSel) cls += ' selected';
     if (!isDiscardMode && !canAfford) cls += ' disabled';
     cardEl.className = cls;
-    cardEl.innerHTML = `
-      <div class="card-name">${getCardName(cardId)}</div>
-      <div class="card-cost">コスト: ${cost}</div>
-      <div class="card-type">${isChar ? '【キャラ】' : '【アイテム】'}</div>
-    `;
+
+    if (isChar) {
+      const def = getCharDef(cardId);
+      const kw = def?.keywords.join(' ') ?? '';
+      cardEl.innerHTML = `
+        <div class="card-name">${getCardName(cardId)}</div>
+        <div class="card-cost">${def?.attribute ?? ''} コスト${cost}</div>
+        <div class="card-stats">HP ${def?.hp ?? '?'} / ATK ${def?.atk ?? '?'}</div>
+        ${kw ? `<div class="card-keywords">${kw}</div>` : ''}
+        <div class="card-effect">${def?.effect ?? ''}</div>
+      `;
+    } else {
+      const def = getItemDef(cardId);
+      cardEl.innerHTML = `
+        <div class="card-name">${getCardName(cardId)}</div>
+        <div class="card-cost">【アイテム】 コスト${cost}</div>
+        <div class="card-effect">${def?.effect ?? ''}</div>
+      `;
+    }
     if (isDiscardMode) {
       cardEl.style.borderColor = '#ff6b6b';
       cardEl.addEventListener('click', () => onDiscardCardClick(state, ui, idx));

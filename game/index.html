@@ -217,16 +217,23 @@
       border-radius: 6px;
       padding: 6px 8px;
       cursor: pointer;
-      min-width: 64px; max-width: 100px;
-      text-align: center;
+      min-width: 110px; max-width: 160px;
+      text-align: left;
       transition: border-color 0.1s, background 0.1s;
     }
     .hand-card:hover { border-color: #f0c040; }
     .hand-card.selected { border-color: #f0c040; background: #2a2500; box-shadow: 0 0 6px #f0c04060; }
     .hand-card.disabled { opacity: 0.4; cursor: not-allowed; }
-    .hand-card .card-name { font-size: 0.7rem; font-weight: bold; }
-    .hand-card .card-cost { font-size: 0.65rem; color: #4ecdc4; }
-    .hand-card .card-type { font-size: 0.6rem; color: #888; }
+    .hand-card .card-name { font-size: 0.7rem; font-weight: bold; margin-bottom: 2px; }
+    .hand-card .card-cost { font-size: 0.6rem; color: #4ecdc4; }
+    .hand-card .card-stats { font-size: 0.65rem; color: #ffa040; margin-top: 2px; }
+    .hand-card .card-keywords { font-size: 0.6rem; color: #51cf66; margin-top: 1px; }
+    .hand-card .card-effect {
+      font-size: 0.58rem; color: #aaa; margin-top: 3px;
+      line-height: 1.3;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
     .hand-back {
       background: #0a1a2e;
       border: 2px solid #1a2a4e;
