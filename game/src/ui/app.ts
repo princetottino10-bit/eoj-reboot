@@ -34,6 +34,9 @@ const INITIAL_GAME_UI_EXTRA: GameUiExtra = {
   validCells: [],
   pendingCardId: null,
   pendingCellIdx: null,
+  discardContext: null,
+  effectDirContext: null,
+  itemHandIdx: null,
 };
 
 let state: AppState = {
