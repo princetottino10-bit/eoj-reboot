@@ -153,11 +153,11 @@ export function getValidSummonCells(board: Board, playerIdx: 0 | 1): CellIndex[]
 
 export function findCoverAlly(board: Board, targetIdx: CellIndex): CellIndex | null {
   const target = board[targetIdx];
-  if (target === null) return null;
+  if (target == null) return null;
 
   for (const adj of getAdjacentCells(targetIdx)) {
     const ally = board[adj];
-    if (ally !== null && ally.owner === target.owner && ally.keywords.includes('カバー')) {
+    if (ally != null && ally.owner === target.owner && ally.keywords.includes('カバー')) {
       return adj;
     }
   }

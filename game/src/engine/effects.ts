@@ -182,7 +182,7 @@ function applyAtom(
     case 'give_marker_adj_allies': {
       for (const idx of adjIdxs) {
         const c = nb[idx];
-        if (c !== null && c.owner === owner) {
+        if (c != null && c.owner === owner) {
           nb[idx] = { ...c, markers: { ...c.markers, [atom.marker]: c.markers[atom.marker] + 1 } };
         }
       }
@@ -191,7 +191,7 @@ function applyAtom(
     case 'give_marker_self_and_adj_allies': {
       for (const idx of [summonIdx, ...adjIdxs]) {
         const c = nb[idx];
-        if (c !== null && c.owner === owner) {
+        if (c != null && c.owner === owner) {
           nb[idx] = { ...c, markers: { ...c.markers, [atom.marker]: c.markers[atom.marker] + 1 } };
         }
       }
@@ -199,7 +199,7 @@ function applyAtom(
     }
     case 'give_marker_self': {
       const c = nb[summonIdx];
-      if (c !== null) {
+      if (c != null) {
         nb[summonIdx] = { ...c, markers: { ...c.markers, [atom.marker]: c.markers[atom.marker] + 1 } };
       }
       break;
@@ -207,7 +207,7 @@ function applyAtom(
     case 'heal_adj_allies': {
       for (const idx of adjIdxs) {
         const c = nb[idx];
-        if (c !== null && c.owner === owner) {
+        if (c != null && c.owner === owner) {
           nb[idx] = { ...c, hp: Math.min(c.hp + atom.amount, c.maxHp) };
         }
       }
@@ -216,7 +216,7 @@ function applyAtom(
     case 'atk_delta_adj_allies': {
       for (const idx of adjIdxs) {
         const c = nb[idx];
-        if (c !== null && c.owner === owner) {
+        if (c != null && c.owner === owner) {
           nb[idx] = { ...c, atk: Math.max(0, c.atk + atom.delta) };
         }
       }
@@ -225,7 +225,7 @@ function applyAtom(
     case 'damage_adj_enemies': {
       for (const idx of adjIdxs) {
         const c = nb[idx];
-        if (c !== null && c.owner === opp) {
+        if (c != null && c.owner === opp) {
           const newHp = c.hp - atom.amount;
           nb[idx] = newHp <= 0 ? null : { ...c, hp: newHp };
         }
@@ -294,7 +294,7 @@ export function resolveSummonAutoAttack(
   const workBoard = deepCopyBoard(board);
 
   const summoned = workBoard[summonIdx];
-  if (summoned === null) return { board: workBoard, results: [] };
+  if (summoned == null) return { board: workBoard, results: [] };
 
   const owner = summoned.owner;
   const opp = (1 - owner) as 0 | 1;
@@ -313,19 +313,19 @@ export function resolveSummonAutoAttack(
     const cells = getAttackCells(summonIdx, charDef.attack_cells, summoned.dir);
     targetIdxs = (cells ?? []).filter(idx => {
       const c = workBoard[idx];
-      return c !== null && c.owner === opp;
+      return c != null && c.owner === opp;
     });
   }
 
   const results: AutoAttackResult[] = [];
   for (const targetIdx of targetIdxs) {
-    if (workBoard[summonIdx] === null) break;  // 攻撃者が撃破済み
-    if (workBoard[targetIdx] === null) continue; // 対象が既に撃破済み
+    if (workBoard[summonIdx] == null) break;   // 攻撃者が撃破済み
+    if (workBoard[targetIdx] == null) continue; // 対象が既に撃破済み
 
     const defenderCost = getDefenderCost(workBoard[targetIdx]!.cardId);
     const result = resolveAttack(workBoard, summonIdx, targetIdx, {
       teamDR,
-      weaknessCells,
+      ...(weaknessCells !== undefined ? { weaknessCells } : {}),
       attackType,
       defenderCost,
     });

@@ -130,7 +130,7 @@ function applyDamage(
   defenderCost = 1,
 ): ApplyResult {
   const char = board[targetIdx];
-  if (char === null) return { damage: 0, vpAwarded: 0 };
+  if (char == null) return { damage: 0, vpAwarded: 0 };
   const actual = Math.max(0, amount);
   char.hp -= actual;
   if (char.hp <= 0) {
@@ -157,7 +157,7 @@ export function resolveAttack(
 
   const attacker = board[attackerIdx];
   const defender = board[defenderIdx];
-  if (attacker === null || defender === null) return EMPTY;
+  if (attacker == null || defender == null) return EMPTY;
 
   // 要塞は自ら攻撃できない
   if (opts.isInitiatedByFortress) {
@@ -196,7 +196,7 @@ export function resolveAttack(
 
     // 反撃: 要塞カバーのみ
     let counterDmg = 0;
-    if (board[coverIdx] !== null && hasKw(coverChar, '要塞')) {
+    if (board[coverIdx] != null && hasKw(coverChar, '要塞')) {
       // 要塞カバーは方向に関係なく反撃
       const cr = applyDamage(board, attackerIdx, coverChar.atk, 1);
       counterDmg = cr.damage;
@@ -226,14 +226,14 @@ export function resolveAttack(
   let counterFirst = false;
 
   // 先制反撃（攻撃が来る前に反撃）
-  if (canCounter && defHasQuick && board[attackerIdx] !== null) {
+  if (canCounter && defHasQuick && board[attackerIdx] != null) {
     counterFirst = true;
     const counterDmgRaw = defender.atk - (hasKw(attacker, '防護') ? 1 : 0);
     const cr = applyDamage(board, attackerIdx, counterDmgRaw, 1);
     counterDmg = cr.damage;
 
     // 先制で攻撃者が死亡 → 攻撃自体が来ない
-    if (board[attackerIdx] === null) {
+    if (board[attackerIdx] == null) {
       return { ...EMPTY, isBlind: blind, counterFirst: true, counterDamage: counterDmg };
     }
   }
@@ -250,7 +250,7 @@ export function resolveAttack(
   );
 
   // 通常反撃（先制でない場合、防衛者が生存している場合）
-  if (canCounter && !defHasQuick && board[defenderIdx] !== null && board[attackerIdx] !== null) {
+  if (canCounter && !defHasQuick && board[defenderIdx] != null && board[attackerIdx] != null) {
     const counterDmgRaw = defender.atk - (hasKw(attacker, '防護') ? 1 : 0);
     const cr = applyDamage(board, attackerIdx, counterDmgRaw, 1);
     counterDmg = cr.damage;
