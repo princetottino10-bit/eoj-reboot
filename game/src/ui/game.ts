@@ -10,7 +10,7 @@ import {
 } from '../engine/board.js';
 import { resolveAttack } from '../engine/combat.js';
 import { createCharInstance, attributeHpBonus } from '../engine/gamestate.js';
-import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect } from '../engine/effects.js';
+import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect, applyEffectAfterDir } from '../engine/effects.js';
 import {
   getEffectSpec, getItemSpec, getUltSpec, getFirstSelectTarget,
 } from '../engine/effectSpecs.js';
@@ -20,7 +20,7 @@ import { evalVictory } from '../engine/victory.js';
 import { applyItemEffect } from '../engine/items.js';
 import { applyPendingEffect, applyDiscardEffect } from '../engine/pendingEffects.js';
 import { applyUltDirectEffect, applyUltTargetEffect } from '../engine/ults.js';
-import { calcCostReduction, countAlliesInBPosition } from '../engine/cost.js';
+import { calcCostReduction } from '../engine/cost.js';
 
 export interface GameUiExtra {
   mode: 'idle' | 'hand_selected' | 'summon_dir_pending' | 'char_selected'
@@ -632,14 +632,7 @@ function onEffectDirPicked(state: GameState, ui: GameUiExtra, dir: Direction): v
   newBoard[targetIdx] = { ...target, dir, hasRotated: true };
   let newState = appendLog({ ...state, board: newBoard }, `${getCardName(target.cardId)} を ${DIR_ARROWS[dir]} に向けた`, 'info');
 
-  // trick_v2_12 conditional draw
-  if (cardId === 'trick_v2_12') {
-    const count = countAlliesInBPosition(newState.board, active);
-    if (count >= 3) {
-      newState = drawStep(newState);
-      newState = appendLog(newState, 'B位置3体以上 → 1ドロー', 'info');
-    }
-  }
+  newState = applyEffectAfterDir(newState, cardId, summonIdx, active);
 
   void summonIdx;
   newState = applyVictoryCheck(newState, null);

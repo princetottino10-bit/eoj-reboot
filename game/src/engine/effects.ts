@@ -6,6 +6,7 @@ import type { EffectClause, EffectAtom, EffectTarget, EffectCondition } from './
 import { getEffectSpec, clauseHasPendingEffects, needsTargetSelection } from './effectSpecs.js';
 import { getAdjacentCells, getAttackCells } from './board.js';
 import { resolveAttack } from './combat.js';
+import { countAlliesInBPosition } from './cost.js';
 
 // ============================================================
 // 型
@@ -106,6 +107,8 @@ function evalCondition(
       ).length;
       return count >= cond.min;
     }
+    case 'b_position_ally_count_gte':
+      return countAlliesInBPosition(board, owner) >= cond.min;
     case 'on_matching_attr_cell':
       return charAttr != null && boardAttrs[summonIdx] === charAttr;
     default:
@@ -222,6 +225,34 @@ export function applyAutoEffects(
   }
 
   return { board, players };
+}
+
+/**
+ * 方向選択（effect_dir_pending）完了後に残っている on_summon の自動効果を適用する。
+ * pending 節はスキップし、条件付き節のみ評価して適用する。
+ */
+export function applyEffectAfterDir(
+  state: GameState,
+  cardId: string,
+  summonIdx: CellIndex,
+  active: 0 | 1,
+): GameState {
+  const spec = getEffectSpec(cardId);
+  let board = [...state.board] as Board;
+  let players: [PlayerState, PlayerState] = [{ ...state.players[0] }, { ...state.players[1] }];
+
+  for (const clause of spec.clauses) {
+    if (clause.trigger !== 'on_summon') continue;
+    if (clauseHasPendingEffects(clause)) continue;
+    if (!clause.condition) continue; // 無条件の自動効果は summon 時に適用済み
+    if (!evalCondition(clause.condition, board, summonIdx, active, state.boardAttrs)) continue;
+    for (const atom of clause.effects) {
+      const r = applyAtom(board, players, summonIdx, active, atom);
+      board = r.board;
+      players = r.players;
+    }
+  }
+  return { ...state, board, players };
 }
 
 export interface AutoAttackResult {
