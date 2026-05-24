@@ -315,6 +315,15 @@ describe('item_01: 2枚ドロー', () => {
     expect(result.players[0].hand.length).toBe(1);
     expect(result.players[0].deck.length).toBe(0);
   });
+
+  it('マナは変化しない', () => {
+    const board: Board = Array(9).fill(null);
+    const state = makeState(board, {
+      players: [makePlayer({ deck: ['aggro_v2_01', 'tank_v2_01'], mana: 3 }), makePlayer()],
+    });
+    const result = applyItemEffect(state, 'item_01', undefined, 0);
+    expect(result.players[0].mana).toBe(3);
+  });
 });
 
 // ============================================================

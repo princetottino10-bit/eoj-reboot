@@ -1,6 +1,5 @@
 import type { GameState, CellIndex, Board, Direction } from './types.js';
 import { appendLog } from './types.js';
-import { drawStep } from './turn.js';
 import { clearAffiliatedEffects } from './combat.js';
 import { getCardName } from '../data/cards.js';
 import { ITEM_SPECS } from './effectSpecs.js';
@@ -21,9 +20,14 @@ function applyItemAtom(
 
   // ── 対象不要なアトム ──
   if (atom.type === 'draw') {
-    let ns = state;
-    for (let i = 0; i < atom.count; i++) ns = drawStep(ns);
-    return appendLog(ns, `${atom.count}枚ドロー`, 'info');
+    const np = [...state.players] as typeof state.players;
+    const deck = [...np[active].deck];
+    const hand = [...np[active].hand];
+    for (let i = 0; i < atom.count; i++) {
+      if (deck.length > 0) hand.push(deck.pop()!);
+    }
+    np[active] = { ...np[active], deck, hand };
+    return appendLog({ ...state, players: np }, `${atom.count}枚ドロー`, 'info');
   }
   if (atom.type === 'mana_gain') {
     const np = [...state.players] as typeof state.players;
