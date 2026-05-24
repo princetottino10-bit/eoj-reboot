@@ -253,6 +253,40 @@ describe('resolveAttack', () => {
     const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
     expect(result.vpAwarded).toBeGreaterThan(0);
   });
+
+  it('反撃で攻撃者を撃破 → counterVpAwarded が返る', () => {
+    // P2(DEF, ATK=3) の反撃で P1(ATK, HP=1) を倒す
+    p1.hp = 1; p1.maxHp = 1;
+    p2.atk = 3;
+    const result = resolveAttack(board, 4, 1, { teamDR: [false, false], attackerCost: 2 });
+    expect(board[4]).toBeNull();               // 攻撃者撃破
+    expect(result.counterVpAwarded).toBe(1);  // cost=2 → 1VP
+  });
+
+  it('反撃で攻撃者を撃破しない → counterVpAwarded=0', () => {
+    p1.hp = 5; p1.maxHp = 5;
+    const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
+    expect(result.counterVpAwarded).toBe(0);
+  });
+
+  it('先制反撃で攻撃者撃破 → counterVpAwarded が返る', () => {
+    p1.hp = 1; p1.maxHp = 1;
+    p2.keywords = ['先制'];
+    const result = resolveAttack(board, 4, 1, { teamDR: [false, false], attackerCost: 3 });
+    expect(board[4]).toBeNull();
+    expect(result.counterFirst).toBe(true);
+    expect(result.counterVpAwarded).toBe(2);  // cost=3-4 → 2VP
+  });
+
+  it('反撃ダメージに teamDR が適用される', () => {
+    // P1(owner=0) が teamDR 適用中 → 受ける反撃ダメージ -1
+    // P2(ATK=3) の反撃: 3 - teamDR(1) = 2
+    p1.hp = 5; p1.maxHp = 5;
+    p2.atk = 3;
+    const result = resolveAttack(board, 4, 1, { teamDR: [true, false] });
+    expect(result.counterDamage).toBe(2); // 3 - 1(teamDR) = 2
+    expect(board[4]!.hp).toBe(3);        // 5 - 2 = 3
+  });
 });
 
 // ============================================================
@@ -351,5 +385,41 @@ describe('チームDR', () => {
     // P2(owner=1)がteamDR適用中
     resolveAttack(board, 4, 1, { teamDR: [false, true] });
     expect(board[1]!.hp).toBe(2); // 4 - (3 - 1) = 2
+  });
+});
+
+// ============================================================
+// 無敵（immune）
+// ============================================================
+describe('immune', () => {
+  it('immune > 0 のキャラはダメージを受けない', () => {
+    const board = makeBoard();
+    const attacker = makeChar({ owner: 0, atk: 3, dir: DIR_UP });
+    const defender = makeChar({
+      owner: 1, hp: 3, maxHp: 3, dir: DIR_DOWN,
+      status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, dirLocked: 0, immune: 1 },
+    });
+    board[4] = attacker;
+    board[1] = defender;
+
+    const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
+    expect(result.defenderDamage).toBe(0);
+    expect(board[1]!.hp).toBe(3); // HP変化なし
+    expect(board[1]).not.toBeNull(); // 生存
+  });
+
+  it('immune > 0 のキャラは反撃でもダメージを受けない', () => {
+    const board = makeBoard();
+    const attacker = makeChar({
+      owner: 0, atk: 3, hp: 5, maxHp: 5, dir: DIR_UP,
+      status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, dirLocked: 0, immune: 1 },
+    });
+    const defender = makeChar({ owner: 1, hp: 3, maxHp: 3, dir: DIR_DOWN, atk: 3 });
+    board[4] = attacker;
+    board[1] = defender;
+
+    const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
+    expect(result.counterDamage).toBe(0);
+    expect(board[4]!.hp).toBe(5); // HP変化なし
   });
 });

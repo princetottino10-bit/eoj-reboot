@@ -648,6 +648,7 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
   newState = { ...newState, board: boardAfterAtk };
 
   let vpGained = 0;
+  let oppVpGained = 0;
   for (const { result } of results) {
     if (!result.blocked) {
       if (result.defenderDamage > 0) newState = appendLog(newState, `  → ${result.defenderDamage}ダメージ`, 'damage');
@@ -657,10 +658,20 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
       }
     }
     if (result.counterDamage > 0) newState = appendLog(newState, `  ← 反撃 ${result.counterDamage}ダメージ`, 'damage');
+    if (result.counterVpAwarded > 0) {
+      oppVpGained += result.counterVpAwarded;
+      newState = appendLog(newState, `  ← 撃破（反撃）！ ${result.counterVpAwarded}VP`, 'system');
+    }
   }
   if (vpGained > 0) {
     const np = [...newState.players] as typeof newState.players;
     np[active] = { ...np[active], vp: np[active].vp + vpGained };
+    newState = { ...newState, players: np };
+  }
+  if (oppVpGained > 0) {
+    const opp = (1 - active) as 0 | 1;
+    const np = [...newState.players] as typeof newState.players;
+    np[opp] = { ...np[opp], vp: np[opp].vp + oppVpGained };
     newState = { ...newState, players: np };
   }
 
@@ -734,6 +745,7 @@ function doAttack(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void
     ...(def.weakness_cells !== undefined ? { weaknessCells: def.weakness_cells as RelCoord[] } : {}),
     attackType: def.attack_type === '魔法' ? 'magic' : 'physical',
     defenderCost: getCharDef(targetChar.cardId)?.cost ?? 1,
+    attackerCost: def.cost,
   });
 
   // Mark attacker as acted
@@ -755,6 +767,13 @@ function doAttack(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void
       np[active] = { ...np[active], vp: np[active].vp + result.vpAwarded };
       newState = { ...newState, players: np };
       newState = appendLog(newState, `${defName} 撃破！ ${result.vpAwarded}VP`, 'system');
+    }
+    if (result.counterVpAwarded > 0) {
+      const opp = (1 - active) as 0 | 1;
+      const np = [...newState.players] as typeof newState.players;
+      np[opp] = { ...np[opp], vp: np[opp].vp + result.counterVpAwarded };
+      newState = { ...newState, players: np };
+      newState = appendLog(newState, `${atkName} 撃破（反撃）！ ${result.counterVpAwarded}VP`, 'system');
     }
   }
 

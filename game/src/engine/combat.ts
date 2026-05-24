@@ -18,16 +18,19 @@ export interface AttackOptions {
   attackType?: 'physical' | 'magic';
   /** 防衛者のカードコスト（撃破時VP計算用、省略時は 1VP） */
   defenderCost?: number;
+  /** 攻撃者のカードコスト（反撃撃破時のVP計算用、省略時は 1VP） */
+  attackerCost?: number;
 }
 
 export interface AttackResult {
-  blocked: boolean;       // 要塞により攻撃自体がブロックされた
-  evaded: boolean;        // 回避により攻撃が無効化された
-  isBlind: boolean;       // B位置から攻撃したか
-  counterFirst: boolean;  // 先制反撃が先に発生したか
-  defenderDamage: number; // 防衛者（またはカバー役）が受けたダメージ量
-  counterDamage: number;  // 攻撃者が受けた反撃ダメージ量
-  vpAwarded: number;      // 撃破により獲得したVP（0=撃破なし）
+  blocked: boolean;          // 要塞により攻撃自体がブロックされた
+  evaded: boolean;           // 回避により攻撃が無効化された
+  isBlind: boolean;          // B位置から攻撃したか
+  counterFirst: boolean;     // 先制反撃が先に発生したか
+  defenderDamage: number;    // 防衛者（またはカバー役）が受けたダメージ量
+  counterDamage: number;     // 攻撃者が受けた反撃ダメージ量
+  vpAwarded: number;         // 防衛者撃破で獲得するVP（攻撃側に帰属）
+  counterVpAwarded: number;  // 反撃で攻撃者を撃破した際のVP（防衛側に帰属）
 }
 
 export interface DamageOptions {
@@ -131,6 +134,7 @@ function applyDamage(
 ): ApplyResult {
   const char = board[targetIdx];
   if (char == null) return { damage: 0, vpAwarded: 0 };
+  if (char.status.immune > 0) return { damage: 0, vpAwarded: 0 };
   const actual = Math.max(0, amount);
   char.hp -= actual;
   if (char.hp <= 0) {
@@ -152,7 +156,7 @@ export function resolveAttack(
 ): AttackResult {
   const EMPTY: AttackResult = {
     blocked: false, evaded: false, isBlind: false,
-    counterFirst: false, defenderDamage: 0, counterDamage: 0, vpAwarded: 0,
+    counterFirst: false, defenderDamage: 0, counterDamage: 0, vpAwarded: 0, counterVpAwarded: 0,
   };
 
   const attacker = board[attackerIdx];
@@ -194,17 +198,23 @@ export function resolveAttack(
       board, coverIdx, dmg, opts.defenderCost ?? 1,
     );
 
-    // 反撃: 要塞カバーのみ
+    // 反撃: 要塞カバーのみ（反撃はカバーされないため攻撃者に直接）
     let counterDmg = 0;
+    let counterVp = 0;
     if (board[coverIdx] != null && hasKw(coverChar, '要塞')) {
-      // 要塞カバーは方向に関係なく反撃
-      const cr = applyDamage(board, attackerIdx, coverChar.atk, 1);
+      const counterDmgRaw = Math.max(0,
+        coverChar.atk
+        - (hasKw(attacker, '防護') ? 1 : 0)
+        - (opts.teamDR[attacker.owner] ? 1 : 0),
+      );
+      const cr = applyDamage(board, attackerIdx, counterDmgRaw, opts.attackerCost ?? 1);
       counterDmg = cr.damage;
+      counterVp = cr.vpAwarded;
     }
 
     return {
       blocked: false, evaded: false, isBlind: blind, counterFirst: false,
-      defenderDamage: covDmg, counterDamage: counterDmg, vpAwarded: covVp,
+      defenderDamage: covDmg, counterDamage: counterDmg, vpAwarded: covVp, counterVpAwarded: counterVp,
     };
   }
 
@@ -223,18 +233,26 @@ export function resolveAttack(
   const canCounter = !blind && canCounterAttack(defenderIdx, defender.dir, attackerIdx);
 
   let counterDmg = 0;
+  let counterVp = 0;
   let counterFirst = false;
+
+  const attackerOwner = attacker.owner;
 
   // 先制反撃（攻撃が来る前に反撃）
   if (canCounter && defHasQuick && board[attackerIdx] != null) {
     counterFirst = true;
-    const counterDmgRaw = defender.atk - (hasKw(attacker, '防護') ? 1 : 0);
-    const cr = applyDamage(board, attackerIdx, counterDmgRaw, 1);
+    const counterDmgRaw = Math.max(0,
+      defender.atk
+      - (hasKw(attacker, '防護') ? 1 : 0)
+      - (opts.teamDR[attackerOwner] ? 1 : 0),
+    );
+    const cr = applyDamage(board, attackerIdx, counterDmgRaw, opts.attackerCost ?? 1);
     counterDmg = cr.damage;
+    counterVp = cr.vpAwarded;
 
     // 先制で攻撃者が死亡 → 攻撃自体が来ない
     if (board[attackerIdx] == null) {
-      return { ...EMPTY, isBlind: blind, counterFirst: true, counterDamage: counterDmg };
+      return { ...EMPTY, isBlind: blind, counterFirst: true, counterDamage: counterDmg, counterVpAwarded: counterVp };
     }
   }
 
@@ -251,13 +269,18 @@ export function resolveAttack(
 
   // 通常反撃（先制でない場合、防衛者が生存している場合）
   if (canCounter && !defHasQuick && board[defenderIdx] != null && board[attackerIdx] != null) {
-    const counterDmgRaw = defender.atk - (hasKw(attacker, '防護') ? 1 : 0);
-    const cr = applyDamage(board, attackerIdx, counterDmgRaw, 1);
+    const counterDmgRaw = Math.max(0,
+      defender.atk
+      - (hasKw(attacker, '防護') ? 1 : 0)
+      - (opts.teamDR[attackerOwner] ? 1 : 0),
+    );
+    const cr = applyDamage(board, attackerIdx, counterDmgRaw, opts.attackerCost ?? 1);
     counterDmg = cr.damage;
+    counterVp = cr.vpAwarded;
   }
 
   return {
     blocked: false, evaded: false, isBlind: blind, counterFirst,
-    defenderDamage: defDmg, counterDamage: counterDmg, vpAwarded,
+    defenderDamage: defDmg, counterDamage: counterDmg, vpAwarded, counterVpAwarded: counterVp,
   };
 }

@@ -277,6 +277,7 @@ export function resolveSummonAutoAttack(
       ...(weaknessCells !== undefined ? { weaknessCells } : {}),
       attackType,
       defenderCost,
+      attackerCost: charDef.cost,
     });
     results.push({ targetIdx, result });
   }
