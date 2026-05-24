@@ -1,19 +1,23 @@
 import { setState, getState, resetGameUiExtra } from './app.js';
 import type { GameState, CellIndex, Direction, Board } from '../engine/types.js';
 import type { RelCoord } from '../engine/types.js';
+import { appendLog } from '../engine/types.js';
 import {
-  getCharDef, getItemDef, isCharCard, getCardName, getCardCost, CARD_DB,
+  getCharDef, getItemDef, isCharCard, getCardName, getCardCost,
 } from '../data/cards.js';
 import {
   getAttackCells, getAdjacentCells, getValidSummonCells,
-  cellRow, cellCol, cellIdx as makeCellIdx, isValidCell, relToAbs,
 } from '../engine/board.js';
-import { resolveAttack, clearAffiliatedEffects } from '../engine/combat.js';
+import { resolveAttack } from '../engine/combat.js';
 import { createCharInstance, attributeHpBonus } from '../engine/gamestate.js';
 import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect } from '../engine/effects.js';
 import { getUltSpec } from '../engine/effectSpecs.js';
 import { startTurnPhase, drawStep, endTurnCleanup, spendReactivationMana } from '../engine/turn.js';
 import { evalVictory } from '../engine/victory.js';
+import { applyItemEffect } from '../engine/items.js';
+import { applyPendingEffect, applyDiscardEffect } from '../engine/pendingEffects.js';
+import { applyUltDirectEffect, applyUltTargetEffect } from '../engine/ults.js';
+import { calcCostReduction, countAlliesInBPosition } from '../engine/cost.js';
 
 export interface GameUiExtra {
   mode: 'idle' | 'hand_selected' | 'summon_dir_pending' | 'char_selected'
@@ -299,8 +303,11 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
 
   state.players[active].hand.forEach((cardId, idx) => {
     const cost = getCardCost(cardId);
-    const canAfford = state.players[active].mana >= cost;
     const isChar = isCharCard(cardId);
+    const def = isChar ? getCharDef(cardId) : null;
+    const reduction = def ? calcCostReduction(def, state.board, active) : 0;
+    const effectiveCost = isChar ? Math.max(2, cost - reduction) : cost;
+    const canAfford = state.players[active].mana >= effectiveCost;
     const isSelected = ui.mode === 'hand_selected' && ui.summonHandIdx === idx;
     const isItemSel = ui.mode === 'effect_targeting' && ui.itemHandIdx === idx;
     const isValidSwap = isElementSwapMode && ui.validCells.includes(idx);
@@ -311,15 +318,15 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
     if (isElementSwapMode && !isValidSwap) cls += ' disabled';
     cardEl.className = cls;
 
-    if (isChar) {
-      const def = getCharDef(cardId);
-      const kw = def?.keywords.join(' ') ?? '';
+    if (isChar && def) {
+      const kw = def.keywords.join(' ');
+      const costDisplay = reduction > 0 ? `コスト${effectiveCost}(${cost}→${effectiveCost})` : `コスト${cost}`;
       cardEl.innerHTML = `
         <div class="card-name">${getCardName(cardId)}</div>
-        <div class="card-cost">${def?.attribute ?? ''} コスト${cost}</div>
-        <div class="card-stats">HP ${def?.hp ?? '?'} / ATK ${def?.atk ?? '?'}</div>
+        <div class="card-cost">${def.attribute} ${costDisplay}</div>
+        <div class="card-stats">HP ${def.hp} / ATK ${def.atk}</div>
         ${kw ? `<div class="card-keywords">${kw}</div>` : ''}
-        <div class="card-effect">${def?.effect ?? ''}</div>
+        <div class="card-effect">${def.effect}</div>
       `;
     } else {
       const def = getItemDef(cardId);
@@ -443,6 +450,10 @@ function onHandCardClick(state: GameState, handIdx: number): void {
   const cardId = state.players[active].hand[handIdx]!;
 
   if (isCharCard(cardId)) {
+    const def = getCharDef(cardId);
+    const reduction = def ? calcCostReduction(def, state.board, active) : 0;
+    const effectiveCost = Math.max(2, (def?.cost ?? 0) - reduction);
+    if (state.players[active].mana < effectiveCost) return;
     const validCells = getValidSummonCells(state.board, active);
     setState({
       gameUiExtra: {
@@ -624,7 +635,7 @@ function onEffectDirPicked(state: GameState, ui: GameUiExtra, dir: Direction): v
     setState({ gameState: newState, screen: 'over' });
     return;
   }
-  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+  onEndTurn(newState);
 }
 
 function onDiscardCardClick(state: GameState, ui: GameUiExtra, handIdx: number): void {
@@ -669,7 +680,8 @@ function onDiscardCardClick(state: GameState, ui: GameUiExtra, handIdx: number):
     setState({ gameState: newState, screen: 'over' });
     return;
   }
-  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+  // ultCasterIdx === null means this is a summon-triggered discard effect
+  onEndTurn(newState);
   void mandatory;
 }
 
@@ -713,6 +725,9 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
   const def = getCharDef(cardId);
   if (!def) return;
 
+  const reduction = calcCostReduction(def, state.board, active);
+  const effectiveCost = Math.max(2, def.cost - reduction);
+
   const cellAttr = state.boardAttrs[cellIdx] ?? '虚';
   const hpBonus = attributeHpBonus(def.attribute, cellAttr);
   let instance = createCharInstance(def, active, dir);
@@ -724,7 +739,7 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
   const newHand = [...state.players[active].hand];
   newHand.splice(handIdx, 1);
   const ps = [...state.players] as typeof state.players;
-  ps[active] = { ...ps[active], hand: newHand, mana: ps[active].mana - def.cost };
+  ps[active] = { ...ps[active], hand: newHand, mana: ps[active].mana - effectiveCost };
 
   let newState = appendLog(
     { ...state, board: newBoard, players: ps },
@@ -784,7 +799,7 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
   if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
 
   if (!effect.hasPending) {
-    setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+    onEndTurn(newState);
     return;
   }
 
@@ -817,6 +832,10 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
 
   // Target-selection effects
   const { validCells, hint } = getPendingTargets(newState, cardId, cellIdx);
+  if (validCells.length === 0) {
+    onEndTurn(newState);
+    return;
+  }
   newState = appendLog(newState, `効果: ${hint}`, 'info');
   setState({
     gameState: newState,
@@ -912,7 +931,7 @@ function doResolveEffect(state: GameState, ui: GameUiExtra, targetIdx: CellIndex
   let newState = applyPendingEffect(state, cardId, summonIdx, targetIdx, active);
   newState = applyVictoryCheck(newState, null);
   if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
-  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+  onEndTurn(newState);
 }
 
 function doResolveItemEffect(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void {
@@ -966,259 +985,6 @@ function doApplyImmediateItem(state: GameState, handIdx: number, cardId: string)
 // ============================================================
 // Effect application
 // ============================================================
-
-function applyPendingEffect(
-  state: GameState,
-  cardId: string,
-  summonIdx: CellIndex,
-  targetIdx: CellIndex,
-  active: 0 | 1,
-): GameState {
-  const opp = (1 - active) as 0 | 1;
-  const nb = [...state.board] as Board;
-
-  const giveMarker = (marker: 'protection' | 'evasion' | 'piercing' | 'quickness') => {
-    const c = nb[targetIdx];
-    if (c && c.owner === active) nb[targetIdx] = { ...c, markers: { ...c.markers, [marker]: c.markers[marker] + 1 } };
-  };
-
-  const rotateTarget90 = () => {
-    const c = nb[targetIdx];
-    if (c) nb[targetIdx] = { ...c, dir: ((c.dir + 1) % 4) as Direction };
-  };
-
-  const adjustAtk = (delta: number) => {
-    const c = nb[targetIdx];
-    if (c && c.owner === opp) nb[targetIdx] = { ...c, atk: Math.max(0, c.atk + delta) };
-  };
-
-  const addActionTax = (amount: number) => {
-    const c = nb[targetIdx];
-    if (c && c.owner === opp) nb[targetIdx] = { ...c, status: { ...c.status, actionTax: c.status.actionTax + amount, actionTaxBy: cardId } };
-  };
-
-  void summonIdx;
-
-  switch (cardId) {
-    // ── Synergy ──
-    case 'synergy_v2_01': case 'synergy_v2_04':
-      giveMarker('protection');
-      return appendLog({ ...state, board: nb }, '防護マーカーを付与した', 'info');
-    case 'synergy_v2_02':
-      giveMarker('evasion');
-      return appendLog({ ...state, board: nb }, '回避マーカーを付与した', 'info');
-    case 'synergy_v2_03':
-      giveMarker('piercing');
-      return appendLog({ ...state, board: nb }, '貫通マーカーを付与した', 'info');
-    case 'synergy_v2_09': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, hp: Math.min(c.hp + 1, c.maxHp) };
-      return appendLog({ ...state, board: nb }, 'HPを1回復させた', 'heal');
-    }
-    // ── Trick ──
-    case 'trick_v2_04': {
-      const summoned = nb[summonIdx];
-      const target = nb[targetIdx];
-      nb[summonIdx] = target ?? null;
-      nb[targetIdx] = summoned ?? null;
-      return appendLog({ ...state, board: nb }, '味方と位置を入れ替えた', 'info');
-    }
-    case 'trick_v2_01':
-      rotateTarget90();
-      return appendLog({ ...state, board: nb }, `敵を90°回転させた`, 'info');
-    case 'trick_v2_02':
-      rotateTarget90();
-      return appendLog({ ...state, board: nb }, `敵を90°回転させた`, 'info');
-    case 'trick_v2_06': {
-      const pushed = pushBack(nb, targetIdx);
-      if (pushed) return appendLog({ ...state, board: pushed }, `敵を後退させた`, 'info');
-      return appendLog(state, `後退できない（効果なし）`, 'info');
-    }
-    // ── Control ──
-    case 'control_v2_01':
-      adjustAtk(-1);
-      return appendLog({ ...state, board: nb }, '敵のATKを1下げた', 'info');
-    case 'control_v2_02': case 'control_v2_04': case 'control_v2_11':
-      addActionTax(1);
-      return appendLog({ ...state, board: nb }, '敵の再行動コスト+1', 'info');
-    case 'control_v2_03':
-      adjustAtk(-2);
-      return appendLog({ ...state, board: nb }, '敵のATKを2下げた', 'info');
-    case 'control_v2_05': case 'control_v2_08':
-      rotateTarget90();
-      return appendLog({ ...state, board: nb }, '敵を90°回転させた', 'info');
-    case 'control_v2_07': {
-      // Brainwash any enemy; bonus: ATK-1 on all adjacent enemies
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) {
-        nb[targetIdx] = { ...c, status: { ...c.status, brainwashedTurns: 3, brainwashedBy: cardId } };
-      }
-      const adjIdxs = getAdjacentCells(summonIdx);
-      for (const ai of adjIdxs) {
-        const ac = nb[ai];
-        if (ac && ac.owner === opp) nb[ai] = { ...ac, atk: Math.max(0, ac.atk - 1) };
-      }
-      return appendLog({ ...state, board: nb }, `${getCardName(nb[targetIdx]?.cardId ?? targetIdx.toString())} を洗脳、隣接敵ATK-1`, 'info');
-    }
-    case 'control_v2_10': {
-      adjustAtk(-1);
-      const debuffCount = state.board.filter(c => c !== null && c.owner === opp &&
-        (c.atk < c.baseAtk || c.status.actionTax > 0)).length;
-      let ns = appendLog({ ...state, board: nb }, `敵のATK-1（デバフ敵: ${debuffCount}体）`, 'info');
-      if (debuffCount >= 1) {
-        ns = drawStep(ns);
-        ns = appendLog(ns, 'デバフ1体以上 → 1ドロー', 'info');
-      }
-      if (debuffCount >= 3) {
-        const tgt = ns.board[targetIdx];
-        if (tgt) {
-          const nb2 = [...ns.board] as Board;
-          const newHp = tgt.hp - 1;
-          nb2[targetIdx] = newHp <= 0 ? null : { ...tgt, hp: newHp };
-          if (newHp <= 0) {
-            clearAffiliatedEffects(nb2, tgt.cardId);
-            const np = [...ns.players] as typeof ns.players;
-            np[active] = { ...np[active], vp: np[active].vp + 1 };
-            ns = { ...ns, board: nb2, players: np };
-            ns = appendLog(ns, 'デバフ3体以上 → 1ダメ（撃破！1VP）', 'system');
-          } else {
-            ns = { ...ns, board: nb2 };
-            ns = appendLog(ns, 'デバフ3体以上 → 1ダメ', 'damage');
-          }
-        }
-      }
-      return ns;
-    }
-    default:
-      return appendLog(state, `${cardId} の効果（未実装）`, 'system');
-  }
-}
-
-function applyDiscardEffect(
-  state: GameState,
-  cardId: string,
-  summonIdx: CellIndex,
-  active: 0 | 1,
-  discarded: boolean,
-): GameState {
-  if (!discarded) return state;
-  const opp = (1 - active) as 0 | 1;
-
-  if (cardId === 'trick_v2_03') {
-    const np = [...state.players] as typeof state.players;
-    np[active] = { ...np[active], mana: np[active].mana + 1 };
-    return appendLog({ ...state, players: np }, 'マナ+1', 'info');
-  }
-  if (cardId === 'snipe_v2_07') {
-    let ns = drawStep(state);
-    ns = drawStep(ns);
-    return appendLog(ns, '2枚ドロー', 'info');
-  }
-  if (cardId === 'aggro_v2_10') {
-    // mandatory discard already done; no further effect
-    return state;
-  }
-  if (cardId === 'aggro_v2_03') {
-    // Push an adjacent enemy — find the first one
-    const adjIdxs = getAdjacentCells(summonIdx);
-    for (const ai of adjIdxs) {
-      const c = state.board[ai];
-      if (c && c.owner === opp) {
-        const pushed = pushBack(state.board, ai);
-        if (pushed) return appendLog({ ...state, board: pushed }, `敵を後退させた`, 'info');
-      }
-    }
-    return appendLog(state, '後退できる敵なし（効果なし）', 'info');
-  }
-  return state;
-}
-
-function applyItemEffect(state: GameState, itemId: string, targetIdx: CellIndex, active: 0 | 1): GameState {
-  const opp = (1 - active) as 0 | 1;
-  const nb = [...state.board] as Board;
-
-  switch (itemId) {
-    case 'item_03': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, hp: Math.min(c.hp + 3, c.maxHp) };
-      return appendLog({ ...state, board: nb }, `HP+3`, 'heal');
-    }
-    case 'item_04': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, atk: c.atk + 2 };
-      return appendLog({ ...state, board: nb }, `このターンATK+2`, 'info');
-    }
-    case 'item_grant_piercing': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, markers: { ...c.markers, piercing: c.markers.piercing + 1 } };
-      return appendLog({ ...state, board: nb }, `貫通マーカー付与`, 'info');
-    }
-    case 'item_grant_protection': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, markers: { ...c.markers, protection: c.markers.protection + 1 } };
-      return appendLog({ ...state, board: nb }, `防護マーカー付与`, 'info');
-    }
-    case 'item_reactivate': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, hasActed: false };
-      return appendLog({ ...state, board: nb }, `再行動可能になった`, 'info');
-    }
-    case 'item_self_bounce': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) {
-        nb[targetIdx] = null;
-        const np = [...state.players] as typeof state.players;
-        np[active] = { ...np[active], hand: [...np[active].hand, c.cardId] };
-        return appendLog({ ...state, board: nb, players: np }, `${getCardName(c.cardId)} を手札に戻した`, 'info');
-      }
-      return state;
-    }
-    case 'item_05': {
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) nb[targetIdx] = { ...c, atk: Math.max(0, c.atk - 2) };
-      return appendLog({ ...state, board: nb }, `敵ATK-2`, 'info');
-    }
-    case 'item_06': {
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) {
-        const newHp = c.hp - 2;
-        nb[targetIdx] = newHp <= 0 ? null : { ...c, hp: newHp };
-        if (newHp <= 0) {
-          clearAffiliatedEffects(nb, c.cardId);
-          const np = [...state.players] as typeof state.players;
-          np[active] = { ...np[active], vp: np[active].vp + 1 };
-          return appendLog({ ...state, board: nb, players: np }, `敵に2ダメ（撃破！1VP）`, 'system');
-        }
-        return appendLog({ ...state, board: nb }, `敵に2ダメ`, 'damage');
-      }
-      return state;
-    }
-    case 'item_14': {
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) {
-        nb[targetIdx] = { ...c, dir: ((c.dir + 2) % 4) as Direction, status: { ...c.status, dirLocked: 1 } };
-      }
-      return appendLog({ ...state, board: nb }, `敵を180°回転・向き固定1ターン`, 'info');
-    }
-    case 'item_20': {
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) nb[targetIdx] = { ...c, dir: ((c.dir + 1) % 4) as Direction };
-      return appendLog({ ...state, board: nb }, `敵を90°回転`, 'info');
-    }
-    case 'item_bounce_enemy': {
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) {
-        nb[targetIdx] = null;
-        const np = [...state.players] as typeof state.players;
-        np[opp] = { ...np[opp], hand: [...np[opp].hand, c.cardId] };
-        return appendLog({ ...state, board: nb, players: np }, `${getCardName(c.cardId)} を相手の手札に戻した`, 'system');
-      }
-      return state;
-    }
-    default:
-      return appendLog(state, `${itemId} は未実装`, 'system');
-  }
-}
 
 function getPendingTargets(
   state: GameState,
@@ -1302,104 +1068,6 @@ function getItemTargets(
 // ============================================================
 // Ult handlers
 // ============================================================
-
-function getFrontRowCells(board: Board, casterIdx: CellIndex, dir: Direction, targetOwner: 0 | 1): CellIndex[] {
-  const row = cellRow(casterIdx);
-  const col = cellCol(casterIdx);
-  const cells: CellIndex[] = [];
-  if (dir === 0) {
-    const r = row - 1;
-    if (r >= 0) for (let c = 0; c < 3; c++) cells.push((r * 3 + c) as CellIndex);
-  } else if (dir === 2) {
-    const r = row + 1;
-    if (r <= 2) for (let c = 0; c < 3; c++) cells.push((r * 3 + c) as CellIndex);
-  } else if (dir === 1) {
-    const c = col + 1;
-    if (c <= 2) for (let r = 0; r < 3; r++) cells.push((r * 3 + c) as CellIndex);
-  } else {
-    const c = col - 1;
-    if (c >= 0) for (let r = 0; r < 3; r++) cells.push((r * 3 + c) as CellIndex);
-  }
-  return cells.filter(i => { const ch = board[i]; return ch !== null && ch !== undefined && ch.owner === targetOwner; });
-}
-
-function applyUltDirectEffects(state: GameState, casterIdx: CellIndex, active: 0 | 1): GameState {
-  const nb = [...state.board] as Board;
-  const opp = (1 - active) as 0 | 1;
-  const caster = nb[casterIdx];
-  if (!caster) return state;
-  const cardId = caster.cardId;
-
-  switch (cardId) {
-    case 'aggro_v2_09': {
-      nb[casterIdx] = { ...caster, markers: { ...caster.markers, piercing: caster.markers.piercing + 1 } };
-      return appendLog({ ...state, board: nb }, '貫通マーカーを1枚獲得', 'info');
-    }
-    case 'aggro_v2_12': {
-      const frontCells = getFrontRowCells(nb, casterIdx, caster.dir, opp);
-      const np = [...state.players] as typeof state.players;
-      for (const ci of frontCells) {
-        const target = nb[ci];
-        if (target && target.owner === opp) {
-          const newHp = target.hp - 5;
-          if (newHp <= 0) {
-            nb[ci] = null;
-            clearAffiliatedEffects(nb, target.cardId);
-            np[active] = { ...np[active], vp: np[active].vp + (getCharDef(target.cardId)?.vp ?? 1) };
-          } else {
-            nb[ci] = { ...target, hp: newHp };
-          }
-        }
-      }
-      nb[casterIdx] = { ...caster, hp: 1 };
-      return appendLog({ ...state, board: nb, players: np }, `前列の敵に5ダメ・自身HP1に設定`, 'damage');
-    }
-    case 'tank_v2_08': {
-      const newTeamDR: [boolean, boolean] = [state.teamDR[0], state.teamDR[1]];
-      newTeamDR[active] = true;
-      return appendLog({ ...state, teamDR: newTeamDR }, 'チームダメージ軽減発動', 'system');
-    }
-    case 'tank_v2_10': {
-      const adjIdxs = getAdjacentCells(casterIdx);
-      for (const ai of adjIdxs) {
-        const ally = nb[ai];
-        if (ally && ally.owner === active) {
-          nb[ai] = { ...ally, hp: ally.maxHp, markers: { ...ally.markers, protection: ally.markers.protection + 1 } };
-        }
-      }
-      return appendLog({ ...state, board: nb }, '隣接味方全快＋防護マーカー付与', 'info');
-    }
-    case 'control_v2_10': {
-      for (let i = 0; i < 9; i++) {
-        const c = nb[i];
-        if (c && c.owner === opp) nb[i] = { ...c, atk: Math.max(0, c.atk - 1), baseAtk: Math.max(0, c.baseAtk - 1) };
-      }
-      return appendLog({ ...state, board: nb }, '全敵のATKを永続-1', 'info');
-    }
-    case 'synergy_v2_10': {
-      for (let i = 0; i < 9; i++) {
-        const c = nb[i];
-        if (c && c.owner === active) nb[i] = { ...c, atk: c.atk + 1, baseAtk: c.baseAtk + 1, hp: c.hp + 1, maxHp: c.maxHp + 1 };
-      }
-      return appendLog({ ...state, board: nb }, '全味方のATK+1・最大HP+1（永続）', 'info');
-    }
-    case 'synergy_v2_12': {
-      for (let i = 0; i < 9; i++) {
-        const c = nb[i];
-        if (c && c.owner === active) {
-          nb[i] = { ...c, markers: { protection: c.markers.protection + 1, evasion: c.markers.evasion + 1, piercing: c.markers.piercing + 1, quickness: c.markers.quickness + 1 } };
-        }
-      }
-      return appendLog({ ...state, board: nb }, '全味方に4種マーカーを付与', 'info');
-    }
-    case 'trick_v2_12': {
-      nb[casterIdx] = { ...caster, status: { ...caster.status, immune: caster.status.immune + 1 } };
-      return appendLog({ ...state, board: nb }, '無敵1ターン付与', 'info');
-    }
-    default:
-      return appendLog(state, `${cardId} ウルト効果（未実装）`, 'system');
-  }
-}
 
 function onUltClick(state: GameState, ui: GameUiExtra): void {
   const casterIdx = ui.selectedBoardIdx;
@@ -1495,7 +1163,7 @@ function onUltClick(state: GameState, ui: GameUiExtra): void {
   }
 
   // Direct effects (no target selection)
-  newState = applyUltDirectEffects(newState, casterIdx, active);
+  newState = applyUltDirectEffect(newState, casterIdx, active);
   newState = applyVictoryCheck(newState, null);
   if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
@@ -1507,64 +1175,25 @@ function onUltTargetClick(state: GameState, ui: GameUiExtra, targetIdx: CellInde
   const casterCardId = ui.pendingCardId ?? state.board[casterIdx]?.cardId;
   if (!casterCardId) return;
   const active = state.active;
-  const opp = (1 - active) as 0 | 1;
-  let newState = state;
 
-  switch (casterCardId) {
-    case 'snipe_v2_09':
-    case 'snipe_v2_12': {
-      const dmg = casterCardId === 'snipe_v2_09' ? 4 : 5;
-      const nb = [...newState.board] as Board;
-      const target = nb[targetIdx];
-      if (target && target.owner === opp) {
-        const newHp = target.hp - dmg;
-        if (newHp <= 0) {
-          nb[targetIdx] = null;
-          clearAffiliatedEffects(nb, target.cardId);
-          const np2 = [...newState.players] as typeof newState.players;
-          np2[active] = { ...np2[active], vp: np2[active].vp + (getCharDef(target.cardId)?.vp ?? 1) };
-          newState = appendLog({ ...newState, board: nb, players: np2 }, `${getCardName(target.cardId)} に${dmg}ダメ（貫通）撃破！VP獲得`, 'system');
-        } else {
-          nb[targetIdx] = { ...target, hp: newHp };
-          newState = appendLog({ ...newState, board: nb }, `${getCardName(target.cardId)} に${dmg}ダメ（貫通）`, 'damage');
-        }
-      }
-      break;
-    }
-    case 'control_v2_09': {
-      const nb = [...newState.board] as Board;
-      const target = nb[targetIdx];
-      const casterChar = nb[casterIdx];
-      if (target && target.owner === opp && casterChar) {
-        const steal = Math.min(2, target.atk);
-        nb[targetIdx] = { ...target, atk: Math.max(0, target.atk - steal), baseAtk: Math.max(0, target.baseAtk - steal) };
-        nb[casterIdx] = { ...casterChar, atk: casterChar.atk + steal, baseAtk: casterChar.baseAtk + steal };
-        newState = appendLog({ ...newState, board: nb }, `${getCardName(target.cardId)} のATKを${steal}奪った`, 'info');
-      }
-      break;
-    }
-    case 'trick_v2_09': {
-      const nb = [...newState.board] as Board;
-      const casterChar = nb[casterIdx];
-      const targetChar = nb[targetIdx];
-      nb[casterIdx] = targetChar ?? null;
-      nb[targetIdx] = casterChar ?? null;
-      newState = appendLog({ ...newState, board: nb },
-        `${getCardName(casterChar?.cardId ?? '')} と ${getCardName(targetChar?.cardId ?? '')} の位置を入れ替えた`, 'info');
-      setState({
-        gameState: newState,
-        gameUiExtra: {
-          ...resetGameUiExtra(),
-          mode: 'ult_dir_pending',
-          pendingCellIdx: casterIdx,
-          ultCasterIdx: casterIdx,
-        },
-      });
-      return;
-    }
+  const { newState: afterEffect, continueToDir } = applyUltTargetEffect(state, casterIdx, casterCardId, targetIdx, active);
+
+  if (continueToDir) {
+    const checked = applyVictoryCheck(afterEffect, null);
+    if (checked.winner !== null) { setState({ gameState: checked, screen: 'over' }); return; }
+    setState({
+      gameState: checked,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: 'ult_dir_pending',
+        pendingCellIdx: casterIdx,
+        ultCasterIdx: casterIdx,
+      },
+    });
+    return;
   }
 
-  newState = applyVictoryCheck(newState, null);
+  const newState = applyVictoryCheck(afterEffect, null);
   if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
@@ -1664,43 +1293,6 @@ function doElementSwap(state: GameState, ui: GameUiExtra, swapHandIdx: number): 
 // Utility helpers
 // ============================================================
 
-/** Push a char 1 step backward (opposite of their facing). Returns new board or null if blocked. */
-function pushBack(board: Board, charIdx: CellIndex): Board | null {
-  const char = board[charIdx];
-  if (!char) return null;
-  const DR = [1, 0, -1, 0];
-  const DC = [0, -1, 0, 1];
-  const newRow = cellRow(charIdx) + (DR[char.dir] ?? 0);
-  const newCol = cellCol(charIdx) + (DC[char.dir] ?? 0);
-  if (!isValidCell(newRow, newCol)) return null;
-  const destIdx = makeCellIdx(newRow, newCol);
-  if (board[destIdx] != null) return null;
-  const nb = [...board] as Board;
-  nb[charIdx] = null;
-  nb[destIdx] = char;
-  return nb;
-}
-
-/** Count allied chars that are in B-position of at least one enemy. */
-function countAlliesInBPosition(board: Board, active: 0 | 1): number {
-  const opp = (1 - active) as 0 | 1;
-  const allySet = new Set<number>();
-  board.forEach((c, enemyIdx) => {
-    if (c == null || c.owner !== opp) return;
-    const weakCells = (getCharDef(c.cardId)?.weakness_cells ?? [[-1, 0]]) as [number, number][];
-    for (const [rr, rc] of weakCells) {
-      const [dr, dc] = relToAbs(rr, rc, c.dir);
-      const row = cellRow(enemyIdx) + dr;
-      const col = cellCol(enemyIdx) + dc;
-      if (!isValidCell(row, col)) continue;
-      const wIdx = makeCellIdx(row, col);
-      const ally = board[wIdx];
-      if (ally != null && ally.owner === active) allySet.add(wIdx);
-    }
-  });
-  return allySet.size;
-}
-
 function applyVictoryCheck(state: GameState, endOfTurnPlayer: 0 | 1 | null): GameState {
   const winner = evalVictory(state, endOfTurnPlayer);
   if (winner === null) return state;
@@ -1709,10 +1301,6 @@ function applyVictoryCheck(state: GameState, endOfTurnPlayer: 0 | 1 | null): Gam
   else if (endOfTurnPlayer !== null) reason = `P${endOfTurnPlayer + 1}が5マス支配`;
   else reason = `P${winner + 1}がVP15達成`;
   return { ...state, winner, winReason: reason };
-}
-
-function appendLog(state: GameState, text: string, type: 'system' | 'damage' | 'heal' | 'info'): GameState {
-  return { ...state, log: [...state.log, { text, type }] };
 }
 
 function addLog(text: string, type: 'system' | 'damage' | 'heal' | 'info'): void {

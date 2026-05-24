@@ -192,7 +192,12 @@ describe('createCharInstance', () => {
   });
   it('全マーカーが 0', () => {
     const c = createCharInstance(def, 0, 0);
-    expect(c.markers).toEqual({ protection: 0, evasion: 0, piercing: 0, quickness: 0 });
+    expect(c.markers).toEqual({ protection: 0, evasion: 0, piercing: 0, quickness: 0, aim: 0 });
+  });
+
+  it('tempAtkBuff が 0', () => {
+    const c = createCharInstance(def, 0, 0);
+    expect(c.tempAtkBuff).toBe(0);
   });
   it('全ステータス効果が初期値', () => {
     const c = createCharInstance(def, 0, 0);

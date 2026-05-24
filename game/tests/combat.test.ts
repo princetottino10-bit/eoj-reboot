@@ -25,7 +25,7 @@ function makeChar(overrides: Partial<CharInstance> & { owner: 0 | 1 }): CharInst
     ultUsed: false,
     summonedOnTurn: 0,
     keywords: [],
-    markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0 },
+    markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0, aim: 0 },
     status: {
       brainwashedTurns: 0,
       brainwashedBy: null,
@@ -34,6 +34,7 @@ function makeChar(overrides: Partial<CharInstance> & { owner: 0 | 1 }): CharInst
       dirLocked: 0,
       immune: 0,
     },
+    tempAtkBuff: 0,
     ...overrides,
   };
 }
@@ -66,7 +67,7 @@ describe('calcDamage', () => {
 
   it('防護マーカー: ダメージ-1', () => {
     const attacker = makeChar({ owner: 0, atk: 3 });
-    const defender = makeChar({ owner: 1, markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0 } });
+    const defender = makeChar({ owner: 1, markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0, aim: 0 } });
     expect(calcDamage(attacker, defender, { isBlind: false, teamDR: false })).toBe(2);
   });
 
@@ -95,7 +96,7 @@ describe('calcDamage', () => {
   });
 
   it('貫通マーカー: 防護を無視', () => {
-    const attacker = makeChar({ owner: 0, atk: 2, markers: { protection: 0, evasion: 0, piercing: 1, quickness: 0 } });
+    const attacker = makeChar({ owner: 0, atk: 2, markers: { protection: 0, evasion: 0, piercing: 1, quickness: 0, aim: 0 } });
     const defender = makeChar({ owner: 1, keywords: ['防護'] });
     expect(calcDamage(attacker, defender, { isBlind: false, teamDR: false })).toBe(2);
   });

@@ -85,7 +85,7 @@ export function calcDamage(
   opts: DamageOptions,
 ): number {
   const hasPiercing = hasKw(attacker, '貫通');
-  let dmg = attacker.atk;
+  let dmg = attacker.atk + (attacker.tempAtkBuff ?? 0);
   if (opts.isBlind) dmg += 1;
   if (!hasPiercing && hasKw(defender, '防護')) dmg -= 1;
   if (opts.teamDR) dmg -= 1;

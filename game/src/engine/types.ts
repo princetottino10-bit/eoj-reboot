@@ -25,6 +25,7 @@ export interface Markers {
   evasion: number;    // 回避マーカー枚数
   piercing: number;   // 貫通マーカー枚数
   quickness: number;  // 先制マーカー枚数
+  aim: number;        // 照準マーカー枚数（snipeエース回収条件用）
 }
 
 export type MarkerKey = keyof Markers;
@@ -57,6 +58,8 @@ export interface CharInstance {
   keywords: string[];
   markers: Markers;
   status: StatusEffects;
+  /** このターンのみ有効な一時ATKボーナス（アイテム等） */
+  tempAtkBuff: number;
 }
 
 export type Board = (CharInstance | null)[];
@@ -121,4 +124,12 @@ export interface PendingEffect {
   type: string;
   payload: Record<string, unknown>;
   resolve: (targetIdx: CellIndex) => void;
+}
+
+// ============================================================
+// ユーティリティ
+// ============================================================
+
+export function appendLog(state: GameState, text: string, type: LogEntry['type']): GameState {
+  return { ...state, log: [...state.log, { text, type }] };
 }

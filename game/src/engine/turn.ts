@@ -97,8 +97,15 @@ export function endTurnCleanup(state: GameState): GameState {
   const newTeamDR: [boolean, boolean] = [state.teamDR[0], state.teamDR[1]];
   newTeamDR[opp] = false;
 
+  // 現プレイヤーのキャラのtempAtkBuffをリセット
+  const newBoard = state.board.map(char => {
+    if (char === null || char.owner !== p) return char;
+    return char.tempAtkBuff > 0 ? { ...char, tempAtkBuff: 0 } : char;
+  });
+
   return {
     ...state,
+    board: newBoard,
     players: newPlayers,
     teamDR: newTeamDR,
     active: opp,

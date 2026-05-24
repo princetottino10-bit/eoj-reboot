@@ -1,4 +1,4 @@
-import type { Board, CellIndex, Direction, RelCoord } from './types.js';
+import type { Board, CellIndex, Direction, RelCoord, CharInstance } from './types.js';
 
 export {
   DIR_UP, DIR_RIGHT, DIR_DOWN, DIR_LEFT,
@@ -164,4 +164,47 @@ export function findCoverAlly(board: Board, targetIdx: CellIndex): CellIndex | n
     }
   }
   return null;
+}
+
+// ============================================================
+// 押し出し・前列セル
+// ============================================================
+
+/** Push a char 1 step backward (opposite of their facing). Returns new board or null if blocked. */
+export function pushBack(board: Board, charIdx: CellIndex): Board | null {
+  const char = board[charIdx];
+  if (!char) return null;
+  if (char.keywords.includes('不動')) return null;
+  const DR = [1, 0, -1, 0];
+  const DC = [0, -1, 0, 1];
+  const newRow = cellRow(charIdx) + (DR[char.dir] ?? 0);
+  const newCol = cellCol(charIdx) + (DC[char.dir] ?? 0);
+  if (!isValidCell(newRow, newCol)) return null;
+  const destIdx = cellIdx(newRow, newCol);
+  if (board[destIdx] != null) return null;
+  const nb = [...board] as Board;
+  nb[charIdx] = null;
+  nb[destIdx] = char;
+  return nb;
+}
+
+/** Returns cells in the "front row" (one step ahead of caster's direction) occupied by targetOwner. */
+export function getFrontRowCells(board: Board, casterIdx: CellIndex, dir: Direction, targetOwner: 0 | 1): CellIndex[] {
+  const row = cellRow(casterIdx);
+  const col = cellCol(casterIdx);
+  const cells: CellIndex[] = [];
+  if (dir === 0) {
+    const r = row - 1;
+    if (r >= 0) for (let c = 0; c < 3; c++) cells.push((r * 3 + c) as CellIndex);
+  } else if (dir === 2) {
+    const r = row + 1;
+    if (r <= 2) for (let c = 0; c < 3; c++) cells.push((r * 3 + c) as CellIndex);
+  } else if (dir === 1) {
+    const c = col + 1;
+    if (c <= 2) for (let r = 0; r < 3; r++) cells.push((r * 3 + c) as CellIndex);
+  } else {
+    const c = col - 1;
+    if (c >= 0) for (let r = 0; r < 3; r++) cells.push((r * 3 + c) as CellIndex);
+  }
+  return cells.filter(i => { const ch = board[i]; return ch != null && (ch as CharInstance).owner === targetOwner; });
 }

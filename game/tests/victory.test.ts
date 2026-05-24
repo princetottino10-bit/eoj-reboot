@@ -24,8 +24,9 @@ function makeChar(owner: 0 | 1): CharInstance {
     hp: 3, maxHp: 3, atk: 2, baseAtk: 2, dir: 0,
     hasActed: false, hasRotated: false, ultUsed: false, summonedOnTurn: 0,
     keywords: [],
-    markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0 },
+    markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0, aim: 0 },
     status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, actionTaxBy: null, dirLocked: 0, immune: 0 },
+    tempAtkBuff: 0,
   };
 }
 

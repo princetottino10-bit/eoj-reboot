@@ -7,9 +7,24 @@ import {
   getAttackCells,
   getValidSummonCells,
   findCoverAlly,
+  pushBack,
+  getFrontRowCells,
   DIR_UP, DIR_RIGHT, DIR_DOWN, DIR_LEFT,
 } from '../src/engine/board.js';
-import type { Board, Direction, RelCoord } from '../src/engine/types.js';
+import type { Board, Direction, RelCoord, CharInstance } from '../src/engine/types.js';
+
+function makeChar(owner: 0 | 1, opts: Partial<CharInstance> = {}): CharInstance {
+  return {
+    cardId: 'test_v2_01', owner,
+    hp: 3, maxHp: 3, atk: 2, baseAtk: 2, dir: DIR_UP,
+    hasActed: false, hasRotated: false, ultUsed: false, summonedOnTurn: 0,
+    keywords: [],
+    markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0, aim: 0 },
+    status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, actionTaxBy: null, dirLocked: 0, immune: 0 },
+    tempAtkBuff: 0,
+    ...opts,
+  };
+}
 
 // ============================================================
 // セル座標変換
@@ -293,5 +308,106 @@ describe('findCoverAlly', () => {
     board[3] = { owner: 0, keywords: ['カバー'] } as any;
     const result = findCoverAlly(board, 4);
     expect([1, 3]).toContain(result);
+  });
+});
+
+// ============================================================
+// pushBack
+// ============================================================
+describe('pushBack', () => {
+  it('UP向きのキャラを後退（ボード下方向）に移動', () => {
+    const board: Board = Array(9).fill(null);
+    board[1] = makeChar(0, { dir: DIR_UP }); // row=0,col=1 UP向き → 後退=row+1=row1,col1=idx4
+    const result = pushBack(board, 1);
+    expect(result).not.toBeNull();
+    expect(result![1]).toBeNull();
+    expect(result![4]).not.toBeNull();
+  });
+
+  it('DOWN向きのキャラを後退（ボード上方向）に移動', () => {
+    const board: Board = Array(9).fill(null);
+    board[7] = makeChar(0, { dir: DIR_DOWN }); // row=2,col=1 DOWN向き → 後退=row-1=row1,col1=idx4
+    const result = pushBack(board, 7);
+    expect(result).not.toBeNull();
+    expect(result![7]).toBeNull();
+    expect(result![4]).not.toBeNull();
+  });
+
+  it('壁に背中がある場合はnull（移動不可）', () => {
+    const board: Board = Array(9).fill(null);
+    board[7] = makeChar(0, { dir: DIR_UP }); // row=2,col=1 UP向き → 後退=row+1=row3→盤外
+    expect(pushBack(board, 7)).toBeNull();
+  });
+
+  it('後退先が塞がれている場合はnull', () => {
+    const board: Board = Array(9).fill(null);
+    board[1] = makeChar(0, { dir: DIR_UP }); // row=0,col=1 → 後退先=idx4
+    board[4] = makeChar(1, {}); // idx4が塞がれている
+    expect(pushBack(board, 1)).toBeNull();
+  });
+
+  it('不動キャラは押し出せない', () => {
+    const board: Board = Array(9).fill(null);
+    board[1] = makeChar(0, { dir: DIR_UP, keywords: ['不動'] });
+    expect(pushBack(board, 1)).toBeNull();
+  });
+
+  it('セルが空の場合はnull', () => {
+    const board: Board = Array(9).fill(null);
+    expect(pushBack(board, 4)).toBeNull();
+  });
+});
+
+// ============================================================
+// getFrontRowCells
+// ============================================================
+describe('getFrontRowCells', () => {
+  it('UP向き(dir=0): casterIdx=4 の前列(row=0)に敵がいれば返す', () => {
+    const board: Board = Array(9).fill(null);
+    board[4] = makeChar(0, { dir: DIR_UP });
+    board[0] = makeChar(1, {});
+    board[1] = makeChar(1, {});
+    board[2] = makeChar(0, {}); // 味方は除外
+    const result = getFrontRowCells(board, 4, DIR_UP, 1).sort((a, b) => a - b);
+    expect(result).toEqual([0, 1]);
+  });
+
+  it('DOWN向き(dir=2): casterIdx=4 の前列(row=2)に敵がいれば返す', () => {
+    const board: Board = Array(9).fill(null);
+    board[4] = makeChar(0, { dir: DIR_DOWN });
+    board[6] = makeChar(1, {});
+    board[7] = makeChar(1, {});
+    const result = getFrontRowCells(board, 4, DIR_DOWN, 1).sort((a, b) => a - b);
+    expect(result).toEqual([6, 7]);
+  });
+
+  it('RIGHT向き(dir=1): casterIdx=4 の前列(col=2)に敵がいれば返す', () => {
+    const board: Board = Array(9).fill(null);
+    board[4] = makeChar(0, { dir: DIR_RIGHT });
+    board[2] = makeChar(1, {});
+    board[5] = makeChar(1, {});
+    const result = getFrontRowCells(board, 4, DIR_RIGHT, 1).sort((a, b) => a - b);
+    expect(result).toEqual([2, 5]);
+  });
+
+  it('LEFT向き(dir=3): casterIdx=4 の前列(col=0)に敵がいれば返す', () => {
+    const board: Board = Array(9).fill(null);
+    board[4] = makeChar(0, { dir: DIR_LEFT });
+    board[0] = makeChar(1, {});
+    board[3] = makeChar(1, {});
+    const result = getFrontRowCells(board, 4, DIR_LEFT, 1).sort((a, b) => a - b);
+    expect(result).toEqual([0, 3]);
+  });
+
+  it('前列に誰もいない場合は空配列', () => {
+    const board: Board = Array(9).fill(null);
+    board[4] = makeChar(0, { dir: DIR_UP });
+    expect(getFrontRowCells(board, 4, DIR_UP, 1)).toEqual([]);
+  });
+
+  it('壁際(row=0)でUP向きの場合は前列なし', () => {
+    const board: Board = Array(9).fill(null);
+    board[1] = makeChar(0, { dir: DIR_UP }); // row=0のキャラ → 前列はrow=-1→盤外
+    expect(getFrontRowCells(board, 1, DIR_UP, 1)).toEqual([]);
   });
 });

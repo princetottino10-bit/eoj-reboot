@@ -16,8 +16,9 @@ function makeChar(owner: 0 | 1, opts: Partial<CharInstance> = {}): CharInstance 
     hp: 3, maxHp: 3, atk: 2, baseAtk: 2, dir: 0,
     hasActed: false, hasRotated: false, ultUsed: false, summonedOnTurn: 0,
     keywords: [],
-    markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0 },
+    markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0, aim: 0 },
     status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, actionTaxBy: null, dirLocked: 0, immune: 0 },
+    tempAtkBuff: 0,
     ...opts,
   };
 }
@@ -331,5 +332,31 @@ describe('endTurnCleanup: teamDR', () => {
     const state = makeState({ active: 0, teamDR: [true, false] });
     const next = endTurnCleanup(state);
     expect(next.teamDR[0]).toBe(true);
+  });
+});
+
+describe('endTurnCleanup: tempAtkBuff', () => {
+  it('現プレイヤー(P0)のtempAtkBuffがリセットされる', () => {
+    const board = Array(9).fill(null);
+    board[0] = makeChar(0, { tempAtkBuff: 2 });
+    const state = makeState({ active: 0, board });
+    const next = endTurnCleanup(state);
+    expect(next.board[0]?.tempAtkBuff).toBe(0);
+  });
+
+  it('相手(P1)のtempAtkBuffはリセットされない', () => {
+    const board = Array(9).fill(null);
+    board[0] = makeChar(1, { tempAtkBuff: 2 }); // P1のキャラ
+    const state = makeState({ active: 0, board }); // P0のターン終了
+    const next = endTurnCleanup(state);
+    expect(next.board[0]?.tempAtkBuff).toBe(2); // P1は変わらない
+  });
+
+  it('tempAtkBuff=0のキャラはそのまま', () => {
+    const board = Array(9).fill(null);
+    board[0] = makeChar(0, { tempAtkBuff: 0 });
+    const state = makeState({ active: 0, board });
+    const next = endTurnCleanup(state);
+    expect(next.board[0]?.tempAtkBuff).toBe(0);
   });
 });

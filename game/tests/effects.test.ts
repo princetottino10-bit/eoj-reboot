@@ -18,8 +18,9 @@ function makeChar(owner: 0 | 1, opts: Partial<CharInstance> = {}): CharInstance 
     hp: 3, maxHp: 3, atk: 2, baseAtk: 2, dir: 0,
     hasActed: false, hasRotated: false, ultUsed: false, summonedOnTurn: 0,
     keywords: [],
-    markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0 },
+    markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0, aim: 0 },
     status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, actionTaxBy: null, dirLocked: 0, immune: 0 },
+    tempAtkBuff: 0,
     ...opts,
   };
 }
@@ -135,7 +136,7 @@ describe('applyAutoEffects: give_marker adj_allies', () => {
   it('既存のマーカーに積み重ね可能', () => {
     const board = emptyBoard();
     board[4] = makeChar(0);
-    board[1] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0 } });
+    board[1] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0, aim: 0 } });
 
     const { board: nb } = applyAutoEffects(makeState(board), 4, 0, fx);
     expect(nb[1]?.markers.protection).toBe(2);
@@ -348,9 +349,9 @@ describe('applyAutoEffects: 条件 marker_ally_count_gte', () => {
     const board = emptyBoard();
     board[4] = makeChar(0);
     board[1] = makeChar(0, { atk: 2 });
-    board[0] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0 } });
-    board[2] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0 } });
-    board[6] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0 } });
+    board[0] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0, aim: 0 } });
+    board[2] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0, aim: 0 } });
+    board[6] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0, aim: 0 } });
 
     const { board: nb } = applyAutoEffects(makeState(board), 4, 0, fx);
     expect(nb[1]?.atk).toBe(3);
@@ -360,8 +361,8 @@ describe('applyAutoEffects: 条件 marker_ally_count_gte', () => {
     const board = emptyBoard();
     board[4] = makeChar(0);
     board[1] = makeChar(0, { atk: 2 });
-    board[0] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0 } });
-    board[2] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0 } });
+    board[0] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0, aim: 0 } });
+    board[2] = makeChar(0, { markers: { protection: 1, evasion: 0, piercing: 0, quickness: 0, aim: 0 } });
 
     const { board: nb } = applyAutoEffects(makeState(board), 4, 0, fx);
     expect(nb[1]?.atk).toBe(2);
