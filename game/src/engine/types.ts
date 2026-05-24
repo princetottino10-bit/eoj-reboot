@@ -50,6 +50,8 @@ export interface CharInstance {
   hasActed: boolean;
   hasRotated: boolean;
   ultUsed: boolean;
+  /** このキャラが召喚されたターン番号（next_turn_onwards ウルト判定用） */
+  summonedOnTurn: number;
   /** カードに印刷されているキーワード（永続、消費しない） */
   keywords: string[];
   markers: Markers;

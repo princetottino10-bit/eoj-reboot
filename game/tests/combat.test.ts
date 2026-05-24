@@ -23,6 +23,7 @@ function makeChar(overrides: Partial<CharInstance> & { owner: 0 | 1 }): CharInst
     hasActed: false,
     hasRotated: false,
     ultUsed: false,
+    summonedOnTurn: 0,
     keywords: [],
     markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0 },
     status: {

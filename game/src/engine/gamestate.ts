@@ -90,6 +90,7 @@ export function createCharInstance(
     hasActed: false,
     hasRotated: false,
     ultUsed: false,
+    summonedOnTurn: 0,
     keywords: [...def.keywords],
     markers: { protection: 0, evasion: 0, piercing: 0, quickness: 0 },
     status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, dirLocked: 0, immune: 0 },

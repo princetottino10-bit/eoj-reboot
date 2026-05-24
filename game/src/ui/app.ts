@@ -47,6 +47,8 @@ const INITIAL_GAME_UI_EXTRA: GameUiExtra = {
   discardContext: null,
   effectDirContext: null,
   itemHandIdx: null,
+  ultCasterIdx: null,
+  elementSwapBoardIdx: null,
 };
 
 let state: AppState = {

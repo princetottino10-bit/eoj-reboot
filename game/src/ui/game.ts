@@ -11,12 +11,15 @@ import {
 import { resolveAttack } from '../engine/combat.js';
 import { createCharInstance, attributeHpBonus } from '../engine/gamestate.js';
 import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect } from '../engine/effects.js';
+import { getUltSpec } from '../engine/effectSpecs.js';
 import { startTurnPhase, drawStep, endTurnCleanup, spendReactivationMana } from '../engine/turn.js';
 import { evalVictory } from '../engine/victory.js';
 
 export interface GameUiExtra {
   mode: 'idle' | 'hand_selected' | 'summon_dir_pending' | 'char_selected'
-      | 'attack_targeting' | 'effect_targeting' | 'effect_dir_pending' | 'discard_pending';
+      | 'attack_targeting' | 'effect_targeting' | 'effect_dir_pending' | 'discard_pending'
+      | 'ult_targeting' | 'ult_dir_pending'
+      | 'element_swap_ally_pending' | 'element_swap_hand_pending';
   validCells: CellIndex[];
   dirPickerCell: CellIndex | null;
   summonHandIdx: number | null;
@@ -29,6 +32,10 @@ export interface GameUiExtra {
   discardContext: { cardId: string; cellIdx: CellIndex; mandatory: boolean } | null;
   /** Index of item card being played (in active player's hand) */
   itemHandIdx: number | null;
+  /** Ult caster's board index (for multi-step ult flows) */
+  ultCasterIdx: CellIndex | null;
+  /** Board index selected in element_swap step 1 */
+  elementSwapBoardIdx: CellIndex | null;
 }
 
 const DIR_ARROWS = ['↑', '→', '↓', '←'] as const;
@@ -148,6 +155,12 @@ export function renderGame(state: GameState, ui: GameUiExtra): HTMLElement {
       (dir) => onEffectDirPicked(state, ui, dir),
     ));
   }
+  if (ui.mode === 'ult_dir_pending' && ui.pendingCellIdx !== null) {
+    div.appendChild(buildDirPickerOverlay(
+      '向きを選択（ウルト）',
+      (dir) => onUltDirPicked(state, ui, dir),
+    ));
+  }
 
   return div;
 }
@@ -196,6 +209,19 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
           actionPanel.appendChild(rotBtn);
         }
       }
+
+      const ultSpec = getUltSpec(char.cardId);
+      if (ultSpec !== null && !char.ultUsed && state.players[active].vp >= ultSpec.vpCost) {
+        const timingOk = ultSpec.timing === 'immediate' || state.turn > char.summonedOnTurn;
+        if (timingOk) {
+          const ultBtn = document.createElement('button');
+          ultBtn.className = 'btn btn-warning';
+          ultBtn.textContent = `ウルト (${ultSpec.vpCost}VP)`;
+          ultBtn.addEventListener('click', () => onUltClick(state, ui));
+          actionPanel.appendChild(ultBtn);
+        }
+      }
+
       actionPanel.appendChild(cancel());
     }
   } else if (ui.mode === 'discard_pending') {
@@ -226,6 +252,30 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
     else if (ui.mode === 'effect_dir_pending') hint.textContent = '向きを選択してください（オーバーレイ）';
     else hint.textContent = ui.itemHandIdx !== null ? 'アイテム効果の対象を選択' : '効果の対象を選択';
     actionPanel.appendChild(hint);
+  } else if (ui.mode === 'ult_targeting') {
+    actionPanel.appendChild(cancel());
+    const hint = document.createElement('div');
+    hint.className = 'action-label';
+    const ultName = ui.pendingCardId ? getCardName(ui.pendingCardId) : 'ウルト';
+    hint.textContent = `${ultName}のウルト: 対象を選択`;
+    actionPanel.appendChild(hint);
+  } else if (ui.mode === 'ult_dir_pending') {
+    const hint = document.createElement('div');
+    hint.className = 'action-label';
+    hint.textContent = '向きを選択してください（オーバーレイ）';
+    actionPanel.appendChild(hint);
+  } else if (ui.mode === 'element_swap_ally_pending') {
+    actionPanel.appendChild(cancel());
+    const hint = document.createElement('div');
+    hint.className = 'action-label';
+    hint.textContent = '入れ替える盤面の味方を選択';
+    actionPanel.appendChild(hint);
+  } else if (ui.mode === 'element_swap_hand_pending') {
+    actionPanel.appendChild(cancel());
+    const hint = document.createElement('div');
+    hint.className = 'action-label';
+    hint.textContent = '入れ替える手札のキャラを選択（緑枠）';
+    actionPanel.appendChild(hint);
   }
 
   return actionPanel;
@@ -242,6 +292,7 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
   const handCards = document.createElement('div');
   handCards.className = 'hand-cards';
   const isDiscardMode = ui.mode === 'discard_pending';
+  const isElementSwapMode = ui.mode === 'element_swap_hand_pending';
 
   const { online: isOnline, myPlayerIndex } = getState();
   const isMyTurn = !isOnline || myPlayerIndex === active;
@@ -252,10 +303,12 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
     const isChar = isCharCard(cardId);
     const isSelected = ui.mode === 'hand_selected' && ui.summonHandIdx === idx;
     const isItemSel = ui.mode === 'effect_targeting' && ui.itemHandIdx === idx;
+    const isValidSwap = isElementSwapMode && ui.validCells.includes(idx);
     const cardEl = document.createElement('div');
     let cls = 'hand-card';
     if (isSelected || isItemSel) cls += ' selected';
-    if (!isDiscardMode && !canAfford) cls += ' disabled';
+    if (!isDiscardMode && !isElementSwapMode && !canAfford) cls += ' disabled';
+    if (isElementSwapMode && !isValidSwap) cls += ' disabled';
     cardEl.className = cls;
 
     if (isChar) {
@@ -276,10 +329,13 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
         <div class="card-effect">${def?.effect ?? ''}</div>
       `;
     }
-    if (isDiscardMode && isMyTurn) {
+    if (isElementSwapMode && isMyTurn && isValidSwap) {
+      cardEl.style.borderColor = '#00cc66';
+      cardEl.addEventListener('click', () => doElementSwap(state, ui, idx));
+    } else if (isDiscardMode && isMyTurn) {
       cardEl.style.borderColor = '#ff6b6b';
       cardEl.addEventListener('click', () => onDiscardCardClick(state, ui, idx));
-    } else if (canAfford && isMyTurn) {
+    } else if (!isElementSwapMode && canAfford && isMyTurn) {
       cardEl.addEventListener('click', () => onHandCardClick(state, idx));
     }
     handCards.appendChild(cardEl);
@@ -309,7 +365,7 @@ function buildCell(state: GameState, ui: GameUiExtra, idx: CellIndex): HTMLEleme
 
   let classes = 'cell';
   if (char) classes += ` owner-${char.owner}`;
-  if (ui.validCells.includes(idx)) {
+  if (ui.validCells.includes(idx) && ui.mode !== 'element_swap_hand_pending') {
     classes += ui.mode === 'attack_targeting' ? ' attack-target' : ' valid';
   }
   if (ui.selectedBoardIdx === idx || ui.effectDirContext?.targetIdx === idx) classes += ' selected';
@@ -416,7 +472,19 @@ function onHandCardClick(state: GameState, handIdx: number): void {
   }
 
   if (cardId === 'item_element_swap') {
-    addLog('item_element_swap は未実装です', 'system');
+    const allAllies = state.board
+      .map((c, i) => (c !== null && c.owner === active ? i : -1))
+      .filter(i => i >= 0) as CellIndex[];
+    if (allAllies.length === 0) { addLog('味方がいません', 'system'); return; }
+    setState({
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: 'element_swap_ally_pending',
+        validCells: allAllies,
+        itemHandIdx: handIdx,
+        pendingCardId: cardId,
+      },
+    });
     return;
   }
 
@@ -454,6 +522,16 @@ function onCellClick(state: GameState, ui: GameUiExtra, idx: CellIndex): void {
     } else {
       doResolveEffect(state, ui, idx);
     }
+    return;
+  }
+  if (ui.mode === 'ult_targeting') {
+    if (!ui.validCells.includes(idx)) return;
+    onUltTargetClick(state, ui, idx);
+    return;
+  }
+  if (ui.mode === 'element_swap_ally_pending') {
+    if (!ui.validCells.includes(idx)) return;
+    onElementSwapAllyClick(state, ui, idx);
     return;
   }
 
@@ -565,6 +643,27 @@ function onDiscardCardClick(state: GameState, ui: GameUiExtra, handIdx: number):
   ps[active] = { ...ps[active], hand: newHand, discard: newDiscard };
   let newState = appendLog({ ...state, players: ps }, `${getCardName(discarded)} を捨てた`, 'info');
 
+  // Ult discard flow (snipe_v2_09): proceed to enemy targeting
+  if (ui.ultCasterIdx !== null) {
+    const opp = (1 - active) as 0 | 1;
+    const allEnemies = newState.board
+      .map((c, i) => (c !== null && c.owner === opp ? i : -1))
+      .filter(i => i >= 0) as CellIndex[];
+    newState = applyVictoryCheck(newState, null);
+    if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+    setState({
+      gameState: newState,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: 'ult_targeting',
+        validCells: allEnemies,
+        ultCasterIdx: ui.ultCasterIdx,
+        pendingCardId: ui.pendingCardId,
+      },
+    });
+    return;
+  }
+
   // Apply the effect that required discard
   newState = applyDiscardEffect(newState, cardId, cellIdx, active, true);
   newState = applyVictoryCheck(newState, null);
@@ -620,7 +719,7 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
   const hpBonus = attributeHpBonus(def.attribute, cellAttr);
   let instance = createCharInstance(def, active, dir);
   const bonusedHp = Math.max(1, instance.hp + hpBonus);
-  instance = { ...instance, hp: bonusedHp, maxHp: bonusedHp };
+  instance = { ...instance, hp: bonusedHp, maxHp: bonusedHp, summonedOnTurn: state.turn };
 
   const newBoard = [...state.board] as Board;
   newBoard[cellIdx] = instance;
@@ -1198,6 +1297,365 @@ function getItemTargets(
     }
     default: return { validCells: [], hint: `${itemId} 対象選択` };
   }
+}
+
+// ============================================================
+// Ult handlers
+// ============================================================
+
+function getFrontRowCells(board: Board, casterIdx: CellIndex, dir: Direction, targetOwner: 0 | 1): CellIndex[] {
+  const row = cellRow(casterIdx);
+  const col = cellCol(casterIdx);
+  const cells: CellIndex[] = [];
+  if (dir === 0) {
+    const r = row - 1;
+    if (r >= 0) for (let c = 0; c < 3; c++) cells.push((r * 3 + c) as CellIndex);
+  } else if (dir === 2) {
+    const r = row + 1;
+    if (r <= 2) for (let c = 0; c < 3; c++) cells.push((r * 3 + c) as CellIndex);
+  } else if (dir === 1) {
+    const c = col + 1;
+    if (c <= 2) for (let r = 0; r < 3; r++) cells.push((r * 3 + c) as CellIndex);
+  } else {
+    const c = col - 1;
+    if (c >= 0) for (let r = 0; r < 3; r++) cells.push((r * 3 + c) as CellIndex);
+  }
+  return cells.filter(i => { const ch = board[i]; return ch !== null && ch !== undefined && ch.owner === targetOwner; });
+}
+
+function applyUltDirectEffects(state: GameState, casterIdx: CellIndex, active: 0 | 1): GameState {
+  const nb = [...state.board] as Board;
+  const opp = (1 - active) as 0 | 1;
+  const caster = nb[casterIdx];
+  if (!caster) return state;
+  const cardId = caster.cardId;
+
+  switch (cardId) {
+    case 'aggro_v2_09': {
+      nb[casterIdx] = { ...caster, markers: { ...caster.markers, piercing: caster.markers.piercing + 1 } };
+      return appendLog({ ...state, board: nb }, '貫通マーカーを1枚獲得', 'info');
+    }
+    case 'aggro_v2_12': {
+      const frontCells = getFrontRowCells(nb, casterIdx, caster.dir, opp);
+      const np = [...state.players] as typeof state.players;
+      for (const ci of frontCells) {
+        const target = nb[ci];
+        if (target && target.owner === opp) {
+          const newHp = target.hp - 5;
+          if (newHp <= 0) {
+            nb[ci] = null;
+            np[active] = { ...np[active], vp: np[active].vp + (getCharDef(target.cardId)?.vp ?? 1) };
+          } else {
+            nb[ci] = { ...target, hp: newHp };
+          }
+        }
+      }
+      nb[casterIdx] = { ...caster, hp: 1 };
+      return appendLog({ ...state, board: nb, players: np }, `前列の敵に5ダメ・自身HP1に設定`, 'damage');
+    }
+    case 'tank_v2_08': {
+      const newTeamDR: [boolean, boolean] = [state.teamDR[0], state.teamDR[1]];
+      newTeamDR[active] = true;
+      return appendLog({ ...state, teamDR: newTeamDR }, 'チームダメージ軽減発動', 'system');
+    }
+    case 'tank_v2_10': {
+      const adjIdxs = getAdjacentCells(casterIdx);
+      for (const ai of adjIdxs) {
+        const ally = nb[ai];
+        if (ally && ally.owner === active) {
+          nb[ai] = { ...ally, hp: ally.maxHp, markers: { ...ally.markers, protection: ally.markers.protection + 1 } };
+        }
+      }
+      return appendLog({ ...state, board: nb }, '隣接味方全快＋防護マーカー付与', 'info');
+    }
+    case 'control_v2_10': {
+      for (let i = 0; i < 9; i++) {
+        const c = nb[i];
+        if (c && c.owner === opp) nb[i] = { ...c, atk: Math.max(0, c.atk - 1), baseAtk: Math.max(0, c.baseAtk - 1) };
+      }
+      return appendLog({ ...state, board: nb }, '全敵のATKを永続-1', 'info');
+    }
+    case 'synergy_v2_10': {
+      for (let i = 0; i < 9; i++) {
+        const c = nb[i];
+        if (c && c.owner === active) nb[i] = { ...c, atk: c.atk + 1, baseAtk: c.baseAtk + 1, hp: c.hp + 1, maxHp: c.maxHp + 1 };
+      }
+      return appendLog({ ...state, board: nb }, '全味方のATK+1・最大HP+1（永続）', 'info');
+    }
+    case 'synergy_v2_12': {
+      for (let i = 0; i < 9; i++) {
+        const c = nb[i];
+        if (c && c.owner === active) {
+          nb[i] = { ...c, markers: { protection: c.markers.protection + 1, evasion: c.markers.evasion + 1, piercing: c.markers.piercing + 1, quickness: c.markers.quickness + 1 } };
+        }
+      }
+      return appendLog({ ...state, board: nb }, '全味方に4種マーカーを付与', 'info');
+    }
+    case 'trick_v2_12': {
+      nb[casterIdx] = { ...caster, status: { ...caster.status, immune: caster.status.immune + 1 } };
+      return appendLog({ ...state, board: nb }, '無敵1ターン付与', 'info');
+    }
+    default:
+      return appendLog(state, `${cardId} ウルト効果（未実装）`, 'system');
+  }
+}
+
+function onUltClick(state: GameState, ui: GameUiExtra): void {
+  const casterIdx = ui.selectedBoardIdx;
+  if (casterIdx === null) return;
+  const caster = state.board[casterIdx];
+  if (!caster) return;
+  const spec = getUltSpec(caster.cardId);
+  if (!spec) return;
+  const active = state.active;
+  const opp = (1 - active) as 0 | 1;
+
+  // Spend VP, mark used
+  const np = [...state.players] as typeof state.players;
+  np[active] = { ...np[active], vp: np[active].vp - spec.vpCost };
+  const nb = [...state.board] as Board;
+  nb[casterIdx] = { ...caster, ultUsed: true };
+  let newState = appendLog({ ...state, board: nb, players: np }, `${getCardName(caster.cardId)} がウルト発動！（${spec.vpCost}VP消費）`, 'system');
+
+  // snipe_v2_09: mandatory discard, then select enemy
+  if (caster.cardId === 'snipe_v2_09') {
+    setState({
+      gameState: newState,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: 'discard_pending',
+        discardContext: { cardId: caster.cardId, cellIdx: casterIdx, mandatory: true },
+        ultCasterIdx: casterIdx,
+        pendingCardId: caster.cardId,
+      },
+    });
+    return;
+  }
+
+  // snipe_v2_12: self damage 2, then select enemy
+  if (caster.cardId === 'snipe_v2_12') {
+    const updCaster = newState.board[casterIdx];
+    if (updCaster) {
+      const nb2 = [...newState.board] as Board;
+      const newHp = updCaster.hp - 2;
+      nb2[casterIdx] = newHp <= 0 ? null : { ...updCaster, hp: newHp };
+      newState = appendLog({ ...newState, board: nb2 }, `自身に2ダメ（ウルトコスト）`, 'damage');
+    }
+    const allEnemies = newState.board
+      .map((c, i) => (c !== null && c.owner === opp ? i : -1))
+      .filter(i => i >= 0) as CellIndex[];
+    setState({
+      gameState: newState,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: 'ult_targeting',
+        validCells: allEnemies,
+        ultCasterIdx: casterIdx,
+        pendingCardId: caster.cardId,
+      },
+    });
+    return;
+  }
+
+  // control_v2_09: atk_steal from select_enemy
+  if (caster.cardId === 'control_v2_09') {
+    const allEnemies = newState.board
+      .map((c, i) => (c !== null && c.owner === opp ? i : -1))
+      .filter(i => i >= 0) as CellIndex[];
+    setState({
+      gameState: newState,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: 'ult_targeting',
+        validCells: allEnemies,
+        ultCasterIdx: casterIdx,
+        pendingCardId: caster.cardId,
+      },
+    });
+    return;
+  }
+
+  // trick_v2_09: swap_positions with select_any (excluding self)
+  if (caster.cardId === 'trick_v2_09') {
+    const allUnits = newState.board
+      .map((c, i) => (c !== null && i !== casterIdx ? i : -1))
+      .filter(i => i >= 0) as CellIndex[];
+    setState({
+      gameState: newState,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: 'ult_targeting',
+        validCells: allUnits,
+        ultCasterIdx: casterIdx,
+        pendingCardId: caster.cardId,
+      },
+    });
+    return;
+  }
+
+  // Direct effects (no target selection)
+  newState = applyUltDirectEffects(newState, casterIdx, active);
+  newState = applyVictoryCheck(newState, null);
+  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+}
+
+function onUltTargetClick(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void {
+  const casterIdx = ui.ultCasterIdx;
+  if (casterIdx === null) return;
+  const casterCardId = ui.pendingCardId ?? state.board[casterIdx]?.cardId;
+  if (!casterCardId) return;
+  const active = state.active;
+  const opp = (1 - active) as 0 | 1;
+  let newState = state;
+
+  switch (casterCardId) {
+    case 'snipe_v2_09':
+    case 'snipe_v2_12': {
+      const dmg = casterCardId === 'snipe_v2_09' ? 4 : 5;
+      const nb = [...newState.board] as Board;
+      const target = nb[targetIdx];
+      if (target && target.owner === opp) {
+        const newHp = target.hp - dmg;
+        if (newHp <= 0) {
+          nb[targetIdx] = null;
+          const np2 = [...newState.players] as typeof newState.players;
+          np2[active] = { ...np2[active], vp: np2[active].vp + (getCharDef(target.cardId)?.vp ?? 1) };
+          newState = appendLog({ ...newState, board: nb, players: np2 }, `${getCardName(target.cardId)} に${dmg}ダメ（貫通）撃破！VP獲得`, 'system');
+        } else {
+          nb[targetIdx] = { ...target, hp: newHp };
+          newState = appendLog({ ...newState, board: nb }, `${getCardName(target.cardId)} に${dmg}ダメ（貫通）`, 'damage');
+        }
+      }
+      break;
+    }
+    case 'control_v2_09': {
+      const nb = [...newState.board] as Board;
+      const target = nb[targetIdx];
+      const casterChar = nb[casterIdx];
+      if (target && target.owner === opp && casterChar) {
+        const steal = Math.min(2, target.atk);
+        nb[targetIdx] = { ...target, atk: Math.max(0, target.atk - steal), baseAtk: Math.max(0, target.baseAtk - steal) };
+        nb[casterIdx] = { ...casterChar, atk: casterChar.atk + steal, baseAtk: casterChar.baseAtk + steal };
+        newState = appendLog({ ...newState, board: nb }, `${getCardName(target.cardId)} のATKを${steal}奪った`, 'info');
+      }
+      break;
+    }
+    case 'trick_v2_09': {
+      const nb = [...newState.board] as Board;
+      const casterChar = nb[casterIdx];
+      const targetChar = nb[targetIdx];
+      nb[casterIdx] = targetChar ?? null;
+      nb[targetIdx] = casterChar ?? null;
+      newState = appendLog({ ...newState, board: nb },
+        `${getCardName(casterChar?.cardId ?? '')} と ${getCardName(targetChar?.cardId ?? '')} の位置を入れ替えた`, 'info');
+      setState({
+        gameState: newState,
+        gameUiExtra: {
+          ...resetGameUiExtra(),
+          mode: 'ult_dir_pending',
+          pendingCellIdx: casterIdx,
+          ultCasterIdx: casterIdx,
+        },
+      });
+      return;
+    }
+  }
+
+  newState = applyVictoryCheck(newState, null);
+  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+}
+
+function onUltDirPicked(state: GameState, ui: GameUiExtra, dir: Direction): void {
+  const targetCellIdx = ui.pendingCellIdx;
+  if (targetCellIdx === null) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+  const nb = [...state.board] as Board;
+  const unit = nb[targetCellIdx];
+  if (!unit) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+  nb[targetCellIdx] = { ...unit, dir };
+  const newState = appendLog({ ...state, board: nb }, `${getCardName(unit.cardId)} を ${DIR_ARROWS[dir]} に向けた`, 'info');
+  const checked = applyVictoryCheck(newState, null);
+  if (checked.winner !== null) { setState({ gameState: checked, screen: 'over' }); return; }
+  setState({ gameState: checked, gameUiExtra: resetGameUiExtra() });
+}
+
+// ============================================================
+// Element swap (item_element_swap)
+// ============================================================
+
+function onElementSwapAllyClick(state: GameState, ui: GameUiExtra, boardIdx: CellIndex): void {
+  const handIdx = ui.itemHandIdx;
+  if (handIdx === null) return;
+  const active = state.active;
+  const boardChar = state.board[boardIdx];
+  if (!boardChar) return;
+  const boardCharDef = getCharDef(boardChar.cardId);
+  if (!boardCharDef) return;
+  const boardAttr = boardCharDef.attribute;
+
+  const matchingHandIdxs = state.players[active].hand
+    .map((cId, i) => {
+      if (!isCharCard(cId)) return -1;
+      const def = getCharDef(cId);
+      return (def && def.attribute === boardAttr) ? i : -1;
+    })
+    .filter(i => i >= 0) as number[];
+
+  if (matchingHandIdxs.length === 0) {
+    addLog(`同属性（${boardAttr}）の手札キャラがいません`, 'system');
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
+
+  setState({
+    gameUiExtra: {
+      ...resetGameUiExtra(),
+      mode: 'element_swap_hand_pending',
+      validCells: matchingHandIdxs as CellIndex[],
+      itemHandIdx: handIdx,
+      pendingCardId: 'item_element_swap',
+      pendingCellIdx: boardIdx,
+      elementSwapBoardIdx: boardIdx,
+    },
+  });
+  addLog(`同属性（${boardAttr}）の手札キャラを選択してください`, 'info');
+}
+
+function doElementSwap(state: GameState, ui: GameUiExtra, swapHandIdx: number): void {
+  const itemHandIdx = ui.itemHandIdx;
+  const boardIdx = ui.elementSwapBoardIdx ?? ui.pendingCellIdx;
+  if (itemHandIdx === null || boardIdx === null) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+  const active = state.active;
+
+  const boardChar = state.board[boardIdx];
+  if (!boardChar) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+
+  const newHand = [...state.players[active].hand];
+  const itemCard = newHand.splice(itemHandIdx, 1)[0]!;
+  const newDiscard = [...state.players[active].discard, itemCard];
+
+  // Adjust swapHandIdx after item removal
+  const adjustedSwapIdx = swapHandIdx > itemHandIdx ? swapHandIdx - 1 : swapHandIdx;
+  const swapCardId = newHand[adjustedSwapIdx]!;
+  newHand.splice(adjustedSwapIdx, 1);
+  newHand.push(boardChar.cardId);
+
+  const cost = getItemDef(itemCard)?.cost ?? 0;
+  const ps = [...state.players] as typeof state.players;
+  ps[active] = { ...ps[active], hand: newHand, discard: newDiscard, mana: ps[active].mana - cost };
+
+  const swapDef = getCharDef(swapCardId);
+  if (!swapDef) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+  const newInstance = { ...createCharInstance(swapDef, active, boardChar.dir), summonedOnTurn: state.turn };
+  const newBoard = [...state.board] as Board;
+  newBoard[boardIdx] = newInstance;
+
+  let newState = appendLog({ ...state, board: newBoard, players: ps },
+    `${getCardName(boardChar.cardId)} と ${getCardName(swapCardId)} を入れ替えた`, 'info');
+  newState = applyVictoryCheck(newState, null);
+  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
 // ============================================================
