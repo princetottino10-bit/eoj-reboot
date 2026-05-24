@@ -254,11 +254,12 @@ describe('getValidSummonCells', () => {
     expect(getValidSummonCells(board, 0).sort((a,b)=>a-b)).toEqual([2, 3, 4]);
   });
 
-  it('敵キャラで占有されたマスは召喚不可', () => {
+  it('敵キャラが隣接元にもなる: 敵の隣接空きマスも有効', () => {
     const board: Board = Array(9).fill(null);
-    board[4] = { owner: 0 } as any;
-    board[1] = { owner: 1 } as any; // 敵
-    expect(getValidSummonCells(board, 0).sort((a,b)=>a-b)).toEqual([3, 5, 7]);
+    board[4] = { owner: 0 } as any; // 味方: adj = 1(occupied),3,5,7
+    board[1] = { owner: 1 } as any; // 敵: adj = 0,2,4(occupied)
+    // 敵マス(1)自体は空きではないので召喚不可、隣接は 0,2 が追加
+    expect(getValidSummonCells(board, 0).sort((a,b)=>a-b)).toEqual([0, 2, 3, 5, 7]);
   });
 
   it('自分のターゲット: P1=0, P2=1 で別々に判定', () => {

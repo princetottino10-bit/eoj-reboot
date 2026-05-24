@@ -130,8 +130,6 @@ export function getValidSummonCells(board: Board, playerIdx: 0 | 1): CellIndex[]
     if (board[i]?.owner === playerIdx) friendlyIndices.push(i);
   }
 
-  if (friendlyIndices.length >= 5) return [];
-
   if (friendlyIndices.length === 0) {
     // 初回召喚: 全空きマス
     return board.reduce<CellIndex[]>((acc, cell, i) => {
@@ -140,10 +138,11 @@ export function getValidSummonCells(board: Board, playerIdx: 0 | 1): CellIndex[]
     }, []);
   }
 
-  // 2回目以降: 既存味方の隣接空きマスの和集合
+  // 2回目以降: 盤面上のいずれかのキャラ（味方・敵問わず）に隣接する空きマスの和集合
   const valid = new Set<CellIndex>();
-  for (const fi of friendlyIndices) {
-    for (const adj of getAdjacentCells(fi)) {
+  for (let i = 0; i < 9; i++) {
+    if (board[i] === null) continue;
+    for (const adj of getAdjacentCells(i)) {
       if (board[adj] === null) valid.add(adj);
     }
   }
