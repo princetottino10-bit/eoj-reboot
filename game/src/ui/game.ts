@@ -643,7 +643,15 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
 
   // Auto attack
   const { board: boardAfterAtk, results } = resolveSummonAutoAttack(
-    newState.board, cellIdx, def, newState.teamDR, (id) => getCharDef(id)?.cost ?? 1,
+    newState.board, cellIdx, def, newState.teamDR,
+    (id) => {
+      const d = getCharDef(id);
+      return {
+        cost: d?.cost ?? 1,
+        attackCells: (d?.attack_cells ?? null) as 'all' | null | [number, number][],
+        weaknessCells: (d?.weakness_cells ?? [[-1, 0]]) as [number, number][],
+      };
+    },
   );
   newState = { ...newState, board: boardAfterAtk };
 
@@ -740,12 +748,14 @@ function doAttack(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void
     c === null ? null : { ...c, keywords: [...c.keywords], markers: { ...c.markers }, status: { ...c.status } },
   ) as Board;
 
+  const defDef = getCharDef(targetChar.cardId);
   const result = resolveAttack(workBoard, attackerIdx, targetIdx, {
     teamDR: state.teamDR,
-    ...(def.weakness_cells !== undefined ? { weaknessCells: def.weakness_cells as RelCoord[] } : {}),
+    weaknessCells: (defDef?.weakness_cells ?? [[-1, 0]]) as RelCoord[],
     attackType: def.attack_type === '魔法' ? 'magic' : 'physical',
-    defenderCost: getCharDef(targetChar.cardId)?.cost ?? 1,
+    defenderCost: defDef?.cost ?? 1,
     attackerCost: def.cost,
+    defenderAttackCells: (defDef?.attack_cells ?? null) as 'all' | null | [number, number][],
   });
 
   // Mark attacker as acted

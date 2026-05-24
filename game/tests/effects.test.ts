@@ -466,7 +466,12 @@ describe('applyAutoEffects: フィルタリング', () => {
 // resolveSummonAutoAttack
 // ============================================================
 describe('resolveSummonAutoAttack', () => {
-  const noCost = (_: string) => 1;
+  // デフォルト: コスト1、反撃不可（attackCells=null）
+  const noCost = (_: string) => ({
+    cost: 1,
+    attackCells: null as 'all' | null | [number, number][],
+    weaknessCells: [[-1, 0]] as [number, number][],
+  });
 
   it('攻撃範囲に敵がいなければ攻撃しない', () => {
     const board = emptyBoard();
@@ -538,7 +543,13 @@ describe('resolveSummonAutoAttack', () => {
     board[5] = makeChar(1, { hp: 5, maxHp: 5 });
 
     const def = makeDef({ attack_cells: [[1, 0], [0, 1]] });
-    const { board: nb, results } = resolveSummonAutoAttack(board, 4, def, [false, false], noCost);
+    // P2(idx=1,DOWN) が反撃できるよう attackCells=[[1,0]] を返す
+    const withCounter = (_: string) => ({
+      cost: 1,
+      attackCells: [[1, 0]] as [number, number][],
+      weaknessCells: [[-1, 0]] as [number, number][],
+    });
+    const { board: nb, results } = resolveSummonAutoAttack(board, 4, def, [false, false], withCounter);
     expect(nb[4]).toBeNull();
     expect(results).toHaveLength(1);
     expect(nb[5]?.hp).toBe(5);

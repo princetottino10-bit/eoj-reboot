@@ -1,4 +1,4 @@
-import type { Board, CharInstance, CellIndex, GameState } from './types.js';
+import type { Board, CharInstance, CellIndex, GameState, RelCoord } from './types.js';
 import type { PlayerState } from './types.js';
 import type { CharCardDef } from './gamestate.js';
 import type { AttackResult } from './combat.js';
@@ -239,7 +239,11 @@ export function resolveSummonAutoAttack(
   summonIdx: CellIndex,
   charDef: CharCardDef,
   teamDR: [boolean, boolean],
-  getDefenderCost: (cardId: string) => number,
+  getDefenderCardInfo: (cardId: string) => {
+    cost: number;
+    attackCells: 'all' | null | [number, number][];
+    weaknessCells: [number, number][];
+  },
 ): { board: Board; results: AutoAttackResult[] } {
   const workBoard = deepCopyBoard(board);
 
@@ -248,7 +252,6 @@ export function resolveSummonAutoAttack(
 
   const owner = summoned.owner;
   const opp = (1 - owner) as 0 | 1;
-  const weaknessCells = charDef.weakness_cells as [number, number][] | undefined;
   const attackType = charDef.attack_type === '魔法' ? 'magic' as const : 'physical' as const;
 
   let targetIdxs: CellIndex[];
@@ -271,13 +274,14 @@ export function resolveSummonAutoAttack(
     if (workBoard[summonIdx] == null) break;
     if (workBoard[targetIdx] == null) continue;
 
-    const defenderCost = getDefenderCost(workBoard[targetIdx]!.cardId);
+    const defInfo = getDefenderCardInfo(workBoard[targetIdx]!.cardId);
     const result = resolveAttack(workBoard, summonIdx, targetIdx, {
       teamDR,
-      ...(weaknessCells !== undefined ? { weaknessCells } : {}),
+      weaknessCells: defInfo.weaknessCells as RelCoord[],
       attackType,
-      defenderCost,
+      defenderCost: defInfo.cost,
       attackerCost: charDef.cost,
+      defenderAttackCells: defInfo.attackCells,
     });
     results.push({ targetIdx, result });
   }

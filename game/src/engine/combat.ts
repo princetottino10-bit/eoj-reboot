@@ -1,7 +1,6 @@
 import type { Board, CharInstance, CellIndex, Direction, RelCoord } from './types.js';
 import {
-  absToRel, cellRow, cellCol, isBlindSpot, findCoverAlly,
-  DIR_UP, DIR_DOWN, DIR_LEFT, DIR_RIGHT,
+  isBlindSpot, findCoverAlly, getAttackCells,
 } from './board.js';
 
 // ============================================================
@@ -20,6 +19,8 @@ export interface AttackOptions {
   defenderCost?: number;
   /** 攻撃者のカードコスト（反撃撃破時のVP計算用、省略時は 1VP） */
   attackerCost?: number;
+  /** 防衛者の attack_cells（反撃範囲判定用。null なら反撃不可） */
+  defenderAttackCells?: 'all' | null | [number, number][];
 }
 
 export interface AttackResult {
@@ -95,26 +96,24 @@ export function calcDamage(
 // 反撃可否判定
 // ============================================================
 
-// 各方向の「正面デルタ」 (dr, dc)
-const FWD_DELTA: Record<Direction, [number, number]> = {
-  0: [-1,  0], // UP
-  1: [ 0,  1], // RIGHT
-  2: [ 1,  0], // DOWN
-  3: [ 0, -1], // LEFT
-};
-
 /**
- * 防衛者の正面に攻撃者がいれば反撃可能
+ * 防衛者が反撃可能かを判定する。
+ * 条件: 攻撃が物理であること（呼び出し側で確認）、かつ
+ *   1. 攻撃者が防衛者の B 位置にいない
+ *   2. 攻撃者が防衛者の attack_cells 射程内にいる
  */
 export function canCounterAttack(
   defenderIdx: CellIndex,
   defenderDir: Direction,
+  defenderAttackCells: 'all' | null | [number, number][],
   attackerIdx: CellIndex,
+  weaknessCells: RelCoord[],
 ): boolean {
-  const dr = cellRow(attackerIdx) - cellRow(defenderIdx);
-  const dc = cellCol(attackerIdx) - cellCol(defenderIdx);
-  const [fdr, fdc] = FWD_DELTA[defenderDir];
-  return fdr === dr && fdc === dc;
+  if (isBlindSpot(attackerIdx, defenderIdx, defenderDir, weaknessCells)) return false;
+  if (defenderAttackCells === null) return false;
+  if (defenderAttackCells === 'all') return true;
+  const cells = getAttackCells(defenderIdx, defenderAttackCells, defenderDir);
+  return cells !== null && cells.includes(attackerIdx);
 }
 
 // ============================================================
@@ -230,7 +229,8 @@ export function resolveAttack(
 
   // 先制判定
   const defHasQuick = hasKw(defender, '先制');
-  const canCounter = !blind && canCounterAttack(defenderIdx, defender.dir, attackerIdx);
+  const canCounter = attackType === 'physical' &&
+    canCounterAttack(defenderIdx, defender.dir, opts.defenderAttackCells ?? null, attackerIdx, weakCells);
 
   let counterDmg = 0;
   let counterVp = 0;

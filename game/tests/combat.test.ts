@@ -108,29 +108,55 @@ describe('calcDamage', () => {
 // ============================================================
 // 反撃可否（canCounterAttack）
 // ============================================================
-// 前提: 防衛者の正面が攻撃者の方向を向いているなら反撃可
+// 前提: 物理攻撃かつ攻撃者が防衛者の attack_cells 射程内にいて
+//       かつ B 位置でないとき反撃可
 describe('canCounterAttack', () => {
-  // 防衛者 index 4 (center), 攻撃者 index 1 (上)
-  // 防衛者が UP 向き → 正面が上 → 攻撃者が真正面 → 反撃可
-  it('防衛者の正面に攻撃者がいる → 反撃可', () => {
-    expect(canCounterAttack(4, DIR_UP, 1)).toBe(true);
+  // attack_cells [[1,0]] = 正面1マス攻撃、weakness_cells [[-1,0]] = 真後ろがBスポット
+
+  it('射程内かつB位置でない → 反撃可 (UP)', () => {
+    // 防衛者 idx=4 UP、attack_cells=[[1,0]] → idx=1。攻撃者 idx=1
+    expect(canCounterAttack(4, DIR_UP, [[1, 0]], 1, [[-1, 0]])).toBe(true);
   });
 
-  // 防衛者 index 4, 攻撃者 index 7 (下), 防衛者が UP 向き → 正面は上なのに攻撃者は後ろ → 反撃不可
-  it('防衛者の正面に攻撃者がいない（後ろから）→ 反撃不可', () => {
-    expect(canCounterAttack(4, DIR_UP, 7)).toBe(false);
+  it('射程外 → 反撃不可（後ろから攻撃）', () => {
+    // 防衛者 idx=4 UP、attack_cells=[[1,0]] → idx=1。攻撃者 idx=7（後ろ）
+    expect(canCounterAttack(4, DIR_UP, [[1, 0]], 7, [[-1, 0]])).toBe(false);
   });
 
-  it('防衛者 DOWN 向き: 下にいる攻撃者 → 反撃可', () => {
-    expect(canCounterAttack(4, DIR_DOWN, 7)).toBe(true);
+  it('射程内かつB位置でない → 反撃可 (DOWN)', () => {
+    // 防衛者 idx=4 DOWN、attack_cells=[[1,0]] → idx=7。攻撃者 idx=7
+    expect(canCounterAttack(4, DIR_DOWN, [[1, 0]], 7, [[-1, 0]])).toBe(true);
   });
 
-  it('防衛者 RIGHT 向き: 右にいる攻撃者 → 反撃可', () => {
-    expect(canCounterAttack(4, DIR_RIGHT, 5)).toBe(true);
+  it('射程内かつB位置でない → 反撃可 (RIGHT)', () => {
+    // 防衛者 idx=4 RIGHT、attack_cells=[[1,0]] → idx=5。攻撃者 idx=5
+    expect(canCounterAttack(4, DIR_RIGHT, [[1, 0]], 5, [[-1, 0]])).toBe(true);
   });
 
-  it('防衛者 RIGHT 向き: 左にいる攻撃者 → 反撃不可', () => {
-    expect(canCounterAttack(4, DIR_RIGHT, 3)).toBe(false);
+  it('射程外（横）→ 反撃不可', () => {
+    // 防衛者 idx=4 RIGHT、attack_cells=[[1,0]] → idx=5。攻撃者 idx=3（左）
+    expect(canCounterAttack(4, DIR_RIGHT, [[1, 0]], 3, [[-1, 0]])).toBe(false);
+  });
+
+  it('attack_cells=null → 反撃不可', () => {
+    expect(canCounterAttack(4, DIR_UP, null, 1, [[-1, 0]])).toBe(false);
+  });
+
+  it('attack_cells="all" かつ B 位置でない → 反撃可', () => {
+    // 防衛者 idx=4 UP、"all" 射程。攻撃者 idx=5（B位置でない）
+    expect(canCounterAttack(4, DIR_UP, 'all', 5, [[-1, 0]])).toBe(true);
+  });
+
+  it('B 位置から攻撃 → 反撃不可（射程内でも）', () => {
+    // 防衛者 idx=4 UP、weakness=[[-1,0]] → B位置=idx=7（真後ろ）
+    // attack_cells=[[1,0]] では idx=7 は射程外だが、
+    // 'all' を使えば射程内。それでも B位置優先 → 反撃不可
+    expect(canCounterAttack(4, DIR_UP, 'all', 7, [[-1, 0]])).toBe(false);
+  });
+
+  it('攻撃者が射程内でない隣接マス → 反撃不可', () => {
+    // 防衛者 idx=4 UP、attack_cells=[[1,0]]（正面のみ）。攻撃者 idx=3（左）
+    expect(canCounterAttack(4, DIR_UP, [[1, 0]], 3, [[-1, 0]])).toBe(false);
   });
 });
 
@@ -163,8 +189,11 @@ describe('resolveAttack', () => {
   });
 
   it('正面からの攻撃(B位置なし): 反撃が発生する', () => {
-    // P1がUP向きでP2(idx=1)を攻撃。P2はDOWN向きなので正面にP1がいる → 反撃可
-    const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
+    // P1(idx=4,UP)がP2(idx=1,DOWN)を攻撃。P2の attack_cells=[[1,0]]→idx=4にP1がいる → 反撃可
+    const result = resolveAttack(board, 4, 1, {
+      teamDR: [false, false],
+      defenderAttackCells: [[1, 0]],
+    });
     expect(result.counterDamage).toBe(2);
     expect(board[4]!.hp).toBe(3); // P1も反撃を受ける: 5 - 2 = 3
   });
@@ -234,7 +263,10 @@ describe('resolveAttack', () => {
     p2.keywords = ['先制'];
     p2.hp = 2; // 先制反撃で倒されると攻撃が来ない
     p2.maxHp = 2;
-    const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
+    const result = resolveAttack(board, 4, 1, {
+      teamDR: [false, false],
+      defenderAttackCells: [[1, 0]],
+    });
     // P2(先制)が先に反撃 → P1にATK=2のダメージ → P1残り3HP
     expect(result.counterFirst).toBe(true);
     expect(board[4]!.hp).toBe(3); // 5 - 2
@@ -258,7 +290,11 @@ describe('resolveAttack', () => {
     // P2(DEF, ATK=3) の反撃で P1(ATK, HP=1) を倒す
     p1.hp = 1; p1.maxHp = 1;
     p2.atk = 3;
-    const result = resolveAttack(board, 4, 1, { teamDR: [false, false], attackerCost: 2 });
+    const result = resolveAttack(board, 4, 1, {
+      teamDR: [false, false],
+      attackerCost: 2,
+      defenderAttackCells: [[1, 0]],
+    });
     expect(board[4]).toBeNull();               // 攻撃者撃破
     expect(result.counterVpAwarded).toBe(1);  // cost=2 → 1VP
   });
@@ -272,7 +308,11 @@ describe('resolveAttack', () => {
   it('先制反撃で攻撃者撃破 → counterVpAwarded が返る', () => {
     p1.hp = 1; p1.maxHp = 1;
     p2.keywords = ['先制'];
-    const result = resolveAttack(board, 4, 1, { teamDR: [false, false], attackerCost: 3 });
+    const result = resolveAttack(board, 4, 1, {
+      teamDR: [false, false],
+      attackerCost: 3,
+      defenderAttackCells: [[1, 0]],
+    });
     expect(board[4]).toBeNull();
     expect(result.counterFirst).toBe(true);
     expect(result.counterVpAwarded).toBe(2);  // cost=3-4 → 2VP
@@ -283,9 +323,39 @@ describe('resolveAttack', () => {
     // P2(ATK=3) の反撃: 3 - teamDR(1) = 2
     p1.hp = 5; p1.maxHp = 5;
     p2.atk = 3;
-    const result = resolveAttack(board, 4, 1, { teamDR: [true, false] });
+    const result = resolveAttack(board, 4, 1, {
+      teamDR: [true, false],
+      defenderAttackCells: [[1, 0]],
+    });
     expect(result.counterDamage).toBe(2); // 3 - 1(teamDR) = 2
     expect(board[4]!.hp).toBe(3);        // 5 - 2 = 3
+  });
+
+  it('魔法攻撃では反撃しない', () => {
+    // attackType='magic' かつ defenderAttackCells があっても反撃なし
+    const result = resolveAttack(board, 4, 1, {
+      teamDR: [false, false],
+      attackType: 'magic',
+      defenderAttackCells: [[1, 0]],
+    });
+    expect(result.counterDamage).toBe(0);
+    expect(board[4]!.hp).toBe(5); // 反撃なし
+  });
+
+  it('defenderAttackCells を渡さないと反撃なし', () => {
+    // デフォルト null → 反撃不可
+    const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
+    expect(result.counterDamage).toBe(0);
+    expect(board[4]!.hp).toBe(5);
+  });
+
+  it('攻撃者が射程外 → 反撃なし', () => {
+    // P2(idx=1,DOWN) の attack_cells=[[2,0]] は射程2正面=idx=7（P1はidx=4、射程1正面）
+    const result = resolveAttack(board, 4, 1, {
+      teamDR: [false, false],
+      defenderAttackCells: [[2, 0]], // 2マス前方のみ
+    });
+    expect(result.counterDamage).toBe(0);
   });
 });
 
