@@ -633,14 +633,7 @@ function onEffectDirPicked(state: GameState, ui: GameUiExtra, dir: Direction): v
   let newState = appendLog({ ...state, board: newBoard }, `${getCardName(target.cardId)} を ${DIR_ARROWS[dir]} に向けた`, 'info');
 
   newState = applyEffectAfterDir(newState, cardId, summonIdx, active);
-
-  void summonIdx;
-  newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) {
-    setState({ gameState: newState, screen: 'over' });
-    return;
-  }
-  onEndTurn(newState);
+  finalizeSummonTurn(newState, cardId, summonIdx);
 }
 
 function onDiscardCardClick(state: GameState, ui: GameUiExtra, handIdx: number): void {
@@ -678,15 +671,9 @@ function onDiscardCardClick(state: GameState, ui: GameUiExtra, handIdx: number):
     return;
   }
 
-  // Apply the effect that required discard
+  // Apply the effect that required discard, then attack → end turn
   newState = applyDiscardEffect(newState, cardId, cellIdx, active, true);
-  newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) {
-    setState({ gameState: newState, screen: 'over' });
-    return;
-  }
-  // ultCasterIdx === null means this is a summon-triggered discard effect
-  onEndTurn(newState);
+  finalizeSummonTurn(newState, cardId, cellIdx);
   void mandatory;
 }
 
@@ -696,8 +683,14 @@ function onDiscardSkip(state: GameState, ui: GameUiExtra): void {
     setState({ gameUiExtra: resetGameUiExtra() });
     return;
   }
-  // Skip: no effect
-  setState({ gameState: appendLog(state, 'スキップした', 'info'), gameUiExtra: resetGameUiExtra() });
+  if (ui.ultCasterIdx !== null) {
+    // ウルトの捨て牌はスキップ不可（ultCasterIdx が入っている場合は何もしない）
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
+  const { cardId, cellIdx } = ctx;
+  const ns = appendLog(state, 'スキップした', 'info');
+  finalizeSummonTurn(ns, cardId, cellIdx);
 }
 
 function onEndTurn(state: GameState): void {
@@ -724,43 +717,20 @@ function onEndTurn(state: GameState): void {
 // Core game actions
 // ============================================================
 
-function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Direction): void {
+// 召喚時効果解決後に自動攻撃→VP→勝利チェック→ターン終了を行うヘルパー。
+// スワップ等で召喚位置が変わる可能性があるため summonedOnTurn でキャラを探す。
+function finalizeSummonTurn(state: GameState, cardId: string, fallbackSummonIdx: CellIndex): void {
   const active = state.active;
-  const cardId = state.players[active].hand[handIdx]!;
   const def = getCharDef(cardId);
-  if (!def) return;
+  if (!def) { onEndTurn(state); return; }
 
-  const reduction = calcCostReduction(def, state.board, active);
-  const effectiveCost = Math.max(2, def.cost - reduction);
+  let summonIdx = state.board.findIndex(c =>
+    c !== null && c.owner === active && c.summonedOnTurn === state.turn,
+  ) as CellIndex;
+  if (summonIdx < 0) summonIdx = fallbackSummonIdx;
 
-  const cellAttr = state.boardAttrs[cellIdx] ?? '虚';
-  const hpBonus = attributeHpBonus(def.attribute, cellAttr);
-  let instance = createCharInstance(def, active, dir);
-  const bonusedHp = Math.max(1, instance.hp + hpBonus);
-  instance = { ...instance, hp: bonusedHp, maxHp: bonusedHp, summonedOnTurn: state.turn };
-
-  const newBoard = [...state.board] as Board;
-  newBoard[cellIdx] = instance;
-  const newHand = [...state.players[active].hand];
-  newHand.splice(handIdx, 1);
-  const ps = [...state.players] as typeof state.players;
-  ps[active] = { ...ps[active], hand: newHand, mana: ps[active].mana - effectiveCost };
-
-  let newState = appendLog(
-    { ...state, board: newBoard, players: ps },
-    `P${active + 1}: ${def.name} を ${cellIdx + 1}番マスに召喚 (${DIR_ARROWS[dir]})` +
-      (hpBonus !== 0 ? ` HP${hpBonus > 0 ? '+' : ''}${hpBonus}` : ''),
-    'info',
-  );
-
-  // Auto effects
-  const effect = getSummonEffect(cardId);
-  const r = applyAutoEffects(newState, cellIdx, active, effect.clauses, def.attribute);
-  newState = { ...newState, board: r.board, players: r.players };
-
-  // Auto attack
   const { board: boardAfterAtk, results } = resolveSummonAutoAttack(
-    newState.board, cellIdx, def, newState.teamDR,
+    state.board, summonIdx, def, state.teamDR,
     (id) => {
       const d = getCharDef(id);
       return {
@@ -770,7 +740,7 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
       };
     },
   );
-  newState = { ...newState, board: boardAfterAtk };
+  let newState = { ...state, board: boardAfterAtk };
 
   let vpGained = 0;
   let oppVpGained = 0;
@@ -802,11 +772,52 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
 
   newState = applyVictoryCheck(newState, null);
   if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  onEndTurn(newState);
+}
+
+function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Direction): void {
+  const active = state.active;
+  const cardId = state.players[active].hand[handIdx]!;
+  const def = getCharDef(cardId);
+  if (!def) return;
+
+  const reduction = calcCostReduction(def, state.board, active);
+  const effectiveCost = Math.max(2, def.cost - reduction);
+
+  const cellAttr = state.boardAttrs[cellIdx] ?? '虚';
+  const hpBonus = attributeHpBonus(def.attribute, cellAttr);
+  let instance = createCharInstance(def, active, dir);
+  const bonusedHp = Math.max(1, instance.hp + hpBonus);
+  instance = { ...instance, hp: bonusedHp, maxHp: bonusedHp, summonedOnTurn: state.turn };
+
+  const newBoard = [...state.board] as Board;
+  newBoard[cellIdx] = instance;
+  const newHand = [...state.players[active].hand];
+  newHand.splice(handIdx, 1);
+  const ps = [...state.players] as typeof state.players;
+  ps[active] = { ...ps[active], hand: newHand, mana: ps[active].mana - effectiveCost };
+
+  let newState = appendLog(
+    { ...state, board: newBoard, players: ps },
+    `P${active + 1}: ${def.name} を ${cellIdx + 1}番マスに召喚 (${DIR_ARROWS[dir]})` +
+      (hpBonus !== 0 ? ` HP${hpBonus > 0 ? '+' : ''}${hpBonus}` : ''),
+    'info',
+  );
+
+  // Auto effects (non-pending only)
+  const effect = getSummonEffect(cardId);
+  const r = applyAutoEffects(newState, cellIdx, active, effect.clauses, def.attribute);
+  newState = { ...newState, board: r.board, players: r.players };
 
   if (!effect.hasPending) {
-    onEndTurn(newState);
+    // pending効果なし: ルール通り「効果→自動攻撃→ターン終了」を即時完結
+    finalizeSummonTurn(newState, cardId, cellIdx);
     return;
   }
+
+  // pending効果あり: 自動攻撃はユーザー入力（効果解決）が完了してから実行する
+  newState = applyVictoryCheck(newState, null);
+  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
 
   // コストとして手札を捨てるエフェクト → discard_pending フロー
   const discardCostClause = effect.clauses.find(c =>
@@ -849,7 +860,7 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
   // Target-selection effects
   const { validCells, hint } = getPendingTargets(newState, cardId, cellIdx);
   if (validCells.length === 0) {
-    onEndTurn(newState);
+    finalizeSummonTurn(newState, cardId, cellIdx);
     return;
   }
   newState = appendLog(newState, `効果: ${hint}`, 'info');
@@ -948,10 +959,8 @@ function doResolveEffect(state: GameState, ui: GameUiExtra, targetIdx: CellIndex
     return;
   }
 
-  let newState = applyPendingEffect(state, cardId, summonIdx, targetIdx, active);
-  newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
-  onEndTurn(newState);
+  const newState = applyPendingEffect(state, cardId, summonIdx, targetIdx, active);
+  finalizeSummonTurn(newState, cardId, summonIdx);
 }
 
 function doResolveItemEffect(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void {
