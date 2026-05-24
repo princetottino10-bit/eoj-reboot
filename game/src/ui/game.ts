@@ -994,18 +994,7 @@ function doApplyImmediateItem(state: GameState, handIdx: number, cardId: string)
   const newDiscard = [...state.players[active].discard, cardId];
   const ps = [...state.players] as typeof state.players;
   ps[active] = { ...ps[active], hand: newHand, discard: newDiscard, mana: ps[active].mana - cost };
-  let newState = { ...state, players: ps };
-
-  if (cardId === 'item_01') {
-    newState = drawStep(newState);
-    newState = drawStep(newState);
-    newState = appendLog(newState, '2枚ドロー！', 'info');
-  } else if (cardId === 'item_02') {
-    const np = [...newState.players] as typeof newState.players;
-    np[active] = { ...np[active], mana: np[active].mana + 1 };
-    newState = { ...newState, players: np };
-    newState = appendLog(newState, 'マナ+1！', 'info');
-  }
+  const newState = applyItemEffect({ ...state, players: ps }, cardId, undefined, active);
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 

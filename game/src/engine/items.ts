@@ -1,91 +1,139 @@
 import type { GameState, CellIndex, Board, Direction } from './types.js';
 import { appendLog } from './types.js';
+import { drawStep } from './turn.js';
 import { clearAffiliatedEffects } from './combat.js';
-import { getCharDef, getCardName } from '../data/cards.js';
+import { getCardName } from '../data/cards.js';
+import { ITEM_SPECS } from './effectSpecs.js';
+import type { EffectAtom, EffectTarget } from './effectSpecs.js';
 
-export function applyItemEffect(state: GameState, itemId: string, targetIdx: CellIndex, active: 0 | 1): GameState {
+// ============================================================
+// エフェクト原子の適用
+// ============================================================
+
+function applyItemAtom(
+  state: GameState,
+  atom: EffectAtom,
+  atomTarget: EffectTarget | undefined,
+  targetIdx: CellIndex | undefined,
+  active: 0 | 1,
+): GameState {
   const opp = (1 - active) as 0 | 1;
-  const nb = [...state.board] as Board;
 
-  switch (itemId) {
-    case 'item_03': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, hp: Math.min(c.hp + 3, c.maxHp) };
-      return appendLog({ ...state, board: nb }, `HP+3`, 'heal');
+  // ── 対象不要なアトム ──
+  if (atom.type === 'draw') {
+    let ns = state;
+    for (let i = 0; i < atom.count; i++) ns = drawStep(ns);
+    return appendLog(ns, `${atom.count}枚ドロー`, 'info');
+  }
+  if (atom.type === 'mana_gain') {
+    const np = [...state.players] as typeof state.players;
+    np[active] = { ...np[active], mana: np[active].mana + atom.amount };
+    return appendLog({ ...state, players: np }, `マナ+${atom.amount}`, 'info');
+  }
+
+  if (targetIdx === undefined) return state;
+  const nb = [...state.board] as Board;
+  const c = nb[targetIdx];
+  if (!c) return state;
+
+  // オーナーシップガード（spec の target 種別から判定）
+  const isAllyScope = atomTarget === 'select_ally' || atomTarget === 'select_adj_ally';
+  const isEnemyScope = atomTarget === 'select_enemy' || atomTarget === 'select_adj_enemy';
+  if (isAllyScope && c.owner !== active) return state;
+  if (isEnemyScope && c.owner !== opp) return state;
+
+  // ── 対象ありアトム ──
+  switch (atom.type) {
+    case 'heal': {
+      nb[targetIdx] = { ...c, hp: Math.min(c.hp + atom.amount, c.maxHp) };
+      return appendLog({ ...state, board: nb }, `HP+${atom.amount}`, 'heal');
     }
-    case 'item_04': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, tempAtkBuff: c.tempAtkBuff + 2 };
-      return appendLog({ ...state, board: nb }, `このターンATK+2`, 'info');
+    case 'give_marker': {
+      nb[targetIdx] = { ...c, markers: { ...c.markers, [atom.marker]: c.markers[atom.marker] + 1 } };
+      return appendLog({ ...state, board: nb }, `${atom.marker}マーカー付与`, 'info');
     }
-    case 'item_grant_piercing': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, markers: { ...c.markers, piercing: c.markers.piercing + 1 } };
-      return appendLog({ ...state, board: nb }, `貫通マーカー付与`, 'info');
-    }
-    case 'item_grant_protection': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, markers: { ...c.markers, protection: c.markers.protection + 1 } };
-      return appendLog({ ...state, board: nb }, `防護マーカー付与`, 'info');
-    }
-    case 'item_reactivate': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) nb[targetIdx] = { ...c, hasActed: false };
-      return appendLog({ ...state, board: nb }, `再行動可能になった`, 'info');
-    }
-    case 'item_self_bounce': {
-      const c = nb[targetIdx];
-      if (c && c.owner === active) {
-        nb[targetIdx] = null;
-        const np = [...state.players] as typeof state.players;
-        np[active] = { ...np[active], hand: [...np[active].hand, c.cardId] };
-        return appendLog({ ...state, board: nb, players: np }, `${getCardName(c.cardId)} を手札に戻した`, 'info');
+    case 'atk_delta': {
+      if ('turns' in atom && atom.turns) {
+        nb[targetIdx] = { ...c, tempAtkBuff: c.tempAtkBuff + atom.delta };
+      } else {
+        nb[targetIdx] = { ...c, atk: Math.max(0, c.atk + atom.delta) };
       }
-      return state;
+      const sign = atom.delta > 0 ? '+' : '';
+      return appendLog({ ...state, board: nb }, `ATK${sign}${atom.delta}`, 'info');
     }
-    case 'item_05': {
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) nb[targetIdx] = { ...c, atk: Math.max(0, c.atk - 2) };
-      return appendLog({ ...state, board: nb }, `敵ATK-2`, 'info');
-    }
-    case 'item_06': {
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) {
-        const newHp = c.hp - 2;
-        nb[targetIdx] = newHp <= 0 ? null : { ...c, hp: newHp };
-        if (newHp <= 0) {
-          clearAffiliatedEffects(nb, c.cardId);
+    case 'hp_delta': {
+      const newHp = c.hp + atom.amount;
+      if (newHp <= 0) {
+        nb[targetIdx] = null;
+        clearAffiliatedEffects(nb, c.cardId);
+        if (c.owner === opp) {
           const np = [...state.players] as typeof state.players;
           np[active] = { ...np[active], vp: np[active].vp + 1 };
-          return appendLog({ ...state, board: nb, players: np }, `敵に2ダメ（撃破！1VP）`, 'system');
+          return appendLog({ ...state, board: nb, players: np },
+            `${Math.abs(atom.amount)}ダメ（撃破！1VP）`, 'system');
         }
-        return appendLog({ ...state, board: nb }, `敵に2ダメ`, 'damage');
+        return appendLog({ ...state, board: nb }, `${Math.abs(atom.amount)}ダメ`, 'damage');
       }
-      return state;
+      nb[targetIdx] = { ...c, hp: newHp };
+      return appendLog({ ...state, board: nb },
+        atom.amount < 0 ? `${Math.abs(atom.amount)}ダメ` : `HP+${atom.amount}`, atom.amount < 0 ? 'damage' : 'heal');
     }
-    case 'item_14': {
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) {
-        nb[targetIdx] = { ...c, dir: ((c.dir + 2) % 4) as Direction, status: { ...c.status, dirLocked: 1 } };
-      }
-      return appendLog({ ...state, board: nb }, `敵を180°回転・向き固定1ターン`, 'info');
+    case 'rotate': {
+      if (atom.degrees === 'any') return state; // 向き選択はUI側で処理
+      const rotated = atom.degrees === 180
+        ? ((c.dir + 2) % 4) as Direction
+        : ((c.dir + 1) % 4) as Direction;
+      nb[targetIdx] = { ...c, dir: rotated };
+      return appendLog({ ...state, board: nb }, `${atom.degrees}°回転`, 'info');
     }
-    case 'item_20': {
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) nb[targetIdx] = { ...c, dir: ((c.dir + 1) % 4) as Direction };
-      return appendLog({ ...state, board: nb }, `敵を90°回転`, 'info');
+    case 'dir_lock': {
+      nb[targetIdx] = { ...c, status: { ...c.status, dirLocked: atom.turns } };
+      return appendLog({ ...state, board: nb }, `向き固定${atom.turns}ターン`, 'info');
     }
-    case 'item_bounce_enemy': {
-      const c = nb[targetIdx];
-      if (c && c.owner === opp) {
-        nb[targetIdx] = null;
-        const np = [...state.players] as typeof state.players;
+    case 'clear_has_acted': {
+      nb[targetIdx] = { ...c, hasActed: false };
+      return appendLog({ ...state, board: nb }, `${getCardName(c.cardId)} 再行動可能`, 'info');
+    }
+    case 'bounce': {
+      nb[targetIdx] = null;
+      const np = [...state.players] as typeof state.players;
+      if (c.owner === active) {
+        np[active] = { ...np[active], hand: [...np[active].hand, c.cardId] };
+        return appendLog({ ...state, board: nb, players: np }, `${getCardName(c.cardId)} を手札に戻した`, 'info');
+      } else {
         np[opp] = { ...np[opp], hand: [...np[opp].hand, c.cardId] };
         return appendLog({ ...state, board: nb, players: np }, `${getCardName(c.cardId)} を相手の手札に戻した`, 'system');
       }
-      return state;
     }
     default:
-      return appendLog(state, `${itemId} は未実装`, 'system');
+      return state;
   }
+}
+
+// ============================================================
+// 公開 API
+// ============================================================
+
+/**
+ * ITEM_SPECS を参照してアイテム効果を適用する。
+ * targetIdx は対象ありアイテムに渡す。即時効果（draw, mana_gain など）は undefined でよい。
+ */
+export function applyItemEffect(
+  state: GameState,
+  itemId: string,
+  targetIdx: CellIndex | undefined,
+  active: 0 | 1,
+): GameState {
+  const spec = ITEM_SPECS[itemId];
+  if (!spec) return appendLog(state, `${itemId} は未実装`, 'system');
+
+  const clause = spec.clauses.find(c => c.trigger === 'on_use');
+  if (!clause) return state;
+
+  let ns = state;
+  for (const atom of clause.effects) {
+    const atomTarget = ('target' in atom ? (atom as { target: EffectTarget }).target : undefined);
+    ns = applyItemAtom(ns, atom, atomTarget, targetIdx, active);
+  }
+  return ns;
 }

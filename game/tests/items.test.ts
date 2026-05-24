@@ -293,13 +293,57 @@ describe('item_bounce_enemy: 相手手札に戻す', () => {
 });
 
 // ============================================================
+// item_01: 2枚ドロー（即時）
+// ============================================================
+describe('item_01: 2枚ドロー', () => {
+  it('デッキから2枚引いて手札に加える', () => {
+    const board: Board = Array(9).fill(null);
+    const state = makeState(board, {
+      players: [makePlayer({ deck: ['aggro_v2_01', 'tank_v2_01'], hand: [] }), makePlayer()],
+    });
+    const result = applyItemEffect(state, 'item_01', undefined, 0);
+    expect(result.players[0].hand.length).toBe(2);
+    expect(result.players[0].deck.length).toBe(0);
+  });
+
+  it('デッキが1枚なら1枚だけドロー', () => {
+    const board: Board = Array(9).fill(null);
+    const state = makeState(board, {
+      players: [makePlayer({ deck: ['aggro_v2_01'], hand: [] }), makePlayer()],
+    });
+    const result = applyItemEffect(state, 'item_01', undefined, 0);
+    expect(result.players[0].hand.length).toBe(1);
+    expect(result.players[0].deck.length).toBe(0);
+  });
+});
+
+// ============================================================
+// item_02: マナ+1（即時）
+// ============================================================
+describe('item_02: マナ+1', () => {
+  it('使用者のマナが1増える', () => {
+    const board: Board = Array(9).fill(null);
+    const state = makeState(board, { players: [makePlayer({ mana: 2 }), makePlayer()] });
+    const result = applyItemEffect(state, 'item_02', undefined, 0);
+    expect(result.players[0].mana).toBe(3);
+  });
+
+  it('相手のマナは変わらない', () => {
+    const board: Board = Array(9).fill(null);
+    const state = makeState(board, { players: [makePlayer({ mana: 0 }), makePlayer({ mana: 5 })] });
+    const result = applyItemEffect(state, 'item_02', undefined, 0);
+    expect(result.players[1].mana).toBe(5);
+  });
+});
+
+// ============================================================
 // 未実装アイテム
 // ============================================================
 describe('未実装アイテム', () => {
   it('不明なitemIdはログを残して状態を返す', () => {
     const board: Board = Array(9).fill(null);
     const state = makeState(board);
-    const result = applyItemEffect(state, 'item_unknown', 0, 0);
+    const result = applyItemEffect(state, 'item_unknown', undefined, 0);
     expect(result.log.length).toBeGreaterThan(0);
   });
 });
