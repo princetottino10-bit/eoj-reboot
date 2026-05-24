@@ -18,6 +18,8 @@
 | 属性マスHP補正（同属性+2, 対立-2） | ✅ | `gamestate.ts: attributeHpBonus` |
 | 標準盤面属性配置 | ✅ | `STANDARD_BOARD_ATTRS` シャッフル |
 | 召喚コスト・マナ消費 | ✅ | |
+| エース回収コスト軽減（コスト5→最低2） | ✅ | `engine/cost.ts: calcCostReduction`（派閥別条件） |
+| 召喚後は即ターン終了（行動権消費） | ✅ | `doSummon`→`onEndTurn`呼出、エフェクト解決後も同様 |
 | 召喚位置: 初回は全空きマス | ✅ | `board.ts: getValidSummonCells` |
 | 召喚位置: 2回目以降は既存味方の隣接マス | ✅ | `board.ts: getValidSummonCells` |
 | 1プレイヤー最大5体制限 | ✅ | `board.ts: getValidSummonCells`（≥5なら空配列） |
@@ -157,5 +159,5 @@
 | 項目 | 優先度 | 備考 |
 |------|-------|------|
 | on_attack効果（control_v2_09など） | 低 | 攻撃時に発動する効果は現在未実装 |
-| 全キャラのウルト実装 | ✅ | 2026-05-24完了 |
+| snipe エース回収（照準マーカー） | 低 | `aim`マーカーの付与手段未実装のため常に軽減0 |
 | キャラ個別効果の網羅テスト | 低 | `effects.test.ts`は自動効果のみカバー |
