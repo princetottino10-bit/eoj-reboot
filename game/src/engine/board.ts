@@ -1,4 +1,5 @@
 import type { Board, CellIndex, Direction, RelCoord, CharInstance } from './types.js';
+import type { EffectTarget } from './effectSpecs.js';
 
 export {
   DIR_UP, DIR_RIGHT, DIR_DOWN, DIR_LEFT,
@@ -186,6 +187,48 @@ export function pushBack(board: Board, charIdx: CellIndex): Board | null {
   nb[charIdx] = null;
   nb[destIdx] = char;
   return nb;
+}
+
+// ============================================================
+// エフェクトターゲット解決
+// ============================================================
+
+/**
+ * select_* EffectTarget を具体的なセルインデックス配列に解決する。
+ * originIdx: 召喚セル（summon効果）またはキャスターセル（ult効果）。アイテムは省略。
+ * select_ally / select_any は originIdx を除外する。
+ * select_adj_* は originIdx が必須。
+ */
+export function resolveSelectCells(
+  target: EffectTarget,
+  board: Board,
+  active: 0 | 1,
+  originIdx?: CellIndex,
+): CellIndex[] {
+  const opp = (1 - active) as 0 | 1;
+  switch (target) {
+    case 'select_ally':
+      return board.map((c, i) => (c != null && c.owner === active && i !== originIdx ? i : -1))
+        .filter(i => i >= 0) as CellIndex[];
+    case 'select_adj_ally': {
+      if (originIdx === undefined) return [];
+      return getAdjacentCells(originIdx)
+        .filter(i => { const c = board[i]; return c != null && c.owner === active; }) as CellIndex[];
+    }
+    case 'select_enemy':
+      return board.map((c, i) => (c != null && c.owner === opp ? i : -1))
+        .filter(i => i >= 0) as CellIndex[];
+    case 'select_adj_enemy': {
+      if (originIdx === undefined) return [];
+      return getAdjacentCells(originIdx)
+        .filter(i => { const c = board[i]; return c != null && c.owner === opp; }) as CellIndex[];
+    }
+    case 'select_any':
+      return board.map((c, i) => (c != null && i !== originIdx ? i : -1))
+        .filter(i => i >= 0) as CellIndex[];
+    default:
+      return [];
+  }
 }
 
 /** Returns cells in the "front row" (one step ahead of caster's direction) occupied by targetOwner. */

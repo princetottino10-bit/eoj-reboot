@@ -6,12 +6,15 @@ import {
   getCharDef, getItemDef, isCharCard, getCardName, getCardCost,
 } from '../data/cards.js';
 import {
-  getAttackCells, getAdjacentCells, getValidSummonCells,
+  getAttackCells, getAdjacentCells, getValidSummonCells, resolveSelectCells,
 } from '../engine/board.js';
 import { resolveAttack } from '../engine/combat.js';
 import { createCharInstance, attributeHpBonus } from '../engine/gamestate.js';
 import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect } from '../engine/effects.js';
-import { getUltSpec } from '../engine/effectSpecs.js';
+import {
+  getEffectSpec, getItemSpec, getUltSpec, getFirstSelectTarget,
+} from '../engine/effectSpecs.js';
+import type { EffectTarget } from '../engine/effectSpecs.js';
 import { startTurnPhase, drawStep, endTurnCleanup, spendReactivationMana } from '../engine/turn.js';
 import { evalVictory } from '../engine/victory.js';
 import { applyItemEffect } from '../engine/items.js';
@@ -45,6 +48,14 @@ export interface GameUiExtra {
 const DIR_ARROWS = ['↑', '→', '↓', '←'] as const;
 
 function dirArrow(dir: Direction): string { return DIR_ARROWS[dir]!; }
+
+const TARGET_HINT: Partial<Record<EffectTarget, string>> = {
+  'select_ally':      '対象の味方を選択',
+  'select_adj_ally':  '隣接味方を選択',
+  'select_enemy':     '対象の敵を選択',
+  'select_adj_enemy': '隣接敵を選択',
+  'select_any':       '対象を選択',
+};
 
 function markerStr(char: NonNullable<Board[number]>): string {
   const parts: string[] = [];
@@ -474,12 +485,6 @@ function onHandCardClick(state: GameState, handIdx: number): void {
   const cost = itemDef.cost;
   if (state.players[active].mana < cost) return;
 
-  // Immediate items (no target needed)
-  if (cardId === 'item_01' || cardId === 'item_02') {
-    doApplyImmediateItem(state, handIdx, cardId);
-    return;
-  }
-
   if (cardId === 'item_element_swap') {
     const allAllies = state.board
       .map((c, i) => (c !== null && c.owner === active ? i : -1))
@@ -497,7 +502,14 @@ function onHandCardClick(state: GameState, handIdx: number): void {
     return;
   }
 
-  // Items needing a target — figure out valid cells
+  // 対象選択不要なアイテムは即時発動
+  const itemSpec = getItemSpec(cardId);
+  if (!itemSpec || getFirstSelectTarget(itemSpec.clauses, 'on_use') === null) {
+    doApplyImmediateItem(state, handIdx, cardId);
+    return;
+  }
+
+  // 対象選択が必要なアイテム
   const { validCells, hint } = getItemTargets(state, cardId, active);
   setState({
     gameUiExtra: {
@@ -803,22 +815,33 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
     return;
   }
 
-  // Discard-first effects
-  if (cardId === 'aggro_v2_03' || cardId === 'trick_v2_03' || cardId === 'snipe_v2_07') {
+  // コストとして手札を捨てるエフェクト → discard_pending フロー
+  const discardCostClause = effect.clauses.find(c =>
+    c.trigger === 'on_summon' && c.cost?.type === 'discard',
+  );
+  if (discardCostClause) {
     setState({
       gameState: newState,
       gameUiExtra: {
         ...resetGameUiExtra(),
         mode: 'discard_pending',
-        discardContext: { cardId, cellIdx, mandatory: false },
+        discardContext: { cardId, cellIdx, mandatory: discardCostClause.costMandatory ?? false },
       },
     });
     return;
   }
-  if (cardId === 'aggro_v2_10') {
-    // Draw 1 first, then mandatory discard
-    newState = drawStep(newState);
-    newState = appendLog(newState, '1枚ドローした', 'info');
+  // ドロー後に強制捨て（draw を先に適用してから discard_pending へ）
+  const drawThenDiscardClause = effect.clauses.find(c =>
+    c.trigger === 'on_summon' &&
+    c.costMandatory &&
+    c.effects.some(e => e.type === 'draw') &&
+    c.effects.some(e => e.type === 'discard'),
+  );
+  if (drawThenDiscardClause) {
+    for (const e of drawThenDiscardClause.effects.filter(e => e.type === 'draw')) {
+      for (let i = 0; i < (e as { count: number }).count; i++) newState = drawStep(newState);
+    }
+    newState = appendLog(newState, 'ドローした', 'info');
     setState({
       gameState: newState,
       gameUiExtra: {
@@ -915,8 +938,12 @@ function doResolveEffect(state: GameState, ui: GameUiExtra, targetIdx: CellIndex
 
   const active = state.active;
 
-  // Two-step effects: transition to direction picker
-  if (cardId === 'tank_v2_11' || cardId === 'trick_v2_09' || cardId === 'trick_v2_12') {
+  // on_summon に rotate degrees:'any' があれば対象選択後に方向選択へ
+  const needsDirPick = getEffectSpec(cardId).clauses.some(c =>
+    c.trigger === 'on_summon' &&
+    c.effects.some(e => e.type === 'rotate' && (e as { degrees: unknown }).degrees === 'any'),
+  );
+  if (needsDirPick) {
     setState({
       gameState: state,
       gameUiExtra: {
@@ -991,43 +1018,11 @@ function getPendingTargets(
   cardId: string,
   summonIdx: CellIndex,
 ): { validCells: CellIndex[]; hint: string } {
-  const active = state.active;
-  const opp = (1 - active) as 0 | 1;
-  const adjIdxs = getAdjacentCells(summonIdx);
-
-  const allAllies = state.board
-    .map((c, i) => (c !== null && c.owner === active && i !== summonIdx ? i : -1))
-    .filter(i => i >= 0) as CellIndex[];
-  const adjAllies = adjIdxs.filter(i => { const c = state.board[i]; return c != null && c.owner === active; }) as CellIndex[];
-  const adjEnemies = adjIdxs.filter(i => { const c = state.board[i]; return c != null && c.owner === opp; }) as CellIndex[];
-  const allEnemies = state.board
-    .map((c, i) => (c !== null && c.owner === opp ? i : -1))
-    .filter(i => i >= 0) as CellIndex[];
-
-  switch (cardId) {
-    // Synergy
-    case 'synergy_v2_01': case 'synergy_v2_04': return { validCells: allAllies, hint: '防護を付与する味方を選択' };
-    case 'synergy_v2_02': return { validCells: adjAllies, hint: '隣接味方1体に回避付与' };
-    case 'synergy_v2_03': return { validCells: adjAllies, hint: '隣接味方1体に貫通付与' };
-    case 'synergy_v2_09': return { validCells: adjAllies, hint: '隣接味方1体のHP+1' };
-    // Trick
-    case 'trick_v2_04': return { validCells: adjAllies, hint: '位置を入れ替える隣接味方を選択' };
-    case 'trick_v2_01': return { validCells: allEnemies, hint: '90°回転させる敵を選択' };
-    case 'trick_v2_02': return { validCells: adjEnemies, hint: '隣接する敵1体を90°回転' };
-    case 'trick_v2_06': return { validCells: adjEnemies, hint: '後退させる隣接敵を選択' };
-    case 'trick_v2_09': return { validCells: adjEnemies, hint: '向きを変える隣接敵を選択（→方向選択）' };
-    case 'trick_v2_12': return { validCells: allEnemies, hint: '向きを変える敵を選択（→方向選択）' };
-    // Tank
-    case 'tank_v2_11': return { validCells: allAllies, hint: '向きを変える味方を選択（→方向選択）' };
-    // Control
-    case 'control_v2_01': return { validCells: adjEnemies, hint: '隣接敵のATK-1' };
-    case 'control_v2_02': case 'control_v2_04': case 'control_v2_11': return { validCells: adjEnemies, hint: '隣接敵の再行動コスト+1' };
-    case 'control_v2_03': return { validCells: adjEnemies, hint: '隣接敵のATK-2' };
-    case 'control_v2_05': case 'control_v2_08': return { validCells: adjEnemies, hint: '隣接敵を90°回転' };
-    case 'control_v2_07': return { validCells: allEnemies, hint: '洗脳する敵を選択' };
-    case 'control_v2_10': return { validCells: adjEnemies, hint: '隣接敵のATK-1（条件付きドロー・ダメ）' };
-    default: return { validCells: [], hint: `${cardId} 効果対象選択（未実装）` };
-  }
+  const spec = getEffectSpec(cardId);
+  const target = getFirstSelectTarget(spec.clauses, 'on_summon');
+  if (!target) return { validCells: [], hint: '' };
+  const validCells = resolveSelectCells(target, state.board, state.active, summonIdx);
+  return { validCells, hint: TARGET_HINT[target] ?? '対象を選択' };
 }
 
 function getItemTargets(
@@ -1035,34 +1030,29 @@ function getItemTargets(
   itemId: string,
   active: 0 | 1,
 ): { validCells: CellIndex[]; hint: string } {
-  const opp = (1 - active) as 0 | 1;
-  const allAllies = state.board
-    .map((c, i) => (c !== null && c.owner === active ? i : -1))
-    .filter(i => i >= 0) as CellIndex[];
-  const allEnemies = state.board
-    .map((c, i) => (c !== null && c.owner === opp ? i : -1))
-    .filter(i => i >= 0) as CellIndex[];
+  const spec = getItemSpec(itemId);
+  if (!spec) return { validCells: [], hint: '' };
+  const clause = spec.clauses.find(c => c.trigger === 'on_use');
+  if (!clause) return { validCells: [], hint: '' };
 
-  switch (itemId) {
-    case 'item_03': return { validCells: allAllies, hint: '味方1体のHP+3' };
-    case 'item_04': return { validCells: allAllies, hint: '味方1体のATK+2（このターン）' };
-    case 'item_grant_piercing': return { validCells: allAllies, hint: '貫通マーカーを付与する味方を選択' };
-    case 'item_grant_protection': return { validCells: allAllies, hint: '防護マーカーを付与する味方を選択' };
-    case 'item_reactivate': return { validCells: allAllies, hint: '再行動させる味方を選択' };
-    case 'item_self_bounce': return { validCells: allAllies, hint: '手札に戻す味方を選択' };
-    case 'item_05': return { validCells: allEnemies, hint: '敵1体のATK-2' };
-    case 'item_06': return { validCells: allEnemies, hint: '敵1体に2ダメ' };
-    case 'item_14': return { validCells: allEnemies, hint: '180°回転・向き固定する敵を選択' };
-    case 'item_20': return { validCells: allEnemies, hint: '90°回転する敵を選択' };
-    case 'item_bounce_enemy': {
-      const costLE2 = allEnemies.filter(i => {
-        const c = state.board[i];
-        return c != null && (getCharDef(c.cardId)?.cost ?? 99) <= 2;
-      });
-      return { validCells: costLE2, hint: 'コスト2以下の敵を手札に戻す' };
+  for (const atom of clause.effects) {
+    if (!('target' in atom)) continue;
+    const target = (atom as { target: EffectTarget }).target;
+    if (!['select_ally', 'select_adj_ally', 'select_enemy', 'select_adj_enemy', 'select_any'].includes(target)) continue;
+    let cells = resolveSelectCells(target, state.board, active);
+    // bounce の maxCost 制約をアトムから読む
+    if (atom.type === 'bounce' && 'maxCost' in atom) {
+      const maxCost = (atom as { maxCost?: number }).maxCost;
+      if (maxCost !== undefined) {
+        cells = cells.filter(i => {
+          const c = state.board[i];
+          return c != null && (getCharDef(c.cardId)?.cost ?? 99) <= maxCost;
+        });
+      }
     }
-    default: return { validCells: [], hint: `${itemId} 対象選択` };
+    return { validCells: cells, hint: TARGET_HINT[target] ?? '対象を選択' };
   }
+  return { validCells: [], hint: '' };
 }
 
 // ============================================================
@@ -1077,7 +1067,6 @@ function onUltClick(state: GameState, ui: GameUiExtra): void {
   const spec = getUltSpec(caster.cardId);
   if (!spec) return;
   const active = state.active;
-  const opp = (1 - active) as 0 | 1;
 
   // Spend VP, mark used
   const np = [...state.players] as typeof state.players;
@@ -1086,8 +1075,11 @@ function onUltClick(state: GameState, ui: GameUiExtra): void {
   nb[casterIdx] = { ...caster, ultUsed: true };
   let newState = appendLog({ ...state, board: nb, players: np }, `${getCardName(caster.cardId)} がウルト発動！（${spec.vpCost}VP消費）`, 'system');
 
-  // snipe_v2_09: mandatory discard, then select enemy
-  if (caster.cardId === 'snipe_v2_09') {
+  const clause = spec.clauses.find(c => c.trigger === 'on_ult_activate');
+  if (!clause) { setState({ gameState: newState, gameUiExtra: resetGameUiExtra() }); return; }
+
+  // 必須コスト: 手札捨て → discard_pending フローへ
+  if (clause.cost?.type === 'discard' && clause.costMandatory) {
     setState({
       gameState: newState,
       gameUiExtra: {
@@ -1101,24 +1093,28 @@ function onUltClick(state: GameState, ui: GameUiExtra): void {
     return;
   }
 
-  // snipe_v2_12: self damage 2, then select enemy
-  if (caster.cardId === 'snipe_v2_12') {
+  // 必須コスト: 自傷ダメージ → 即時適用してから対象選択へ
+  if (clause.cost?.type === 'self_damage' && clause.costMandatory) {
+    const amount = clause.cost.amount;
     const updCaster = newState.board[casterIdx];
     if (updCaster) {
       const nb2 = [...newState.board] as Board;
-      const newHp = updCaster.hp - 2;
+      const newHp = updCaster.hp - amount;
       nb2[casterIdx] = newHp <= 0 ? null : { ...updCaster, hp: newHp };
-      newState = appendLog({ ...newState, board: nb2 }, `自身に2ダメ（ウルトコスト）`, 'damage');
+      newState = appendLog({ ...newState, board: nb2 }, `自身に${amount}ダメ（ウルトコスト）`, 'damage');
     }
-    const allEnemies = newState.board
-      .map((c, i) => (c !== null && c.owner === opp ? i : -1))
-      .filter(i => i >= 0) as CellIndex[];
+  }
+
+  // 対象選択が必要か UltSpec から判定
+  const selectTarget = getFirstSelectTarget(spec.clauses, 'on_ult_activate');
+  if (selectTarget) {
+    const validCells = resolveSelectCells(selectTarget, newState.board, active, casterIdx);
     setState({
       gameState: newState,
       gameUiExtra: {
         ...resetGameUiExtra(),
         mode: 'ult_targeting',
-        validCells: allEnemies,
+        validCells,
         ultCasterIdx: casterIdx,
         pendingCardId: caster.cardId,
       },
@@ -1126,43 +1122,7 @@ function onUltClick(state: GameState, ui: GameUiExtra): void {
     return;
   }
 
-  // control_v2_09: atk_steal from select_enemy
-  if (caster.cardId === 'control_v2_09') {
-    const allEnemies = newState.board
-      .map((c, i) => (c !== null && c.owner === opp ? i : -1))
-      .filter(i => i >= 0) as CellIndex[];
-    setState({
-      gameState: newState,
-      gameUiExtra: {
-        ...resetGameUiExtra(),
-        mode: 'ult_targeting',
-        validCells: allEnemies,
-        ultCasterIdx: casterIdx,
-        pendingCardId: caster.cardId,
-      },
-    });
-    return;
-  }
-
-  // trick_v2_09: swap_positions with select_any (excluding self)
-  if (caster.cardId === 'trick_v2_09') {
-    const allUnits = newState.board
-      .map((c, i) => (c !== null && i !== casterIdx ? i : -1))
-      .filter(i => i >= 0) as CellIndex[];
-    setState({
-      gameState: newState,
-      gameUiExtra: {
-        ...resetGameUiExtra(),
-        mode: 'ult_targeting',
-        validCells: allUnits,
-        ultCasterIdx: casterIdx,
-        pendingCardId: caster.cardId,
-      },
-    });
-    return;
-  }
-
-  // Direct effects (no target selection)
+  // 直接効果（対象選択なし）
   newState = applyUltDirectEffect(newState, casterIdx, active);
   newState = applyVictoryCheck(newState, null);
   if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }

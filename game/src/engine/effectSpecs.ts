@@ -142,6 +142,19 @@ export function clauseHasPendingEffects(clause: EffectClause): boolean {
   );
 }
 
+/** 指定トリガーの節群から最初の select_* EffectTarget を返す。なければ null。 */
+export function getFirstSelectTarget(clauses: EffectClause[], trigger: EffectTrigger): EffectTarget | null {
+  for (const clause of clauses) {
+    if (clause.trigger !== trigger) continue;
+    for (const effect of clause.effects) {
+      if ('target' in effect && SELECT_TARGETS.has((effect as { target: EffectTarget }).target)) {
+        return (effect as { target: EffectTarget }).target;
+      }
+    }
+  }
+  return null;
+}
+
 // ============================================================
 // キャラクターエフェクトスペック（カードID → CardEffectSpec）
 // effects のないカードはこのテーブルに登録不要（getEffectSpec で空を返す）
@@ -365,7 +378,7 @@ export const EFFECT_SPECS: Record<string, CardEffectSpec> = {
     { trigger: 'on_summon', cost: { type: 'discard', count: 1 }, effects: [{ type: 'mana_gain', amount: 1 }] },
   ]},
   'trick_v2_04': { clauses: [
-    { trigger: 'on_summon', effects: [{ type: 'swap_positions', target: 'select_ally' }] },
+    { trigger: 'on_summon', effects: [{ type: 'swap_positions', target: 'select_adj_ally' }] },
   ]},
   'trick_v2_05': { clauses: [
     { trigger: 'on_attack', condition: { type: 'self_in_b_position' }, effects: [{ type: 'extra_damage', amount: 1 }] },
