@@ -5,8 +5,23 @@ import { getAdjacentPositions } from './utils';
 export const MAX_CHARACTERS_PER_PLAYER = 5;
 export const MAX_SUMMONS_PER_TURN = 2;
 export const EXTRA_SUMMON_MANA_COST = 1;
-export const VP_TARGET = 15;
+export const VP_TARGET = 12;
 export const TERRITORY_CONTROL_TARGET = 5;
+
+// state.ts への循環依存を避けるためインライン実装
+function countCells(state: GameState, playerId: PlayerId): number {
+  let count = 0;
+  for (const row of state.board)
+    for (const cell of row)
+      if (cell.character?.owner === playerId) count++;
+  return count;
+}
+
+/** 相手が4マス以上保持している = チェック状態 */
+export function isUnderCheck(state: GameState, pid: PlayerId): boolean {
+  const opponentId: PlayerId = pid === 0 ? 1 : 0;
+  return countCells(state, opponentId) >= 4;
+}
 
 export function getKillVpForManaCost(manaCost: number): number {
   if (manaCost <= 2) return 1;
@@ -205,11 +220,14 @@ export function getAceEffectiveCost(state: GameState, pid: PlayerId, card: { id?
   if (card.manaCost < 5 && !isFormerC6Ace) return card.manaCost;
 
   const condCount = getAceConditionCount(state, pid, card.faction);
+  // チェック中は-1追加（窮地の逆転召喚）
+  const checkDiscount = isUnderCheck(state, pid) ? 1 : 0;
+
   if (isFormerC6Ace) {
     const ownerUnits = countOwnerUnits(state, pid);
     const fieldDiscount = ownerUnits >= 3 ? 1 : 0;
-    return Math.max(2, card.manaCost - condCount - fieldDiscount);
+    return Math.max(2, card.manaCost - condCount - fieldDiscount - checkDiscount);
   }
 
-  return Math.max(2, card.manaCost - condCount);
+  return Math.max(2, card.manaCost - condCount - checkDiscount);
 }

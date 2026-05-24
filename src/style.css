@@ -67,6 +67,37 @@ body {
   opacity: 0.85;
 }
 
+.player-vp {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: #f1c40f;
+}
+
+.player-cells {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.player-info.under-check {
+  animation: check-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes check-pulse {
+  from { box-shadow: 0 0 6px rgba(255, 68, 68, 0.4); }
+  to   { box-shadow: 0 0 16px rgba(255, 68, 68, 0.8); }
+}
+
+.check-warning {
+  padding: 0.15rem 0.6rem;
+  background: rgba(255, 68, 68, 0.25);
+  border: 1px solid rgba(255, 68, 68, 0.6);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  color: #ff6b6b;
+  letter-spacing: 0.05em;
+}
+
 .phase-indicator {
   margin-left: auto;
   padding: 0.15rem 0.5rem;

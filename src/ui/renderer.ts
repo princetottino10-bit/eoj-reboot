@@ -2,7 +2,8 @@ import type { AttackRange, AttackType, BlindPattern, Direction, Element } from '
 import { isCharacter } from '../types/card';
 import type { GameState, Position, PlayerId, BoardCharacter } from '../types/game';
 import { getValidTargetCells, getBlindPositions, getEffectiveBlindPattern, getRangeOffsets } from '../engine/range';
-import { getActionTaxTotal } from '../engine/rules';
+import { getActionTaxTotal, isUnderCheck, VP_TARGET } from '../engine/rules';
+import { countControlledCells } from '../engine/state';
 import { describeKeywords, describeEffects, getCardTooltip } from './card-text';
 
 const ELEMENT_COLORS: Record<Element, string> = {
@@ -190,14 +191,19 @@ export class GameRenderer {
   private renderPlayerInfo(state: GameState, playerId: PlayerId): HTMLElement {
     const player = state.players[playerId];
     const isCurrent = state.currentPlayer === playerId;
+    const underCheck = isUnderCheck(state, playerId);
+    const cells = countControlledCells(state, playerId);
     const info = document.createElement('div');
-    info.className = `player-info ${isCurrent ? 'current-player' : ''}`;
-    info.style.borderColor = PLAYER_COLORS[playerId];
+    info.className = `player-info ${isCurrent ? 'current-player' : ''} ${underCheck ? 'under-check' : ''}`;
+    info.style.borderColor = underCheck ? '#ff4444' : PLAYER_COLORS[playerId];
 
     info.innerHTML = `
       <span class="player-name" style="color:${PLAYER_COLORS[playerId]}">${player.name}</span>
+      <span class="player-vp" title="VP / 目標${VP_TARGET}">⭐ ${player.vp} / ${VP_TARGET}</span>
+      <span class="player-cells" title="制圧マス数">🏴 ${cells}</span>
       <span class="player-mana">💎 ${player.mana}</span>
       <span class="player-deck">🃏 ${player.deck.length}</span>
+      ${underCheck ? `<span class="check-warning">⚠ チェック</span>` : ''}
       ${isCurrent ? `<span class="phase-indicator">${this.phaseLabel(state.phase)}</span>` : ''}
     `;
     return info;

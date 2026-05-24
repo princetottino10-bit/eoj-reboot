@@ -11,7 +11,7 @@ import type {
 } from '../types/game';
 import { calculateHpBonus, getAdjacentPositions } from './utils';
 import { getAttackTargets as getRangeTargets, isInAttackRange, isBlindSpot } from './range';
-import { drawCards, checkWinCondition, getWinnerReason } from './state';
+import { drawCards, checkWinCondition, getWinnerReason, countControlledCells } from './state';
 import { resolveEffects, resolveGlobalTrigger, tickBuffDurations, resolveItemEffects, findCharacters } from './effects';
 import {
   EXTRA_SUMMON_MANA_COST,
@@ -20,6 +20,7 @@ import {
   getAceEffectiveCost,
   getActionTaxTotal,
   getKillVpForManaCost,
+  isUnderCheck,
 } from './rules';
 
 // ========================================
@@ -202,6 +203,9 @@ function removeCharacter(state: GameState, pos: Position, killer?: BoardCharacte
   const owner = char2.owner;
   const player = state.players[owner];
 
+  // チェックキルボーナス判定（除去前に判定）
+  const defenderCellsBefore = countControlledCells(state, owner);
+
   state = setCharacterOnCell(state, pos, null);
   state = updatePlayer(state, owner, {
     mana: player.mana + 1,
@@ -210,9 +214,14 @@ function removeCharacter(state: GameState, pos: Position, killer?: BoardCharacte
   // v2: VP付与（敵を撃破した場合）
   if (killer && killer.owner !== owner) {
     const killVP = getKillVpForManaCost(char2.card.manaCost);
-    const newVp = state.players[killer.owner].vp + killVP;
+    // チェック中（相手が4マス以上）のキルには+1VPボーナス
+    const checkKillBonus = defenderCellsBefore >= 4 ? 1 : 0;
+    const newVp = state.players[killer.owner].vp + killVP + checkKillBonus;
     state = updatePlayer(state, killer.owner, { vp: newVp });
-    state = addLog(state, `Player ${killer.owner} gains ${killVP} VP (total: ${newVp})`);
+    const vpLog = checkKillBonus > 0
+      ? `Player ${killer.owner} gains ${killVP}+1(check) VP (total: ${newVp})`
+      : `Player ${killer.owner} gains ${killVP} VP (total: ${newVp})`;
+    state = addLog(state, vpLog);
   }
   if (killer && killer.owner !== owner) {
     state = addCombatEvent(state, {
@@ -584,6 +593,12 @@ export function startTurn(state: GameState): GameState {
   state = updatePlayer(state, pid, {
     mana: state.players[pid].mana + 2,
   });
+
+  // チェック状態（相手が4マス以上）なら+1マナボーナス
+  if (isUnderCheck(state, pid)) {
+    state = updatePlayer(state, pid, { mana: state.players[pid].mana + 1 });
+    state = addLog(state, `Player ${pid} gains check bonus mana`);
+  }
 
   // Set phase
   state = { ...state, phase: 'action' };
