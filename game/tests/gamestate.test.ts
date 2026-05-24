@@ -198,7 +198,7 @@ describe('createCharInstance', () => {
     const c = createCharInstance(def, 0, 0);
     expect(c.status).toEqual({
       brainwashedTurns: 0, brainwashedBy: null,
-      actionTax: 0, dirLocked: 0, immune: 0,
+      actionTax: 0, actionTaxBy: null, dirLocked: 0, immune: 0,
     });
   });
 });

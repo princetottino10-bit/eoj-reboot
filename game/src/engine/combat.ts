@@ -125,6 +125,17 @@ interface ApplyResult {
   vpAwarded: number;
 }
 
+export function clearAffiliatedEffects(board: Board, deadCardId: string): void {
+  for (let i = 0; i < 9; i++) {
+    const c = board[i];
+    if (c == null) continue;
+    if (c.status.brainwashedBy === deadCardId)
+      board[i] = { ...c, status: { ...c.status, brainwashedTurns: 0, brainwashedBy: null } } as typeof c;
+    if (c.status.actionTaxBy === deadCardId)
+      board[i] = { ...c, status: { ...c.status, actionTax: 0, actionTaxBy: null } } as typeof c;
+  }
+}
+
 function applyDamage(
   board: Board,
   targetIdx: CellIndex,
@@ -137,7 +148,9 @@ function applyDamage(
   const actual = Math.max(0, amount);
   char.hp -= actual;
   if (char.hp <= 0) {
+    const deadCardId = char.cardId;
     board[targetIdx] = null;
+    clearAffiliatedEffects(board, deadCardId);
     return { damage: actual, vpAwarded: vpForCost(defenderCost) };
   }
   return { damage: actual, vpAwarded: 0 };

@@ -33,6 +33,7 @@ export interface StatusEffects {
   brainwashedTurns: number;  // 洗脳残りターン数（0=解除済み）
   brainwashedBy: string | null; // 洗脳付与者のカードID
   actionTax: number;         // 再行動コスト増加量
+  actionTaxBy: string | null; // actionTax付与者のカードID
   dirLocked: number;         // 向き固定残りターン数
   immune: number;            // 無敵残りターン数
 }

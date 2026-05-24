@@ -30,6 +30,7 @@ function makeChar(overrides: Partial<CharInstance> & { owner: 0 | 1 }): CharInst
       brainwashedTurns: 0,
       brainwashedBy: null,
       actionTax: 0,
+      actionTaxBy: null,
       dirLocked: 0,
       immune: 0,
     },
@@ -468,7 +469,7 @@ describe('immune', () => {
     const attacker = makeChar({ owner: 0, atk: 3, dir: DIR_UP });
     const defender = makeChar({
       owner: 1, hp: 3, maxHp: 3, dir: DIR_DOWN,
-      status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, dirLocked: 0, immune: 1 },
+      status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, actionTaxBy: null, dirLocked: 0, immune: 1 },
     });
     board[4] = attacker;
     board[1] = defender;
@@ -483,7 +484,7 @@ describe('immune', () => {
     const board = makeBoard();
     const attacker = makeChar({
       owner: 0, atk: 3, hp: 5, maxHp: 5, dir: DIR_UP,
-      status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, dirLocked: 0, immune: 1 },
+      status: { brainwashedTurns: 0, brainwashedBy: null, actionTax: 0, actionTaxBy: null, dirLocked: 0, immune: 1 },
     });
     const defender = makeChar({ owner: 1, hp: 3, maxHp: 3, dir: DIR_DOWN, atk: 3 });
     board[4] = attacker;

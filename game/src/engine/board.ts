@@ -129,6 +129,8 @@ export function getValidSummonCells(board: Board, playerIdx: 0 | 1): CellIndex[]
     if (board[i]?.owner === playerIdx) friendlyIndices.push(i);
   }
 
+  if (friendlyIndices.length >= 5) return [];
+
   if (friendlyIndices.length === 0) {
     // 初回召喚: 全空きマス
     return board.reduce<CellIndex[]>((acc, cell, i) => {

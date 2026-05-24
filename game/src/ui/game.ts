@@ -5,10 +5,10 @@ import {
   getCharDef, getItemDef, isCharCard, getCardName, getCardCost, CARD_DB,
 } from '../data/cards.js';
 import {
-  getAttackCells, getAdjacentCells,
+  getAttackCells, getAdjacentCells, getValidSummonCells,
   cellRow, cellCol, cellIdx as makeCellIdx, isValidCell, relToAbs,
 } from '../engine/board.js';
-import { resolveAttack } from '../engine/combat.js';
+import { resolveAttack, clearAffiliatedEffects } from '../engine/combat.js';
 import { createCharInstance, attributeHpBonus } from '../engine/gamestate.js';
 import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect } from '../engine/effects.js';
 import { getUltSpec } from '../engine/effectSpecs.js';
@@ -186,7 +186,7 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
       labelEl.textContent = `${char.keywords.includes('要塞') ? '[要塞] ' : ''}${getCardName(char.cardId)} の行動:`;
       actionPanel.appendChild(labelEl);
 
-      if (!char.hasActed && !char.keywords.includes('要塞')) {
+      if (!char.hasActed && !char.keywords.includes('要塞') && char.status.brainwashedTurns === 0) {
         const attackBtn = document.createElement('button');
         attackBtn.className = 'btn btn-danger';
         attackBtn.textContent = '攻撃';
@@ -194,7 +194,7 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
         actionPanel.appendChild(attackBtn);
       }
 
-      if (!char.hasRotated && char.status.dirLocked === 0) {
+      if (!char.hasRotated && char.status.dirLocked === 0 && char.status.brainwashedTurns === 0) {
         const rotLabel = document.createElement('div');
         rotLabel.className = 'action-label';
         rotLabel.style.width = '100%';
@@ -443,9 +443,7 @@ function onHandCardClick(state: GameState, handIdx: number): void {
   const cardId = state.players[active].hand[handIdx]!;
 
   if (isCharCard(cardId)) {
-    const validCells: CellIndex[] = state.board
-      .map((c, i) => (c === null ? i : -1))
-      .filter(i => i >= 0) as CellIndex[];
+    const validCells = getValidSummonCells(state.board, active);
     setState({
       gameUiExtra: {
         ...getState().gameUiExtra,
@@ -996,7 +994,7 @@ function applyPendingEffect(
 
   const addActionTax = (amount: number) => {
     const c = nb[targetIdx];
-    if (c && c.owner === opp) nb[targetIdx] = { ...c, status: { ...c.status, actionTax: c.status.actionTax + amount } };
+    if (c && c.owner === opp) nb[targetIdx] = { ...c, status: { ...c.status, actionTax: c.status.actionTax + amount, actionTaxBy: cardId } };
   };
 
   void summonIdx;
@@ -1078,6 +1076,7 @@ function applyPendingEffect(
           const newHp = tgt.hp - 1;
           nb2[targetIdx] = newHp <= 0 ? null : { ...tgt, hp: newHp };
           if (newHp <= 0) {
+            clearAffiliatedEffects(nb2, tgt.cardId);
             const np = [...ns.players] as typeof ns.players;
             np[active] = { ...np[active], vp: np[active].vp + 1 };
             ns = { ...ns, board: nb2, players: np };
@@ -1185,6 +1184,7 @@ function applyItemEffect(state: GameState, itemId: string, targetIdx: CellIndex,
         const newHp = c.hp - 2;
         nb[targetIdx] = newHp <= 0 ? null : { ...c, hp: newHp };
         if (newHp <= 0) {
+          clearAffiliatedEffects(nb, c.cardId);
           const np = [...state.players] as typeof state.players;
           np[active] = { ...np[active], vp: np[active].vp + 1 };
           return appendLog({ ...state, board: nb, players: np }, `敵に2ダメ（撃破！1VP）`, 'system');
@@ -1344,6 +1344,7 @@ function applyUltDirectEffects(state: GameState, casterIdx: CellIndex, active: 0
           const newHp = target.hp - 5;
           if (newHp <= 0) {
             nb[ci] = null;
+            clearAffiliatedEffects(nb, target.cardId);
             np[active] = { ...np[active], vp: np[active].vp + (getCharDef(target.cardId)?.vp ?? 1) };
           } else {
             nb[ci] = { ...target, hp: newHp };
@@ -1519,6 +1520,7 @@ function onUltTargetClick(state: GameState, ui: GameUiExtra, targetIdx: CellInde
         const newHp = target.hp - dmg;
         if (newHp <= 0) {
           nb[targetIdx] = null;
+          clearAffiliatedEffects(nb, target.cardId);
           const np2 = [...newState.players] as typeof newState.players;
           np2[active] = { ...np2[active], vp: np2[active].vp + (getCharDef(target.cardId)?.vp ?? 1) };
           newState = appendLog({ ...newState, board: nb, players: np2 }, `${getCardName(target.cardId)} に${dmg}ダメ（貫通）撃破！VP獲得`, 'system');
