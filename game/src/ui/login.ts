@@ -12,11 +12,28 @@ export function renderLogin(error?: string | null): HTMLElement {
   `;
 
   const btn = div.querySelector('#btn-google-login') as HTMLButtonElement;
+  const errEl = div.querySelector('.login-error') as HTMLElement;
 
   btn.addEventListener('click', () => {
     btn.disabled = true;
-    btn.textContent = 'リダイレクト中…';
-    void signInWithGoogle(); // Googleページへ遷移（戻り値なし）
+    btn.textContent = 'ログイン中…';
+    errEl.textContent = '';
+
+    signInWithGoogle().then((method) => {
+      if (method === 'redirect') {
+        btn.textContent = 'リダイレクト中…';
+        errEl.textContent = 'ポップアップがブロックされました（広告ブロック等）。別ページに移動します…';
+      } else if (method === 'cancelled') {
+        btn.disabled = false;
+        btn.textContent = 'Googleでログイン';
+      }
+      // 'popup': onAuthStateChanged が発火してアプリが遷移する
+    }).catch((e: unknown) => {
+      console.error('[Login]', e);
+      btn.disabled = false;
+      btn.textContent = 'Googleでログイン';
+      errEl.textContent = 'ログインに失敗しました。時間をおいて再試行してください。';
+    });
   });
 
   return div;

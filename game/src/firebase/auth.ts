@@ -1,5 +1,6 @@
 import {
   GoogleAuthProvider,
+  signInWithPopup,
   signInWithRedirect,
   signOut as fbSignOut,
   onAuthStateChanged as fbOnAuthStateChanged,
@@ -21,9 +22,26 @@ async function checkAllowlist(email: string): Promise<boolean> {
   return snap.exists();
 }
 
-// Google 認証ページへリダイレクト
-export function signInWithGoogle(): Promise<void> {
-  return signInWithRedirect(auth, provider);
+/**
+ * Popup でログインを試み、ポップアップブロック時は redirect にフォールバックする。
+ * 戻り値: 'popup' = popup で完了 / 'redirect' = redirect に切り替え（ページ遷移中）
+ *         'cancelled' = ユーザーがポップアップを閉じた
+ */
+export async function signInWithGoogle(): Promise<'popup' | 'redirect' | 'cancelled'> {
+  try {
+    await signInWithPopup(auth, provider);
+    return 'popup';
+  } catch (e: unknown) {
+    const code = (e as { code?: string }).code;
+    if (code === 'auth/popup-blocked') {
+      void signInWithRedirect(auth, provider);
+      return 'redirect';
+    }
+    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+      return 'cancelled';
+    }
+    throw e;
+  }
 }
 
 export function signOut(): Promise<void> {
