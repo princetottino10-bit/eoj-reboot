@@ -10,7 +10,7 @@ import {
 } from '../engine/board.js';
 import { resolveAttack } from '../engine/combat.js';
 import { createCharInstance, attributeHpBonus } from '../engine/gamestate.js';
-import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect, applyEffectAfterDir } from '../engine/effects.js';
+import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect } from '../engine/effects.js';
 import {
   getEffectSpec, getItemSpec, getUltSpec, getFirstSelectTarget,
 } from '../engine/effectSpecs.js';
@@ -18,7 +18,7 @@ import type { EffectTarget } from '../engine/effectSpecs.js';
 import { startTurnPhase, drawStep, endTurnCleanup, spendReactivationMana } from '../engine/turn.js';
 import { evalVictory } from '../engine/victory.js';
 import { applyItemEffect } from '../engine/items.js';
-import { applyPendingEffect, applyDiscardEffect } from '../engine/pendingEffects.js';
+import { applyPendingEffect, applyDiscardEffect, applyEffectAfterDir } from '../engine/pendingEffects.js';
 import { applyUltDirectEffect, applyUltTargetEffect } from '../engine/ults.js';
 import { calcCostReduction } from '../engine/cost.js';
 

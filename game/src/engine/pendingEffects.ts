@@ -1,10 +1,12 @@
-import type { GameState, CellIndex, Board, Direction } from './types.js';
+import type { GameState, CellIndex, Board, Direction, PlayerState } from './types.js';
 import { appendLog } from './types.js';
 import { getAdjacentCells } from './board.js';
 import { pushBack } from './board.js';
 import { drawStep } from './turn.js';
 import { clearAffiliatedEffects } from './combat.js';
 import { getCardName } from '../data/cards.js';
+import { getEffectSpec, clauseHasPendingEffects } from './effectSpecs.js';
+import { evalCondition, applyAtom } from './effects.js';
 
 export function applyPendingEffect(
   state: GameState,
@@ -170,4 +172,32 @@ export function applyDiscardEffect(
     return appendLog(state, '後退できる敵なし（効果なし）', 'info');
   }
   return state;
+}
+
+/**
+ * 向き選択完了後に残っている on_summon の条件付き自動効果を適用する。
+ * pending 節・無条件節はスキップ（summon 時に適用済み）。
+ */
+export function applyEffectAfterDir(
+  state: GameState,
+  cardId: string,
+  summonIdx: CellIndex,
+  active: 0 | 1,
+): GameState {
+  const spec = getEffectSpec(cardId);
+  let board = [...state.board] as Board;
+  let players: [PlayerState, PlayerState] = [{ ...state.players[0] }, { ...state.players[1] }];
+
+  for (const clause of spec.clauses) {
+    if (clause.trigger !== 'on_summon') continue;
+    if (clauseHasPendingEffects(clause)) continue;
+    if (!clause.condition) continue;
+    if (!evalCondition(clause.condition, board, summonIdx, active, state.boardAttrs)) continue;
+    for (const atom of clause.effects) {
+      const r = applyAtom(board, players, summonIdx, active, atom);
+      board = r.board;
+      players = r.players;
+    }
+  }
+  return { ...state, board, players };
 }
