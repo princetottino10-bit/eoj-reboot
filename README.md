@@ -29,7 +29,7 @@ just setup
 just dev        # ブラウザゲームの開発サーバーを起動 (http://localhost:5173)
 just test       # テストを実行
 just pdf        # 印刷用PDFを生成 (card-gen/cards.pdf)
-just md         # カードリストMarkdownを生成 (data/cards.md)
+just md         # カードリストMarkdownを生成 (docs/cards.md)
 ```
 
 `just` だけで全コマンド一覧を表示します。
@@ -40,7 +40,8 @@ just md         # カードリストMarkdownを生成 (data/cards.md)
 eoj-reboot/
 ├── data/
 │   ├── cards.json          # カードデータ（キャラクター・アイテム）
-│   └── cards.schema.json   # cards.json の JSON スキーマ
+│   ├── cards.schema.json   # cards.json の JSON スキーマ
+│   └── rulebook.md         # ゲームエンジン向けルール抜粋
 ├── card-gen/
 │   ├── generate_cards.py   # 印刷用 PDF 生成スクリプト
 │   └── generate_card_md.py # カードリスト Markdown 生成スクリプト
@@ -48,11 +49,9 @@ eoj-reboot/
 │   ├── src/engine/         # ゲームロジック（TypeScript）
 │   ├── src/ui/             # ブラウザ UI
 │   └── tests/              # vitest テスト
-├── data/
-│   └── rulebook.md         # ゲームエンジン向けルール抜粋
 ├── docs/
 │   ├── EOJR_Rulebook.md    # 公式ルールブック（全文）
-│   └── cards.md            # カードリスト（生成済み）
+│   └── cards.md            # カードリスト（just md で生成）
 └── justfile                # タスクランナー定義
 ```
 
