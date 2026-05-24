@@ -83,7 +83,7 @@ function applyItemAtom(
         atom.amount < 0 ? `${Math.abs(atom.amount)}ダメ` : `HP+${atom.amount}`, atom.amount < 0 ? 'damage' : 'heal');
     }
     case 'rotate': {
-      if (atom.degrees === 'any') return state; // 向き選択はUI側で処理
+      if (atom.degrees === 'any' || atom.degrees === 'either') return state; // 向き選択はUI側で処理
       const rotated = atom.degrees === 180
         ? ((c.dir + 2) % 4) as Direction
         : ((c.dir + 1) % 4) as Direction;

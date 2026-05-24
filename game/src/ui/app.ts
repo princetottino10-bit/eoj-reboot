@@ -46,6 +46,8 @@ const INITIAL_GAME_UI_EXTRA: GameUiExtra = {
   pendingCellIdx: null,
   discardContext: null,
   effectDirContext: null,
+  effectRotateContext: null,
+  itemRotateContext: null,
   itemHandIdx: null,
   ultCasterIdx: null,
   elementSwapBoardIdx: null,

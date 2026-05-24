@@ -24,17 +24,23 @@ import { calcCostReduction } from '../engine/cost.js';
 
 export interface GameUiExtra {
   mode: 'idle' | 'hand_selected' | 'summon_dir_pending' | 'char_selected'
-      | 'attack_targeting' | 'effect_targeting' | 'effect_dir_pending' | 'discard_pending'
+      | 'attack_targeting' | 'effect_targeting' | 'effect_dir_pending' | 'effect_rotate_pending'
+      | 'discard_pending'
       | 'ult_targeting' | 'ult_dir_pending'
-      | 'element_swap_ally_pending' | 'element_swap_hand_pending';
+      | 'element_swap_ally_pending' | 'element_swap_hand_pending'
+      | 'item_rotate_pending';
   validCells: CellIndex[];
   dirPickerCell: CellIndex | null;
   summonHandIdx: number | null;
   selectedBoardIdx: CellIndex | null;
   pendingCardId: string | null;
   pendingCellIdx: CellIndex | null;
-  /** Two-step effect: after target chosen, show direction picker */
+  /** Two-step effect: after target chosen, show direction picker (any) */
   effectDirContext: { cardId: string; summonIdx: CellIndex; targetIdx: CellIndex } | null;
+  /** Two-step effect: after target chosen, show 90° left/right picker */
+  effectRotateContext: { cardId: string; summonIdx: CellIndex; targetIdx: CellIndex } | null;
+  /** Item effect: after target chosen, show 90° left/right picker */
+  itemRotateContext: { cardId: string; targetIdx: CellIndex; handIdx: number } | null;
   /** Discard-from-hand effect context */
   discardContext: { cardId: string; cellIdx: CellIndex; mandatory: boolean } | null;
   /** Index of item card being played (in active player's hand) */
@@ -176,6 +182,18 @@ export function renderGame(state: GameState, ui: GameUiExtra): HTMLElement {
       (dir) => onUltDirPicked(state, ui, dir),
     ));
   }
+  if (ui.mode === 'effect_rotate_pending' && ui.effectRotateContext !== null) {
+    div.appendChild(buildRotatePickerOverlay(
+      '回転方向を選択',
+      (clockwise) => onEffectRotatePicked(state, ui, clockwise),
+    ));
+  }
+  if (ui.mode === 'item_rotate_pending' && ui.itemRotateContext !== null) {
+    div.appendChild(buildRotatePickerOverlay(
+      '回転方向を選択',
+      (clockwise) => onItemRotatePicked(state, ui, clockwise),
+    ));
+  }
 
   return div;
 }
@@ -257,7 +275,8 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
     }
   } else if (
     ui.mode === 'hand_selected' || ui.mode === 'attack_targeting' ||
-    ui.mode === 'effect_targeting' || ui.mode === 'effect_dir_pending'
+    ui.mode === 'effect_targeting' || ui.mode === 'effect_dir_pending' ||
+    ui.mode === 'effect_rotate_pending' || ui.mode === 'item_rotate_pending'
   ) {
     actionPanel.appendChild(cancel());
     const hint = document.createElement('div');
@@ -265,6 +284,7 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
     if (ui.mode === 'hand_selected') hint.textContent = '召喚先のマスを選択';
     else if (ui.mode === 'attack_targeting') hint.textContent = '攻撃対象を選択';
     else if (ui.mode === 'effect_dir_pending') hint.textContent = '向きを選択してください（オーバーレイ）';
+    else if (ui.mode === 'effect_rotate_pending' || ui.mode === 'item_rotate_pending') hint.textContent = '回転方向を選択してください（オーバーレイ）';
     else hint.textContent = ui.itemHandIdx !== null ? 'アイテム効果の対象を選択' : '効果の対象を選択';
     actionPanel.appendChild(hint);
   } else if (ui.mode === 'ult_targeting') {
@@ -440,6 +460,41 @@ function buildDirPickerOverlay(title: string, onPick: (dir: Direction) => void):
     grid.appendChild(btn);
   });
   picker.appendChild(grid);
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-secondary';
+  cancelBtn.style.marginTop = '12px';
+  cancelBtn.textContent = 'キャンセル';
+  cancelBtn.addEventListener('click', () => setState({ gameUiExtra: resetGameUiExtra() }));
+  picker.appendChild(cancelBtn);
+
+  overlay.appendChild(picker);
+  return overlay;
+}
+
+function buildRotatePickerOverlay(title: string, onPick: (clockwise: boolean) => void): HTMLElement {
+  const overlay = document.createElement('div');
+  overlay.className = 'dir-picker-overlay';
+  const picker = document.createElement('div');
+  picker.className = 'dir-picker';
+  picker.innerHTML = `<h3>${title}</h3>`;
+
+  const btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;gap:12px;justify-content:center;margin-top:8px;';
+
+  const rightBtn = document.createElement('button');
+  rightBtn.className = 'btn';
+  rightBtn.textContent = '右90° →↻';
+  rightBtn.addEventListener('click', () => onPick(true));
+
+  const leftBtn = document.createElement('button');
+  leftBtn.className = 'btn';
+  leftBtn.textContent = '←↺ 左90°';
+  leftBtn.addEventListener('click', () => onPick(false));
+
+  btns.appendChild(leftBtn);
+  btns.appendChild(rightBtn);
+  picker.appendChild(btns);
 
   const cancelBtn = document.createElement('button');
   cancelBtn.className = 'btn btn-secondary';
@@ -634,6 +689,63 @@ function onEffectDirPicked(state: GameState, ui: GameUiExtra, dir: Direction): v
 
   newState = applyEffectAfterDir(newState, cardId, summonIdx, active);
   finalizeSummonTurn(newState, cardId, summonIdx);
+}
+
+function onEffectRotatePicked(state: GameState, ui: GameUiExtra, clockwise: boolean): void {
+  const ctx = ui.effectRotateContext;
+  if (!ctx) return;
+  const { cardId, summonIdx, targetIdx } = ctx;
+  const active = state.active;
+
+  const newBoard = [...state.board] as Board;
+  const target = newBoard[targetIdx];
+  if (!target) {
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
+
+  const newDir = clockwise ? ((target.dir + 1) % 4) as Direction : ((target.dir + 3) % 4) as Direction;
+  newBoard[targetIdx] = { ...target, dir: newDir };
+  let newState = appendLog(
+    { ...state, board: newBoard },
+    `${getCardName(target.cardId)} を${clockwise ? '右' : '左'}90°回転させた`,
+    'info',
+  );
+
+  newState = applyEffectAfterDir(newState, cardId, summonIdx, active);
+  finalizeSummonTurn(newState, cardId, summonIdx);
+}
+
+function onItemRotatePicked(state: GameState, ui: GameUiExtra, clockwise: boolean): void {
+  const ctx = ui.itemRotateContext;
+  if (!ctx) return;
+  const { cardId, targetIdx, handIdx } = ctx;
+  const active = state.active;
+
+  // Pay cost and discard item from hand
+  const cost = getItemDef(cardId)?.cost ?? 0;
+  const newHand = [...state.players[active].hand];
+  newHand.splice(handIdx, 1);
+  const newDiscard = [...state.players[active].discard, cardId];
+  const ps = [...state.players] as typeof state.players;
+  ps[active] = { ...ps[active], hand: newHand, discard: newDiscard, mana: ps[active].mana - cost };
+  let newState = { ...state, players: ps };
+
+  const nb = [...newState.board] as Board;
+  const target = nb[targetIdx];
+  if (target) {
+    const newDir = clockwise ? ((target.dir + 1) % 4) as Direction : ((target.dir + 3) % 4) as Direction;
+    nb[targetIdx] = { ...target, dir: newDir };
+    newState = appendLog(
+      { ...newState, board: nb },
+      `${getCardName(target.cardId)} を${clockwise ? '右' : '左'}90°回転させた`,
+      'info',
+    );
+  }
+
+  newState = applyVictoryCheck(newState, null);
+  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
 function onDiscardCardClick(state: GameState, ui: GameUiExtra, handIdx: number): void {
@@ -959,6 +1071,23 @@ function doResolveEffect(state: GameState, ui: GameUiExtra, targetIdx: CellIndex
     return;
   }
 
+  // on_summon に rotate degrees:'either' があれば左右90°選択へ
+  const needsRotatePick = getEffectSpec(cardId).clauses.some(c =>
+    c.trigger === 'on_summon' &&
+    c.effects.some(e => e.type === 'rotate' && (e as { degrees: unknown }).degrees === 'either'),
+  );
+  if (needsRotatePick) {
+    setState({
+      gameState: state,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: 'effect_rotate_pending',
+        effectRotateContext: { cardId, summonIdx, targetIdx },
+      },
+    });
+    return;
+  }
+
   const newState = applyPendingEffect(state, cardId, summonIdx, targetIdx, active);
   finalizeSummonTurn(newState, cardId, summonIdx);
 }
@@ -967,6 +1096,25 @@ function doResolveItemEffect(state: GameState, ui: GameUiExtra, targetIdx: CellI
   const cardId = ui.pendingCardId;
   const handIdx = ui.itemHandIdx;
   if (!cardId || handIdx === null) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+
+  // item に rotate degrees:'either' があれば左右90°選択へ（コスト支払いは方向確定後）
+  const itemSpec = getItemSpec(cardId);
+  const needsRotatePick = itemSpec?.clauses.some(c =>
+    c.trigger === 'on_use' &&
+    c.effects.some(e => e.type === 'rotate' && (e as { degrees: unknown }).degrees === 'either'),
+  ) ?? false;
+  if (needsRotatePick) {
+    setState({
+      gameState: state,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: 'item_rotate_pending',
+        itemRotateContext: { cardId, targetIdx, handIdx },
+      },
+    });
+    return;
+  }
+
   const active = state.active;
 
   // Pay cost and discard item from hand

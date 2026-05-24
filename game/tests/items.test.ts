@@ -261,12 +261,13 @@ describe('item_14: 180°回転・向き固定1ターン', () => {
 // item_20: 90°回転
 // ============================================================
 describe('item_20: 敵を90°回転', () => {
-  it('敵を90°右回転', () => {
+  it('UIが回転方向を決めるため applyItemEffect は状態を変えない', () => {
+    // degrees:'either' の回転はUI側で処理するため engine は no-op
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(1, { dir: 0 }); // UP → RIGHT
+    board[4] = makeChar(1, { dir: 0 });
     const state = makeState(board);
     const result = applyItemEffect(state, 'item_20', 4, 0);
-    expect(result.board[4]?.dir).toBe(1); // RIGHT
+    expect(result.board[4]?.dir).toBe(0); // unchanged
   });
 });
 

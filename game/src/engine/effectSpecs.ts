@@ -50,7 +50,7 @@ export type EffectAtom =
   | { type: 'atk_delta'; target: EffectTarget; delta: number; permanent?: boolean; turns?: number }
   | { type: 'atk_steal'; target: EffectTarget; amount: number }
   | { type: 'push'; target: EffectTarget; distance: number }
-  | { type: 'rotate'; target: EffectTarget; degrees: 90 | 180 | 'any' }
+  | { type: 'rotate'; target: EffectTarget; degrees: 'either' | 180 | 'any' }
   | { type: 'draw'; count: number }
   | { type: 'discard'; count: number }
   | { type: 'mana_steal'; amount: number }
@@ -255,14 +255,14 @@ export const EFFECT_SPECS: Record<string, CardEffectSpec> = {
     { trigger: 'on_summon', effects: [{ type: 'action_tax', target: 'select_adj_enemy', amount: 1 }] },
   ]},
   'control_v2_05': { clauses: [
-    { trigger: 'on_summon', effects: [{ type: 'rotate', target: 'select_adj_enemy', degrees: 90 }] },
+    { trigger: 'on_summon', effects: [{ type: 'rotate', target: 'select_adj_enemy', degrees: 'either' }] },
   ]},
   'control_v2_07': { clauses: [
     { trigger: 'on_summon', effects: [{ type: 'brainwash', target: 'select_enemy', turns: 2 }] },
     { trigger: 'on_summon', effects: [{ type: 'atk_delta', target: 'select_adj_enemy', delta: -1 }] },
   ]},
   'control_v2_08': { clauses: [
-    { trigger: 'on_summon', effects: [{ type: 'rotate', target: 'select_adj_enemy', degrees: 90 }] },
+    { trigger: 'on_summon', effects: [{ type: 'rotate', target: 'select_adj_enemy', degrees: 'either' }] },
   ]},
   'control_v2_09': { clauses: [
     { trigger: 'on_summon', effects: [{ type: 'mana_steal', amount: 2 }] },
@@ -369,10 +369,10 @@ export const EFFECT_SPECS: Record<string, CardEffectSpec> = {
   // TRICK
   // ==============================
   'trick_v2_01': { clauses: [
-    { trigger: 'on_summon', effects: [{ type: 'rotate', target: 'select_enemy', degrees: 90 }] },
+    { trigger: 'on_summon', effects: [{ type: 'rotate', target: 'select_enemy', degrees: 'either' }] },
   ]},
   'trick_v2_02': { clauses: [
-    { trigger: 'on_summon', effects: [{ type: 'rotate', target: 'select_adj_enemy', degrees: 90 }] },
+    { trigger: 'on_summon', effects: [{ type: 'rotate', target: 'select_adj_enemy', degrees: 'either' }] },
   ]},
   'trick_v2_03': { clauses: [
     { trigger: 'on_summon', cost: { type: 'discard', count: 1 }, effects: [{ type: 'mana_gain', amount: 1 }] },
@@ -486,7 +486,7 @@ export const ITEM_SPECS: Record<string, ItemSpec> = {
     { type: 'rotate', target: 'select_enemy', degrees: 180 },
     { type: 'dir_lock', target: 'select_enemy', turns: 1 },
   ]}]},
-  'item_20':              { clauses: [{ trigger: 'on_use', effects: [{ type: 'rotate', target: 'select_enemy', degrees: 90 }] }] },
+  'item_20':              { clauses: [{ trigger: 'on_use', effects: [{ type: 'rotate', target: 'select_enemy', degrees: 'either' }] }] },
   'item_bounce_enemy':    { clauses: [{ trigger: 'on_use', effects: [{ type: 'bounce', target: 'select_enemy', maxCost: 2 }] }] },
   'item_element_swap':    { clauses: [{ trigger: 'on_use', effects: [{ type: 'element_swap', target: 'select_ally' }] }] },
   'item_grant_piercing':  { clauses: [{ trigger: 'on_use', effects: [{ type: 'give_marker', target: 'select_ally', marker: 'piercing' }] }] },
