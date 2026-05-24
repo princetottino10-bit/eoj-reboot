@@ -2064,6 +2064,17 @@ const item_grant_piercing: ItemCard = {
   ],
 };
 
+const item_field_set_nicht: ItemCard = {
+  id: 'item_field_set_nicht',
+  name: '虚化の礎',
+  type: 'item',
+  manaCost: 1,
+  effects: [
+    { trigger: 'on_use', target: 'target_cell', effect: 'field_set', value: 0, elementValue: 'nicht',
+      description: '対象マスの属性を虚（nicht）に変更する（虚マスが既に3マス以上の場合は無効）。' },
+  ],
+};
+
 export const ALL_ITEMS: ItemCard[] = [
   item01, item02, item03, item04, item05, item06,
   item07, item08, item09, item10, item11, item12,
@@ -2072,6 +2083,7 @@ export const ALL_ITEMS: ItemCard[] = [
   item25, item26, item27, item28, item29, item30,
   item_element_swap, item_bounce_enemy, item_self_bounce,
   item_reactivate, item_element_write, item_grant_protection, item_grant_piercing,
+  item_field_set_nicht,
 ];
 
 // ========================================

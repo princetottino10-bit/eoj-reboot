@@ -344,11 +344,16 @@ const control_v2: CharacterCard[] = [
     ],
   },
   {
-    id: 'control_v2_06', name: '断弦のリラ', type: 'character',
+    id: 'control_v2_06', name: '地裂のリラ', type: 'character',
     faction: 'control', element: 'geist', schoolClass: 'intel',
     hp: 3, atk: 2, manaCost: 3, activateCost: 2,
     attackRange: 'front1', attackType: 'physical', keywords: [],
-    effects: [],
+    effects: [
+      {
+        trigger: 'on_summon', target: 'adjacent_enemy', effect: 'field_quake', value: 0,
+        description: '召喚時、隣接する敵1体が立つマスの属性を反転する（同属性が3マス以上になる場合は無効）。',
+      },
+    ],
   },
   {
     id: 'control_v2_07', name: '魅了のセツナ', type: 'character',

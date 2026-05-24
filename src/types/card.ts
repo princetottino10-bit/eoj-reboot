@@ -176,6 +176,7 @@ export type EffectType =
     | 'mark'              // v2: マーク付与（スナイプ用）
     | 'steal_mana'        // v2: 相手マナ-value、自分マナ+value
     | 'exhaust_attack'    // このターン攻撃できない（攻撃済みにする）
+    | 'field_set'        // 対象マスを指定属性に変更（value = 属性名文字列）
     // NOTE: 'regenerate' は廃止。毎ターン回復は原則禁止
     ;
 
@@ -213,6 +214,7 @@ export interface CardEffect {
   target: EffectTarget;
   effect: EffectType;
   value: number;
+  elementValue?: string;   // field_set など、属性名を指定するエフェクト用
   condition?: EffectCondition;  // 省略時は always
   handCost?: number;  // 手札コスト（効果発動前に手札をN枚捨てる。手札不足なら不発）
   /** 日本語テキスト。UIに直接表示する（パーサーの代わり） */

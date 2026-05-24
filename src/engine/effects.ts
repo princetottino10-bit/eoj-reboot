@@ -16,6 +16,14 @@ function getCell(state: GameState, pos: Position) {
   return state.board[pos.row][pos.col];
 }
 
+function countElementOnBoard(state: GameState, element: string): number {
+  let count = 0;
+  for (const row of state.board)
+    for (const cell of row)
+      if (cell.element === element) count++;
+  return count;
+}
+
 function setCell(state: GameState, pos: Position, cell: GameState['board'][0][0]): GameState {
   const newBoard = state.board.map((row, r) =>
     row.map((c, col) => (r === pos.row && col === pos.col ? cell : c)),
@@ -786,17 +794,37 @@ function applySingleEffect(
     }
 
     case 'field_quake': {
-      // 属性反転（対立属性へ変更）
+      // 属性反転（対立属性へ変更）。同属性が既に3マスある場合は発動しない
+      const opposites: Record<string, string> = {
+        faust: 'geist', geist: 'faust',
+        licht: 'nacht', nacht: 'licht',
+        nicht: 'nicht',
+      };
       for (const pos of targets) {
         const cell = getCell(state, pos);
-        const opposites: Record<string, string> = {
-          faust: 'geist', geist: 'faust',
-          licht: 'nacht', nacht: 'licht',
-          nicht: 'nicht',
-        };
         const newElement = (opposites[cell.element] || cell.element) as any;
+        if (newElement !== cell.element && countElementOnBoard(state, newElement) >= 3) {
+          state = addLog(state, `属性 ${newElement} は既に3マスあるため反転できません`);
+          continue;
+        }
         state = setCell(state, pos, { ...cell, element: newElement });
         state = addLog(state, `(${pos.row},${pos.col}) の属性が ${newElement} に変化`);
+      }
+      break;
+    }
+
+    case 'field_set': {
+      // 指定属性に変更。同属性が既に3マスある場合は発動しない
+      const targetElement = effect.elementValue ?? 'nicht';
+      for (const pos of targets) {
+        const cell = getCell(state, pos);
+        if (cell.element === targetElement) continue;
+        if (countElementOnBoard(state, targetElement) >= 3) {
+          state = addLog(state, `属性 ${targetElement} は既に3マスあるため変更できません`);
+          continue;
+        }
+        state = setCell(state, pos, { ...cell, element: targetElement as any });
+        state = addLog(state, `(${pos.row},${pos.col}) の属性が ${targetElement} に変化`);
       }
       break;
     }
