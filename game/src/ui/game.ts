@@ -1042,15 +1042,22 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
       labelEl.textContent = `${char.keywords.includes("要塞") ? "[要塞] " : ""}${getCardName(char.cardId)} の行動:`;
       actionPanel.appendChild(labelEl);
 
+      const charDef = getCharDef(char.cardId);
+      const reactivationCost =
+        (charDef?.reactivation_cost ?? 0) + char.status.actionTax;
+      const canAffordAction =
+        state.players[active].mana >= reactivationCost;
+
       if (
         !char.hasActed &&
         !char.keywords.includes("要塞") &&
         char.status.brainwashedTurns === 0
       ) {
         const attackBtn = document.createElement("button");
-        attackBtn.className = "btn btn-danger";
+        attackBtn.className = `btn btn-danger${canAffordAction ? "" : " disabled"}`;
         attackBtn.textContent = "攻撃";
-        attackBtn.addEventListener("click", () => onAttackClick(state, ui));
+        if (canAffordAction)
+          attackBtn.addEventListener("click", () => onAttackClick(state, ui));
         actionPanel.appendChild(attackBtn);
       }
 
@@ -1067,12 +1074,13 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
         for (let d = 0; d < 4; d++) {
           if (d === char.dir) continue;
           const rotBtn = document.createElement("button");
-          rotBtn.className = "btn btn-secondary";
+          rotBtn.className = `btn btn-secondary${canAffordAction ? "" : " disabled"}`;
           // biome-ignore lint/style/noNonNullAssertion: d loops 0-3 matching Direction union
           rotBtn.textContent = DIR_ARROWS[d as Direction]!;
-          rotBtn.addEventListener("click", () =>
-            onRotateClick(state, ui, d as Direction),
-          );
+          if (canAffordAction)
+            rotBtn.addEventListener("click", () =>
+              onRotateClick(state, ui, d as Direction),
+            );
           actionPanel.appendChild(rotBtn);
         }
       }
@@ -1584,6 +1592,9 @@ function onAttackClick(state: GameState, ui: GameUiExtra): void {
   const def = getCharDef(char.cardId);
   if (!def) return;
 
+  const totalCost = def.reactivation_cost + char.status.actionTax;
+  if (state.players[state.active].mana < totalCost) return;
+
   const opp = (1 - char.owner) as 0 | 1;
   let targetIdxs: CellIndex[];
 
@@ -1620,6 +1631,9 @@ function onRotateClick(
   if (!char) return;
   const def = getCharDef(char.cardId);
   if (!def) return;
+
+  const totalCost = def.reactivation_cost + char.status.actionTax;
+  if (state.players[state.active].mana < totalCost) return;
 
   const newBoard = [...state.board] as Board;
   newBoard[ui.selectedBoardIdx] = { ...char, dir: newDir, hasRotated: true };
