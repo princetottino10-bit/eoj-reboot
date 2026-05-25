@@ -1,6 +1,7 @@
 import type { DraftState } from "./draft.js";
 import { buildDeck } from "./draft.js";
 import type { CharInstance, Direction, GameState } from "./types.js";
+import { assertNonNull } from "./types.js";
 
 // ============================================================
 // カード定義型
@@ -125,6 +126,7 @@ function shuffleArray<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
+    // biome-ignore lint/style/noNonNullAssertion: Fisher-Yates — loop bounds guarantee valid indices
     [a[i], a[j]] = [a[j]!, a[i]!];
   }
   return a;
@@ -154,7 +156,7 @@ export function createInitialGameState(
     const d = [...deck];
     const hand: string[] = [];
     for (let i = 0; i < 5 && d.length > 0; i++) {
-      hand.push(d.pop()!);
+      hand.push(assertNonNull(d.pop()));
     }
     return { hand, deck: d };
   };

@@ -45,7 +45,7 @@ import type {
   GameState,
   RelCoord,
 } from "../engine/types.js";
-import { appendLog } from "../engine/types.js";
+import { appendLog, assertNonNull } from "../engine/types.js";
 import { applyUltDirectEffect, applyUltTargetEffect } from "../engine/ults.js";
 import { evalVictory } from "../engine/victory.js";
 import { getState, resetGameUiExtra, setState } from "./app.js";
@@ -107,6 +107,7 @@ export interface GameUiExtra {
 const DIR_ARROWS = ["↑", "→", "↓", "←"] as const;
 
 function dirArrow(dir: Direction): string {
+  // biome-ignore lint/style/noNonNullAssertion: DIR_ARROWS has 4 elements, dir is Direction (0|1|2|3)
   return DIR_ARROWS[dir]!;
 }
 
@@ -157,6 +158,7 @@ function ensureDetailPopup(): { popup: HTMLElement; overlay: HTMLElement } {
     _detailOverlay.addEventListener("click", hideCardDetail);
     document.body.appendChild(_detailOverlay);
   }
+  // biome-ignore lint/style/noNonNullAssertion: both assigned in the if block above
   return { popup: _detailPopup!, overlay: _detailOverlay! };
 }
 
@@ -493,6 +495,7 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
           if (d === char.dir) continue;
           const rotBtn = document.createElement("button");
           rotBtn.className = "btn btn-secondary";
+          // biome-ignore lint/style/noNonNullAssertion: d loops 0-3 matching Direction union
           rotBtn.textContent = DIR_ARROWS[d as Direction]!;
           rotBtn.addEventListener("click", () =>
             onRotateClick(state, ui, d as Direction),
@@ -852,7 +855,7 @@ function buildRotatePickerOverlay(
 
 function onHandCardClick(state: GameState, handIdx: number): void {
   const active = state.active;
-  const cardId = state.players[active].hand[handIdx]!;
+  const cardId = assertNonNull(state.players[active].hand[handIdx]);
 
   if (isCharCard(cardId)) {
     const def = getCharDef(cardId);
@@ -1157,7 +1160,7 @@ function onDiscardCardClick(
 
   // Discard the chosen card
   const newHand = [...state.players[active].hand];
-  const discarded = newHand.splice(handIdx, 1)[0]!;
+  const discarded = assertNonNull(newHand.splice(handIdx, 1)[0]);
   const newDiscard = [...state.players[active].discard, discarded];
   const ps = [...state.players] as typeof state.players;
   ps[active] = { ...ps[active], hand: newHand, discard: newDiscard };
@@ -1347,7 +1350,7 @@ function doSummon(
   dir: Direction,
 ): void {
   const active = state.active;
-  const cardId = state.players[active].hand[handIdx]!;
+  const cardId = assertNonNull(state.players[active].hand[handIdx]);
   const def = getCharDef(cardId);
   if (!def) return;
 
@@ -1513,6 +1516,7 @@ function doAttack(
 
   // Mark attacker as acted
   if (workBoard[attackerIdx])
+    // biome-ignore lint/style/noNonNullAssertion: null check in if condition above
     workBoard[attackerIdx] = { ...workBoard[attackerIdx]!, hasActed: true };
 
   let newState = spendReactivationMana(
@@ -2026,13 +2030,13 @@ function doElementSwap(
   }
 
   const newHand = [...state.players[active].hand];
-  const itemCard = newHand.splice(itemHandIdx, 1)[0]!;
+  const itemCard = assertNonNull(newHand.splice(itemHandIdx, 1)[0]);
   const newDiscard = [...state.players[active].discard, itemCard];
 
   // Adjust swapHandIdx after item removal
   const adjustedSwapIdx =
     swapHandIdx > itemHandIdx ? swapHandIdx - 1 : swapHandIdx;
-  const swapCardId = newHand[adjustedSwapIdx]!;
+  const swapCardId = assertNonNull(newHand[adjustedSwapIdx]);
   newHand.splice(adjustedSwapIdx, 1);
   newHand.push(boardChar.cardId);
 

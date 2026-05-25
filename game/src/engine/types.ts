@@ -145,3 +145,8 @@ export function appendLog(
 ): GameState {
   return { ...state, log: [...state.log, { text, type }] };
 }
+
+export function assertNonNull<T>(value: T | null | undefined): T {
+  if (value == null) throw new Error("Unexpected null/undefined");
+  return value;
+}

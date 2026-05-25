@@ -131,6 +131,7 @@ export function renderDraft(ui: DraftUiState): HTMLElement {
         )
           return;
         card.addEventListener("click", () => {
+          // biome-ignore lint/style/noNonNullAssertion: data-faction is set in the template above
           const faction = card.dataset.faction!;
           handleFactionPick(faction);
         });
@@ -143,6 +144,7 @@ export function renderDraft(ui: DraftUiState): HTMLElement {
     itemGrid.querySelectorAll<HTMLElement>(".item-set-card").forEach((card) => {
       if (card.classList.contains("picked")) return;
       card.addEventListener("click", () => {
+        // biome-ignore lint/style/noNonNullAssertion: data-item is set in the template above
         const item = card.dataset.item!;
         handleItemPick(item);
       });
@@ -194,9 +196,13 @@ function handleItemPick(item: string): void {
 
 function startGame(ui: DraftUiState): void {
   let draft = createDraftState();
+  // biome-ignore lint/style/noNonNullAssertion: guaranteed by draft completion (pickIndex === 6)
   draft = makePick(draft, ui.p0Factions[0]!);
+  // biome-ignore lint/style/noNonNullAssertion: guaranteed by draft completion (pickIndex === 6)
   draft = makePick(draft, ui.p1Factions[0]!);
+  // biome-ignore lint/style/noNonNullAssertion: guaranteed by draft completion (pickIndex === 6)
   draft = makePick(draft, ui.p1Factions[1]!);
+  // biome-ignore lint/style/noNonNullAssertion: guaranteed by draft completion (pickIndex === 6)
   draft = makePick(draft, ui.p0Factions[1]!);
   draft = makePick(draft, ui.p0Item);
   draft = makePick(draft, ui.p1Item);

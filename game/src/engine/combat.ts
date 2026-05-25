@@ -219,6 +219,7 @@ export function resolveAttack(
   // ---- カバー処理 ----------------------------------------
   const coverIdx = findCoverAlly(board, defenderIdx);
   if (coverIdx !== null && attackType === "physical") {
+    // biome-ignore lint/style/noNonNullAssertion: coverIdx found by non-null board scan
     const coverChar = board[coverIdx]!;
 
     // 回避はターゲット（防衛者）基準でチェック

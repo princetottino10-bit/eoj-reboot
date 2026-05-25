@@ -1,4 +1,5 @@
 import type { CellIndex, GameState } from "./types.js";
+import { assertNonNull } from "./types.js";
 
 export const HAND_LIMIT = 7;
 
@@ -74,7 +75,7 @@ export function drawStep(state: GameState): GameState {
   const deck = [...newPlayers[p].deck];
   const hand = [...newPlayers[p].hand];
   if (deck.length > 0) {
-    hand.push(deck.pop()!);
+    hand.push(assertNonNull(deck.pop()));
   }
   newPlayers[p] = { ...newPlayers[p], deck, hand };
 

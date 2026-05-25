@@ -72,7 +72,7 @@ let state: AppState = {
 
 let firestoreUnsub: (() => void) | null = null;
 
-const root = document.getElementById("app")!;
+const root = document.getElementById("app") as HTMLElement;
 
 export function getState(): AppState {
   return state;
@@ -155,7 +155,7 @@ function applyRoomDoc(doc: RoomDoc): void {
   }
 
   if ((doc.phase === "game" || doc.phase === "over") && doc.gameState) {
-    const gs = doc.gameState as GameState;
+    const gs = doc.gameState as unknown as GameState;
     setState(
       {
         screen: doc.phase === "over" ? "over" : "game",

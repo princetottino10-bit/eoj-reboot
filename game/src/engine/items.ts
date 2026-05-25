@@ -3,7 +3,7 @@ import { clearAffiliatedEffects } from "./combat.js";
 import type { EffectAtom, EffectTarget } from "./effectSpecs.js";
 import { ITEM_SPECS } from "./effectSpecs.js";
 import type { Board, CellIndex, Direction, GameState } from "./types.js";
-import { appendLog } from "./types.js";
+import { appendLog, assertNonNull } from "./types.js";
 
 // ============================================================
 // エフェクト原子の適用
@@ -24,7 +24,7 @@ function applyItemAtom(
     const deck = [...np[active].deck];
     const hand = [...np[active].hand];
     for (let i = 0; i < atom.count; i++) {
-      if (deck.length > 0) hand.push(deck.pop()!);
+      if (deck.length > 0) hand.push(assertNonNull(deck.pop()));
     }
     np[active] = { ...np[active], deck, hand };
     return appendLog(

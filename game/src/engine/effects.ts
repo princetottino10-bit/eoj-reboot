@@ -22,6 +22,7 @@ import type {
   PlayerState,
   RelCoord,
 } from "./types.js";
+import { assertNonNull } from "./types.js";
 
 // ============================================================
 // 型
@@ -224,7 +225,7 @@ export function applyAtom(
       for (let i = 0; i < atom.count; i++) {
         const deck = np[owner].deck;
         if (deck.length > 0) {
-          const card = deck[deck.length - 1]!;
+          const card = assertNonNull(deck.at(-1));
           np[owner] = {
             ...np[owner],
             deck: deck.slice(0, -1),

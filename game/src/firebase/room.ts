@@ -15,10 +15,8 @@ export interface RoomDoc {
   phase: RoomPhase;
   createdBy: string;
   joinedBy: string | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  draftUi: Record<string, any> | null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  gameState: Record<string, any> | null;
+  draftUi: Record<string, unknown> | null;
+  gameState: Record<string, unknown> | null;
   createdAt: unknown;
 }
 
@@ -26,6 +24,7 @@ function randomId(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return Array.from(
     { length: 6 },
+    // biome-ignore lint/style/noNonNullAssertion: bounded index into const chars string
     () => chars[Math.floor(Math.random() * chars.length)!],
   ).join("");
 }
@@ -77,20 +76,18 @@ export function subscribeRoom(
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function writeRoomState(
   roomId: string,
-  data: Record<string, any>,
+  data: Record<string, unknown>,
 ): Promise<void> {
   // Truncate log to avoid large Firestore documents
-  if (data.gameState?.log) {
+  const gs = data.gameState as Record<string, unknown> | null | undefined;
+  if (gs?.log) {
     data = {
       ...data,
-      gameState: {
-        ...data.gameState,
-        log: data.gameState.log.slice(-30),
-      },
+      gameState: { ...gs, log: (gs.log as unknown[]).slice(-30) },
     };
   }
-  await updateDoc(doc(db, "rooms", roomId), data);
+  // biome-ignore lint/suspicious/noExplicitAny: Firestore updateDoc requires Record<string, any>
+  await updateDoc(doc(db, "rooms", roomId), data as Record<string, any>);
 }
