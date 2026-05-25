@@ -1373,9 +1373,12 @@ function finalizeSummonTurn(
     setState({ gameState: newState, screen: "over" });
     return;
   }
-  // 召喚結果を表示してプレイヤーが確認できるよう、自動ターン終了はしない。
-  // 盤面を更新して「ターン終了」ボタンで手動終了させる。
-  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+  // オンラインは相手が待っているので自動終了。ローカルは結果を確認してから手動終了。
+  if (getState().online) {
+    onEndTurn(newState);
+  } else {
+    setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+  }
 }
 
 function doSummon(
