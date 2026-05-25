@@ -6,13 +6,14 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          firebase: [
-            "firebase/app",
-            "firebase/auth",
-            "firebase/firestore",
-            "firebase/analytics",
-          ],
+        manualChunks: (id) => {
+          if (
+            id.includes("firebase/app") ||
+            id.includes("firebase/auth") ||
+            id.includes("firebase/firestore") ||
+            id.includes("firebase/analytics")
+          )
+            return "firebase";
         },
       },
     },
