@@ -30,9 +30,29 @@ just dev        # ブラウザゲームの開発サーバーを起動 (http://lo
 just test       # テストを実行
 just pdf        # 印刷用PDFを生成 (card-gen/cards.pdf)
 just md         # カードリストMarkdownを生成 (docs/cards.md)
+just build      # プロダクションビルド (game/dist/)
+just deploy     # ビルド → Firebase Hosting にデプロイ
 ```
 
 `just` だけで全コマンド一覧を表示します。
+
+## デプロイ
+
+Firebase Hosting（プロジェクト: `inougakuen`）にデプロイします。
+
+firebase-tools はバンドルサイズが大きいため devDependencies には含めず、グローバルインストールを前提としています。
+
+```bash
+# 初回のみ: Firebase CLI のインストール（どちらか）
+npm install -g firebase-tools   # npm グローバル
+volta install firebase-tools    # Volta を使っている場合
+
+# ログインとデプロイ（ビルドも同時に実行）
+firebase login
+just deploy
+```
+
+デプロイ後は Firebase Hosting の URL でゲームにアクセスできます。
 
 ## ファイル構成
 
