@@ -53,6 +53,7 @@ import { getState, resetGameUiExtra, setState } from "./app.js";
 export interface GameUiExtra {
   mode:
     | "idle"
+    | "summon_done"
     | "hand_selected"
     | "summon_dir_pending"
     | "char_selected"
@@ -494,7 +495,12 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
     return btn;
   };
 
-  if (ui.mode === "char_selected" && ui.selectedBoardIdx !== null) {
+  if (ui.mode === "summon_done") {
+    const hint = document.createElement("div");
+    hint.className = "action-label";
+    hint.textContent = "召喚完了 — ターン終了ボタンを押してください";
+    actionPanel.appendChild(hint);
+  } else if (ui.mode === "char_selected" && ui.selectedBoardIdx !== null) {
     const char = state.board[ui.selectedBoardIdx];
     if (char && char.owner === active) {
       const labelEl = document.createElement("div");
@@ -647,6 +653,7 @@ function buildHandSection(
   handCards.className = "hand-cards";
   const isDiscardMode = ui.mode === "discard_pending";
   const isElementSwapMode = ui.mode === "element_swap_hand_pending";
+  const isSummonDone = ui.mode === "summon_done";
 
   const { online: isOnline, myPlayerIndex } = getState();
   const isMyTurn = !isOnline || myPlayerIndex === active;
@@ -664,7 +671,9 @@ function buildHandSection(
     const cardEl = document.createElement("div");
     let cls = "hand-card";
     if (isSelected || isItemSel) cls += " selected";
-    if (!isDiscardMode && !isElementSwapMode && !canAfford) cls += " disabled";
+    if (isSummonDone) cls += " disabled";
+    if (!isDiscardMode && !isElementSwapMode && !isSummonDone && !canAfford)
+      cls += " disabled";
     if (isElementSwapMode && !isValidSwap) cls += " disabled";
     cardEl.className = cls;
 
@@ -710,7 +719,7 @@ function buildHandSection(
         hideCardDetail();
         onDiscardCardClick(state, ui, idx);
       });
-    } else if (!isElementSwapMode && canAfford && isMyTurn) {
+    } else if (!isElementSwapMode && !isSummonDone && canAfford && isMyTurn) {
       cardEl.addEventListener("click", () => {
         if (_longPressActive) {
           _longPressActive = false;
@@ -1377,7 +1386,10 @@ function finalizeSummonTurn(
   if (getState().online) {
     onEndTurn(newState);
   } else {
-    setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+    setState({
+      gameState: newState,
+      gameUiExtra: { ...resetGameUiExtra(), mode: "summon_done" },
+    });
   }
 }
 
