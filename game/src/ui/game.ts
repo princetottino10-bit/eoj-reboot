@@ -609,6 +609,13 @@ function executeAttack(
         "system",
       );
     }
+    if (result.defenderManaGain > 0) {
+      const opp = (1 - active) as 0 | 1;
+      const np = [...newState.players] as typeof newState.players;
+      np[opp] = { ...np[opp], mana: np[opp].mana + result.defenderManaGain };
+      newState = { ...newState, players: np };
+      newState = appendLog(newState, `P${opp + 1}: マナ+${result.defenderManaGain}（撃破補填）`, "info");
+    }
     if (result.counterVpAwarded > 0) {
       const opp = (1 - active) as 0 | 1;
       const np = [...newState.players] as typeof newState.players;
@@ -619,6 +626,12 @@ function executeAttack(
         `${atkName} 撃破（反撃）！ ${result.counterVpAwarded}VP`,
         "system",
       );
+    }
+    if (result.attackerManaGain > 0) {
+      const np = [...newState.players] as typeof newState.players;
+      np[active] = { ...np[active], mana: np[active].mana + result.attackerManaGain };
+      newState = { ...newState, players: np };
+      newState = appendLog(newState, `P${active + 1}: マナ+${result.attackerManaGain}（撃破補填）`, "info");
     }
   }
 
@@ -1981,6 +1994,8 @@ function finalizeSummonTurn(
 
   let vpGained = 0;
   let oppVpGained = 0;
+  let defManaGained = 0;   // 防衛側（opp）マナ付与合計
+  let atkManaGained = 0;   // 攻撃側（active）マナ付与合計
   for (const { result } of results) {
     if (!result.blocked) {
       if (result.defenderDamage > 0)
@@ -1997,6 +2012,7 @@ function finalizeSummonTurn(
           "system",
         );
       }
+      defManaGained += result.defenderManaGain;
     }
     if (result.counterDamage > 0)
       newState = appendLog(
@@ -2012,17 +2028,31 @@ function finalizeSummonTurn(
         "system",
       );
     }
+    atkManaGained += result.attackerManaGain;
   }
   if (vpGained > 0) {
     const np = [...newState.players] as typeof newState.players;
     np[active] = { ...np[active], vp: np[active].vp + vpGained };
     newState = { ...newState, players: np };
   }
+  if (defManaGained > 0) {
+    const opp = (1 - active) as 0 | 1;
+    const np = [...newState.players] as typeof newState.players;
+    np[opp] = { ...np[opp], mana: np[opp].mana + defManaGained };
+    newState = { ...newState, players: np };
+    newState = appendLog(newState, `P${opp + 1}: マナ+${defManaGained}（撃破補填）`, "info");
+  }
   if (oppVpGained > 0) {
     const opp = (1 - active) as 0 | 1;
     const np = [...newState.players] as typeof newState.players;
     np[opp] = { ...np[opp], vp: np[opp].vp + oppVpGained };
     newState = { ...newState, players: np };
+  }
+  if (atkManaGained > 0) {
+    const np = [...newState.players] as typeof newState.players;
+    np[active] = { ...np[active], mana: np[active].mana + atkManaGained };
+    newState = { ...newState, players: np };
+    newState = appendLog(newState, `P${active + 1}: マナ+${atkManaGained}（撃破補填）`, "info");
   }
 
   newState = applyVictoryCheck(newState, null);

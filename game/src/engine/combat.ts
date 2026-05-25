@@ -36,6 +36,8 @@ export interface AttackResult {
   counterDamage: number; // 攻撃者が受けた反撃ダメージ量
   vpAwarded: number; // 防衛者撃破で獲得するVP（攻撃側に帰属）
   counterVpAwarded: number; // 反撃で攻撃者を撃破した際のVP（防衛側に帰属）
+  defenderManaGain: number; // 防衛者撃破時にオーナーが得るマナ（通常1）
+  attackerManaGain: number; // 反撃撃破時に攻撃者オーナーが得るマナ（通常1）
 }
 
 export interface DamageOptions {
@@ -142,6 +144,7 @@ export function canCounterAttack(
 interface ApplyResult {
   damage: number;
   vpAwarded: number;
+  manaGain: number;
 }
 
 export function clearAffiliatedEffects(board: Board, deadCardId: string): void {
@@ -168,17 +171,17 @@ function applyDamage(
   defenderCost = 1,
 ): ApplyResult {
   const char = board[targetIdx];
-  if (char == null) return { damage: 0, vpAwarded: 0 };
-  if (char.status.immune > 0) return { damage: 0, vpAwarded: 0 };
+  if (char == null) return { damage: 0, vpAwarded: 0, manaGain: 0 };
+  if (char.status.immune > 0) return { damage: 0, vpAwarded: 0, manaGain: 0 };
   const actual = Math.max(0, amount);
   char.hp -= actual;
   if (char.hp <= 0) {
     const deadCardId = char.cardId;
     board[targetIdx] = null;
     clearAffiliatedEffects(board, deadCardId);
-    return { damage: actual, vpAwarded: vpForCost(defenderCost) };
+    return { damage: actual, vpAwarded: vpForCost(defenderCost), manaGain: 1 };
   }
-  return { damage: actual, vpAwarded: 0 };
+  return { damage: actual, vpAwarded: 0, manaGain: 0 };
 }
 
 // ============================================================
@@ -200,6 +203,8 @@ export function resolveAttack(
     counterDamage: 0,
     vpAwarded: 0,
     counterVpAwarded: 0,
+    defenderManaGain: 0,
+    attackerManaGain: 0,
   };
 
   const attacker = board[attackerIdx];
@@ -239,7 +244,7 @@ export function resolveAttack(
     });
     if (!hasPiercing) consumeMarker(defender, "防護");
 
-    const { damage: covDmg, vpAwarded: covVp } = applyDamage(
+    const { damage: covDmg, vpAwarded: covVp, manaGain: covMana } = applyDamage(
       board,
       coverIdx,
       dmg,
@@ -249,6 +254,7 @@ export function resolveAttack(
     // 反撃: 要塞カバーのみ（反撃はカバーされないため攻撃者に直接）
     let counterDmg = 0;
     let counterVp = 0;
+    let counterMana = 0;
     if (board[coverIdx] != null && hasKw(coverChar, "要塞")) {
       const counterDmgRaw = Math.max(
         0,
@@ -264,6 +270,7 @@ export function resolveAttack(
       );
       counterDmg = cr.damage;
       counterVp = cr.vpAwarded;
+      counterMana = cr.manaGain;
     }
 
     return {
@@ -275,6 +282,8 @@ export function resolveAttack(
       counterDamage: counterDmg,
       vpAwarded: covVp,
       counterVpAwarded: counterVp,
+      defenderManaGain: covMana,
+      attackerManaGain: counterMana,
     };
   }
 
@@ -302,6 +311,7 @@ export function resolveAttack(
 
   let counterDmg = 0;
   let counterVp = 0;
+  let counterMana = 0;
   let counterFirst = false;
 
   const attackerOwner = attacker.owner;
@@ -323,6 +333,7 @@ export function resolveAttack(
     );
     counterDmg = cr.damage;
     counterVp = cr.vpAwarded;
+    counterMana = cr.manaGain;
 
     // 先制で攻撃者が死亡 → 攻撃自体が来ない
     if (board[attackerIdx] == null) {
@@ -332,6 +343,7 @@ export function resolveAttack(
         counterFirst: true,
         counterDamage: counterDmg,
         counterVpAwarded: counterVp,
+        attackerManaGain: counterMana,
       };
     }
   }
@@ -344,7 +356,7 @@ export function resolveAttack(
   });
   if (!hasPiercing) consumeMarker(defender, "防護");
 
-  const { damage: defDmg, vpAwarded } = applyDamage(
+  const { damage: defDmg, vpAwarded, manaGain: defMana } = applyDamage(
     board,
     defenderIdx,
     dmg,
@@ -372,6 +384,7 @@ export function resolveAttack(
     );
     counterDmg = cr.damage;
     counterVp = cr.vpAwarded;
+    counterMana = cr.manaGain;
   }
 
   return {
@@ -383,5 +396,7 @@ export function resolveAttack(
     counterDamage: counterDmg,
     vpAwarded,
     counterVpAwarded: counterVp,
+    defenderManaGain: defMana,
+    attackerManaGain: counterMana,
   };
 }
