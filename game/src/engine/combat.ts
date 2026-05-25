@@ -41,6 +41,7 @@ export interface AttackResult {
 export interface DamageOptions {
   isBlind: boolean;
   teamDR: boolean;
+  attackType?: "physical" | "magic";
 }
 
 // ============================================================
@@ -103,7 +104,7 @@ export function calcDamage(
 ): number {
   const hasPiercing = hasKw(attacker, "貫通");
   let dmg = attacker.atk + (attacker.tempAtkBuff ?? 0);
-  if (opts.isBlind) dmg += 1;
+  if (opts.isBlind && opts.attackType !== "magic") dmg += 1;
   if (!hasPiercing && hasKw(defender, "防護")) dmg -= 1;
   if (opts.teamDR) dmg -= 1;
   return Math.max(0, dmg);
@@ -234,6 +235,7 @@ export function resolveAttack(
     const dmg = calcDamage(attacker, defender, {
       isBlind: blind,
       teamDR: opts.teamDR[defOwner],
+      attackType,
     });
     if (!hasPiercing) consumeMarker(defender, "防護");
 
@@ -338,6 +340,7 @@ export function resolveAttack(
   const dmg = calcDamage(attacker, defender, {
     isBlind: blind,
     teamDR: opts.teamDR[defOwner],
+    attackType,
   });
   if (!hasPiercing) consumeMarker(defender, "防護");
 
