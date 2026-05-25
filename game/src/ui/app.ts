@@ -55,6 +55,8 @@ const INITIAL_GAME_UI_EXTRA: GameUiExtra = {
   itemHandIdx: null,
   ultCasterIdx: null,
   elementSwapBoardIdx: null,
+  magicAttackContext: null,
+  onAttackContext: null,
 };
 
 let state: AppState = {

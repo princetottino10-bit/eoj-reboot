@@ -6,13 +6,15 @@ import {
   isCharCard,
 } from "../data/cards.js";
 import {
+  getAdjacentCells,
   getAttackCells,
   getValidSummonCells,
+  isBlindSpot,
   resolveSelectCells,
 } from "../engine/board.js";
 import { resolveAttack } from "../engine/combat.js";
 import { calcCostReduction } from "../engine/cost.js";
-import type { EffectTarget } from "../engine/effectSpecs.js";
+import type { EffectCondition, EffectTarget } from "../engine/effectSpecs.js";
 import {
   getEffectSpec,
   getFirstSelectTarget,
@@ -54,6 +56,10 @@ export interface GameUiExtra {
   mode:
     | "idle"
     | "summon_done"
+    | "magic_attack_targeting"
+    | "on_attack_cost_pending"
+    | "on_attack_discard_pending"
+    | "on_attack_rotate_pending"
     | "hand_selected"
     | "summon_dir_pending"
     | "char_selected"
@@ -103,6 +109,21 @@ export interface GameUiExtra {
   ultCasterIdx: CellIndex | null;
   /** Board index selected in element_swap step 1 */
   elementSwapBoardIdx: CellIndex | null;
+  /** Magic summon attack context: which summoned char and card */
+  magicAttackContext: {
+    cardId: string;
+    summonIdx: CellIndex;
+  } | null;
+  /** On-attack effect flow context */
+  onAttackContext: {
+    attackerIdx: CellIndex;
+    targetIdx: CellIndex;
+    isSummonAttack: boolean;
+    extraDamage: number;
+    setPiercing: boolean;
+    rotateAfterAttack: boolean;
+    costClauseActivated: boolean;
+  } | null;
 }
 
 const DIR_ARROWS = ["↑", "→", "↓", "←"] as const;
@@ -196,6 +217,352 @@ function buildWeaknessGrid(
     }
   }
   return `<div class="cd-attack-grid">${gridCells.join("")}</div>`;
+}
+
+// ============================================================
+// On-attack effect helpers
+// ============================================================
+
+function evalOnAttackCond(
+  cond: EffectCondition | undefined,
+  state: GameState,
+  attackerIdx: CellIndex,
+  targetIdx: CellIndex,
+  owner: 0 | 1,
+): boolean {
+  if (!cond) return true;
+  switch (cond.type) {
+    case "self_in_b_position": {
+      const defender = state.board[targetIdx];
+      if (!defender) return false;
+      const defDef = getCharDef(defender.cardId);
+      const weaknessCells = (defDef?.weakness_cells ?? [[-1, 0]]) as RelCoord[];
+      return isBlindSpot(attackerIdx, targetIdx, defender.dir, weaknessCells);
+    }
+    case "attacked_ally_count_gte":
+      return (
+        state.board.filter((c) => c?.owner === owner && c.hasActed).length >=
+        cond.min
+      );
+    case "marker_ally_count_gte": {
+      const count = state.board.filter((c) => {
+        if (!c || c.owner !== owner) return false;
+        return (
+          c.markers.protection > 0 ||
+          c.markers.evasion > 0 ||
+          c.markers.piercing > 0 ||
+          c.markers.quickness > 0 ||
+          c.keywords.includes("防護") ||
+          c.keywords.includes("回避") ||
+          c.keywords.includes("貫通") ||
+          c.keywords.includes("先制")
+        );
+      }).length;
+      return count >= cond.min;
+    }
+    default:
+      return false;
+  }
+}
+
+interface OnAttackEffectSummary {
+  extraDamage: number;
+  setPiercing: boolean;
+  rotateAfterAttack: boolean;
+  hasOptionalCostClause: boolean;
+}
+
+function computeOnAttackEffects(
+  state: GameState,
+  attackerIdx: CellIndex,
+  targetIdx: CellIndex,
+  owner: 0 | 1,
+): OnAttackEffectSummary {
+  const attacker = state.board[attackerIdx];
+  if (!attacker)
+    return {
+      extraDamage: 0,
+      setPiercing: false,
+      rotateAfterAttack: false,
+      hasOptionalCostClause: false,
+    };
+
+  const spec = getEffectSpec(attacker.cardId);
+  const clauses = spec.clauses.filter((c) => c.trigger === "on_attack");
+
+  let extraDamage = 0;
+  let setPiercing = false;
+  let rotateAfterAttack = false;
+  let hasOptionalCostClause = false;
+
+  for (const clause of clauses) {
+    if (clause.cost && !clause.costMandatory) {
+      hasOptionalCostClause = true;
+      continue;
+    }
+    if (clause.cost && clause.costMandatory) continue;
+    if (
+      !evalOnAttackCond(clause.condition, state, attackerIdx, targetIdx, owner)
+    )
+      continue;
+    for (const eff of clause.effects) {
+      if (eff.type === "extra_damage") extraDamage += eff.amount;
+      else if (eff.type === "set_piercing") setPiercing = true;
+      else if (
+        eff.type === "rotate" &&
+        (eff as { target: string }).target === "attack_target"
+      )
+        rotateAfterAttack = true;
+    }
+  }
+
+  return { extraDamage, setPiercing, rotateAfterAttack, hasOptionalCostClause };
+}
+
+function applyOnAttackPostEffects(
+  state: GameState,
+  attackerIdx: CellIndex,
+  targetIdx: CellIndex,
+  owner: 0 | 1,
+): GameState {
+  const attacker = state.board[attackerIdx];
+  if (!attacker) return state;
+
+  const spec = getEffectSpec(attacker.cardId);
+  const clauses = spec.clauses.filter((c) => c.trigger === "on_attack");
+  const opp = (1 - owner) as 0 | 1;
+
+  let newState = state;
+
+  for (const clause of clauses) {
+    if (clause.cost && !clause.costMandatory) continue;
+    if (
+      !evalOnAttackCond(
+        clause.condition,
+        newState,
+        attackerIdx,
+        targetIdx,
+        owner,
+      )
+    )
+      continue;
+    for (const eff of clause.effects) {
+      if (eff.type === "action_tax") {
+        const adjIdxs = getAdjacentCells(attackerIdx);
+        const nb = [...newState.board] as Board;
+        let applied = false;
+        for (const adjIdx of adjIdxs) {
+          const c = nb[adjIdx];
+          if (c && c.owner === opp) {
+            nb[adjIdx] = {
+              ...c,
+              status: {
+                ...c.status,
+                actionTax: c.status.actionTax + eff.amount,
+                actionTaxBy: attacker.cardId,
+              },
+            };
+            applied = true;
+          }
+        }
+        if (applied)
+          newState = appendLog(
+            { ...newState, board: nb },
+            `攻撃時効果: 隣接敵に再起動コスト+${eff.amount}`,
+            "info",
+          );
+        else newState = { ...newState, board: nb };
+      } else if (eff.type === "draw") {
+        for (let i = 0; i < eff.count; i++) {
+          const deck = newState.players[owner].deck;
+          if (deck.length > 0) {
+            const card = assertNonNull(deck.at(-1));
+            const np = [...newState.players] as typeof newState.players;
+            np[owner] = {
+              ...np[owner],
+              deck: deck.slice(0, -1),
+              hand: [...np[owner].hand, card],
+            };
+            newState = appendLog(
+              { ...newState, players: np },
+              `攻撃時効果: ${eff.count}枚ドロー`,
+              "info",
+            );
+          }
+        }
+      }
+    }
+  }
+
+  return newState;
+}
+
+function handleSummonDone(state: GameState): void {
+  if (getState().online) {
+    onEndTurn(state);
+  } else {
+    setState({
+      gameState: state,
+      gameUiExtra: { ...resetGameUiExtra(), mode: "summon_done" },
+    });
+  }
+}
+
+function executeAttack(
+  state: GameState,
+  attackerIdx: CellIndex,
+  targetIdx: CellIndex,
+  isSummonAttack: boolean,
+  extraDamage: number,
+  setPiercing: boolean,
+  rotateAfterAttack: boolean,
+): void {
+  const active = state.active;
+  const attacker = state.board[attackerIdx];
+  if (!attacker) {
+    if (isSummonAttack) handleSummonDone(state);
+    else setState({ gameState: state, gameUiExtra: resetGameUiExtra() });
+    return;
+  }
+  const def = getCharDef(attacker.cardId);
+  if (!def) {
+    if (isSummonAttack) handleSummonDone(state);
+    else setState({ gameState: state, gameUiExtra: resetGameUiExtra() });
+    return;
+  }
+  const targetChar = state.board[targetIdx];
+  if (!targetChar) {
+    if (isSummonAttack) handleSummonDone(state);
+    else setState({ gameState: state, gameUiExtra: resetGameUiExtra() });
+    return;
+  }
+
+  const workBoard = state.board.map((c) =>
+    c === null
+      ? null
+      : {
+          ...c,
+          keywords: [...c.keywords],
+          markers: { ...c.markers },
+          status: { ...c.status },
+        },
+  ) as Board;
+
+  if (extraDamage > 0) {
+    const a = workBoard[attackerIdx];
+    if (a)
+      workBoard[attackerIdx] = {
+        ...a,
+        tempAtkBuff: (a.tempAtkBuff ?? 0) + extraDamage,
+      };
+  }
+  if (setPiercing) {
+    const a = workBoard[attackerIdx];
+    if (a)
+      workBoard[attackerIdx] = {
+        ...a,
+        markers: { ...a.markers, piercing: a.markers.piercing + 1 },
+      };
+  }
+
+  const defDef = getCharDef(targetChar.cardId);
+  const result = resolveAttack(workBoard, attackerIdx, targetIdx, {
+    teamDR: state.teamDR,
+    weaknessCells: (defDef?.weakness_cells ?? [[-1, 0]]) as RelCoord[],
+    attackType: def.attack_type === "魔法" ? "magic" : "physical",
+    defenderCost: defDef?.cost ?? 1,
+    attackerCost: def.cost,
+    defenderAttackCells: (defDef?.attack_cells ?? null) as
+      | "all"
+      | null
+      | [number, number][],
+  });
+
+  if (!isSummonAttack && workBoard[attackerIdx])
+    // biome-ignore lint/style/noNonNullAssertion: null check above
+    workBoard[attackerIdx] = { ...workBoard[attackerIdx]!, hasActed: true };
+
+  let newState = spendReactivationMana(
+    { ...state, board: workBoard },
+    attackerIdx,
+    def.reactivation_cost,
+  );
+
+  const atkName = getCardName(attacker.cardId);
+  const defName = getCardName(targetChar.cardId);
+
+  if (result.blocked) {
+    newState = appendLog(newState, `${atkName} の攻撃がブロックされた`, "info");
+  } else if (result.evaded) {
+    newState = appendLog(newState, `${defName} が攻撃を回避！`, "info");
+  } else {
+    newState = appendLog(
+      newState,
+      `${atkName} → ${defName}: ${result.defenderDamage}ダメージ${result.isBlind ? " [B位置]" : ""}`,
+      "damage",
+    );
+    if (result.counterDamage > 0)
+      newState = appendLog(
+        newState,
+        `${defName} ← 反撃: ${result.counterDamage}ダメージ`,
+        "damage",
+      );
+    if (result.vpAwarded > 0) {
+      const np = [...newState.players] as typeof newState.players;
+      np[active] = { ...np[active], vp: np[active].vp + result.vpAwarded };
+      newState = { ...newState, players: np };
+      newState = appendLog(
+        newState,
+        `${defName} 撃破！ ${result.vpAwarded}VP`,
+        "system",
+      );
+    }
+    if (result.counterVpAwarded > 0) {
+      const opp = (1 - active) as 0 | 1;
+      const np = [...newState.players] as typeof newState.players;
+      np[opp] = { ...np[opp], vp: np[opp].vp + result.counterVpAwarded };
+      newState = { ...newState, players: np };
+      newState = appendLog(
+        newState,
+        `${atkName} 撃破（反撃）！ ${result.counterVpAwarded}VP`,
+        "system",
+      );
+    }
+  }
+
+  newState = applyOnAttackPostEffects(newState, attackerIdx, targetIdx, active);
+
+  newState = applyVictoryCheck(newState, null);
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
+
+  if (rotateAfterAttack && newState.board[targetIdx] != null) {
+    setState({
+      gameState: newState,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "on_attack_rotate_pending",
+        onAttackContext: {
+          attackerIdx,
+          targetIdx,
+          isSummonAttack,
+          extraDamage: 0,
+          setPiercing: false,
+          rotateAfterAttack: false,
+          costClauseActivated: false,
+        },
+      },
+    });
+    return;
+  }
+
+  if (isSummonAttack) {
+    handleSummonDone(newState);
+  } else {
+    setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+  }
 }
 
 function buildAttackGrid(attackCells: AttackCells): string {
@@ -476,6 +843,13 @@ export function renderGame(state: GameState, ui: GameUiExtra): HTMLElement {
       ),
     );
   }
+  if (ui.mode === "on_attack_rotate_pending" && ui.onAttackContext !== null) {
+    div.appendChild(
+      buildDirPickerOverlay("向きを選択（攻撃時効果）", (dir) =>
+        onOnAttackRotatePicked(state, ui, dir),
+      ),
+    );
+  }
 
   return div;
 }
@@ -499,6 +873,74 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
     const hint = document.createElement("div");
     hint.className = "action-label";
     hint.textContent = "召喚完了 — ターン終了ボタンを押してください";
+    actionPanel.appendChild(hint);
+  } else if (ui.mode === "on_attack_cost_pending") {
+    const ctx = ui.onAttackContext;
+    if (ctx) {
+      const attacker = state.board[ctx.attackerIdx];
+      if (attacker) {
+        const spec = getEffectSpec(attacker.cardId);
+        const optClause = spec.clauses.find(
+          (c) => c.trigger === "on_attack" && c.cost && !c.costMandatory,
+        );
+        if (optClause?.cost) {
+          const c = optClause.cost;
+          const costDesc =
+            c.type === "self_damage"
+              ? `自身${c.amount}ダメージ`
+              : c.type === "mana"
+                ? `マナ${c.amount}`
+                : c.type === "discard"
+                  ? `手札${c.count}枚捨て`
+                  : c.type === "self_damage_and_discard"
+                    ? `自身${c.damage}ダメ + 手札${c.discard}枚捨て`
+                    : "";
+          const effectDesc = optClause.effects
+            .map((e) => {
+              if (e.type === "extra_damage") return `+${e.amount}ダメージ`;
+              if (e.type === "set_piercing") return "貫通付与";
+              return "";
+            })
+            .filter(Boolean)
+            .join(" + ");
+          const hint = document.createElement("div");
+          hint.className = "action-label";
+          hint.style.width = "100%";
+          hint.textContent = `攻撃時効果: ${costDesc} → ${effectDesc}`;
+          actionPanel.appendChild(hint);
+
+          const canAfford = (() => {
+            if (c.type === "mana")
+              return state.players[active].mana >= c.amount;
+            if (c.type === "discard")
+              return state.players[active].hand.length >= c.count;
+            if (c.type === "self_damage_and_discard")
+              return state.players[active].hand.length >= c.discard;
+            return true;
+          })();
+
+          const yesBtn = document.createElement("button");
+          yesBtn.className = `btn btn-warning${canAfford ? "" : " disabled"}`;
+          yesBtn.textContent = "発動する";
+          if (canAfford)
+            yesBtn.addEventListener("click", () =>
+              onOnAttackCostYes(state, ui),
+            );
+          actionPanel.appendChild(yesBtn);
+
+          const noBtn = document.createElement("button");
+          noBtn.className = "btn btn-secondary";
+          noBtn.textContent = "スキップ";
+          noBtn.addEventListener("click", () => onOnAttackCostNo(state, ui));
+          actionPanel.appendChild(noBtn);
+        }
+      }
+    }
+  } else if (ui.mode === "on_attack_discard_pending") {
+    const hint = document.createElement("div");
+    hint.className = "action-label";
+    hint.style.width = "100%";
+    hint.textContent = "捨てる手札を1枚選択（攻撃時コスト）";
     actionPanel.appendChild(hint);
   } else if (ui.mode === "char_selected" && ui.selectedBoardIdx !== null) {
     const char = state.board[ui.selectedBoardIdx];
@@ -583,17 +1025,24 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
   } else if (
     ui.mode === "hand_selected" ||
     ui.mode === "attack_targeting" ||
+    ui.mode === "magic_attack_targeting" ||
     ui.mode === "effect_targeting" ||
     ui.mode === "effect_dir_pending" ||
     ui.mode === "effect_rotate_pending" ||
-    ui.mode === "item_rotate_pending"
+    ui.mode === "item_rotate_pending" ||
+    ui.mode === "on_attack_rotate_pending"
   ) {
     actionPanel.appendChild(cancel());
     const hint = document.createElement("div");
     hint.className = "action-label";
     if (ui.mode === "hand_selected") hint.textContent = "召喚先のマスを選択";
-    else if (ui.mode === "attack_targeting")
+    else if (
+      ui.mode === "attack_targeting" ||
+      ui.mode === "magic_attack_targeting"
+    )
       hint.textContent = "攻撃対象を選択";
+    else if (ui.mode === "on_attack_rotate_pending")
+      hint.textContent = "向きを選択してください（オーバーレイ）";
     else if (ui.mode === "effect_dir_pending")
       hint.textContent = "向きを選択してください（オーバーレイ）";
     else if (
@@ -651,7 +1100,8 @@ function buildHandSection(
 
   const handCards = document.createElement("div");
   handCards.className = "hand-cards";
-  const isDiscardMode = ui.mode === "discard_pending";
+  const isDiscardMode =
+    ui.mode === "discard_pending" || ui.mode === "on_attack_discard_pending";
   const isElementSwapMode = ui.mode === "element_swap_hand_pending";
   const isSummonDone = ui.mode === "summon_done";
 
@@ -761,7 +1211,10 @@ function buildCell(
   let classes = "cell";
   if (char) classes += ` owner-${char.owner}`;
   if (ui.validCells.includes(idx) && ui.mode !== "element_swap_hand_pending") {
-    classes += ui.mode === "attack_targeting" ? " attack-target" : " valid";
+    classes +=
+      ui.mode === "attack_targeting" || ui.mode === "magic_attack_targeting"
+        ? " attack-target"
+        : " valid";
   }
   if (ui.selectedBoardIdx === idx || ui.effectDirContext?.targetIdx === idx)
     classes += " selected";
@@ -985,6 +1438,11 @@ function onCellClick(state: GameState, ui: GameUiExtra, idx: CellIndex): void {
     doAttack(state, ui, idx);
     return;
   }
+  if (ui.mode === "magic_attack_targeting") {
+    if (!ui.validCells.includes(idx)) return;
+    doMagicSummonAttack(state, ui, idx);
+    return;
+  }
   if (ui.mode === "effect_targeting") {
     if (!ui.validCells.includes(idx)) return;
     if (ui.itemHandIdx !== null) {
@@ -1195,6 +1653,33 @@ function onDiscardCardClick(
   ui: GameUiExtra,
   handIdx: number,
 ): void {
+  // On-attack discard flow
+  if (ui.mode === "on_attack_discard_pending") {
+    const attackCtx = ui.onAttackContext;
+    if (!attackCtx) return;
+    const active = state.active;
+    const newHand = [...state.players[active].hand];
+    const discarded = assertNonNull(newHand.splice(handIdx, 1)[0]);
+    const newDiscard = [...state.players[active].discard, discarded];
+    const ps = [...state.players] as typeof state.players;
+    ps[active] = { ...ps[active], hand: newHand, discard: newDiscard };
+    const ns = appendLog(
+      { ...state, players: ps },
+      `${getCardName(discarded)} を捨てた（攻撃時コスト）`,
+      "info",
+    );
+    executeAttack(
+      ns,
+      attackCtx.attackerIdx,
+      attackCtx.targetIdx,
+      attackCtx.isSummonAttack,
+      attackCtx.extraDamage,
+      attackCtx.setPiercing,
+      attackCtx.rotateAfterAttack,
+    );
+    return;
+  }
+
   const ctx = ui.discardContext;
   if (!ctx) return;
   const { cardId, cellIdx, mandatory } = ctx;
@@ -1312,6 +1797,28 @@ function finalizeSummonTurn(
   ) as CellIndex;
   if (summonIdx < 0) summonIdx = fallbackSummonIdx;
 
+  // 魔法攻撃: 1体選んで攻撃する
+  if (def.attack_cells === "all") {
+    const opp = (1 - active) as 0 | 1;
+    const enemies = state.board
+      .map((c, i) => (c !== null && c.owner === opp ? i : -1))
+      .filter((i) => i >= 0) as CellIndex[];
+    if (enemies.length > 0) {
+      setState({
+        gameState: state,
+        gameUiExtra: {
+          ...resetGameUiExtra(),
+          mode: "magic_attack_targeting",
+          validCells: enemies,
+          magicAttackContext: { cardId, summonIdx },
+        },
+      });
+      return;
+    }
+    handleSummonDone(state);
+    return;
+  }
+
   const { board: boardAfterAtk, results } = resolveSummonAutoAttack(
     state.board,
     summonIdx,
@@ -1382,15 +1889,7 @@ function finalizeSummonTurn(
     setState({ gameState: newState, screen: "over" });
     return;
   }
-  // オンラインは相手が待っているので自動終了。ローカルは結果を確認してから手動終了。
-  if (getState().online) {
-    onEndTurn(newState);
-  } else {
-    setState({
-      gameState: newState,
-      gameUiExtra: { ...resetGameUiExtra(), mode: "summon_done" },
-    });
-  }
+  handleSummonDone(newState);
 }
 
 function doSummon(
@@ -1535,93 +2034,297 @@ function doAttack(
   if (attackerIdx === null) return;
   const attacker = state.board[attackerIdx];
   if (!attacker) return;
-  const def = getCharDef(attacker.cardId);
-  if (!def) return;
-  const targetChar = state.board[targetIdx];
-  if (!targetChar) return;
 
-  const workBoard = state.board.map((c) =>
-    c === null
-      ? null
-      : {
-          ...c,
-          keywords: [...c.keywords],
-          markers: { ...c.markers },
-          status: { ...c.status },
+  const { extraDamage, setPiercing, rotateAfterAttack, hasOptionalCostClause } =
+    computeOnAttackEffects(state, attackerIdx, targetIdx, active);
+
+  if (hasOptionalCostClause) {
+    setState({
+      gameState: state,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "on_attack_cost_pending",
+        onAttackContext: {
+          attackerIdx,
+          targetIdx,
+          isSummonAttack: false,
+          extraDamage,
+          setPiercing,
+          rotateAfterAttack,
+          costClauseActivated: false,
         },
-  ) as Board;
-
-  const defDef = getCharDef(targetChar.cardId);
-  const result = resolveAttack(workBoard, attackerIdx, targetIdx, {
-    teamDR: state.teamDR,
-    weaknessCells: (defDef?.weakness_cells ?? [[-1, 0]]) as RelCoord[],
-    attackType: def.attack_type === "魔法" ? "magic" : "physical",
-    defenderCost: defDef?.cost ?? 1,
-    attackerCost: def.cost,
-    defenderAttackCells: (defDef?.attack_cells ?? null) as
-      | "all"
-      | null
-      | [number, number][],
-  });
-
-  // Mark attacker as acted
-  if (workBoard[attackerIdx])
-    // biome-ignore lint/style/noNonNullAssertion: null check in if condition above
-    workBoard[attackerIdx] = { ...workBoard[attackerIdx]!, hasActed: true };
-
-  let newState = spendReactivationMana(
-    { ...state, board: workBoard },
-    attackerIdx,
-    def.reactivation_cost,
-  );
-  const atkName = getCardName(attacker.cardId);
-  const defName = getCardName(targetChar.cardId);
-
-  if (result.blocked) {
-    newState = appendLog(newState, `${atkName} の攻撃がブロックされた`, "info");
-  } else if (result.evaded) {
-    newState = appendLog(newState, `${defName} が攻撃を回避！`, "info");
-  } else {
-    newState = appendLog(
-      newState,
-      `${atkName} → ${defName}: ${result.defenderDamage}ダメージ${result.isBlind ? " [B位置]" : ""}`,
-      "damage",
-    );
-    if (result.counterDamage > 0)
-      newState = appendLog(
-        newState,
-        `${defName} ← 反撃: ${result.counterDamage}ダメージ`,
-        "damage",
-      );
-    if (result.vpAwarded > 0) {
-      const np = [...newState.players] as typeof newState.players;
-      np[active] = { ...np[active], vp: np[active].vp + result.vpAwarded };
-      newState = { ...newState, players: np };
-      newState = appendLog(
-        newState,
-        `${defName} 撃破！ ${result.vpAwarded}VP`,
-        "system",
-      );
-    }
-    if (result.counterVpAwarded > 0) {
-      const opp = (1 - active) as 0 | 1;
-      const np = [...newState.players] as typeof newState.players;
-      np[opp] = { ...np[opp], vp: np[opp].vp + result.counterVpAwarded };
-      newState = { ...newState, players: np };
-      newState = appendLog(
-        newState,
-        `${atkName} 撃破（反撃）！ ${result.counterVpAwarded}VP`,
-        "system",
-      );
-    }
-  }
-
-  newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) {
-    setState({ gameState: newState, screen: "over" });
+      },
+    });
     return;
   }
-  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+
+  executeAttack(
+    state,
+    attackerIdx,
+    targetIdx,
+    false,
+    extraDamage,
+    setPiercing,
+    rotateAfterAttack,
+  );
+}
+
+function doMagicSummonAttack(
+  state: GameState,
+  ui: GameUiExtra,
+  targetIdx: CellIndex,
+): void {
+  const ctx = ui.magicAttackContext;
+  if (!ctx) return;
+  const active = state.active;
+
+  let attackerIdx = state.board.findIndex(
+    (c) => c !== null && c.owner === active && c.summonedOnTurn === state.turn,
+  ) as CellIndex;
+  if (attackerIdx < 0) attackerIdx = ctx.summonIdx;
+
+  const { extraDamage, setPiercing, rotateAfterAttack, hasOptionalCostClause } =
+    computeOnAttackEffects(state, attackerIdx, targetIdx, active);
+
+  if (hasOptionalCostClause) {
+    setState({
+      gameState: state,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "on_attack_cost_pending",
+        onAttackContext: {
+          attackerIdx,
+          targetIdx,
+          isSummonAttack: true,
+          extraDamage,
+          setPiercing,
+          rotateAfterAttack,
+          costClauseActivated: false,
+        },
+        magicAttackContext: ctx,
+      },
+    });
+    return;
+  }
+
+  executeAttack(
+    state,
+    attackerIdx,
+    targetIdx,
+    true,
+    extraDamage,
+    setPiercing,
+    rotateAfterAttack,
+  );
+}
+
+function onOnAttackCostYes(state: GameState, ui: GameUiExtra): void {
+  const ctx = ui.onAttackContext;
+  if (!ctx) return;
+  const { attackerIdx, targetIdx, isSummonAttack } = ctx;
+  const active = state.active;
+  const attacker = state.board[attackerIdx];
+  if (!attacker) return;
+
+  const spec = getEffectSpec(attacker.cardId);
+  const optClause = spec.clauses.find(
+    (c) => c.trigger === "on_attack" && c.cost && !c.costMandatory,
+  );
+  if (!optClause?.cost) {
+    executeAttack(
+      state,
+      attackerIdx,
+      targetIdx,
+      isSummonAttack,
+      ctx.extraDamage,
+      ctx.setPiercing,
+      ctx.rotateAfterAttack,
+    );
+    return;
+  }
+
+  let extraDamage = ctx.extraDamage;
+  let setPiercing = ctx.setPiercing;
+  const condOk =
+    !optClause.condition ||
+    evalOnAttackCond(
+      optClause.condition,
+      state,
+      attackerIdx,
+      targetIdx,
+      active,
+    );
+  if (condOk) {
+    for (const eff of optClause.effects) {
+      if (eff.type === "extra_damage") extraDamage += eff.amount;
+      else if (eff.type === "set_piercing") setPiercing = true;
+    }
+  }
+
+  const updCtx = {
+    ...ctx,
+    extraDamage,
+    setPiercing,
+    costClauseActivated: true,
+  };
+  const cost = optClause.cost;
+
+  if (cost.type === "self_damage") {
+    const nb = [...state.board] as Board;
+    const a = nb[attackerIdx];
+    if (a) {
+      const newHp = a.hp - cost.amount;
+      nb[attackerIdx] = newHp <= 0 ? null : { ...a, hp: newHp };
+    }
+    const ns = appendLog(
+      { ...state, board: nb },
+      `攻撃時コスト: 自身${cost.amount}ダメージ`,
+      "damage",
+    );
+    executeAttack(
+      ns,
+      attackerIdx,
+      targetIdx,
+      isSummonAttack,
+      updCtx.extraDamage,
+      updCtx.setPiercing,
+      updCtx.rotateAfterAttack,
+    );
+  } else if (cost.type === "mana") {
+    if (state.players[active].mana < cost.amount) {
+      executeAttack(
+        state,
+        attackerIdx,
+        targetIdx,
+        isSummonAttack,
+        ctx.extraDamage,
+        ctx.setPiercing,
+        ctx.rotateAfterAttack,
+      );
+      return;
+    }
+    const np = [...state.players] as typeof state.players;
+    np[active] = { ...np[active], mana: np[active].mana - cost.amount };
+    const ns = appendLog(
+      { ...state, players: np },
+      `攻撃時コスト: マナ${cost.amount}消費`,
+      "info",
+    );
+    executeAttack(
+      ns,
+      attackerIdx,
+      targetIdx,
+      isSummonAttack,
+      updCtx.extraDamage,
+      updCtx.setPiercing,
+      updCtx.rotateAfterAttack,
+    );
+  } else if (cost.type === "discard") {
+    if (state.players[active].hand.length === 0) {
+      executeAttack(
+        state,
+        attackerIdx,
+        targetIdx,
+        isSummonAttack,
+        ctx.extraDamage,
+        ctx.setPiercing,
+        ctx.rotateAfterAttack,
+      );
+      return;
+    }
+    setState({
+      gameState: state,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "on_attack_discard_pending",
+        onAttackContext: updCtx,
+        magicAttackContext: ui.magicAttackContext,
+      },
+    });
+  } else if (cost.type === "self_damage_and_discard") {
+    const nb = [...state.board] as Board;
+    const a = nb[attackerIdx];
+    let ns = state;
+    if (a) {
+      const newHp = a.hp - cost.damage;
+      nb[attackerIdx] = newHp <= 0 ? null : { ...a, hp: newHp };
+      ns = appendLog(
+        { ...state, board: nb },
+        `攻撃時コスト: 自身${cost.damage}ダメージ`,
+        "damage",
+      );
+    }
+    if (ns.players[active].hand.length === 0) {
+      executeAttack(
+        ns,
+        attackerIdx,
+        targetIdx,
+        isSummonAttack,
+        ctx.extraDamage,
+        ctx.setPiercing,
+        ctx.rotateAfterAttack,
+      );
+      return;
+    }
+    setState({
+      gameState: ns,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "on_attack_discard_pending",
+        onAttackContext: updCtx,
+        magicAttackContext: ui.magicAttackContext,
+      },
+    });
+  }
+}
+
+function onOnAttackCostNo(state: GameState, ui: GameUiExtra): void {
+  const ctx = ui.onAttackContext;
+  if (!ctx) return;
+  executeAttack(
+    state,
+    ctx.attackerIdx,
+    ctx.targetIdx,
+    ctx.isSummonAttack,
+    ctx.extraDamage,
+    ctx.setPiercing,
+    ctx.rotateAfterAttack,
+  );
+}
+
+function onOnAttackRotatePicked(
+  state: GameState,
+  ui: GameUiExtra,
+  dir: Direction,
+): void {
+  const ctx = ui.onAttackContext;
+  if (!ctx) return;
+  const { targetIdx, isSummonAttack } = ctx;
+
+  const nb = [...state.board] as Board;
+  const target = nb[targetIdx];
+  if (!target) {
+    if (isSummonAttack) handleSummonDone(state);
+    else setState({ gameState: state, gameUiExtra: resetGameUiExtra() });
+    return;
+  }
+
+  nb[targetIdx] = { ...target, dir };
+  const ns = appendLog(
+    { ...state, board: nb },
+    `攻撃時効果: ${getCardName(target.cardId)} を ${DIR_ARROWS[dir]} に向けた`,
+    "info",
+  );
+  const checked = applyVictoryCheck(ns, null);
+  if (checked.winner !== null) {
+    setState({ gameState: checked, screen: "over" });
+    return;
+  }
+  if (isSummonAttack) {
+    handleSummonDone(checked);
+  } else {
+    setState({ gameState: checked, gameUiExtra: resetGameUiExtra() });
+  }
 }
 
 function doResolveEffect(
