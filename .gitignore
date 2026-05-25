@@ -1,4 +1,5 @@
 *.pdf
 .claude/
+.agents/
 .venv/
 .firebase/
