@@ -1,13 +1,12 @@
-import { setState, getState } from './app.js';
-import { FACTIONS, FACTION_NAMES, CARD_DB } from '../data/cards.js';
-import { createDraftState, makePick } from '../engine/draft.js';
-import { createInitialGameState } from '../engine/gamestate.js';
-import { startTurnPhase, drawStep } from '../engine/turn.js';
-import { resetGameUiExtra } from './app.js';
+import { CARD_DB, FACTION_NAMES, FACTIONS } from "../data/cards.js";
+import { createDraftState, makePick } from "../engine/draft.js";
+import { createInitialGameState } from "../engine/gamestate.js";
+import { drawStep, startTurnPhase } from "../engine/turn.js";
+import { getState, resetGameUiExtra, setState } from "./app.js";
 
 export interface DraftUiState {
-  step: 'faction' | 'item';
-  pickIndex: number;  // 0-5 (4 faction picks, 2 item picks)
+  step: "faction" | "item";
+  pickIndex: number; // 0-5 (4 faction picks, 2 item picks)
   p0Factions: string[];
   p1Factions: string[];
   p0Item: string;
@@ -18,7 +17,7 @@ export interface DraftUiState {
 
 // Draft order: P0→P1→P1→P0 (factions), P0→P1 (items)
 const DRAFT_ORDER = [0, 1, 1, 0, 0, 1] as const;
-const ITEM_SETS = ['A', 'B', 'C', 'D'];
+const ITEM_SETS = ["A", "B", "C", "D"];
 
 function currentPicker(ui: DraftUiState): 0 | 1 {
   return DRAFT_ORDER[ui.pickIndex] as 0 | 1;
@@ -29,25 +28,30 @@ function getAllPickedFactions(ui: DraftUiState): string[] {
 }
 
 export function renderDraft(ui: DraftUiState): HTMLElement {
-  const div = document.createElement('div');
-  div.className = 'screen-draft';
+  const div = document.createElement("div");
+  div.className = "screen-draft";
 
   const { online, myPlayerIndex } = getState();
   const picker = currentPicker(ui);
   const isMyTurn = !online || myPlayerIndex === picker;
   const isItemPhase = ui.pickIndex >= 4;
   const pickerLabel = `プレイヤー${picker + 1}`;
-  const pickerClass = picker === 0 ? 'p0-color' : 'p1-color';
+  const pickerClass = picker === 0 ? "p0-color" : "p1-color";
 
   // Summary of picks so far
-  let summaryHtml = '';
-  if (ui.p0Factions.length > 0 || ui.p1Factions.length > 0 || ui.p0Item || ui.p1Item) {
+  let summaryHtml = "";
+  if (
+    ui.p0Factions.length > 0 ||
+    ui.p1Factions.length > 0 ||
+    ui.p0Item ||
+    ui.p1Item
+  ) {
     summaryHtml = `<div class="draft-picks">`;
     if (ui.p0Factions.length > 0) {
-      summaryHtml += `<div class="pick-row"><span class="pick-label p0-color">P1の派閥:</span><span class="pick-val">${ui.p0Factions.map(f => FACTION_NAMES[f] ?? f).join(' / ')}</span></div>`;
+      summaryHtml += `<div class="pick-row"><span class="pick-label p0-color">P1の派閥:</span><span class="pick-val">${ui.p0Factions.map((f) => FACTION_NAMES[f] ?? f).join(" / ")}</span></div>`;
     }
     if (ui.p1Factions.length > 0) {
-      summaryHtml += `<div class="pick-row"><span class="pick-label p1-color">P2の派閥:</span><span class="pick-val">${ui.p1Factions.map(f => FACTION_NAMES[f] ?? f).join(' / ')}</span></div>`;
+      summaryHtml += `<div class="pick-row"><span class="pick-label p1-color">P2の派閥:</span><span class="pick-val">${ui.p1Factions.map((f) => FACTION_NAMES[f] ?? f).join(" / ")}</span></div>`;
     }
     if (ui.p0Item) {
       summaryHtml += `<div class="pick-row"><span class="pick-label p0-color">P1のアイテムセット:</span><span class="pick-val">セット${ui.p0Item}</span></div>`;
@@ -58,25 +62,26 @@ export function renderDraft(ui: DraftUiState): HTMLElement {
     summaryHtml += `</div>`;
   }
 
-  let stepHtml = '';
+  let stepHtml = "";
   if (!isItemPhase) {
     const pickedFactions = getAllPickedFactions(ui);
     const myFactions = picker === 0 ? ui.p0Factions : ui.p1Factions;
-    const pickNum = myFactions.length === 0 ? '1つ目' : '2つ目';
+    const pickNum = myFactions.length === 0 ? "1つ目" : "2つ目";
 
     stepHtml = `
       <div class="draft-step">
         <h3><span class="${pickerClass}">${pickerLabel}</span> の派閥選択（${pickNum}）</h3>
         <div class="faction-grid" id="faction-grid">
-          ${FACTIONS.map(f => {
-            const isPicked = pickedFactions.includes(f) && !myFactions.includes(f);
+          ${FACTIONS.map((f) => {
+            const isPicked =
+              pickedFactions.includes(f) && !myFactions.includes(f);
             const isMyPick = myFactions.includes(f);
-            const cls = isPicked ? 'picked' : isMyPick ? 'disabled' : '';
+            const cls = isPicked ? "picked" : isMyPick ? "disabled" : "";
             return `<div class="faction-card ${cls}" data-faction="${f}">
               <div class="faction-name-jp">${FACTION_NAMES[f] ?? f}</div>
               <div class="faction-name-en">${f}</div>
             </div>`;
-          }).join('')}
+          }).join("")}
         </div>
       </div>
     `;
@@ -88,14 +93,14 @@ export function renderDraft(ui: DraftUiState): HTMLElement {
       <div class="draft-step">
         <h3><span class="${pickerClass}">${pickerLabel}</span> のアイテムセット選択</h3>
         <div class="item-grid" id="item-grid">
-          ${ITEM_SETS.map(s => {
+          ${ITEM_SETS.map((s) => {
             const isPicked = oppItem === s;
             const isMyPick = myItem === s;
-            const cls = isPicked ? 'picked' : isMyPick ? 'selected' : '';
+            const cls = isPicked ? "picked" : isMyPick ? "selected" : "";
             return `<div class="item-set-card ${cls}" data-item="${s}">
               <div style="font-size:1.2rem;font-weight:bold;">セット${s}</div>
             </div>`;
-          }).join('')}
+          }).join("")}
         </div>
       </div>
     `;
@@ -103,7 +108,7 @@ export function renderDraft(ui: DraftUiState): HTMLElement {
 
   const waitingBanner = !isMyTurn
     ? `<div class="waiting-banner">P${picker + 1}が選択中...</div>`
-    : '';
+    : "";
 
   div.innerHTML = `
     <h2>ドラフト</h2>
@@ -115,24 +120,30 @@ export function renderDraft(ui: DraftUiState): HTMLElement {
   if (!isMyTurn) return div; // 相手のターン中はクリック無効
 
   // Faction click handlers
-  const factionGrid = div.querySelector('#faction-grid');
+  const factionGrid = div.querySelector("#faction-grid");
   if (factionGrid) {
-    factionGrid.querySelectorAll<HTMLElement>('.faction-card').forEach(card => {
-      if (card.classList.contains('picked') || card.classList.contains('disabled')) return;
-      card.addEventListener('click', () => {
-        const faction = card.dataset['faction']!;
-        handleFactionPick(faction);
+    factionGrid
+      .querySelectorAll<HTMLElement>(".faction-card")
+      .forEach((card) => {
+        if (
+          card.classList.contains("picked") ||
+          card.classList.contains("disabled")
+        )
+          return;
+        card.addEventListener("click", () => {
+          const faction = card.dataset.faction!;
+          handleFactionPick(faction);
+        });
       });
-    });
   }
 
   // Item click handlers
-  const itemGrid = div.querySelector('#item-grid');
+  const itemGrid = div.querySelector("#item-grid");
   if (itemGrid) {
-    itemGrid.querySelectorAll<HTMLElement>('.item-set-card').forEach(card => {
-      if (card.classList.contains('picked')) return;
-      card.addEventListener('click', () => {
-        const item = card.dataset['item']!;
+    itemGrid.querySelectorAll<HTMLElement>(".item-set-card").forEach((card) => {
+      if (card.classList.contains("picked")) return;
+      card.addEventListener("click", () => {
+        const item = card.dataset.item!;
         handleItemPick(item);
       });
     });
@@ -154,7 +165,7 @@ function handleFactionPick(faction: string): void {
   newUi = { ...newUi, pickIndex: draftUi.pickIndex + 1 };
 
   if (newUi.pickIndex === 4) {
-    newUi = { ...newUi, step: 'item' };
+    newUi = { ...newUi, step: "item" };
   }
 
   setState({ draftUi: newUi });
@@ -197,8 +208,13 @@ function startGame(ui: DraftUiState): void {
   const { online } = getState();
   if (online) {
     // オンラインモード: パス画面不要、直接ゲームへ
-    setState({ screen: 'game', gameState, gameUiExtra: resetGameUiExtra() });
+    setState({ screen: "game", gameState, gameUiExtra: resetGameUiExtra() });
   } else {
-    setState({ screen: 'pass', gameState, passForPlayer: gameState.active, gameUiExtra: resetGameUiExtra() });
+    setState({
+      screen: "pass",
+      gameState,
+      passForPlayer: gameState.active,
+      gameUiExtra: resetGameUiExtra(),
+    });
   }
 }

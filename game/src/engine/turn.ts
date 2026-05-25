@@ -1,4 +1,4 @@
-import type { GameState, CellIndex } from './types.js';
+import type { CellIndex, GameState } from "./types.js";
 
 export const HAND_LIMIT = 7;
 
@@ -18,8 +18,14 @@ export function spendReactivationMana(
   const active = state.active;
   const char = state.board[charIdx];
   const totalCost = baseCost + (char?.status.actionTax ?? 0);
-  const newPlayers = [{ ...state.players[0] }, { ...state.players[1] }] as typeof state.players;
-  newPlayers[active] = { ...newPlayers[active], mana: newPlayers[active].mana - totalCost };
+  const newPlayers = [
+    { ...state.players[0] },
+    { ...state.players[1] },
+  ] as typeof state.players;
+  newPlayers[active] = {
+    ...newPlayers[active],
+    mana: newPlayers[active].mana - totalCost,
+  };
   return { ...state, players: newPlayers };
 }
 
@@ -33,18 +39,19 @@ export function spendReactivationMana(
  */
 export function startTurnPhase(state: GameState): GameState {
   const active = state.active;
-  const newBoard = state.board.map(char => {
+  const newBoard = state.board.map((char) => {
     if (char === null) return null;
     if (char.owner !== active) return char;
 
     const s = char.status;
-    const brainwashedTurns = s.brainwashedTurns > 0 ? s.brainwashedTurns - 1 : 0;
+    const brainwashedTurns =
+      s.brainwashedTurns > 0 ? s.brainwashedTurns - 1 : 0;
     const newStatus = {
       ...s,
       brainwashedTurns,
       brainwashedBy: brainwashedTurns === 0 ? null : s.brainwashedBy,
       dirLocked: s.dirLocked > 0 ? s.dirLocked - 1 : 0,
-      immune:    s.immune   > 0 ? s.immune   - 1 : 0,
+      immune: s.immune > 0 ? s.immune - 1 : 0,
     };
     return { ...char, status: newStatus, hasActed: false, hasRotated: false };
   });
@@ -58,7 +65,10 @@ export function startTurnPhase(state: GameState): GameState {
 /** マナ+2、デッキトップから1ドロー（デッキ空の場合はスキップ）。 */
 export function drawStep(state: GameState): GameState {
   const p = state.active;
-  const newPlayers = [{ ...state.players[0] }, { ...state.players[1] }] as typeof state.players;
+  const newPlayers = [
+    { ...state.players[0] },
+    { ...state.players[1] },
+  ] as typeof state.players;
   newPlayers[p] = { ...newPlayers[p], mana: newPlayers[p].mana + 2 };
 
   const deck = [...newPlayers[p].deck];
@@ -86,7 +96,10 @@ export function endTurnCleanup(state: GameState): GameState {
   const p = state.active;
   const opp = (1 - p) as 0 | 1;
 
-  const newPlayers = [{ ...state.players[0] }, { ...state.players[1] }] as typeof state.players;
+  const newPlayers = [
+    { ...state.players[0] },
+    { ...state.players[1] },
+  ] as typeof state.players;
   const hand = [...newPlayers[p].hand];
   const discard = [...newPlayers[p].discard];
   if (hand.length > HAND_LIMIT) {
@@ -98,7 +111,7 @@ export function endTurnCleanup(state: GameState): GameState {
   newTeamDR[opp] = false;
 
   // 現プレイヤーのキャラのtempAtkBuffをリセット
-  const newBoard = state.board.map(char => {
+  const newBoard = state.board.map((char) => {
     if (char === null || char.owner !== p) return char;
     return char.tempAtkBuff > 0 ? { ...char, tempAtkBuff: 0 } : char;
   });

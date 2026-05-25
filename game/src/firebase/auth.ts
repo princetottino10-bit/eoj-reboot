@@ -1,12 +1,12 @@
 import {
+  onAuthStateChanged as fbOnAuthStateChanged,
+  signOut as fbSignOut,
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
-  signOut as fbSignOut,
-  onAuthStateChanged as fbOnAuthStateChanged,
-} from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from './config.js';
+} from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "./config.js";
 
 export interface User {
   uid: string;
@@ -17,8 +17,13 @@ export interface User {
 const provider = new GoogleAuthProvider();
 
 async function checkAllowlist(email: string): Promise<boolean> {
-  const snap = await getDoc(doc(db, 'allowed_users', email));
-  console.log('[Auth] allowlist check:', email, '→', snap.exists() ? 'allowed' : 'denied');
+  const snap = await getDoc(doc(db, "allowed_users", email));
+  console.log(
+    "[Auth] allowlist check:",
+    email,
+    "→",
+    snap.exists() ? "allowed" : "denied",
+  );
   return snap.exists();
 }
 
@@ -27,18 +32,23 @@ async function checkAllowlist(email: string): Promise<boolean> {
  * 戻り値: 'popup' = popup で完了 / 'redirect' = redirect に切り替え（ページ遷移中）
  *         'cancelled' = ユーザーがポップアップを閉じた
  */
-export async function signInWithGoogle(): Promise<'popup' | 'redirect' | 'cancelled'> {
+export async function signInWithGoogle(): Promise<
+  "popup" | "redirect" | "cancelled"
+> {
   try {
     await signInWithPopup(auth, provider);
-    return 'popup';
+    return "popup";
   } catch (e: unknown) {
     const code = (e as { code?: string }).code;
-    if (code === 'auth/popup-blocked') {
+    if (code === "auth/popup-blocked") {
       void signInWithRedirect(auth, provider);
-      return 'redirect';
+      return "redirect";
     }
-    if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
-      return 'cancelled';
+    if (
+      code === "auth/popup-closed-by-user" ||
+      code === "auth/cancelled-popup-request"
+    ) {
+      return "cancelled";
     }
     throw e;
   }
@@ -56,9 +66,9 @@ export function onAuthStateChanged(
   cb: (user: User | null, authError?: string | null) => void,
 ): () => void {
   return fbOnAuthStateChanged(auth, async (firebaseUser) => {
-    console.log('[Auth] state changed:', firebaseUser?.email ?? 'null');
+    console.log("[Auth] state changed:", firebaseUser?.email ?? "null");
 
-    if (!firebaseUser || !firebaseUser.email) {
+    if (!firebaseUser?.email) {
       const err = _pendingError;
       _pendingError = null;
       cb(null, err);
@@ -68,14 +78,19 @@ export function onAuthStateChanged(
     try {
       const allowed = await checkAllowlist(firebaseUser.email);
       if (!allowed) {
-        _pendingError = 'このアカウントはアクセスが許可されていません。';
+        _pendingError = "このアカウントはアクセスが許可されていません。";
         await fbSignOut(auth); // → null で再発火 → 上の cb(null, err) が呼ばれる
         return;
       }
-      cb({ uid: firebaseUser.uid, email: firebaseUser.email, displayName: firebaseUser.displayName });
+      cb({
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName,
+      });
     } catch (e) {
-      console.error('[Auth] allowlist check error:', e);
-      _pendingError = 'ログイン確認中にエラーが発生しました。コンソールを確認してください。';
+      console.error("[Auth] allowlist check error:", e);
+      _pendingError =
+        "ログイン確認中にエラーが発生しました。コンソールを確認してください。";
       await fbSignOut(auth);
     }
   });

@@ -1,4 +1,4 @@
-import type { Board, GameState, PlayerState } from './types.js';
+import type { Board, GameState, PlayerState } from "./types.js";
 
 // ============================================================
 // 定数
@@ -21,8 +21,13 @@ export function checkVPWin(players: [PlayerState, PlayerState]): 0 | 1 | null {
 /**
  * 自ターン終了時のみ呼ぶ。endingPlayer が5マス以上占拠していれば勝利。
  */
-export function checkTerritoryWin(board: Board, endingPlayer: 0 | 1): 0 | 1 | null {
-  const count = board.filter(c => c !== null && c.owner === endingPlayer).length;
+export function checkTerritoryWin(
+  board: Board,
+  endingPlayer: 0 | 1,
+): 0 | 1 | null {
+  const count = board.filter(
+    (c) => c !== null && c.owner === endingPlayer,
+  ).length;
   return count >= TERRITORY_WIN_COUNT ? endingPlayer : null;
 }
 

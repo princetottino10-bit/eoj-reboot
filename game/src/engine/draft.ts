@@ -21,8 +21,12 @@ export interface DraftState {
 
 export const DRAFT_PICK_ORDER = [0, 1, 1, 0, 0, 1] as const;
 export const DRAFT_PICK_TYPES = [
-  'faction', 'faction', 'faction', 'faction',
-  'itemSet', 'itemSet',
+  "faction",
+  "faction",
+  "faction",
+  "faction",
+  "itemSet",
+  "itemSet",
 ] as const;
 
 // ============================================================
@@ -32,8 +36,15 @@ export const DRAFT_PICK_TYPES = [
 export function createDraftState(): DraftState {
   return {
     step: 0,
-    availableFactions: ['aggro', 'tank', 'control', 'synergy', 'snipe', 'trick'],
-    availableItemSets: ['A', 'B', 'C', 'D'],
+    availableFactions: [
+      "aggro",
+      "tank",
+      "control",
+      "synergy",
+      "snipe",
+      "trick",
+    ],
+    availableItemSets: ["A", "B", "C", "D"],
     factions: [[], []],
     itemSets: [null, null],
   };
@@ -47,8 +58,8 @@ export function currentPicker(draft: DraftState): 0 | 1 {
   return DRAFT_PICK_ORDER[draft.step] ?? 0;
 }
 
-export function currentPickType(draft: DraftState): 'faction' | 'itemSet' {
-  return DRAFT_PICK_TYPES[draft.step] ?? 'faction';
+export function currentPickType(draft: DraftState): "faction" | "itemSet" {
+  return DRAFT_PICK_TYPES[draft.step] ?? "faction";
 }
 
 export function isDraftComplete(draft: DraftState): boolean {
@@ -63,7 +74,7 @@ export function makePick(draft: DraftState, choice: string): DraftState {
   const pickType = currentPickType(draft);
   const picker = currentPicker(draft);
 
-  if (pickType === 'faction') {
+  if (pickType === "faction") {
     if (!draft.availableFactions.includes(choice)) {
       throw new Error(`Invalid or unavailable faction: ${choice}`);
     }
@@ -75,7 +86,7 @@ export function makePick(draft: DraftState, choice: string): DraftState {
     return {
       ...draft,
       step: draft.step + 1,
-      availableFactions: draft.availableFactions.filter(f => f !== choice),
+      availableFactions: draft.availableFactions.filter((f) => f !== choice),
       factions: newFactions,
     };
   } else {
@@ -87,7 +98,7 @@ export function makePick(draft: DraftState, choice: string): DraftState {
     return {
       ...draft,
       step: draft.step + 1,
-      availableItemSets: draft.availableItemSets.filter(s => s !== choice),
+      availableItemSets: draft.availableItemSets.filter((s) => s !== choice),
       itemSets: newItemSets,
     };
   }
@@ -106,12 +117,16 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-export function buildDeck(factions: string[], itemSet: string, cards: CardData): string[] {
+export function buildDeck(
+  factions: string[],
+  itemSet: string,
+  cards: CardData,
+): string[] {
   const charIds = cards.characters
-    .filter(c => factions.includes(c.faction))
-    .map(c => c.id);
+    .filter((c) => factions.includes(c.faction))
+    .map((c) => c.id);
   const itemIds = cards.items
-    .filter(i => i.sets.includes(itemSet))
-    .map(i => i.id);
+    .filter((i) => i.sets.includes(itemSet))
+    .map((i) => i.id);
   return shuffle([...charIds, ...itemIds]);
 }

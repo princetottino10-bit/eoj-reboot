@@ -1,12 +1,27 @@
-import type { Board, CharInstance, CellIndex, GameState, RelCoord } from './types.js';
-import type { PlayerState } from './types.js';
-import type { CharCardDef } from './gamestate.js';
-import type { AttackResult } from './combat.js';
-import type { EffectClause, EffectAtom, EffectTarget, EffectCondition } from './effectSpecs.js';
-import { getEffectSpec, clauseHasPendingEffects, needsTargetSelection } from './effectSpecs.js';
-import { getAdjacentCells, getAttackCells } from './board.js';
-import { resolveAttack } from './combat.js';
-import { countAlliesInBPosition } from './cost.js';
+import { getAdjacentCells, getAttackCells } from "./board.js";
+import type { AttackResult } from "./combat.js";
+import { resolveAttack } from "./combat.js";
+import { countAlliesInBPosition } from "./cost.js";
+import type {
+  EffectAtom,
+  EffectClause,
+  EffectCondition,
+  EffectTarget,
+} from "./effectSpecs.js";
+import {
+  clauseHasPendingEffects,
+  getEffectSpec,
+  needsTargetSelection,
+} from "./effectSpecs.js";
+import type { CharCardDef } from "./gamestate.js";
+import type {
+  Board,
+  CellIndex,
+  CharInstance,
+  GameState,
+  PlayerState,
+  RelCoord,
+} from "./types.js";
 
 // ============================================================
 // 型
@@ -23,7 +38,10 @@ export interface SummonEffectResult {
 
 export function getSummonEffect(cardId: string): SummonEffectResult {
   const spec = getEffectSpec(cardId);
-  return { clauses: spec.clauses, hasPending: needsTargetSelection(spec.clauses, 'on_summon') };
+  return {
+    clauses: spec.clauses,
+    hasPending: needsTargetSelection(spec.clauses, "on_summon"),
+  };
 }
 
 // ============================================================
@@ -32,25 +50,33 @@ export function getSummonEffect(cardId: string): SummonEffectResult {
 
 function hasMarkerBuff(char: CharInstance): boolean {
   return (
-    char.markers.protection > 0 || char.markers.evasion > 0 ||
-    char.markers.piercing > 0 || char.markers.quickness > 0 ||
-    char.keywords.includes('防護') || char.keywords.includes('回避') ||
-    char.keywords.includes('貫通') || char.keywords.includes('先制')
+    char.markers.protection > 0 ||
+    char.markers.evasion > 0 ||
+    char.markers.piercing > 0 ||
+    char.markers.quickness > 0 ||
+    char.keywords.includes("防護") ||
+    char.keywords.includes("回避") ||
+    char.keywords.includes("貫通") ||
+    char.keywords.includes("先制")
   );
 }
 
 function countMarkerAllies(board: Board, owner: 0 | 1): number {
-  return board.filter(c => c !== null && c.owner === owner && hasMarkerBuff(c)).length;
+  return board.filter(
+    (c) => c !== null && c.owner === owner && hasMarkerBuff(c),
+  ).length;
 }
 
 function deepCopyBoard(board: Board): Board {
-  return board.map(c =>
-    c === null ? null : {
-      ...c,
-      keywords: [...c.keywords],
-      markers: { ...c.markers },
-      status: { ...c.status },
-    },
+  return board.map((c) =>
+    c === null
+      ? null
+      : {
+          ...c,
+          keywords: [...c.keywords],
+          markers: { ...c.markers },
+          status: { ...c.status },
+        },
   ) as Board;
 }
 
@@ -67,13 +93,20 @@ function resolveTargets(
   const opp = (1 - owner) as 0 | 1;
   const adjIdxs = getAdjacentCells(summonIdx);
   switch (target) {
-    case 'self': return [summonIdx];
-    case 'adj_allies': return adjIdxs.filter(i => board[i]?.owner === owner);
-    case 'adj_enemies': return adjIdxs.filter(i => board[i]?.owner === opp);
-    case 'self_and_adj_allies': return [summonIdx, ...adjIdxs.filter(i => board[i]?.owner === owner)];
-    case 'all_allies': return board.map((_, i) => i).filter(i => board[i]?.owner === owner);
-    case 'all_enemies': return board.map((_, i) => i).filter(i => board[i]?.owner === opp);
-    default: return [];
+    case "self":
+      return [summonIdx];
+    case "adj_allies":
+      return adjIdxs.filter((i) => board[i]?.owner === owner);
+    case "adj_enemies":
+      return adjIdxs.filter((i) => board[i]?.owner === opp);
+    case "self_and_adj_allies":
+      return [summonIdx, ...adjIdxs.filter((i) => board[i]?.owner === owner)];
+    case "all_allies":
+      return board.map((_, i) => i).filter((i) => board[i]?.owner === owner);
+    case "all_enemies":
+      return board.map((_, i) => i).filter((i) => board[i]?.owner === opp);
+    default:
+      return [];
   }
 }
 
@@ -91,25 +124,27 @@ export function evalCondition(
 ): boolean {
   const opp = (1 - owner) as 0 | 1;
   switch (cond.type) {
-    case 'ally_count_gte':
-      return board.filter(c => c?.owner === owner).length >= cond.min;
-    case 'marker_ally_count_gte':
+    case "ally_count_gte":
+      return board.filter((c) => c?.owner === owner).length >= cond.min;
+    case "marker_ally_count_gte":
       return countMarkerAllies(board, owner) >= cond.min;
-    case 'attacked_ally_count_gte':
-      return board.filter(c => c?.owner === owner && c.hasActed).length >= cond.min;
-    case 'debuffed_enemy_count_gte': {
-      const count = board.filter(c =>
-        c?.owner === opp && (
-          c.status.brainwashedTurns > 0 ||
-          c.status.actionTax > 0 ||
-          c.atk < c.baseAtk
-        ),
+    case "attacked_ally_count_gte":
+      return (
+        board.filter((c) => c?.owner === owner && c.hasActed).length >= cond.min
+      );
+    case "debuffed_enemy_count_gte": {
+      const count = board.filter(
+        (c) =>
+          c?.owner === opp &&
+          (c.status.brainwashedTurns > 0 ||
+            c.status.actionTax > 0 ||
+            c.atk < c.baseAtk),
       ).length;
       return count >= cond.min;
     }
-    case 'b_position_ally_count_gte':
+    case "b_position_ally_count_gte":
       return countAlliesInBPosition(board, owner) >= cond.min;
-    case 'on_matching_attr_cell':
+    case "on_matching_attr_cell":
       return charAttr != null && boardAttrs[summonIdx] === charAttr;
     default:
       return false;
@@ -128,21 +163,27 @@ export function applyAtom(
   atom: EffectAtom,
 ): { board: Board; players: [PlayerState, PlayerState] } {
   const opp = (1 - owner) as 0 | 1;
-  let nb = [...board] as Board;
-  let np: [PlayerState, PlayerState] = [{ ...players[0] }, { ...players[1] }];
+  const nb = [...board] as Board;
+  const np: [PlayerState, PlayerState] = [{ ...players[0] }, { ...players[1] }];
 
   switch (atom.type) {
-    case 'give_marker': {
+    case "give_marker": {
       const idxs = resolveTargets(atom.target, nb, summonIdx, owner);
       for (const idx of idxs) {
         const c = nb[idx];
         if (c != null) {
-          nb[idx] = { ...c, markers: { ...c.markers, [atom.marker]: c.markers[atom.marker] + 1 } };
+          nb[idx] = {
+            ...c,
+            markers: {
+              ...c.markers,
+              [atom.marker]: c.markers[atom.marker] + 1,
+            },
+          };
         }
       }
       break;
     }
-    case 'heal': {
+    case "heal": {
       const idxs = resolveTargets(atom.target, nb, summonIdx, owner);
       for (const idx of idxs) {
         const c = nb[idx];
@@ -152,7 +193,7 @@ export function applyAtom(
       }
       break;
     }
-    case 'atk_delta': {
+    case "atk_delta": {
       const idxs = resolveTargets(atom.target, nb, summonIdx, owner);
       for (const idx of idxs) {
         const c = nb[idx];
@@ -162,7 +203,7 @@ export function applyAtom(
       }
       break;
     }
-    case 'hp_delta': {
+    case "hp_delta": {
       const idxs = resolveTargets(atom.target, nb, summonIdx, owner);
       for (const idx of idxs) {
         const c = nb[idx];
@@ -173,18 +214,22 @@ export function applyAtom(
       }
       break;
     }
-    case 'mana_steal': {
+    case "mana_steal": {
       const stolen = Math.min(atom.amount, np[opp].mana);
       np[opp] = { ...np[opp], mana: np[opp].mana - stolen };
       np[owner] = { ...np[owner], mana: np[owner].mana + stolen };
       break;
     }
-    case 'draw': {
+    case "draw": {
       for (let i = 0; i < atom.count; i++) {
         const deck = np[owner].deck;
         if (deck.length > 0) {
           const card = deck[deck.length - 1]!;
-          np[owner] = { ...np[owner], deck: deck.slice(0, -1), hand: [...np[owner].hand, card] };
+          np[owner] = {
+            ...np[owner],
+            deck: deck.slice(0, -1),
+            hand: [...np[owner].hand, card],
+          };
         }
       }
       break;
@@ -210,12 +255,26 @@ export function applyAutoEffects(
   charAttr?: string,
 ): { board: Board; players: [PlayerState, PlayerState] } {
   let board = [...state.board] as Board;
-  let players: [PlayerState, PlayerState] = [{ ...state.players[0] }, { ...state.players[1] }];
+  let players: [PlayerState, PlayerState] = [
+    { ...state.players[0] },
+    { ...state.players[1] },
+  ];
 
   for (const clause of clauses) {
-    if (clause.trigger !== 'on_summon') continue;
+    if (clause.trigger !== "on_summon") continue;
     if (clauseHasPendingEffects(clause)) continue;
-    if (clause.condition && !evalCondition(clause.condition, board, summonIdx, owner, state.boardAttrs, charAttr)) continue;
+    if (
+      clause.condition &&
+      !evalCondition(
+        clause.condition,
+        board,
+        summonIdx,
+        owner,
+        state.boardAttrs,
+        charAttr,
+      )
+    )
+      continue;
 
     for (const atom of clause.effects) {
       const r = applyAtom(board, players, summonIdx, owner, atom);
@@ -244,7 +303,7 @@ export function resolveSummonAutoAttack(
   teamDR: [boolean, boolean],
   getDefenderCardInfo: (cardId: string) => {
     cost: number;
-    attackCells: 'all' | null | [number, number][];
+    attackCells: "all" | null | [number, number][];
     weaknessCells: [number, number][];
   },
 ): { board: Board; results: AutoAttackResult[] } {
@@ -255,18 +314,19 @@ export function resolveSummonAutoAttack(
 
   const owner = summoned.owner;
   const opp = (1 - owner) as 0 | 1;
-  const attackType = charDef.attack_type === '魔法' ? 'magic' as const : 'physical' as const;
+  const attackType =
+    charDef.attack_type === "魔法" ? ("magic" as const) : ("physical" as const);
 
   let targetIdxs: CellIndex[];
-  if (charDef.attack_cells === 'all') {
+  if (charDef.attack_cells === "all") {
     targetIdxs = workBoard
       .map((c, i) => (c !== null && c.owner === opp ? i : -1))
-      .filter(i => i >= 0);
+      .filter((i) => i >= 0);
   } else if (charDef.attack_cells === null) {
     targetIdxs = [];
   } else {
     const cells = getAttackCells(summonIdx, charDef.attack_cells, summoned.dir);
-    targetIdxs = (cells ?? []).filter(idx => {
+    targetIdxs = (cells ?? []).filter((idx) => {
       const c = workBoard[idx];
       return c != null && c.owner === opp;
     });
@@ -277,7 +337,7 @@ export function resolveSummonAutoAttack(
     if (workBoard[summonIdx] == null) break;
     if (workBoard[targetIdx] == null) continue;
 
-    const defInfo = getDefenderCardInfo(workBoard[targetIdx]!.cardId);
+    const defInfo = getDefenderCardInfo(workBoard[targetIdx]?.cardId);
     const result = resolveAttack(workBoard, summonIdx, targetIdx, {
       teamDR,
       weaknessCells: defInfo.weaknessCells as RelCoord[],

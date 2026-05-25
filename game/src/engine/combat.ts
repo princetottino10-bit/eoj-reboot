@@ -1,7 +1,11 @@
-import type { Board, CharInstance, CellIndex, Direction, RelCoord } from './types.js';
-import {
-  isBlindSpot, findCoverAlly, getAttackCells,
-} from './board.js';
+import { findCoverAlly, getAttackCells, isBlindSpot } from "./board.js";
+import type {
+  Board,
+  CellIndex,
+  CharInstance,
+  Direction,
+  RelCoord,
+} from "./types.js";
 
 // ============================================================
 // 型
@@ -14,24 +18,24 @@ export interface AttackOptions {
   /** 要塞キャラが自分から攻撃しようとしているフラグ */
   isInitiatedByFortress?: boolean;
   /** 攻撃の種類（省略時は物理） */
-  attackType?: 'physical' | 'magic';
+  attackType?: "physical" | "magic";
   /** 防衛者のカードコスト（撃破時VP計算用、省略時は 1VP） */
   defenderCost?: number;
   /** 攻撃者のカードコスト（反撃撃破時のVP計算用、省略時は 1VP） */
   attackerCost?: number;
   /** 防衛者の attack_cells（反撃範囲判定用。null なら反撃不可） */
-  defenderAttackCells?: 'all' | null | [number, number][];
+  defenderAttackCells?: "all" | null | [number, number][];
 }
 
 export interface AttackResult {
-  blocked: boolean;          // 要塞により攻撃自体がブロックされた
-  evaded: boolean;           // 回避により攻撃が無効化された
-  isBlind: boolean;          // B位置から攻撃したか
-  counterFirst: boolean;     // 先制反撃が先に発生したか
-  defenderDamage: number;    // 防衛者（またはカバー役）が受けたダメージ量
-  counterDamage: number;     // 攻撃者が受けた反撃ダメージ量
-  vpAwarded: number;         // 防衛者撃破で獲得するVP（攻撃側に帰属）
-  counterVpAwarded: number;  // 反撃で攻撃者を撃破した際のVP（防衛側に帰属）
+  blocked: boolean; // 要塞により攻撃自体がブロックされた
+  evaded: boolean; // 回避により攻撃が無効化された
+  isBlind: boolean; // B位置から攻撃したか
+  counterFirst: boolean; // 先制反撃が先に発生したか
+  defenderDamage: number; // 防衛者（またはカバー役）が受けたダメージ量
+  counterDamage: number; // 攻撃者が受けた反撃ダメージ量
+  vpAwarded: number; // 防衛者撃破で獲得するVP（攻撃側に帰属）
+  counterVpAwarded: number; // 反撃で攻撃者を撃破した際のVP（防衛側に帰属）
 }
 
 export interface DamageOptions {
@@ -47,21 +51,34 @@ export interface DamageOptions {
 function hasKw(char: CharInstance, kw: string): boolean {
   if (char.keywords.includes(kw)) return true;
   switch (kw) {
-    case '防護': return char.markers.protection > 0;
-    case '回避': return char.markers.evasion > 0;
-    case '貫通': return char.markers.piercing > 0;
-    case '先制': return char.markers.quickness > 0;
-    default:     return false;
+    case "防護":
+      return char.markers.protection > 0;
+    case "回避":
+      return char.markers.evasion > 0;
+    case "貫通":
+      return char.markers.piercing > 0;
+    case "先制":
+      return char.markers.quickness > 0;
+    default:
+      return false;
   }
 }
 
 /** 消費型マーカーを1つ消費する（キーワードは消費しない） */
 function consumeMarker(char: CharInstance, kw: string): void {
   switch (kw) {
-    case '防護': if (char.markers.protection > 0) char.markers.protection--; break;
-    case '回避': if (char.markers.evasion   > 0) char.markers.evasion--;   break;
-    case '貫通': if (char.markers.piercing  > 0) char.markers.piercing--;  break;
-    case '先制': if (char.markers.quickness > 0) char.markers.quickness--; break;
+    case "防護":
+      if (char.markers.protection > 0) char.markers.protection--;
+      break;
+    case "回避":
+      if (char.markers.evasion > 0) char.markers.evasion--;
+      break;
+    case "貫通":
+      if (char.markers.piercing > 0) char.markers.piercing--;
+      break;
+    case "先制":
+      if (char.markers.quickness > 0) char.markers.quickness--;
+      break;
   }
 }
 
@@ -84,10 +101,10 @@ export function calcDamage(
   defender: CharInstance,
   opts: DamageOptions,
 ): number {
-  const hasPiercing = hasKw(attacker, '貫通');
+  const hasPiercing = hasKw(attacker, "貫通");
   let dmg = attacker.atk + (attacker.tempAtkBuff ?? 0);
   if (opts.isBlind) dmg += 1;
-  if (!hasPiercing && hasKw(defender, '防護')) dmg -= 1;
+  if (!hasPiercing && hasKw(defender, "防護")) dmg -= 1;
   if (opts.teamDR) dmg -= 1;
   return Math.max(0, dmg);
 }
@@ -105,15 +122,16 @@ export function calcDamage(
 export function canCounterAttack(
   defenderIdx: CellIndex,
   defenderDir: Direction,
-  defenderAttackCells: 'all' | null | [number, number][],
+  defenderAttackCells: "all" | null | [number, number][],
   attackerIdx: CellIndex,
   weaknessCells: RelCoord[],
 ): boolean {
-  if (isBlindSpot(attackerIdx, defenderIdx, defenderDir, weaknessCells)) return false;
+  if (isBlindSpot(attackerIdx, defenderIdx, defenderDir, weaknessCells))
+    return false;
   if (defenderAttackCells === null) return false;
-  if (defenderAttackCells === 'all') return true;
+  if (defenderAttackCells === "all") return true;
   const cells = getAttackCells(defenderIdx, defenderAttackCells, defenderDir);
-  return cells !== null && cells.includes(attackerIdx);
+  return cells?.includes(attackerIdx) ?? false;
 }
 
 // ============================================================
@@ -130,9 +148,15 @@ export function clearAffiliatedEffects(board: Board, deadCardId: string): void {
     const c = board[i];
     if (c == null) continue;
     if (c.status.brainwashedBy === deadCardId)
-      board[i] = { ...c, status: { ...c.status, brainwashedTurns: 0, brainwashedBy: null } } as typeof c;
+      board[i] = {
+        ...c,
+        status: { ...c.status, brainwashedTurns: 0, brainwashedBy: null },
+      } as typeof c;
     if (c.status.actionTaxBy === deadCardId)
-      board[i] = { ...c, status: { ...c.status, actionTax: 0, actionTaxBy: null } } as typeof c;
+      board[i] = {
+        ...c,
+        status: { ...c.status, actionTax: 0, actionTaxBy: null },
+      } as typeof c;
   }
 }
 
@@ -167,8 +191,14 @@ export function resolveAttack(
   opts: AttackOptions,
 ): AttackResult {
   const EMPTY: AttackResult = {
-    blocked: false, evaded: false, isBlind: false,
-    counterFirst: false, defenderDamage: 0, counterDamage: 0, vpAwarded: 0, counterVpAwarded: 0,
+    blocked: false,
+    evaded: false,
+    isBlind: false,
+    counterFirst: false,
+    defenderDamage: 0,
+    counterDamage: 0,
+    vpAwarded: 0,
+    counterVpAwarded: 0,
   };
 
   const attacker = board[attackerIdx];
@@ -180,21 +210,21 @@ export function resolveAttack(
     return { ...EMPTY, blocked: true };
   }
 
-  const attackType = opts.attackType ?? 'physical';
-  const hasPiercing = hasKw(attacker, '貫通');
+  const attackType = opts.attackType ?? "physical";
+  const hasPiercing = hasKw(attacker, "貫通");
   const weakCells: RelCoord[] = opts.weaknessCells ?? [[-1, 0]];
   const blind = isBlindSpot(attackerIdx, defenderIdx, defender.dir, weakCells);
   const defOwner = defender.owner;
 
   // ---- カバー処理 ----------------------------------------
   const coverIdx = findCoverAlly(board, defenderIdx);
-  if (coverIdx !== null && attackType === 'physical') {
+  if (coverIdx !== null && attackType === "physical") {
     const coverChar = board[coverIdx]!;
 
     // 回避はターゲット（防衛者）基準でチェック
     if (!hasPiercing) {
-      if (hasKw(defender, '回避')) {
-        consumeMarker(defender, '回避');
+      if (hasKw(defender, "回避")) {
+        consumeMarker(defender, "回避");
         return { ...EMPTY, evaded: true, isBlind: blind };
       }
     }
@@ -204,46 +234,68 @@ export function resolveAttack(
       isBlind: blind,
       teamDR: opts.teamDR[defOwner],
     });
-    if (!hasPiercing) consumeMarker(defender, '防護');
+    if (!hasPiercing) consumeMarker(defender, "防護");
 
     const { damage: covDmg, vpAwarded: covVp } = applyDamage(
-      board, coverIdx, dmg, opts.defenderCost ?? 1,
+      board,
+      coverIdx,
+      dmg,
+      opts.defenderCost ?? 1,
     );
 
     // 反撃: 要塞カバーのみ（反撃はカバーされないため攻撃者に直接）
     let counterDmg = 0;
     let counterVp = 0;
-    if (board[coverIdx] != null && hasKw(coverChar, '要塞')) {
-      const counterDmgRaw = Math.max(0,
-        coverChar.atk
-        - (hasKw(attacker, '防護') ? 1 : 0)
-        - (opts.teamDR[attacker.owner] ? 1 : 0),
+    if (board[coverIdx] != null && hasKw(coverChar, "要塞")) {
+      const counterDmgRaw = Math.max(
+        0,
+        coverChar.atk -
+          (hasKw(attacker, "防護") ? 1 : 0) -
+          (opts.teamDR[attacker.owner] ? 1 : 0),
       );
-      const cr = applyDamage(board, attackerIdx, counterDmgRaw, opts.attackerCost ?? 1);
+      const cr = applyDamage(
+        board,
+        attackerIdx,
+        counterDmgRaw,
+        opts.attackerCost ?? 1,
+      );
       counterDmg = cr.damage;
       counterVp = cr.vpAwarded;
     }
 
     return {
-      blocked: false, evaded: false, isBlind: blind, counterFirst: false,
-      defenderDamage: covDmg, counterDamage: counterDmg, vpAwarded: covVp, counterVpAwarded: counterVp,
+      blocked: false,
+      evaded: false,
+      isBlind: blind,
+      counterFirst: false,
+      defenderDamage: covDmg,
+      counterDamage: counterDmg,
+      vpAwarded: covVp,
+      counterVpAwarded: counterVp,
     };
   }
 
   // ---- 通常攻撃（カバーなし / 魔法） --------------------
 
   // 回避チェック（物理のみ有効）
-  if (!hasPiercing && attackType === 'physical') {
-    if (hasKw(defender, '回避')) {
-      consumeMarker(defender, '回避');
+  if (!hasPiercing && attackType === "physical") {
+    if (hasKw(defender, "回避")) {
+      consumeMarker(defender, "回避");
       return { ...EMPTY, evaded: true, isBlind: blind };
     }
   }
 
   // 先制判定
-  const defHasQuick = hasKw(defender, '先制');
-  const canCounter = attackType === 'physical' &&
-    canCounterAttack(defenderIdx, defender.dir, opts.defenderAttackCells ?? null, attackerIdx, weakCells);
+  const defHasQuick = hasKw(defender, "先制");
+  const canCounter =
+    attackType === "physical" &&
+    canCounterAttack(
+      defenderIdx,
+      defender.dir,
+      opts.defenderAttackCells ?? null,
+      attackerIdx,
+      weakCells,
+    );
 
   let counterDmg = 0;
   let counterVp = 0;
@@ -254,18 +306,30 @@ export function resolveAttack(
   // 先制反撃（攻撃が来る前に反撃）
   if (canCounter && defHasQuick && board[attackerIdx] != null) {
     counterFirst = true;
-    const counterDmgRaw = Math.max(0,
-      defender.atk
-      - (hasKw(attacker, '防護') ? 1 : 0)
-      - (opts.teamDR[attackerOwner] ? 1 : 0),
+    const counterDmgRaw = Math.max(
+      0,
+      defender.atk -
+        (hasKw(attacker, "防護") ? 1 : 0) -
+        (opts.teamDR[attackerOwner] ? 1 : 0),
     );
-    const cr = applyDamage(board, attackerIdx, counterDmgRaw, opts.attackerCost ?? 1);
+    const cr = applyDamage(
+      board,
+      attackerIdx,
+      counterDmgRaw,
+      opts.attackerCost ?? 1,
+    );
     counterDmg = cr.damage;
     counterVp = cr.vpAwarded;
 
     // 先制で攻撃者が死亡 → 攻撃自体が来ない
     if (board[attackerIdx] == null) {
-      return { ...EMPTY, isBlind: blind, counterFirst: true, counterDamage: counterDmg, counterVpAwarded: counterVp };
+      return {
+        ...EMPTY,
+        isBlind: blind,
+        counterFirst: true,
+        counterDamage: counterDmg,
+        counterVpAwarded: counterVp,
+      };
     }
   }
 
@@ -274,26 +338,46 @@ export function resolveAttack(
     isBlind: blind,
     teamDR: opts.teamDR[defOwner],
   });
-  if (!hasPiercing) consumeMarker(defender, '防護');
+  if (!hasPiercing) consumeMarker(defender, "防護");
 
   const { damage: defDmg, vpAwarded } = applyDamage(
-    board, defenderIdx, dmg, opts.defenderCost ?? 1,
+    board,
+    defenderIdx,
+    dmg,
+    opts.defenderCost ?? 1,
   );
 
   // 通常反撃（先制でない場合、防衛者が生存している場合）
-  if (canCounter && !defHasQuick && board[defenderIdx] != null && board[attackerIdx] != null) {
-    const counterDmgRaw = Math.max(0,
-      defender.atk
-      - (hasKw(attacker, '防護') ? 1 : 0)
-      - (opts.teamDR[attackerOwner] ? 1 : 0),
+  if (
+    canCounter &&
+    !defHasQuick &&
+    board[defenderIdx] != null &&
+    board[attackerIdx] != null
+  ) {
+    const counterDmgRaw = Math.max(
+      0,
+      defender.atk -
+        (hasKw(attacker, "防護") ? 1 : 0) -
+        (opts.teamDR[attackerOwner] ? 1 : 0),
     );
-    const cr = applyDamage(board, attackerIdx, counterDmgRaw, opts.attackerCost ?? 1);
+    const cr = applyDamage(
+      board,
+      attackerIdx,
+      counterDmgRaw,
+      opts.attackerCost ?? 1,
+    );
     counterDmg = cr.damage;
     counterVp = cr.vpAwarded;
   }
 
   return {
-    blocked: false, evaded: false, isBlind: blind, counterFirst,
-    defenderDamage: defDmg, counterDamage: counterDmg, vpAwarded, counterVpAwarded: counterVp,
+    blocked: false,
+    evaded: false,
+    isBlind: blind,
+    counterFirst,
+    defenderDamage: defDmg,
+    counterDamage: counterDmg,
+    vpAwarded,
+    counterVpAwarded: counterVp,
   };
 }

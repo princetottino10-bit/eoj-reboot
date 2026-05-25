@@ -1,5 +1,9 @@
-import cardsJson from '../../../data/cards.json';
-import type { CharCardDef, ItemCardDef, CardDatabase } from '../engine/gamestate.js';
+import cardsJson from "../../../data/cards.json";
+import type {
+  CardDatabase,
+  CharCardDef,
+  ItemCardDef,
+} from "../engine/gamestate.js";
 
 export interface FullCardDatabase extends CardDatabase {
   faction_names: Record<string, string>;
@@ -9,10 +13,10 @@ export interface FullCardDatabase extends CardDatabase {
 export const CARD_DB = cardsJson as unknown as FullCardDatabase;
 
 export const CHAR_MAP = new Map<string, CharCardDef>(
-  CARD_DB.characters.map(c => [c.id, c]),
+  CARD_DB.characters.map((c) => [c.id, c]),
 );
 export const ITEM_MAP = new Map<string, ItemCardDef>(
-  CARD_DB.items.map(i => [i.id, i]),
+  CARD_DB.items.map((i) => [i.id, i]),
 );
 
 export function getCharDef(cardId: string): CharCardDef | undefined {

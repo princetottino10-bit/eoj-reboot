@@ -1,14 +1,18 @@
-import type { GameState, GameScreen } from '../engine/types.js';
-import { renderTitle } from './title.js';
-import { renderLobby } from './lobby.js';
-import { renderWaiting } from './waiting.js';
-import { renderDraft, type DraftUiState } from './draft.js';
-import { renderPass } from './pass.js';
-import { renderGame, type GameUiExtra } from './game.js';
-import { renderOver } from './over.js';
-import { renderLogin } from './login.js';
-import { subscribeRoom, writeRoomState, type RoomDoc } from '../firebase/room.js';
-import { onAuthStateChanged, type User } from '../firebase/auth.js';
+import type { GameScreen, GameState } from "../engine/types.js";
+import { onAuthStateChanged, type User } from "../firebase/auth.js";
+import {
+  type RoomDoc,
+  subscribeRoom,
+  writeRoomState,
+} from "../firebase/room.js";
+import { type DraftUiState, renderDraft } from "./draft.js";
+import { type GameUiExtra, renderGame } from "./game.js";
+import { renderLobby } from "./lobby.js";
+import { renderLogin } from "./login.js";
+import { renderOver } from "./over.js";
+import { renderPass } from "./pass.js";
+import { renderTitle } from "./title.js";
+import { renderWaiting } from "./waiting.js";
 
 export interface AppState {
   screen: GameScreen;
@@ -26,12 +30,12 @@ export interface AppState {
 }
 
 const INITIAL_DRAFT_UI: DraftUiState = {
-  step: 'faction',
+  step: "faction",
   pickIndex: 0,
   p0Factions: [],
   p1Factions: [],
-  p0Item: '',
-  p1Item: '',
+  p0Item: "",
+  p1Item: "",
   hoveredFaction: null,
   hoveredItem: null,
 };
@@ -40,7 +44,7 @@ const INITIAL_GAME_UI_EXTRA: GameUiExtra = {
   dirPickerCell: null,
   summonHandIdx: null,
   selectedBoardIdx: null,
-  mode: 'idle',
+  mode: "idle",
   validCells: [],
   pendingCardId: null,
   pendingCellIdx: null,
@@ -54,7 +58,7 @@ const INITIAL_GAME_UI_EXTRA: GameUiExtra = {
 };
 
 let state: AppState = {
-  screen: 'login',
+  screen: "login",
   draftUi: { ...INITIAL_DRAFT_UI },
   gameState: null,
   gameUiExtra: { ...INITIAL_GAME_UI_EXTRA },
@@ -68,12 +72,17 @@ let state: AppState = {
 
 let firestoreUnsub: (() => void) | null = null;
 
-const root = document.getElementById('app')!;
+const root = document.getElementById("app")!;
 
-export function getState(): AppState { return state; }
+export function getState(): AppState {
+  return state;
+}
 
 // remote=true のとき Firestore への書き戻しをスキップ（ループ防止）
-export function setState(partial: Partial<AppState>, { remote = false } = {}): void {
+export function setState(
+  partial: Partial<AppState>,
+  { remote = false } = {},
+): void {
   state = { ...state, ...partial };
   render();
   if (!remote && state.online && state.roomId) {
@@ -92,21 +101,27 @@ async function syncToFirestore(): Promise<void> {
   const { draftUi, gameState, screen } = state;
 
   const phase =
-    screen === 'draft' ? 'draft' :
-    screen === 'game'  ? 'game'  :
-    screen === 'over'  ? 'over'  : undefined;
+    screen === "draft"
+      ? "draft"
+      : screen === "game"
+        ? "game"
+        : screen === "over"
+          ? "over"
+          : undefined;
 
-  const draftSync = draftUi ? {
-    step: draftUi.step,
-    pickIndex: draftUi.pickIndex,
-    p0Factions: draftUi.p0Factions,
-    p1Factions: draftUi.p1Factions,
-    p0Item: draftUi.p0Item,
-    p1Item: draftUi.p1Item,
-  } : null;
+  const draftSync = draftUi
+    ? {
+        step: draftUi.step,
+        pickIndex: draftUi.pickIndex,
+        p0Factions: draftUi.p0Factions,
+        p1Factions: draftUi.p1Factions,
+        p0Item: draftUi.p0Item,
+        p1Item: draftUi.p1Item,
+      }
+    : null;
 
   const update: Record<string, unknown> = { draftUi: draftSync, gameState };
-  if (phase) update['phase'] = phase;
+  if (phase) update.phase = phase;
 
   await writeRoomState(state.roomId, update);
 }
@@ -116,34 +131,43 @@ function applyRoomDoc(doc: RoomDoc): void {
   const currentScreen = state.screen;
 
   // waiting → draft: 対戦相手が参加した
-  if (currentScreen === 'waiting' && doc.phase === 'draft') {
-    setState({
-      screen: 'draft',
-      draftUi: doc.draftUi
-        ? { ...INITIAL_DRAFT_UI, ...doc.draftUi }
-        : { ...INITIAL_DRAFT_UI },
-    }, { remote: true });
+  if (currentScreen === "waiting" && doc.phase === "draft") {
+    setState(
+      {
+        screen: "draft",
+        draftUi: doc.draftUi
+          ? { ...INITIAL_DRAFT_UI, ...doc.draftUi }
+          : { ...INITIAL_DRAFT_UI },
+      },
+      { remote: true },
+    );
     return;
   }
 
-  if (doc.phase === 'draft' && doc.draftUi) {
-    setState({
-      draftUi: { ...state.draftUi, ...doc.draftUi },
-    }, { remote: true });
+  if (doc.phase === "draft" && doc.draftUi) {
+    setState(
+      {
+        draftUi: { ...state.draftUi, ...doc.draftUi },
+      },
+      { remote: true },
+    );
     return;
   }
 
-  if ((doc.phase === 'game' || doc.phase === 'over') && doc.gameState) {
+  if ((doc.phase === "game" || doc.phase === "over") && doc.gameState) {
     const gs = doc.gameState as GameState;
-    setState({
-      screen: doc.phase === 'over' ? 'over' : 'game',
-      gameState: gs,
-      gameUiExtra: resetGameUiExtra(),
-    }, { remote: true });
+    setState(
+      {
+        screen: doc.phase === "over" ? "over" : "game",
+        gameState: gs,
+        gameUiExtra: resetGameUiExtra(),
+      },
+      { remote: true },
+    );
   }
 }
 
-export function startOnlineRoom(roomId: string, myPlayerIndex: 0 | 1): void {
+export function startOnlineRoom(roomId: string, _myPlayerIndex: 0 | 1): void {
   firestoreUnsub?.();
   firestoreUnsub = subscribeRoom(roomId, applyRoomDoc);
 }
@@ -157,30 +181,31 @@ export function stopOnlineRoom(): void {
 // ── レンダリング ──────────────────────────────────────────────
 
 function render(): void {
-  root.innerHTML = '';
+  root.innerHTML = "";
   switch (state.screen) {
-    case 'login':
+    case "login":
       root.appendChild(renderLogin(state.authError));
       break;
-    case 'title':
+    case "title":
       root.appendChild(renderTitle(state.currentUser));
       break;
-    case 'lobby':
+    case "lobby":
       root.appendChild(renderLobby());
       break;
-    case 'waiting':
-      root.appendChild(renderWaiting(state.roomId ?? ''));
+    case "waiting":
+      root.appendChild(renderWaiting(state.roomId ?? ""));
       break;
-    case 'draft':
+    case "draft":
       root.appendChild(renderDraft(state.draftUi));
       break;
-    case 'pass':
+    case "pass":
       root.appendChild(renderPass(state.passForPlayer));
       break;
-    case 'game':
-      if (state.gameState) root.appendChild(renderGame(state.gameState, state.gameUiExtra));
+    case "game":
+      if (state.gameState)
+        root.appendChild(renderGame(state.gameState, state.gameUiExtra));
       break;
-    case 'over':
+    case "over":
       if (state.gameState) root.appendChild(renderOver(state.gameState));
       break;
   }
@@ -191,10 +216,15 @@ export function startApp(): void {
 
   onAuthStateChanged((user, authError) => {
     if (!user) {
-      state = { ...state, screen: 'login', currentUser: null, authError: authError ?? null };
+      state = {
+        ...state,
+        screen: "login",
+        currentUser: null,
+        authError: authError ?? null,
+      };
       render();
     } else if (!state.currentUser) {
-      state = { ...state, screen: 'title', currentUser: user, authError: null };
+      state = { ...state, screen: "title", currentUser: user, authError: null };
       render();
     } else {
       state = { ...state, currentUser: user };

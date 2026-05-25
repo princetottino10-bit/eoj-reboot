@@ -1,35 +1,71 @@
-import { setState, getState, resetGameUiExtra } from './app.js';
-import type { GameState, CellIndex, Direction, Board } from '../engine/types.js';
-import type { RelCoord } from '../engine/types.js';
-import { appendLog } from '../engine/types.js';
 import {
-  getCharDef, getItemDef, isCharCard, getCardName, getCardCost,
-} from '../data/cards.js';
+  getCardCost,
+  getCardName,
+  getCharDef,
+  getItemDef,
+  isCharCard,
+} from "../data/cards.js";
 import {
-  getAttackCells, getAdjacentCells, getValidSummonCells, resolveSelectCells,
-} from '../engine/board.js';
-import { resolveAttack } from '../engine/combat.js';
-import { createCharInstance, attributeHpBonus } from '../engine/gamestate.js';
-import type { AttackCells } from '../engine/gamestate.js';
-import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect } from '../engine/effects.js';
+  getAttackCells,
+  getValidSummonCells,
+  resolveSelectCells,
+} from "../engine/board.js";
+import { resolveAttack } from "../engine/combat.js";
+import { calcCostReduction } from "../engine/cost.js";
+import type { EffectTarget } from "../engine/effectSpecs.js";
 import {
-  getEffectSpec, getItemSpec, getUltSpec, getFirstSelectTarget,
-} from '../engine/effectSpecs.js';
-import type { EffectTarget } from '../engine/effectSpecs.js';
-import { startTurnPhase, drawStep, endTurnCleanup, spendReactivationMana } from '../engine/turn.js';
-import { evalVictory } from '../engine/victory.js';
-import { applyItemEffect } from '../engine/items.js';
-import { applyPendingEffect, applyDiscardEffect, applyEffectAfterDir } from '../engine/pendingEffects.js';
-import { applyUltDirectEffect, applyUltTargetEffect } from '../engine/ults.js';
-import { calcCostReduction } from '../engine/cost.js';
+  getEffectSpec,
+  getFirstSelectTarget,
+  getItemSpec,
+  getUltSpec,
+} from "../engine/effectSpecs.js";
+import {
+  applyAutoEffects,
+  getSummonEffect,
+  resolveSummonAutoAttack,
+} from "../engine/effects.js";
+import type { AttackCells } from "../engine/gamestate.js";
+import { attributeHpBonus, createCharInstance } from "../engine/gamestate.js";
+import { applyItemEffect } from "../engine/items.js";
+import {
+  applyDiscardEffect,
+  applyEffectAfterDir,
+  applyPendingEffect,
+} from "../engine/pendingEffects.js";
+import {
+  drawStep,
+  endTurnCleanup,
+  spendReactivationMana,
+  startTurnPhase,
+} from "../engine/turn.js";
+import type {
+  Board,
+  CellIndex,
+  Direction,
+  GameState,
+  RelCoord,
+} from "../engine/types.js";
+import { appendLog } from "../engine/types.js";
+import { applyUltDirectEffect, applyUltTargetEffect } from "../engine/ults.js";
+import { evalVictory } from "../engine/victory.js";
+import { getState, resetGameUiExtra, setState } from "./app.js";
 
 export interface GameUiExtra {
-  mode: 'idle' | 'hand_selected' | 'summon_dir_pending' | 'char_selected'
-      | 'attack_targeting' | 'effect_targeting' | 'effect_dir_pending' | 'effect_rotate_pending'
-      | 'discard_pending'
-      | 'ult_targeting' | 'ult_dir_pending'
-      | 'element_swap_ally_pending' | 'element_swap_hand_pending'
-      | 'item_rotate_pending';
+  mode:
+    | "idle"
+    | "hand_selected"
+    | "summon_dir_pending"
+    | "char_selected"
+    | "attack_targeting"
+    | "effect_targeting"
+    | "effect_dir_pending"
+    | "effect_rotate_pending"
+    | "discard_pending"
+    | "ult_targeting"
+    | "ult_dir_pending"
+    | "element_swap_ally_pending"
+    | "element_swap_hand_pending"
+    | "item_rotate_pending";
   validCells: CellIndex[];
   dirPickerCell: CellIndex | null;
   summonHandIdx: number | null;
@@ -37,13 +73,29 @@ export interface GameUiExtra {
   pendingCardId: string | null;
   pendingCellIdx: CellIndex | null;
   /** Two-step effect: after target chosen, show direction picker (any) */
-  effectDirContext: { cardId: string; summonIdx: CellIndex; targetIdx: CellIndex } | null;
+  effectDirContext: {
+    cardId: string;
+    summonIdx: CellIndex;
+    targetIdx: CellIndex;
+  } | null;
   /** Two-step effect: after target chosen, show 90° left/right picker */
-  effectRotateContext: { cardId: string; summonIdx: CellIndex; targetIdx: CellIndex } | null;
+  effectRotateContext: {
+    cardId: string;
+    summonIdx: CellIndex;
+    targetIdx: CellIndex;
+  } | null;
   /** Item effect: after target chosen, show 90° left/right picker */
-  itemRotateContext: { cardId: string; targetIdx: CellIndex; handIdx: number } | null;
+  itemRotateContext: {
+    cardId: string;
+    targetIdx: CellIndex;
+    handIdx: number;
+  } | null;
   /** Discard-from-hand effect context */
-  discardContext: { cardId: string; cellIdx: CellIndex; mandatory: boolean } | null;
+  discardContext: {
+    cardId: string;
+    cellIdx: CellIndex;
+    mandatory: boolean;
+  } | null;
   /** Index of item card being played (in active player's hand) */
   itemHandIdx: number | null;
   /** Ult caster's board index (for multi-step ult flows) */
@@ -52,16 +104,18 @@ export interface GameUiExtra {
   elementSwapBoardIdx: CellIndex | null;
 }
 
-const DIR_ARROWS = ['↑', '→', '↓', '←'] as const;
+const DIR_ARROWS = ["↑", "→", "↓", "←"] as const;
 
-function dirArrow(dir: Direction): string { return DIR_ARROWS[dir]!; }
+function dirArrow(dir: Direction): string {
+  return DIR_ARROWS[dir]!;
+}
 
 const TARGET_HINT: Partial<Record<EffectTarget, string>> = {
-  'select_ally':      '対象の味方を選択',
-  'select_adj_ally':  '隣接味方を選択',
-  'select_enemy':     '対象の敵を選択',
-  'select_adj_enemy': '隣接敵を選択',
-  'select_any':       '対象を選択',
+  select_ally: "対象の味方を選択",
+  select_adj_ally: "隣接味方を選択",
+  select_enemy: "対象の敵を選択",
+  select_adj_enemy: "隣接敵を選択",
+  select_any: "対象を選択",
 };
 
 function markerStr(char: NonNullable<Board[number]>): string {
@@ -70,16 +124,17 @@ function markerStr(char: NonNullable<Board[number]>): string {
   if (char.markers.evasion > 0) parts.push(`回${char.markers.evasion}`);
   if (char.markers.piercing > 0) parts.push(`貫${char.markers.piercing}`);
   if (char.markers.quickness > 0) parts.push(`先${char.markers.quickness}`);
-  if (char.status.brainwashedTurns > 0) parts.push(`洗脳${char.status.brainwashedTurns}`);
+  if (char.status.brainwashedTurns > 0)
+    parts.push(`洗脳${char.status.brainwashedTurns}`);
   if (char.status.actionTax > 0) parts.push(`再+${char.status.actionTax}`);
-  if (char.keywords.includes('防護')) parts.push('防護');
-  if (char.keywords.includes('回避')) parts.push('回避');
-  if (char.keywords.includes('貫通')) parts.push('貫通');
-  if (char.keywords.includes('先制')) parts.push('先制');
-  if (char.keywords.includes('不動')) parts.push('不動');
-  if (char.keywords.includes('カバー')) parts.push('カバー');
-  if (char.keywords.includes('要塞')) parts.push('要塞');
-  return parts.join(' ');
+  if (char.keywords.includes("防護")) parts.push("防護");
+  if (char.keywords.includes("回避")) parts.push("回避");
+  if (char.keywords.includes("貫通")) parts.push("貫通");
+  if (char.keywords.includes("先制")) parts.push("先制");
+  if (char.keywords.includes("不動")) parts.push("不動");
+  if (char.keywords.includes("カバー")) parts.push("カバー");
+  if (char.keywords.includes("要塞")) parts.push("要塞");
+  return parts.join(" ");
 }
 
 // ============================================================
@@ -93,13 +148,13 @@ let _longPressActive = false;
 
 function ensureDetailPopup(): { popup: HTMLElement; overlay: HTMLElement } {
   if (!_detailPopup) {
-    _detailPopup = document.createElement('div');
-    _detailPopup.id = 'card-detail-popup';
+    _detailPopup = document.createElement("div");
+    _detailPopup.id = "card-detail-popup";
     document.body.appendChild(_detailPopup);
 
-    _detailOverlay = document.createElement('div');
-    _detailOverlay.id = 'card-detail-overlay';
-    _detailOverlay.addEventListener('click', hideCardDetail);
+    _detailOverlay = document.createElement("div");
+    _detailOverlay.id = "card-detail-overlay";
+    _detailOverlay.addEventListener("click", hideCardDetail);
     document.body.appendChild(_detailOverlay);
   }
   return { popup: _detailPopup!, overlay: _detailOverlay! };
@@ -107,15 +162,15 @@ function ensureDetailPopup(): { popup: HTMLElement; overlay: HTMLElement } {
 
 function hideCardDetail(): void {
   if (_detailPopup) {
-    _detailPopup.style.display = 'none';
-    _detailPopup.classList.remove('modal-mode');
+    _detailPopup.style.display = "none";
+    _detailPopup.classList.remove("modal-mode");
   }
-  if (_detailOverlay) _detailOverlay.style.display = 'none';
+  if (_detailOverlay) _detailOverlay.style.display = "none";
 }
 
 function buildAttackGrid(attackCells: AttackCells): string {
   if (attackCells === null) return '<div class="cd-attack-none">攻撃不可</div>';
-  if (attackCells === 'all') return '<div class="cd-attack-all">全域攻撃</div>';
+  if (attackCells === "all") return '<div class="cd-attack-all">全域攻撃</div>';
   const cells: string[] = [];
   // 4 rows top→bottom: coord row +2, +1, 0 (char), -1
   for (let gridRow = 0; gridRow < 4; gridRow++) {
@@ -123,34 +178,44 @@ function buildAttackGrid(attackCells: AttackCells): string {
     for (let gridCol = 0; gridCol < 3; gridCol++) {
       const coordCol = gridCol - 1;
       const isChar = coordRow === 0 && coordCol === 0;
-      const isAttack = !isChar && (attackCells as [number, number][]).some(
-        ([r, c]) => r === coordRow && c === coordCol
-      );
-      let cls = 'cd-attack-cell';
-      let content = '';
-      if (isChar) { cls += ' char-pos'; content = '自'; }
-      else if (isAttack) { cls += ' attack-cell'; content = '●'; }
+      const isAttack =
+        !isChar &&
+        (attackCells as [number, number][]).some(
+          ([r, c]) => r === coordRow && c === coordCol,
+        );
+      let cls = "cd-attack-cell";
+      let content = "";
+      if (isChar) {
+        cls += " char-pos";
+        content = "自";
+      } else if (isAttack) {
+        cls += " attack-cell";
+        content = "●";
+      }
       cells.push(`<div class="${cls}">${content}</div>`);
     }
   }
-  return `<div class="cd-attack-grid">${cells.join('')}</div>`;
+  return `<div class="cd-attack-grid">${cells.join("")}</div>`;
 }
 
-function buildCardDetailHtml(cardId: string, boardChar?: NonNullable<Board[number]>): string {
+function buildCardDetailHtml(
+  cardId: string,
+  boardChar?: NonNullable<Board[number]>,
+): string {
   if (isCharCard(cardId)) {
     const def = getCharDef(cardId);
-    if (!def) return '';
-    const kw = def.keywords.join(' ');
+    if (!def) return "";
+    const kw = def.keywords.join(" ");
     const ult = def.ult;
     const ultHtml = ult
       ? `<div class="cd-ult">
            <div class="cd-ult-header">Ult: ${ult.name}　VP${ult.vp_cost}（${ult.timing}）</div>
            <div class="cd-ult-effect">${ult.effect}</div>
          </div>`
-      : '';
+      : "";
     const currentHtml = boardChar
       ? `<div class="cd-current">現在: HP ${boardChar.hp}/${boardChar.maxHp} ATK ${boardChar.atk}</div>`
-      : '';
+      : "";
     return `
       <div class="cd-header">
         <span class="cd-name">${def.name}</span>
@@ -158,7 +223,7 @@ function buildCardDetailHtml(cardId: string, boardChar?: NonNullable<Board[numbe
       </div>
       <div class="cd-meta">${def.attribute} コスト${def.cost} | HP${def.hp} ATK${def.atk}</div>
       ${currentHtml}
-      ${kw ? `<div class="cd-keywords">${kw}</div>` : ''}
+      ${kw ? `<div class="cd-keywords">${kw}</div>` : ""}
       <div class="cd-effect">${def.effect}</div>
       ${ultHtml}
       <div class="cd-attack-section">
@@ -167,7 +232,7 @@ function buildCardDetailHtml(cardId: string, boardChar?: NonNullable<Board[numbe
       </div>`;
   } else {
     const def = getItemDef(cardId);
-    if (!def) return '';
+    if (!def) return "";
     return `
       <div class="cd-header">
         <span class="cd-name">${def.name}</span>
@@ -178,11 +243,15 @@ function buildCardDetailHtml(cardId: string, boardChar?: NonNullable<Board[numbe
   }
 }
 
-function showCardDetailAt(anchor: HTMLElement, cardId: string, boardChar?: NonNullable<Board[number]>): void {
+function showCardDetailAt(
+  anchor: HTMLElement,
+  cardId: string,
+  boardChar?: NonNullable<Board[number]>,
+): void {
   const { popup } = ensureDetailPopup();
-  popup.classList.remove('modal-mode');
+  popup.classList.remove("modal-mode");
   popup.innerHTML = buildCardDetailHtml(cardId, boardChar);
-  popup.style.display = 'block';
+  popup.style.display = "block";
 
   const rect = anchor.getBoundingClientRect();
   const pw = 230;
@@ -202,41 +271,51 @@ function showCardDetailAt(anchor: HTMLElement, cardId: string, boardChar?: NonNu
   });
 }
 
-function showCardDetailModal(cardId: string, boardChar?: NonNullable<Board[number]>): void {
+function showCardDetailModal(
+  cardId: string,
+  boardChar?: NonNullable<Board[number]>,
+): void {
   const { popup, overlay } = ensureDetailPopup();
-  popup.classList.add('modal-mode');
+  popup.classList.add("modal-mode");
   popup.innerHTML = buildCardDetailHtml(cardId, boardChar);
-  popup.style.display = 'block';
-  overlay.style.display = 'block';
+  popup.style.display = "block";
+  overlay.style.display = "block";
 }
 
 function addCardDetailListeners(
   el: HTMLElement,
   cardId: string,
-  boardChar?: NonNullable<Board[number]>
+  boardChar?: NonNullable<Board[number]>,
 ): void {
-  el.addEventListener('pointerenter', (e: PointerEvent) => {
-    if (e.pointerType === 'touch') return;
+  el.addEventListener("pointerenter", (e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
     showCardDetailAt(el, cardId, boardChar);
   });
-  el.addEventListener('pointerleave', (e: PointerEvent) => {
-    if (e.pointerType === 'touch') return;
+  el.addEventListener("pointerleave", (e: PointerEvent) => {
+    if (e.pointerType === "touch") return;
     hideCardDetail();
   });
 
   let pressTimer: ReturnType<typeof setTimeout> | null = null;
-  el.addEventListener('touchstart', () => {
-    pressTimer = setTimeout(() => {
-      _longPressActive = true;
-      showCardDetailModal(cardId, boardChar);
-    }, 500);
-  }, { passive: true });
+  el.addEventListener(
+    "touchstart",
+    () => {
+      pressTimer = setTimeout(() => {
+        _longPressActive = true;
+        showCardDetailModal(cardId, boardChar);
+      }, 500);
+    },
+    { passive: true },
+  );
   const cancelPress = () => {
-    if (pressTimer !== null) { clearTimeout(pressTimer); pressTimer = null; }
+    if (pressTimer !== null) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
   };
-  el.addEventListener('touchend', cancelPress, { passive: true });
-  el.addEventListener('touchcancel', cancelPress, { passive: true });
-  el.addEventListener('touchmove', cancelPress, { passive: true });
+  el.addEventListener("touchend", cancelPress, { passive: true });
+  el.addEventListener("touchcancel", cancelPress, { passive: true });
+  el.addEventListener("touchmove", cancelPress, { passive: true });
 }
 
 // ============================================================
@@ -246,12 +325,12 @@ function addCardDetailListeners(
 export function renderGame(state: GameState, ui: GameUiExtra): HTMLElement {
   const active = state.active;
   const opp = (1 - active) as 0 | 1;
-  const div = document.createElement('div');
-  div.className = 'screen-game';
+  const div = document.createElement("div");
+  div.className = "screen-game";
 
   // ── Header ──
-  const p0Class = active === 0 ? 'player-info active-player' : 'player-info';
-  const p1Class = active === 1 ? 'player-info active-player' : 'player-info';
+  const p0Class = active === 0 ? "player-info active-player" : "player-info";
+  const p1Class = active === 1 ? "player-info active-player" : "player-info";
   div.innerHTML = `
     <div class="game-header">
       <div class="${p0Class}">
@@ -272,10 +351,10 @@ export function renderGame(state: GameState, ui: GameUiExtra): HTMLElement {
   `;
 
   // ── Board ──
-  const boardContainer = document.createElement('div');
-  boardContainer.className = 'board-container';
-  const boardEl = document.createElement('div');
-  boardEl.className = 'board';
+  const boardContainer = document.createElement("div");
+  boardContainer.className = "board-container";
+  const boardEl = document.createElement("div");
+  boardEl.className = "board";
   for (let i = 0; i < 9; i++) {
     boardEl.appendChild(buildCell(state, ui, i as CellIndex));
   }
@@ -289,68 +368,77 @@ export function renderGame(state: GameState, ui: GameUiExtra): HTMLElement {
   div.appendChild(buildHandSection(state, ui, active, opp));
 
   // ── Log ──
-  const logSection = document.createElement('div');
-  logSection.className = 'log-section';
-  state.log.slice(-8).reverse().forEach(entry => {
-    const el = document.createElement('div');
-    el.className = 'log-entry ' + entry.type;
-    el.textContent = entry.text;
-    logSection.appendChild(el);
-  });
+  const logSection = document.createElement("div");
+  logSection.className = "log-section";
+  state.log
+    .slice(-8)
+    .reverse()
+    .forEach((entry) => {
+      const el = document.createElement("div");
+      el.className = `log-entry ${entry.type}`;
+      el.textContent = entry.text;
+      logSection.appendChild(el);
+    });
   div.appendChild(logSection);
 
   // ── Controls ──
   const { online, myPlayerIndex } = getState();
   const isMyTurn = !online || state.active === myPlayerIndex;
 
-  const controls = document.createElement('div');
-  controls.className = 'game-controls';
+  const controls = document.createElement("div");
+  controls.className = "game-controls";
 
   if (online && !isMyTurn) {
-    const waitLabel = document.createElement('div');
-    waitLabel.className = 'action-label';
-    waitLabel.style.cssText = 'width:100%;text-align:center;color:#888;padding:8px;';
+    const waitLabel = document.createElement("div");
+    waitLabel.className = "action-label";
+    waitLabel.style.cssText =
+      "width:100%;text-align:center;color:#888;padding:8px;";
     waitLabel.textContent = `P${state.active + 1}のターン（相手が操作中）`;
     controls.appendChild(waitLabel);
   } else {
-    const endTurnBtn = document.createElement('button');
-    endTurnBtn.className = 'btn';
-    endTurnBtn.textContent = 'ターン終了';
-    endTurnBtn.addEventListener('click', () => onEndTurn(state));
+    const endTurnBtn = document.createElement("button");
+    endTurnBtn.className = "btn";
+    endTurnBtn.textContent = "ターン終了";
+    endTurnBtn.addEventListener("click", () => onEndTurn(state));
     controls.appendChild(endTurnBtn);
   }
   div.appendChild(controls);
 
   // ── Overlays ──
-  if (ui.mode === 'summon_dir_pending' && ui.dirPickerCell !== null) {
-    div.appendChild(buildDirPickerOverlay(
-      '向きを選択（召喚）',
-      (dir) => onDirPicked(state, ui, dir),
-    ));
+  if (ui.mode === "summon_dir_pending" && ui.dirPickerCell !== null) {
+    div.appendChild(
+      buildDirPickerOverlay("向きを選択（召喚）", (dir) =>
+        onDirPicked(state, ui, dir),
+      ),
+    );
   }
-  if (ui.mode === 'effect_dir_pending' && ui.effectDirContext !== null) {
-    div.appendChild(buildDirPickerOverlay(
-      '向きを選択',
-      (dir) => onEffectDirPicked(state, ui, dir),
-    ));
+  if (ui.mode === "effect_dir_pending" && ui.effectDirContext !== null) {
+    div.appendChild(
+      buildDirPickerOverlay("向きを選択", (dir) =>
+        onEffectDirPicked(state, ui, dir),
+      ),
+    );
   }
-  if (ui.mode === 'ult_dir_pending' && ui.pendingCellIdx !== null) {
-    div.appendChild(buildDirPickerOverlay(
-      '向きを選択（ウルト）',
-      (dir) => onUltDirPicked(state, ui, dir),
-    ));
+  if (ui.mode === "ult_dir_pending" && ui.pendingCellIdx !== null) {
+    div.appendChild(
+      buildDirPickerOverlay("向きを選択（ウルト）", (dir) =>
+        onUltDirPicked(state, ui, dir),
+      ),
+    );
   }
-  if (ui.mode === 'effect_rotate_pending' && ui.effectRotateContext !== null) {
-    div.appendChild(buildRotatePickerOverlay(
-      '回転方向を選択',
-      (clockwise) => onEffectRotatePicked(state, ui, clockwise),
-    ));
+  if (ui.mode === "effect_rotate_pending" && ui.effectRotateContext !== null) {
+    div.appendChild(
+      buildRotatePickerOverlay("回転方向を選択", (clockwise) =>
+        onEffectRotatePicked(state, ui, clockwise),
+      ),
+    );
   }
-  if (ui.mode === 'item_rotate_pending' && ui.itemRotateContext !== null) {
-    div.appendChild(buildRotatePickerOverlay(
-      '回転方向を選択',
-      (clockwise) => onItemRotatePicked(state, ui, clockwise),
-    ));
+  if (ui.mode === "item_rotate_pending" && ui.itemRotateContext !== null) {
+    div.appendChild(
+      buildRotatePickerOverlay("回転方向を選択", (clockwise) =>
+        onItemRotatePicked(state, ui, clockwise),
+      ),
+    );
   }
 
   return div;
@@ -358,134 +446,171 @@ export function renderGame(state: GameState, ui: GameUiExtra): HTMLElement {
 
 function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
   const active = state.active;
-  const actionPanel = document.createElement('div');
-  actionPanel.className = 'action-panel';
+  const actionPanel = document.createElement("div");
+  actionPanel.className = "action-panel";
 
-  const cancel = (label = 'キャンセル') => {
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-secondary';
+  const cancel = (label = "キャンセル") => {
+    const btn = document.createElement("button");
+    btn.className = "btn btn-secondary";
     btn.textContent = label;
-    btn.addEventListener('click', () => setState({ gameUiExtra: resetGameUiExtra() }));
+    btn.addEventListener("click", () =>
+      setState({ gameUiExtra: resetGameUiExtra() }),
+    );
     return btn;
   };
 
-  if (ui.mode === 'char_selected' && ui.selectedBoardIdx !== null) {
+  if (ui.mode === "char_selected" && ui.selectedBoardIdx !== null) {
     const char = state.board[ui.selectedBoardIdx];
     if (char && char.owner === active) {
-      const labelEl = document.createElement('div');
-      labelEl.className = 'action-label';
-      labelEl.textContent = `${char.keywords.includes('要塞') ? '[要塞] ' : ''}${getCardName(char.cardId)} の行動:`;
+      const labelEl = document.createElement("div");
+      labelEl.className = "action-label";
+      labelEl.textContent = `${char.keywords.includes("要塞") ? "[要塞] " : ""}${getCardName(char.cardId)} の行動:`;
       actionPanel.appendChild(labelEl);
 
-      if (!char.hasActed && !char.keywords.includes('要塞') && char.status.brainwashedTurns === 0) {
-        const attackBtn = document.createElement('button');
-        attackBtn.className = 'btn btn-danger';
-        attackBtn.textContent = '攻撃';
-        attackBtn.addEventListener('click', () => onAttackClick(state, ui));
+      if (
+        !char.hasActed &&
+        !char.keywords.includes("要塞") &&
+        char.status.brainwashedTurns === 0
+      ) {
+        const attackBtn = document.createElement("button");
+        attackBtn.className = "btn btn-danger";
+        attackBtn.textContent = "攻撃";
+        attackBtn.addEventListener("click", () => onAttackClick(state, ui));
         actionPanel.appendChild(attackBtn);
       }
 
-      if (!char.hasRotated && char.status.dirLocked === 0 && char.status.brainwashedTurns === 0) {
-        const rotLabel = document.createElement('div');
-        rotLabel.className = 'action-label';
-        rotLabel.style.width = '100%';
-        rotLabel.textContent = '向きを変える:';
+      if (
+        !char.hasRotated &&
+        char.status.dirLocked === 0 &&
+        char.status.brainwashedTurns === 0
+      ) {
+        const rotLabel = document.createElement("div");
+        rotLabel.className = "action-label";
+        rotLabel.style.width = "100%";
+        rotLabel.textContent = "向きを変える:";
         actionPanel.appendChild(rotLabel);
         for (let d = 0; d < 4; d++) {
           if (d === char.dir) continue;
-          const rotBtn = document.createElement('button');
-          rotBtn.className = 'btn btn-secondary';
+          const rotBtn = document.createElement("button");
+          rotBtn.className = "btn btn-secondary";
           rotBtn.textContent = DIR_ARROWS[d as Direction]!;
-          rotBtn.addEventListener('click', () => onRotateClick(state, ui, d as Direction));
+          rotBtn.addEventListener("click", () =>
+            onRotateClick(state, ui, d as Direction),
+          );
           actionPanel.appendChild(rotBtn);
         }
       }
 
       const ultSpec = getUltSpec(char.cardId);
-      if (ultSpec !== null && !char.ultUsed && state.players[active].vp >= ultSpec.vpCost) {
-        const timingOk = ultSpec.timing === 'immediate' || state.turn > char.summonedOnTurn;
+      if (
+        ultSpec !== null &&
+        !char.ultUsed &&
+        state.players[active].vp >= ultSpec.vpCost
+      ) {
+        const timingOk =
+          ultSpec.timing === "immediate" || state.turn > char.summonedOnTurn;
         if (timingOk) {
-          const ultBtn = document.createElement('button');
-          ultBtn.className = 'btn btn-warning';
+          const ultBtn = document.createElement("button");
+          ultBtn.className = "btn btn-warning";
           ultBtn.textContent = `ウルト (${ultSpec.vpCost}VP)`;
-          ultBtn.addEventListener('click', () => onUltClick(state, ui));
+          ultBtn.addEventListener("click", () => onUltClick(state, ui));
           actionPanel.appendChild(ultBtn);
         }
       }
 
       actionPanel.appendChild(cancel());
     }
-  } else if (ui.mode === 'discard_pending') {
+  } else if (ui.mode === "discard_pending") {
     const ctx = ui.discardContext;
     if (ctx) {
-      const hint = document.createElement('div');
-      hint.className = 'action-label';
-      hint.style.width = '100%';
-      hint.textContent = ctx.mandatory ? '手札を1枚捨てる（必須）' : '手札を1枚捨てる（スキップ可）';
+      const hint = document.createElement("div");
+      hint.className = "action-label";
+      hint.style.width = "100%";
+      hint.textContent = ctx.mandatory
+        ? "手札を1枚捨てる（必須）"
+        : "手札を1枚捨てる（スキップ可）";
       actionPanel.appendChild(hint);
       if (!ctx.mandatory) {
-        const skipBtn = document.createElement('button');
-        skipBtn.className = 'btn btn-secondary';
-        skipBtn.textContent = 'スキップ';
-        skipBtn.addEventListener('click', () => onDiscardSkip(state, ui));
+        const skipBtn = document.createElement("button");
+        skipBtn.className = "btn btn-secondary";
+        skipBtn.textContent = "スキップ";
+        skipBtn.addEventListener("click", () => onDiscardSkip(state, ui));
         actionPanel.appendChild(skipBtn);
       }
     }
   } else if (
-    ui.mode === 'hand_selected' || ui.mode === 'attack_targeting' ||
-    ui.mode === 'effect_targeting' || ui.mode === 'effect_dir_pending' ||
-    ui.mode === 'effect_rotate_pending' || ui.mode === 'item_rotate_pending'
+    ui.mode === "hand_selected" ||
+    ui.mode === "attack_targeting" ||
+    ui.mode === "effect_targeting" ||
+    ui.mode === "effect_dir_pending" ||
+    ui.mode === "effect_rotate_pending" ||
+    ui.mode === "item_rotate_pending"
   ) {
     actionPanel.appendChild(cancel());
-    const hint = document.createElement('div');
-    hint.className = 'action-label';
-    if (ui.mode === 'hand_selected') hint.textContent = '召喚先のマスを選択';
-    else if (ui.mode === 'attack_targeting') hint.textContent = '攻撃対象を選択';
-    else if (ui.mode === 'effect_dir_pending') hint.textContent = '向きを選択してください（オーバーレイ）';
-    else if (ui.mode === 'effect_rotate_pending' || ui.mode === 'item_rotate_pending') hint.textContent = '回転方向を選択してください（オーバーレイ）';
-    else hint.textContent = ui.itemHandIdx !== null ? 'アイテム効果の対象を選択' : '効果の対象を選択';
+    const hint = document.createElement("div");
+    hint.className = "action-label";
+    if (ui.mode === "hand_selected") hint.textContent = "召喚先のマスを選択";
+    else if (ui.mode === "attack_targeting")
+      hint.textContent = "攻撃対象を選択";
+    else if (ui.mode === "effect_dir_pending")
+      hint.textContent = "向きを選択してください（オーバーレイ）";
+    else if (
+      ui.mode === "effect_rotate_pending" ||
+      ui.mode === "item_rotate_pending"
+    )
+      hint.textContent = "回転方向を選択してください（オーバーレイ）";
+    else
+      hint.textContent =
+        ui.itemHandIdx !== null
+          ? "アイテム効果の対象を選択"
+          : "効果の対象を選択";
     actionPanel.appendChild(hint);
-  } else if (ui.mode === 'ult_targeting') {
+  } else if (ui.mode === "ult_targeting") {
     actionPanel.appendChild(cancel());
-    const hint = document.createElement('div');
-    hint.className = 'action-label';
-    const ultName = ui.pendingCardId ? getCardName(ui.pendingCardId) : 'ウルト';
+    const hint = document.createElement("div");
+    hint.className = "action-label";
+    const ultName = ui.pendingCardId ? getCardName(ui.pendingCardId) : "ウルト";
     hint.textContent = `${ultName}のウルト: 対象を選択`;
     actionPanel.appendChild(hint);
-  } else if (ui.mode === 'ult_dir_pending') {
-    const hint = document.createElement('div');
-    hint.className = 'action-label';
-    hint.textContent = '向きを選択してください（オーバーレイ）';
+  } else if (ui.mode === "ult_dir_pending") {
+    const hint = document.createElement("div");
+    hint.className = "action-label";
+    hint.textContent = "向きを選択してください（オーバーレイ）";
     actionPanel.appendChild(hint);
-  } else if (ui.mode === 'element_swap_ally_pending') {
+  } else if (ui.mode === "element_swap_ally_pending") {
     actionPanel.appendChild(cancel());
-    const hint = document.createElement('div');
-    hint.className = 'action-label';
-    hint.textContent = '入れ替える盤面の味方を選択';
+    const hint = document.createElement("div");
+    hint.className = "action-label";
+    hint.textContent = "入れ替える盤面の味方を選択";
     actionPanel.appendChild(hint);
-  } else if (ui.mode === 'element_swap_hand_pending') {
+  } else if (ui.mode === "element_swap_hand_pending") {
     actionPanel.appendChild(cancel());
-    const hint = document.createElement('div');
-    hint.className = 'action-label';
-    hint.textContent = '入れ替える手札のキャラを選択（緑枠）';
+    const hint = document.createElement("div");
+    hint.className = "action-label";
+    hint.textContent = "入れ替える手札のキャラを選択（緑枠）";
     actionPanel.appendChild(hint);
   }
 
   return actionPanel;
 }
 
-function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp: 0 | 1): HTMLElement {
-  const handSection = document.createElement('div');
-  handSection.className = 'hand-section';
+function buildHandSection(
+  state: GameState,
+  ui: GameUiExtra,
+  active: 0 | 1,
+  opp: 0 | 1,
+): HTMLElement {
+  const handSection = document.createElement("div");
+  handSection.className = "hand-section";
 
-  const handTitle = document.createElement('h4');
-  handTitle.innerHTML = `<span class="${active === 0 ? 'p0-color' : 'p1-color'}">P${active + 1}の手札</span>`;
+  const handTitle = document.createElement("h4");
+  handTitle.innerHTML = `<span class="${active === 0 ? "p0-color" : "p1-color"}">P${active + 1}の手札</span>`;
   handSection.appendChild(handTitle);
 
-  const handCards = document.createElement('div');
-  handCards.className = 'hand-cards';
-  const isDiscardMode = ui.mode === 'discard_pending';
-  const isElementSwapMode = ui.mode === 'element_swap_hand_pending';
+  const handCards = document.createElement("div");
+  handCards.className = "hand-cards";
+  const isDiscardMode = ui.mode === "discard_pending";
+  const isElementSwapMode = ui.mode === "element_swap_hand_pending";
 
   const { online: isOnline, myPlayerIndex } = getState();
   const isMyTurn = !isOnline || myPlayerIndex === active;
@@ -497,24 +622,27 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
     const reduction = def ? calcCostReduction(def, state.board, active) : 0;
     const effectiveCost = isChar ? Math.max(2, cost - reduction) : cost;
     const canAfford = state.players[active].mana >= effectiveCost;
-    const isSelected = ui.mode === 'hand_selected' && ui.summonHandIdx === idx;
-    const isItemSel = ui.mode === 'effect_targeting' && ui.itemHandIdx === idx;
+    const isSelected = ui.mode === "hand_selected" && ui.summonHandIdx === idx;
+    const isItemSel = ui.mode === "effect_targeting" && ui.itemHandIdx === idx;
     const isValidSwap = isElementSwapMode && ui.validCells.includes(idx);
-    const cardEl = document.createElement('div');
-    let cls = 'hand-card';
-    if (isSelected || isItemSel) cls += ' selected';
-    if (!isDiscardMode && !isElementSwapMode && !canAfford) cls += ' disabled';
-    if (isElementSwapMode && !isValidSwap) cls += ' disabled';
+    const cardEl = document.createElement("div");
+    let cls = "hand-card";
+    if (isSelected || isItemSel) cls += " selected";
+    if (!isDiscardMode && !isElementSwapMode && !canAfford) cls += " disabled";
+    if (isElementSwapMode && !isValidSwap) cls += " disabled";
     cardEl.className = cls;
 
     if (isChar && def) {
-      const kw = def.keywords.join(' ');
-      const costDisplay = reduction > 0 ? `コスト${effectiveCost}(${cost}→${effectiveCost})` : `コスト${cost}`;
+      const kw = def.keywords.join(" ");
+      const costDisplay =
+        reduction > 0
+          ? `コスト${effectiveCost}(${cost}→${effectiveCost})`
+          : `コスト${cost}`;
       cardEl.innerHTML = `
         <div class="card-name">${getCardName(cardId)}</div>
         <div class="card-cost">${def.attribute} ${costDisplay}</div>
         <div class="card-stats">HP ${def.hp} / ATK ${def.atk}</div>
-        ${kw ? `<div class="card-keywords">${kw}</div>` : ''}
+        ${kw ? `<div class="card-keywords">${kw}</div>` : ""}
         <div class="card-effect">${def.effect}</div>
       `;
     } else {
@@ -522,27 +650,36 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
       cardEl.innerHTML = `
         <div class="card-name">${getCardName(cardId)}</div>
         <div class="card-cost">【アイテム】 コスト${cost}</div>
-        <div class="card-effect">${def?.effect ?? ''}</div>
+        <div class="card-effect">${def?.effect ?? ""}</div>
       `;
     }
     addCardDetailListeners(cardEl, cardId);
     if (isElementSwapMode && isMyTurn && isValidSwap) {
-      cardEl.style.borderColor = '#00cc66';
-      cardEl.addEventListener('click', () => {
-        if (_longPressActive) { _longPressActive = false; return; }
+      cardEl.style.borderColor = "#00cc66";
+      cardEl.addEventListener("click", () => {
+        if (_longPressActive) {
+          _longPressActive = false;
+          return;
+        }
         hideCardDetail();
         doElementSwap(state, ui, idx);
       });
     } else if (isDiscardMode && isMyTurn) {
-      cardEl.style.borderColor = '#ff6b6b';
-      cardEl.addEventListener('click', () => {
-        if (_longPressActive) { _longPressActive = false; return; }
+      cardEl.style.borderColor = "#ff6b6b";
+      cardEl.addEventListener("click", () => {
+        if (_longPressActive) {
+          _longPressActive = false;
+          return;
+        }
         hideCardDetail();
         onDiscardCardClick(state, ui, idx);
       });
     } else if (!isElementSwapMode && canAfford && isMyTurn) {
-      cardEl.addEventListener('click', () => {
-        if (_longPressActive) { _longPressActive = false; return; }
+      cardEl.addEventListener("click", () => {
+        if (_longPressActive) {
+          _longPressActive = false;
+          return;
+        }
         hideCardDetail();
         onHandCardClick(state, idx);
       });
@@ -551,51 +688,56 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
   });
   handSection.appendChild(handCards);
 
-  const oppHandTitle = document.createElement('h4');
-  oppHandTitle.innerHTML = `<span class="${opp === 0 ? 'p0-color' : 'p1-color'}">P${opp + 1}の手札</span>: ${state.players[opp].hand.length}枚`;
+  const oppHandTitle = document.createElement("h4");
+  oppHandTitle.innerHTML = `<span class="${opp === 0 ? "p0-color" : "p1-color"}">P${opp + 1}の手札</span>: ${state.players[opp].hand.length}枚`;
   handSection.appendChild(oppHandTitle);
 
-  const oppHandCards = document.createElement('div');
-  oppHandCards.className = 'hand-cards';
+  const oppHandCards = document.createElement("div");
+  oppHandCards.className = "hand-cards";
   for (let i = 0; i < state.players[opp].hand.length; i++) {
-    const back = document.createElement('div');
-    back.className = 'hand-back';
-    back.textContent = '?';
+    const back = document.createElement("div");
+    back.className = "hand-back";
+    back.textContent = "?";
     oppHandCards.appendChild(back);
   }
   handSection.appendChild(oppHandCards);
   return handSection;
 }
 
-function buildCell(state: GameState, ui: GameUiExtra, idx: CellIndex): HTMLElement {
+function buildCell(
+  state: GameState,
+  ui: GameUiExtra,
+  idx: CellIndex,
+): HTMLElement {
   const char = state.board[idx];
-  const attr = state.boardAttrs[idx] ?? '';
-  const cell = document.createElement('div');
+  const attr = state.boardAttrs[idx] ?? "";
+  const cell = document.createElement("div");
 
-  let classes = 'cell';
+  let classes = "cell";
   if (char) classes += ` owner-${char.owner}`;
-  if (ui.validCells.includes(idx) && ui.mode !== 'element_swap_hand_pending') {
-    classes += ui.mode === 'attack_targeting' ? ' attack-target' : ' valid';
+  if (ui.validCells.includes(idx) && ui.mode !== "element_swap_hand_pending") {
+    classes += ui.mode === "attack_targeting" ? " attack-target" : " valid";
   }
-  if (ui.selectedBoardIdx === idx || ui.effectDirContext?.targetIdx === idx) classes += ' selected';
+  if (ui.selectedBoardIdx === idx || ui.effectDirContext?.targetIdx === idx)
+    classes += " selected";
   cell.className = classes;
 
-  const attrEl = document.createElement('div');
-  attrEl.className = 'cell-attr';
+  const attrEl = document.createElement("div");
+  attrEl.className = "cell-attr";
   attrEl.textContent = attr;
   cell.appendChild(attrEl);
 
   if (char) {
-    const charDiv = document.createElement('div');
-    charDiv.className = 'cell-char';
+    const charDiv = document.createElement("div");
+    charDiv.className = "cell-char";
     const markers = markerStr(char);
-    const dimmed = char.hasActed ? 'opacity:0.6;' : '';
+    const dimmed = char.hasActed ? "opacity:0.6;" : "";
     charDiv.innerHTML = `
       <div class="char-dir" style="${dimmed}">${dirArrow(char.dir)}</div>
       <div class="char-name" style="${dimmed}">${getCardName(char.cardId)}</div>
       <div class="char-hp" style="${dimmed}">HP: ${char.hp}/${char.maxHp}</div>
       <div class="char-atk" style="${dimmed}">ATK: ${char.atk}</div>
-      ${markers ? `<div class="char-markers">${markers}</div>` : ''}
+      ${markers ? `<div class="char-markers">${markers}</div>` : ""}
     `;
     cell.appendChild(charDiv);
   }
@@ -604,8 +746,11 @@ function buildCell(state: GameState, ui: GameUiExtra, idx: CellIndex): HTMLEleme
 
   const { online: cellOnline, myPlayerIndex: cellMyIdx } = getState();
   if (!cellOnline || state.active === cellMyIdx) {
-    cell.addEventListener('click', () => {
-      if (_longPressActive) { _longPressActive = false; return; }
+    cell.addEventListener("click", () => {
+      if (_longPressActive) {
+        _longPressActive = false;
+        return;
+      }
       hideCardDetail();
       onCellClick(state, ui, idx);
     });
@@ -613,71 +758,88 @@ function buildCell(state: GameState, ui: GameUiExtra, idx: CellIndex): HTMLEleme
   return cell;
 }
 
-function buildDirPickerOverlay(title: string, onPick: (dir: Direction) => void): HTMLElement {
-  const overlay = document.createElement('div');
-  overlay.className = 'dir-picker-overlay';
-  const picker = document.createElement('div');
-  picker.className = 'dir-picker';
+function buildDirPickerOverlay(
+  title: string,
+  onPick: (dir: Direction) => void,
+): HTMLElement {
+  const overlay = document.createElement("div");
+  overlay.className = "dir-picker-overlay";
+  const picker = document.createElement("div");
+  picker.className = "dir-picker";
   picker.innerHTML = `<h3>${title}</h3>`;
 
-  const grid = document.createElement('div');
-  grid.className = 'dir-grid';
+  const grid = document.createElement("div");
+  grid.className = "dir-grid";
   const positions = [
-    null, { dir: 0 as Direction, label: '↑' }, null,
-    { dir: 3 as Direction, label: '←' }, null, { dir: 1 as Direction, label: '→' },
-    null, { dir: 2 as Direction, label: '↓' }, null,
+    null,
+    { dir: 0 as Direction, label: "↑" },
+    null,
+    { dir: 3 as Direction, label: "←" },
+    null,
+    { dir: 1 as Direction, label: "→" },
+    null,
+    { dir: 2 as Direction, label: "↓" },
+    null,
   ];
-  positions.forEach(pos => {
-    const btn = document.createElement('div');
-    btn.className = pos ? 'dir-btn' : 'dir-btn center';
+  positions.forEach((pos) => {
+    const btn = document.createElement("div");
+    btn.className = pos ? "dir-btn" : "dir-btn center";
     if (pos) {
       btn.textContent = pos.label;
-      btn.addEventListener('click', () => onPick(pos.dir));
+      btn.addEventListener("click", () => onPick(pos.dir));
     }
     grid.appendChild(btn);
   });
   picker.appendChild(grid);
 
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'btn btn-secondary';
-  cancelBtn.style.marginTop = '12px';
-  cancelBtn.textContent = 'キャンセル';
-  cancelBtn.addEventListener('click', () => setState({ gameUiExtra: resetGameUiExtra() }));
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "btn btn-secondary";
+  cancelBtn.style.marginTop = "12px";
+  cancelBtn.textContent = "キャンセル";
+  cancelBtn.addEventListener("click", () =>
+    setState({ gameUiExtra: resetGameUiExtra() }),
+  );
   picker.appendChild(cancelBtn);
 
   overlay.appendChild(picker);
   return overlay;
 }
 
-function buildRotatePickerOverlay(title: string, onPick: (clockwise: boolean) => void): HTMLElement {
-  const overlay = document.createElement('div');
-  overlay.className = 'dir-picker-overlay';
-  const picker = document.createElement('div');
-  picker.className = 'dir-picker';
+function buildRotatePickerOverlay(
+  title: string,
+  onPick: (clockwise: boolean) => void,
+): HTMLElement {
+  const overlay = document.createElement("div");
+  overlay.className = "dir-picker-overlay";
+  const picker = document.createElement("div");
+  picker.className = "dir-picker";
   picker.innerHTML = `<h3>${title}</h3>`;
 
-  const btns = document.createElement('div');
-  btns.style.cssText = 'display:flex;gap:12px;justify-content:center;margin-top:8px;';
+  const btns = document.createElement("div");
+  btns.style.cssText =
+    "display:flex;gap:12px;justify-content:center;margin-top:8px;";
 
-  const rightBtn = document.createElement('button');
-  rightBtn.className = 'btn';
-  rightBtn.textContent = '右90° →↻';
-  rightBtn.addEventListener('click', () => onPick(true));
+  const rightBtn = document.createElement("button");
+  rightBtn.className = "btn";
+  rightBtn.textContent = "右90° →↻";
+  rightBtn.addEventListener("click", () => onPick(true));
 
-  const leftBtn = document.createElement('button');
-  leftBtn.className = 'btn';
-  leftBtn.textContent = '←↺ 左90°';
-  leftBtn.addEventListener('click', () => onPick(false));
+  const leftBtn = document.createElement("button");
+  leftBtn.className = "btn";
+  leftBtn.textContent = "←↺ 左90°";
+  leftBtn.addEventListener("click", () => onPick(false));
 
   btns.appendChild(leftBtn);
   btns.appendChild(rightBtn);
   picker.appendChild(btns);
 
-  const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'btn btn-secondary';
-  cancelBtn.style.marginTop = '12px';
-  cancelBtn.textContent = 'キャンセル';
-  cancelBtn.addEventListener('click', () => setState({ gameUiExtra: resetGameUiExtra() }));
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "btn btn-secondary";
+  cancelBtn.style.marginTop = "12px";
+  cancelBtn.textContent = "キャンセル";
+  cancelBtn.addEventListener("click", () =>
+    setState({ gameUiExtra: resetGameUiExtra() }),
+  );
   picker.appendChild(cancelBtn);
 
   overlay.appendChild(picker);
@@ -701,7 +863,7 @@ function onHandCardClick(state: GameState, handIdx: number): void {
     setState({
       gameUiExtra: {
         ...getState().gameUiExtra,
-        mode: 'hand_selected',
+        mode: "hand_selected",
         summonHandIdx: handIdx,
         validCells,
         selectedBoardIdx: null,
@@ -717,15 +879,18 @@ function onHandCardClick(state: GameState, handIdx: number): void {
   const cost = itemDef.cost;
   if (state.players[active].mana < cost) return;
 
-  if (cardId === 'item_element_swap') {
+  if (cardId === "item_element_swap") {
     const allAllies = state.board
       .map((c, i) => (c !== null && c.owner === active ? i : -1))
-      .filter(i => i >= 0) as CellIndex[];
-    if (allAllies.length === 0) { addLog('味方がいません', 'system'); return; }
+      .filter((i) => i >= 0) as CellIndex[];
+    if (allAllies.length === 0) {
+      addLog("味方がいません", "system");
+      return;
+    }
     setState({
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: 'element_swap_ally_pending',
+        mode: "element_swap_ally_pending",
         validCells: allAllies,
         itemHandIdx: handIdx,
         pendingCardId: cardId,
@@ -736,7 +901,7 @@ function onHandCardClick(state: GameState, handIdx: number): void {
 
   // 対象選択不要なアイテムは即時発動
   const itemSpec = getItemSpec(cardId);
-  if (!itemSpec || getFirstSelectTarget(itemSpec.clauses, 'on_use') === null) {
+  if (!itemSpec || getFirstSelectTarget(itemSpec.clauses, "on_use") === null) {
     doApplyImmediateItem(state, handIdx, cardId);
     return;
   }
@@ -746,29 +911,36 @@ function onHandCardClick(state: GameState, handIdx: number): void {
   setState({
     gameUiExtra: {
       ...resetGameUiExtra(),
-      mode: 'effect_targeting',
+      mode: "effect_targeting",
       validCells,
       itemHandIdx: handIdx,
       pendingCardId: cardId,
     },
   });
-  addLog(`アイテム効果: ${hint}`, 'info');
+  addLog(`アイテム効果: ${hint}`, "info");
 }
 
 function onCellClick(state: GameState, ui: GameUiExtra, idx: CellIndex): void {
   const active = state.active;
 
-  if (ui.mode === 'hand_selected') {
+  if (ui.mode === "hand_selected") {
     if (!ui.validCells.includes(idx)) return;
-    setState({ gameUiExtra: { ...ui, mode: 'summon_dir_pending', dirPickerCell: idx, validCells: [] } });
+    setState({
+      gameUiExtra: {
+        ...ui,
+        mode: "summon_dir_pending",
+        dirPickerCell: idx,
+        validCells: [],
+      },
+    });
     return;
   }
-  if (ui.mode === 'attack_targeting') {
+  if (ui.mode === "attack_targeting") {
     if (!ui.validCells.includes(idx)) return;
     doAttack(state, ui, idx);
     return;
   }
-  if (ui.mode === 'effect_targeting') {
+  if (ui.mode === "effect_targeting") {
     if (!ui.validCells.includes(idx)) return;
     if (ui.itemHandIdx !== null) {
       doResolveItemEffect(state, ui, idx);
@@ -777,12 +949,12 @@ function onCellClick(state: GameState, ui: GameUiExtra, idx: CellIndex): void {
     }
     return;
   }
-  if (ui.mode === 'ult_targeting') {
+  if (ui.mode === "ult_targeting") {
     if (!ui.validCells.includes(idx)) return;
     onUltTargetClick(state, ui, idx);
     return;
   }
-  if (ui.mode === 'element_swap_ally_pending') {
+  if (ui.mode === "element_swap_ally_pending") {
     if (!ui.validCells.includes(idx)) return;
     onElementSwapAllyClick(state, ui, idx);
     return;
@@ -790,7 +962,13 @@ function onCellClick(state: GameState, ui: GameUiExtra, idx: CellIndex): void {
 
   const char = state.board[idx];
   if (char && char.owner === active) {
-    setState({ gameUiExtra: { ...resetGameUiExtra(), mode: 'char_selected', selectedBoardIdx: idx } });
+    setState({
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "char_selected",
+        selectedBoardIdx: idx,
+      },
+    });
     return;
   }
   setState({ gameUiExtra: resetGameUiExtra() });
@@ -806,24 +984,34 @@ function onAttackClick(state: GameState, ui: GameUiExtra): void {
   const opp = (1 - char.owner) as 0 | 1;
   let targetIdxs: CellIndex[];
 
-  if (def.attack_cells === 'all') {
+  if (def.attack_cells === "all") {
     targetIdxs = state.board
       .map((c, i) => (c !== null && c.owner === opp ? i : -1))
-      .filter(i => i >= 0) as CellIndex[];
+      .filter((i) => i >= 0) as CellIndex[];
   } else if (def.attack_cells === null) {
     targetIdxs = [];
   } else {
-    const cells = getAttackCells(ui.selectedBoardIdx, def.attack_cells, char.dir);
-    targetIdxs = (cells ?? []).filter(i => {
+    const cells = getAttackCells(
+      ui.selectedBoardIdx,
+      def.attack_cells,
+      char.dir,
+    );
+    targetIdxs = (cells ?? []).filter((i) => {
       const c = state.board[i];
       return c != null && c.owner === opp;
     }) as CellIndex[];
   }
 
-  setState({ gameUiExtra: { ...ui, mode: 'attack_targeting', validCells: targetIdxs } });
+  setState({
+    gameUiExtra: { ...ui, mode: "attack_targeting", validCells: targetIdxs },
+  });
 }
 
-function onRotateClick(state: GameState, ui: GameUiExtra, newDir: Direction): void {
+function onRotateClick(
+  state: GameState,
+  ui: GameUiExtra,
+  newDir: Direction,
+): void {
   if (ui.selectedBoardIdx === null) return;
   const char = state.board[ui.selectedBoardIdx];
   if (!char) return;
@@ -835,9 +1023,13 @@ function onRotateClick(state: GameState, ui: GameUiExtra, newDir: Direction): vo
   let newState = appendLog(
     { ...state, board: newBoard },
     `${getCardName(char.cardId)} が ${DIR_ARROWS[newDir]} を向いた`,
-    'info',
+    "info",
   );
-  newState = spendReactivationMana(newState, ui.selectedBoardIdx, def.reactivation_cost);
+  newState = spendReactivationMana(
+    newState,
+    ui.selectedBoardIdx,
+    def.reactivation_cost,
+  );
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
@@ -848,7 +1040,11 @@ function onDirPicked(state: GameState, ui: GameUiExtra, dir: Direction): void {
   doSummon(state, handIdx, cellIdx, dir);
 }
 
-function onEffectDirPicked(state: GameState, ui: GameUiExtra, dir: Direction): void {
+function onEffectDirPicked(
+  state: GameState,
+  ui: GameUiExtra,
+  dir: Direction,
+): void {
   const ctx = ui.effectDirContext;
   if (!ctx) return;
   const { cardId, summonIdx, targetIdx } = ctx;
@@ -862,13 +1058,21 @@ function onEffectDirPicked(state: GameState, ui: GameUiExtra, dir: Direction): v
   }
 
   newBoard[targetIdx] = { ...target, dir, hasRotated: true };
-  let newState = appendLog({ ...state, board: newBoard }, `${getCardName(target.cardId)} を ${DIR_ARROWS[dir]} に向けた`, 'info');
+  let newState = appendLog(
+    { ...state, board: newBoard },
+    `${getCardName(target.cardId)} を ${DIR_ARROWS[dir]} に向けた`,
+    "info",
+  );
 
   newState = applyEffectAfterDir(newState, cardId, summonIdx, active);
   finalizeSummonTurn(newState, cardId, summonIdx);
 }
 
-function onEffectRotatePicked(state: GameState, ui: GameUiExtra, clockwise: boolean): void {
+function onEffectRotatePicked(
+  state: GameState,
+  ui: GameUiExtra,
+  clockwise: boolean,
+): void {
   const ctx = ui.effectRotateContext;
   if (!ctx) return;
   const { cardId, summonIdx, targetIdx } = ctx;
@@ -881,19 +1085,25 @@ function onEffectRotatePicked(state: GameState, ui: GameUiExtra, clockwise: bool
     return;
   }
 
-  const newDir = clockwise ? ((target.dir + 1) % 4) as Direction : ((target.dir + 3) % 4) as Direction;
+  const newDir = clockwise
+    ? (((target.dir + 1) % 4) as Direction)
+    : (((target.dir + 3) % 4) as Direction);
   newBoard[targetIdx] = { ...target, dir: newDir };
   let newState = appendLog(
     { ...state, board: newBoard },
-    `${getCardName(target.cardId)} を${clockwise ? '右' : '左'}90°回転させた`,
-    'info',
+    `${getCardName(target.cardId)} を${clockwise ? "右" : "左"}90°回転させた`,
+    "info",
   );
 
   newState = applyEffectAfterDir(newState, cardId, summonIdx, active);
   finalizeSummonTurn(newState, cardId, summonIdx);
 }
 
-function onItemRotatePicked(state: GameState, ui: GameUiExtra, clockwise: boolean): void {
+function onItemRotatePicked(
+  state: GameState,
+  ui: GameUiExtra,
+  clockwise: boolean,
+): void {
   const ctx = ui.itemRotateContext;
   if (!ctx) return;
   const { cardId, targetIdx, handIdx } = ctx;
@@ -905,27 +1115,41 @@ function onItemRotatePicked(state: GameState, ui: GameUiExtra, clockwise: boolea
   newHand.splice(handIdx, 1);
   const newDiscard = [...state.players[active].discard, cardId];
   const ps = [...state.players] as typeof state.players;
-  ps[active] = { ...ps[active], hand: newHand, discard: newDiscard, mana: ps[active].mana - cost };
+  ps[active] = {
+    ...ps[active],
+    hand: newHand,
+    discard: newDiscard,
+    mana: ps[active].mana - cost,
+  };
   let newState = { ...state, players: ps };
 
   const nb = [...newState.board] as Board;
   const target = nb[targetIdx];
   if (target) {
-    const newDir = clockwise ? ((target.dir + 1) % 4) as Direction : ((target.dir + 3) % 4) as Direction;
+    const newDir = clockwise
+      ? (((target.dir + 1) % 4) as Direction)
+      : (((target.dir + 3) % 4) as Direction);
     nb[targetIdx] = { ...target, dir: newDir };
     newState = appendLog(
       { ...newState, board: nb },
-      `${getCardName(target.cardId)} を${clockwise ? '右' : '左'}90°回転させた`,
-      'info',
+      `${getCardName(target.cardId)} を${clockwise ? "右" : "左"}90°回転させた`,
+      "info",
     );
   }
 
   newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
-function onDiscardCardClick(state: GameState, ui: GameUiExtra, handIdx: number): void {
+function onDiscardCardClick(
+  state: GameState,
+  ui: GameUiExtra,
+  handIdx: number,
+): void {
   const ctx = ui.discardContext;
   if (!ctx) return;
   const { cardId, cellIdx, mandatory } = ctx;
@@ -937,21 +1161,28 @@ function onDiscardCardClick(state: GameState, ui: GameUiExtra, handIdx: number):
   const newDiscard = [...state.players[active].discard, discarded];
   const ps = [...state.players] as typeof state.players;
   ps[active] = { ...ps[active], hand: newHand, discard: newDiscard };
-  let newState = appendLog({ ...state, players: ps }, `${getCardName(discarded)} を捨てた`, 'info');
+  let newState = appendLog(
+    { ...state, players: ps },
+    `${getCardName(discarded)} を捨てた`,
+    "info",
+  );
 
   // Ult discard flow (snipe_v2_09): proceed to enemy targeting
   if (ui.ultCasterIdx !== null) {
     const opp = (1 - active) as 0 | 1;
     const allEnemies = newState.board
       .map((c, i) => (c !== null && c.owner === opp ? i : -1))
-      .filter(i => i >= 0) as CellIndex[];
+      .filter((i) => i >= 0) as CellIndex[];
     newState = applyVictoryCheck(newState, null);
-    if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+    if (newState.winner !== null) {
+      setState({ gameState: newState, screen: "over" });
+      return;
+    }
     setState({
       gameState: newState,
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: 'ult_targeting',
+        mode: "ult_targeting",
         validCells: allEnemies,
         ultCasterIdx: ui.ultCasterIdx,
         pendingCardId: ui.pendingCardId,
@@ -978,7 +1209,7 @@ function onDiscardSkip(state: GameState, ui: GameUiExtra): void {
     return;
   }
   const { cardId, cellIdx } = ctx;
-  const ns = appendLog(state, 'スキップした', 'info');
+  const ns = appendLog(state, "スキップした", "info");
   finalizeSummonTurn(ns, cardId, cellIdx);
 }
 
@@ -986,19 +1217,30 @@ function onEndTurn(state: GameState): void {
   const active = state.active;
   let newState = endTurnCleanup(state);
   newState = applyVictoryCheck(newState, active);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
 
   newState = startTurnPhase(newState);
   newState = drawStep(newState);
   newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
 
   const { online } = getState();
   if (online) {
     // オンラインモード: パス画面不要。Firestore 経由で相手に通知
     setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
   } else {
-    setState({ gameState: newState, screen: 'pass', passForPlayer: newState.active, gameUiExtra: resetGameUiExtra() });
+    setState({
+      gameState: newState,
+      screen: "pass",
+      passForPlayer: newState.active,
+      gameUiExtra: resetGameUiExtra(),
+    });
   }
 }
 
@@ -1008,23 +1250,36 @@ function onEndTurn(state: GameState): void {
 
 // 召喚時効果解決後に自動攻撃→VP→勝利チェック→ターン終了を行うヘルパー。
 // スワップ等で召喚位置が変わる可能性があるため summonedOnTurn でキャラを探す。
-function finalizeSummonTurn(state: GameState, cardId: string, fallbackSummonIdx: CellIndex): void {
+function finalizeSummonTurn(
+  state: GameState,
+  cardId: string,
+  fallbackSummonIdx: CellIndex,
+): void {
   const active = state.active;
   const def = getCharDef(cardId);
-  if (!def) { onEndTurn(state); return; }
+  if (!def) {
+    onEndTurn(state);
+    return;
+  }
 
-  let summonIdx = state.board.findIndex(c =>
-    c !== null && c.owner === active && c.summonedOnTurn === state.turn,
+  let summonIdx = state.board.findIndex(
+    (c) => c !== null && c.owner === active && c.summonedOnTurn === state.turn,
   ) as CellIndex;
   if (summonIdx < 0) summonIdx = fallbackSummonIdx;
 
   const { board: boardAfterAtk, results } = resolveSummonAutoAttack(
-    state.board, summonIdx, def, state.teamDR,
+    state.board,
+    summonIdx,
+    def,
+    state.teamDR,
     (id) => {
       const d = getCharDef(id);
       return {
         cost: d?.cost ?? 1,
-        attackCells: (d?.attack_cells ?? null) as 'all' | null | [number, number][],
+        attackCells: (d?.attack_cells ?? null) as
+          | "all"
+          | null
+          | [number, number][],
         weaknessCells: (d?.weakness_cells ?? [[-1, 0]]) as [number, number][],
       };
     },
@@ -1035,16 +1290,34 @@ function finalizeSummonTurn(state: GameState, cardId: string, fallbackSummonIdx:
   let oppVpGained = 0;
   for (const { result } of results) {
     if (!result.blocked) {
-      if (result.defenderDamage > 0) newState = appendLog(newState, `  → ${result.defenderDamage}ダメージ`, 'damage');
+      if (result.defenderDamage > 0)
+        newState = appendLog(
+          newState,
+          `  → ${result.defenderDamage}ダメージ`,
+          "damage",
+        );
       if (result.vpAwarded > 0) {
         vpGained += result.vpAwarded;
-        newState = appendLog(newState, `  → 撃破！ ${result.vpAwarded}VP`, 'system');
+        newState = appendLog(
+          newState,
+          `  → 撃破！ ${result.vpAwarded}VP`,
+          "system",
+        );
       }
     }
-    if (result.counterDamage > 0) newState = appendLog(newState, `  ← 反撃 ${result.counterDamage}ダメージ`, 'damage');
+    if (result.counterDamage > 0)
+      newState = appendLog(
+        newState,
+        `  ← 反撃 ${result.counterDamage}ダメージ`,
+        "damage",
+      );
     if (result.counterVpAwarded > 0) {
       oppVpGained += result.counterVpAwarded;
-      newState = appendLog(newState, `  ← 撃破（反撃）！ ${result.counterVpAwarded}VP`, 'system');
+      newState = appendLog(
+        newState,
+        `  ← 撃破（反撃）！ ${result.counterVpAwarded}VP`,
+        "system",
+      );
     }
   }
   if (vpGained > 0) {
@@ -1060,11 +1333,19 @@ function finalizeSummonTurn(state: GameState, cardId: string, fallbackSummonIdx:
   }
 
   newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
   onEndTurn(newState);
 }
 
-function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Direction): void {
+function doSummon(
+  state: GameState,
+  handIdx: number,
+  cellIdx: CellIndex,
+  dir: Direction,
+): void {
   const active = state.active;
   const cardId = state.players[active].hand[handIdx]!;
   const def = getCharDef(cardId);
@@ -1073,29 +1354,44 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
   const reduction = calcCostReduction(def, state.board, active);
   const effectiveCost = Math.max(2, def.cost - reduction);
 
-  const cellAttr = state.boardAttrs[cellIdx] ?? '虚';
+  const cellAttr = state.boardAttrs[cellIdx] ?? "虚";
   const hpBonus = attributeHpBonus(def.attribute, cellAttr);
   let instance = createCharInstance(def, active, dir);
   const bonusedHp = Math.max(1, instance.hp + hpBonus);
-  instance = { ...instance, hp: bonusedHp, maxHp: bonusedHp, summonedOnTurn: state.turn };
+  instance = {
+    ...instance,
+    hp: bonusedHp,
+    maxHp: bonusedHp,
+    summonedOnTurn: state.turn,
+  };
 
   const newBoard = [...state.board] as Board;
   newBoard[cellIdx] = instance;
   const newHand = [...state.players[active].hand];
   newHand.splice(handIdx, 1);
   const ps = [...state.players] as typeof state.players;
-  ps[active] = { ...ps[active], hand: newHand, mana: ps[active].mana - effectiveCost };
+  ps[active] = {
+    ...ps[active],
+    hand: newHand,
+    mana: ps[active].mana - effectiveCost,
+  };
 
   let newState = appendLog(
     { ...state, board: newBoard, players: ps },
     `P${active + 1}: ${def.name} を ${cellIdx + 1}番マスに召喚 (${DIR_ARROWS[dir]})` +
-      (hpBonus !== 0 ? ` HP${hpBonus > 0 ? '+' : ''}${hpBonus}` : ''),
-    'info',
+      (hpBonus !== 0 ? ` HP${hpBonus > 0 ? "+" : ""}${hpBonus}` : ""),
+    "info",
   );
 
   // Auto effects (non-pending only)
   const effect = getSummonEffect(cardId);
-  const r = applyAutoEffects(newState, cellIdx, active, effect.clauses, def.attribute);
+  const r = applyAutoEffects(
+    newState,
+    cellIdx,
+    active,
+    effect.clauses,
+    def.attribute,
+  );
   newState = { ...newState, board: r.board, players: r.players };
 
   if (!effect.hasPending) {
@@ -1106,40 +1402,51 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
 
   // pending効果あり: 自動攻撃はユーザー入力（効果解決）が完了してから実行する
   newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
 
   // コストとして手札を捨てるエフェクト → discard_pending フロー
-  const discardCostClause = effect.clauses.find(c =>
-    c.trigger === 'on_summon' && c.cost?.type === 'discard',
+  const discardCostClause = effect.clauses.find(
+    (c) => c.trigger === "on_summon" && c.cost?.type === "discard",
   );
   if (discardCostClause) {
     setState({
       gameState: newState,
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: 'discard_pending',
-        discardContext: { cardId, cellIdx, mandatory: discardCostClause.costMandatory ?? false },
+        mode: "discard_pending",
+        discardContext: {
+          cardId,
+          cellIdx,
+          mandatory: discardCostClause.costMandatory ?? false,
+        },
       },
     });
     return;
   }
   // ドロー後に強制捨て（draw を先に適用してから discard_pending へ）
-  const drawThenDiscardClause = effect.clauses.find(c =>
-    c.trigger === 'on_summon' &&
-    c.costMandatory &&
-    c.effects.some(e => e.type === 'draw') &&
-    c.effects.some(e => e.type === 'discard'),
+  const drawThenDiscardClause = effect.clauses.find(
+    (c) =>
+      c.trigger === "on_summon" &&
+      c.costMandatory &&
+      c.effects.some((e) => e.type === "draw") &&
+      c.effects.some((e) => e.type === "discard"),
   );
   if (drawThenDiscardClause) {
-    for (const e of drawThenDiscardClause.effects.filter(e => e.type === 'draw')) {
-      for (let i = 0; i < (e as { count: number }).count; i++) newState = drawStep(newState);
+    for (const e of drawThenDiscardClause.effects.filter(
+      (e) => e.type === "draw",
+    )) {
+      for (let i = 0; i < (e as { count: number }).count; i++)
+        newState = drawStep(newState);
     }
-    newState = appendLog(newState, 'ドローした', 'info');
+    newState = appendLog(newState, "ドローした", "info");
     setState({
       gameState: newState,
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: 'discard_pending',
+        mode: "discard_pending",
         discardContext: { cardId, cellIdx, mandatory: true },
       },
     });
@@ -1152,12 +1459,12 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
     finalizeSummonTurn(newState, cardId, cellIdx);
     return;
   }
-  newState = appendLog(newState, `効果: ${hint}`, 'info');
+  newState = appendLog(newState, `効果: ${hint}`, "info");
   setState({
     gameState: newState,
     gameUiExtra: {
       ...resetGameUiExtra(),
-      mode: 'effect_targeting',
+      mode: "effect_targeting",
       validCells,
       pendingCardId: cardId,
       pendingCellIdx: cellIdx,
@@ -1165,7 +1472,11 @@ function doSummon(state: GameState, handIdx: number, cellIdx: CellIndex, dir: Di
   });
 }
 
-function doAttack(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void {
+function doAttack(
+  state: GameState,
+  ui: GameUiExtra,
+  targetIdx: CellIndex,
+): void {
   const active = state.active;
   const attackerIdx = ui.selectedBoardIdx;
   if (attackerIdx === null) return;
@@ -1176,72 +1487,118 @@ function doAttack(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void
   const targetChar = state.board[targetIdx];
   if (!targetChar) return;
 
-  const workBoard = state.board.map(c =>
-    c === null ? null : { ...c, keywords: [...c.keywords], markers: { ...c.markers }, status: { ...c.status } },
+  const workBoard = state.board.map((c) =>
+    c === null
+      ? null
+      : {
+          ...c,
+          keywords: [...c.keywords],
+          markers: { ...c.markers },
+          status: { ...c.status },
+        },
   ) as Board;
 
   const defDef = getCharDef(targetChar.cardId);
   const result = resolveAttack(workBoard, attackerIdx, targetIdx, {
     teamDR: state.teamDR,
     weaknessCells: (defDef?.weakness_cells ?? [[-1, 0]]) as RelCoord[],
-    attackType: def.attack_type === '魔法' ? 'magic' : 'physical',
+    attackType: def.attack_type === "魔法" ? "magic" : "physical",
     defenderCost: defDef?.cost ?? 1,
     attackerCost: def.cost,
-    defenderAttackCells: (defDef?.attack_cells ?? null) as 'all' | null | [number, number][],
+    defenderAttackCells: (defDef?.attack_cells ?? null) as
+      | "all"
+      | null
+      | [number, number][],
   });
 
   // Mark attacker as acted
-  if (workBoard[attackerIdx]) workBoard[attackerIdx] = { ...workBoard[attackerIdx]!, hasActed: true };
+  if (workBoard[attackerIdx])
+    workBoard[attackerIdx] = { ...workBoard[attackerIdx]!, hasActed: true };
 
-  let newState = spendReactivationMana({ ...state, board: workBoard }, attackerIdx, def.reactivation_cost);
+  let newState = spendReactivationMana(
+    { ...state, board: workBoard },
+    attackerIdx,
+    def.reactivation_cost,
+  );
   const atkName = getCardName(attacker.cardId);
   const defName = getCardName(targetChar.cardId);
 
   if (result.blocked) {
-    newState = appendLog(newState, `${atkName} の攻撃がブロックされた`, 'info');
+    newState = appendLog(newState, `${atkName} の攻撃がブロックされた`, "info");
   } else if (result.evaded) {
-    newState = appendLog(newState, `${defName} が攻撃を回避！`, 'info');
+    newState = appendLog(newState, `${defName} が攻撃を回避！`, "info");
   } else {
-    newState = appendLog(newState, `${atkName} → ${defName}: ${result.defenderDamage}ダメージ${result.isBlind ? ' [B位置]' : ''}`, 'damage');
-    if (result.counterDamage > 0) newState = appendLog(newState, `${defName} ← 反撃: ${result.counterDamage}ダメージ`, 'damage');
+    newState = appendLog(
+      newState,
+      `${atkName} → ${defName}: ${result.defenderDamage}ダメージ${result.isBlind ? " [B位置]" : ""}`,
+      "damage",
+    );
+    if (result.counterDamage > 0)
+      newState = appendLog(
+        newState,
+        `${defName} ← 反撃: ${result.counterDamage}ダメージ`,
+        "damage",
+      );
     if (result.vpAwarded > 0) {
       const np = [...newState.players] as typeof newState.players;
       np[active] = { ...np[active], vp: np[active].vp + result.vpAwarded };
       newState = { ...newState, players: np };
-      newState = appendLog(newState, `${defName} 撃破！ ${result.vpAwarded}VP`, 'system');
+      newState = appendLog(
+        newState,
+        `${defName} 撃破！ ${result.vpAwarded}VP`,
+        "system",
+      );
     }
     if (result.counterVpAwarded > 0) {
       const opp = (1 - active) as 0 | 1;
       const np = [...newState.players] as typeof newState.players;
       np[opp] = { ...np[opp], vp: np[opp].vp + result.counterVpAwarded };
       newState = { ...newState, players: np };
-      newState = appendLog(newState, `${atkName} 撃破（反撃）！ ${result.counterVpAwarded}VP`, 'system');
+      newState = appendLog(
+        newState,
+        `${atkName} 撃破（反撃）！ ${result.counterVpAwarded}VP`,
+        "system",
+      );
     }
   }
 
   newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
-function doResolveEffect(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void {
+function doResolveEffect(
+  state: GameState,
+  ui: GameUiExtra,
+  targetIdx: CellIndex,
+): void {
   const cardId = ui.pendingCardId;
   const summonIdx = ui.pendingCellIdx;
-  if (!cardId || summonIdx === null) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+  if (!cardId || summonIdx === null) {
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
 
   const active = state.active;
 
   // on_summon に rotate degrees:'any' があれば対象選択後に方向選択へ
-  const needsDirPick = getEffectSpec(cardId).clauses.some(c =>
-    c.trigger === 'on_summon' &&
-    c.effects.some(e => e.type === 'rotate' && (e as { degrees: unknown }).degrees === 'any'),
+  const needsDirPick = getEffectSpec(cardId).clauses.some(
+    (c) =>
+      c.trigger === "on_summon" &&
+      c.effects.some(
+        (e) =>
+          e.type === "rotate" && (e as { degrees: unknown }).degrees === "any",
+      ),
   );
   if (needsDirPick) {
     setState({
       gameState: state,
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: 'effect_dir_pending',
+        mode: "effect_dir_pending",
         effectDirContext: { cardId, summonIdx, targetIdx },
       },
     });
@@ -1249,43 +1606,67 @@ function doResolveEffect(state: GameState, ui: GameUiExtra, targetIdx: CellIndex
   }
 
   // on_summon に rotate degrees:'either' があれば左右90°選択へ
-  const needsRotatePick = getEffectSpec(cardId).clauses.some(c =>
-    c.trigger === 'on_summon' &&
-    c.effects.some(e => e.type === 'rotate' && (e as { degrees: unknown }).degrees === 'either'),
+  const needsRotatePick = getEffectSpec(cardId).clauses.some(
+    (c) =>
+      c.trigger === "on_summon" &&
+      c.effects.some(
+        (e) =>
+          e.type === "rotate" &&
+          (e as { degrees: unknown }).degrees === "either",
+      ),
   );
   if (needsRotatePick) {
     setState({
       gameState: state,
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: 'effect_rotate_pending',
+        mode: "effect_rotate_pending",
         effectRotateContext: { cardId, summonIdx, targetIdx },
       },
     });
     return;
   }
 
-  const newState = applyPendingEffect(state, cardId, summonIdx, targetIdx, active);
+  const newState = applyPendingEffect(
+    state,
+    cardId,
+    summonIdx,
+    targetIdx,
+    active,
+  );
   finalizeSummonTurn(newState, cardId, summonIdx);
 }
 
-function doResolveItemEffect(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void {
+function doResolveItemEffect(
+  state: GameState,
+  ui: GameUiExtra,
+  targetIdx: CellIndex,
+): void {
   const cardId = ui.pendingCardId;
   const handIdx = ui.itemHandIdx;
-  if (!cardId || handIdx === null) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+  if (!cardId || handIdx === null) {
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
 
   // item に rotate degrees:'either' があれば左右90°選択へ（コスト支払いは方向確定後）
   const itemSpec = getItemSpec(cardId);
-  const needsRotatePick = itemSpec?.clauses.some(c =>
-    c.trigger === 'on_use' &&
-    c.effects.some(e => e.type === 'rotate' && (e as { degrees: unknown }).degrees === 'either'),
-  ) ?? false;
+  const needsRotatePick =
+    itemSpec?.clauses.some(
+      (c) =>
+        c.trigger === "on_use" &&
+        c.effects.some(
+          (e) =>
+            e.type === "rotate" &&
+            (e as { degrees: unknown }).degrees === "either",
+        ),
+    ) ?? false;
   if (needsRotatePick) {
     setState({
       gameState: state,
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: 'item_rotate_pending',
+        mode: "item_rotate_pending",
         itemRotateContext: { cardId, targetIdx, handIdx },
       },
     });
@@ -1300,12 +1681,20 @@ function doResolveItemEffect(state: GameState, ui: GameUiExtra, targetIdx: CellI
   newHand.splice(handIdx, 1);
   const newDiscard = [...state.players[active].discard, cardId];
   const ps = [...state.players] as typeof state.players;
-  ps[active] = { ...ps[active], hand: newHand, discard: newDiscard, mana: ps[active].mana - cost };
+  ps[active] = {
+    ...ps[active],
+    hand: newHand,
+    discard: newDiscard,
+    mana: ps[active].mana - cost,
+  };
   let newState = { ...state, players: ps };
 
   newState = applyItemEffect(newState, cardId, targetIdx, active);
   newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
@@ -1313,15 +1702,29 @@ function doResolveItemEffect(state: GameState, ui: GameUiExtra, targetIdx: CellI
 // Immediate item (no target)
 // ============================================================
 
-function doApplyImmediateItem(state: GameState, handIdx: number, cardId: string): void {
+function doApplyImmediateItem(
+  state: GameState,
+  handIdx: number,
+  cardId: string,
+): void {
   const active = state.active;
   const cost = getItemDef(cardId)?.cost ?? 0;
   const newHand = [...state.players[active].hand];
   newHand.splice(handIdx, 1);
   const newDiscard = [...state.players[active].discard, cardId];
   const ps = [...state.players] as typeof state.players;
-  ps[active] = { ...ps[active], hand: newHand, discard: newDiscard, mana: ps[active].mana - cost };
-  const newState = applyItemEffect({ ...state, players: ps }, cardId, undefined, active);
+  ps[active] = {
+    ...ps[active],
+    hand: newHand,
+    discard: newDiscard,
+    mana: ps[active].mana - cost,
+  };
+  const newState = applyItemEffect(
+    { ...state, players: ps },
+    cardId,
+    undefined,
+    active,
+  );
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
@@ -1335,10 +1738,15 @@ function getPendingTargets(
   summonIdx: CellIndex,
 ): { validCells: CellIndex[]; hint: string } {
   const spec = getEffectSpec(cardId);
-  const target = getFirstSelectTarget(spec.clauses, 'on_summon');
-  if (!target) return { validCells: [], hint: '' };
-  const validCells = resolveSelectCells(target, state.board, state.active, summonIdx);
-  return { validCells, hint: TARGET_HINT[target] ?? '対象を選択' };
+  const target = getFirstSelectTarget(spec.clauses, "on_summon");
+  if (!target) return { validCells: [], hint: "" };
+  const validCells = resolveSelectCells(
+    target,
+    state.board,
+    state.active,
+    summonIdx,
+  );
+  return { validCells, hint: TARGET_HINT[target] ?? "対象を選択" };
 }
 
 function getItemTargets(
@@ -1347,28 +1755,37 @@ function getItemTargets(
   active: 0 | 1,
 ): { validCells: CellIndex[]; hint: string } {
   const spec = getItemSpec(itemId);
-  if (!spec) return { validCells: [], hint: '' };
-  const clause = spec.clauses.find(c => c.trigger === 'on_use');
-  if (!clause) return { validCells: [], hint: '' };
+  if (!spec) return { validCells: [], hint: "" };
+  const clause = spec.clauses.find((c) => c.trigger === "on_use");
+  if (!clause) return { validCells: [], hint: "" };
 
   for (const atom of clause.effects) {
-    if (!('target' in atom)) continue;
+    if (!("target" in atom)) continue;
     const target = (atom as { target: EffectTarget }).target;
-    if (!['select_ally', 'select_adj_ally', 'select_enemy', 'select_adj_enemy', 'select_any'].includes(target)) continue;
+    if (
+      ![
+        "select_ally",
+        "select_adj_ally",
+        "select_enemy",
+        "select_adj_enemy",
+        "select_any",
+      ].includes(target)
+    )
+      continue;
     let cells = resolveSelectCells(target, state.board, active);
     // bounce の maxCost 制約をアトムから読む
-    if (atom.type === 'bounce' && 'maxCost' in atom) {
+    if (atom.type === "bounce" && "maxCost" in atom) {
       const maxCost = (atom as { maxCost?: number }).maxCost;
       if (maxCost !== undefined) {
-        cells = cells.filter(i => {
+        cells = cells.filter((i) => {
           const c = state.board[i];
           return c != null && (getCharDef(c.cardId)?.cost ?? 99) <= maxCost;
         });
       }
     }
-    return { validCells: cells, hint: TARGET_HINT[target] ?? '対象を選択' };
+    return { validCells: cells, hint: TARGET_HINT[target] ?? "対象を選択" };
   }
-  return { validCells: [], hint: '' };
+  return { validCells: [], hint: "" };
 }
 
 // ============================================================
@@ -1389,19 +1806,30 @@ function onUltClick(state: GameState, ui: GameUiExtra): void {
   np[active] = { ...np[active], vp: np[active].vp - spec.vpCost };
   const nb = [...state.board] as Board;
   nb[casterIdx] = { ...caster, ultUsed: true };
-  let newState = appendLog({ ...state, board: nb, players: np }, `${getCardName(caster.cardId)} がウルト発動！（${spec.vpCost}VP消費）`, 'system');
+  let newState = appendLog(
+    { ...state, board: nb, players: np },
+    `${getCardName(caster.cardId)} がウルト発動！（${spec.vpCost}VP消費）`,
+    "system",
+  );
 
-  const clause = spec.clauses.find(c => c.trigger === 'on_ult_activate');
-  if (!clause) { setState({ gameState: newState, gameUiExtra: resetGameUiExtra() }); return; }
+  const clause = spec.clauses.find((c) => c.trigger === "on_ult_activate");
+  if (!clause) {
+    setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+    return;
+  }
 
   // 必須コスト: 手札捨て → discard_pending フローへ
-  if (clause.cost?.type === 'discard' && clause.costMandatory) {
+  if (clause.cost?.type === "discard" && clause.costMandatory) {
     setState({
       gameState: newState,
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: 'discard_pending',
-        discardContext: { cardId: caster.cardId, cellIdx: casterIdx, mandatory: true },
+        mode: "discard_pending",
+        discardContext: {
+          cardId: caster.cardId,
+          cellIdx: casterIdx,
+          mandatory: true,
+        },
         ultCasterIdx: casterIdx,
         pendingCardId: caster.cardId,
       },
@@ -1410,26 +1838,35 @@ function onUltClick(state: GameState, ui: GameUiExtra): void {
   }
 
   // 必須コスト: 自傷ダメージ → 即時適用してから対象選択へ
-  if (clause.cost?.type === 'self_damage' && clause.costMandatory) {
+  if (clause.cost?.type === "self_damage" && clause.costMandatory) {
     const amount = clause.cost.amount;
     const updCaster = newState.board[casterIdx];
     if (updCaster) {
       const nb2 = [...newState.board] as Board;
       const newHp = updCaster.hp - amount;
       nb2[casterIdx] = newHp <= 0 ? null : { ...updCaster, hp: newHp };
-      newState = appendLog({ ...newState, board: nb2 }, `自身に${amount}ダメ（ウルトコスト）`, 'damage');
+      newState = appendLog(
+        { ...newState, board: nb2 },
+        `自身に${amount}ダメ（ウルトコスト）`,
+        "damage",
+      );
     }
   }
 
   // 対象選択が必要か UltSpec から判定
-  const selectTarget = getFirstSelectTarget(spec.clauses, 'on_ult_activate');
+  const selectTarget = getFirstSelectTarget(spec.clauses, "on_ult_activate");
   if (selectTarget) {
-    const validCells = resolveSelectCells(selectTarget, newState.board, active, casterIdx);
+    const validCells = resolveSelectCells(
+      selectTarget,
+      newState.board,
+      active,
+      casterIdx,
+    );
     setState({
       gameState: newState,
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: 'ult_targeting',
+        mode: "ult_targeting",
         validCells,
         ultCasterIdx: casterIdx,
         pendingCardId: caster.cardId,
@@ -1441,27 +1878,43 @@ function onUltClick(state: GameState, ui: GameUiExtra): void {
   // 直接効果（対象選択なし）
   newState = applyUltDirectEffect(newState, casterIdx, active);
   newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
-function onUltTargetClick(state: GameState, ui: GameUiExtra, targetIdx: CellIndex): void {
+function onUltTargetClick(
+  state: GameState,
+  ui: GameUiExtra,
+  targetIdx: CellIndex,
+): void {
   const casterIdx = ui.ultCasterIdx;
   if (casterIdx === null) return;
   const casterCardId = ui.pendingCardId ?? state.board[casterIdx]?.cardId;
   if (!casterCardId) return;
   const active = state.active;
 
-  const { newState: afterEffect, continueToDir } = applyUltTargetEffect(state, casterIdx, casterCardId, targetIdx, active);
+  const { newState: afterEffect, continueToDir } = applyUltTargetEffect(
+    state,
+    casterIdx,
+    casterCardId,
+    targetIdx,
+    active,
+  );
 
   if (continueToDir) {
     const checked = applyVictoryCheck(afterEffect, null);
-    if (checked.winner !== null) { setState({ gameState: checked, screen: 'over' }); return; }
+    if (checked.winner !== null) {
+      setState({ gameState: checked, screen: "over" });
+      return;
+    }
     setState({
       gameState: checked,
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: 'ult_dir_pending',
+        mode: "ult_dir_pending",
         pendingCellIdx: casterIdx,
         ultCasterIdx: casterIdx,
       },
@@ -1470,20 +1923,40 @@ function onUltTargetClick(state: GameState, ui: GameUiExtra, targetIdx: CellInde
   }
 
   const newState = applyVictoryCheck(afterEffect, null);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
-function onUltDirPicked(state: GameState, ui: GameUiExtra, dir: Direction): void {
+function onUltDirPicked(
+  state: GameState,
+  ui: GameUiExtra,
+  dir: Direction,
+): void {
   const targetCellIdx = ui.pendingCellIdx;
-  if (targetCellIdx === null) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+  if (targetCellIdx === null) {
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
   const nb = [...state.board] as Board;
   const unit = nb[targetCellIdx];
-  if (!unit) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+  if (!unit) {
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
   nb[targetCellIdx] = { ...unit, dir };
-  const newState = appendLog({ ...state, board: nb }, `${getCardName(unit.cardId)} を ${DIR_ARROWS[dir]} に向けた`, 'info');
+  const newState = appendLog(
+    { ...state, board: nb },
+    `${getCardName(unit.cardId)} を ${DIR_ARROWS[dir]} に向けた`,
+    "info",
+  );
   const checked = applyVictoryCheck(newState, null);
-  if (checked.winner !== null) { setState({ gameState: checked, screen: 'over' }); return; }
+  if (checked.winner !== null) {
+    setState({ gameState: checked, screen: "over" });
+    return;
+  }
   setState({ gameState: checked, gameUiExtra: resetGameUiExtra() });
 }
 
@@ -1491,7 +1964,11 @@ function onUltDirPicked(state: GameState, ui: GameUiExtra, dir: Direction): void
 // Element swap (item_element_swap)
 // ============================================================
 
-function onElementSwapAllyClick(state: GameState, ui: GameUiExtra, boardIdx: CellIndex): void {
+function onElementSwapAllyClick(
+  state: GameState,
+  ui: GameUiExtra,
+  boardIdx: CellIndex,
+): void {
   const handIdx = ui.itemHandIdx;
   if (handIdx === null) return;
   const active = state.active;
@@ -1505,12 +1982,12 @@ function onElementSwapAllyClick(state: GameState, ui: GameUiExtra, boardIdx: Cel
     .map((cId, i) => {
       if (!isCharCard(cId)) return -1;
       const def = getCharDef(cId);
-      return (def && def.attribute === boardAttr) ? i : -1;
+      return def && def.attribute === boardAttr ? i : -1;
     })
-    .filter(i => i >= 0) as number[];
+    .filter((i) => i >= 0) as number[];
 
   if (matchingHandIdxs.length === 0) {
-    addLog(`同属性（${boardAttr}）の手札キャラがいません`, 'system');
+    addLog(`同属性（${boardAttr}）の手札キャラがいません`, "system");
     setState({ gameUiExtra: resetGameUiExtra() });
     return;
   }
@@ -1518,50 +1995,78 @@ function onElementSwapAllyClick(state: GameState, ui: GameUiExtra, boardIdx: Cel
   setState({
     gameUiExtra: {
       ...resetGameUiExtra(),
-      mode: 'element_swap_hand_pending',
+      mode: "element_swap_hand_pending",
       validCells: matchingHandIdxs as CellIndex[],
       itemHandIdx: handIdx,
-      pendingCardId: 'item_element_swap',
+      pendingCardId: "item_element_swap",
       pendingCellIdx: boardIdx,
       elementSwapBoardIdx: boardIdx,
     },
   });
-  addLog(`同属性（${boardAttr}）の手札キャラを選択してください`, 'info');
+  addLog(`同属性（${boardAttr}）の手札キャラを選択してください`, "info");
 }
 
-function doElementSwap(state: GameState, ui: GameUiExtra, swapHandIdx: number): void {
+function doElementSwap(
+  state: GameState,
+  ui: GameUiExtra,
+  swapHandIdx: number,
+): void {
   const itemHandIdx = ui.itemHandIdx;
   const boardIdx = ui.elementSwapBoardIdx ?? ui.pendingCellIdx;
-  if (itemHandIdx === null || boardIdx === null) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+  if (itemHandIdx === null || boardIdx === null) {
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
   const active = state.active;
 
   const boardChar = state.board[boardIdx];
-  if (!boardChar) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
+  if (!boardChar) {
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
 
   const newHand = [...state.players[active].hand];
   const itemCard = newHand.splice(itemHandIdx, 1)[0]!;
   const newDiscard = [...state.players[active].discard, itemCard];
 
   // Adjust swapHandIdx after item removal
-  const adjustedSwapIdx = swapHandIdx > itemHandIdx ? swapHandIdx - 1 : swapHandIdx;
+  const adjustedSwapIdx =
+    swapHandIdx > itemHandIdx ? swapHandIdx - 1 : swapHandIdx;
   const swapCardId = newHand[adjustedSwapIdx]!;
   newHand.splice(adjustedSwapIdx, 1);
   newHand.push(boardChar.cardId);
 
   const cost = getItemDef(itemCard)?.cost ?? 0;
   const ps = [...state.players] as typeof state.players;
-  ps[active] = { ...ps[active], hand: newHand, discard: newDiscard, mana: ps[active].mana - cost };
+  ps[active] = {
+    ...ps[active],
+    hand: newHand,
+    discard: newDiscard,
+    mana: ps[active].mana - cost,
+  };
 
   const swapDef = getCharDef(swapCardId);
-  if (!swapDef) { setState({ gameUiExtra: resetGameUiExtra() }); return; }
-  const newInstance = { ...createCharInstance(swapDef, active, boardChar.dir), summonedOnTurn: state.turn };
+  if (!swapDef) {
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
+  const newInstance = {
+    ...createCharInstance(swapDef, active, boardChar.dir),
+    summonedOnTurn: state.turn,
+  };
   const newBoard = [...state.board] as Board;
   newBoard[boardIdx] = newInstance;
 
-  let newState = appendLog({ ...state, board: newBoard, players: ps },
-    `${getCardName(boardChar.cardId)} と ${getCardName(swapCardId)} を入れ替えた`, 'info');
+  let newState = appendLog(
+    { ...state, board: newBoard, players: ps },
+    `${getCardName(boardChar.cardId)} と ${getCardName(swapCardId)} を入れ替えた`,
+    "info",
+  );
   newState = applyVictoryCheck(newState, null);
-  if (newState.winner !== null) { setState({ gameState: newState, screen: 'over' }); return; }
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
@@ -1569,17 +2074,24 @@ function doElementSwap(state: GameState, ui: GameUiExtra, swapHandIdx: number): 
 // Utility helpers
 // ============================================================
 
-function applyVictoryCheck(state: GameState, endOfTurnPlayer: 0 | 1 | null): GameState {
+function applyVictoryCheck(
+  state: GameState,
+  endOfTurnPlayer: 0 | 1 | null,
+): GameState {
   const winner = evalVictory(state, endOfTurnPlayer);
   if (winner === null) return state;
   let reason: string;
-  if (winner === -1) reason = '引き分け（時間切れ）';
-  else if (endOfTurnPlayer !== null) reason = `P${endOfTurnPlayer + 1}が5マス支配`;
+  if (winner === -1) reason = "引き分け（時間切れ）";
+  else if (endOfTurnPlayer !== null)
+    reason = `P${endOfTurnPlayer + 1}が5マス支配`;
   else reason = `P${winner + 1}がVP15達成`;
   return { ...state, winner, winReason: reason };
 }
 
-function addLog(text: string, type: 'system' | 'damage' | 'heal' | 'info'): void {
+function addLog(
+  text: string,
+  type: "system" | "damage" | "heal" | "info",
+): void {
   const { gameState } = getState();
   if (!gameState) return;
   setState({ gameState: appendLog(gameState, text, type) });

@@ -22,21 +22,21 @@ export type RelCoord = [rr: number, rc: number];
 // ============================================================
 export interface Markers {
   protection: number; // 防護マーカー枚数
-  evasion: number;    // 回避マーカー枚数
-  piercing: number;   // 貫通マーカー枚数
-  quickness: number;  // 先制マーカー枚数
-  aim: number;        // 照準マーカー枚数（snipeエース回収条件用）
+  evasion: number; // 回避マーカー枚数
+  piercing: number; // 貫通マーカー枚数
+  quickness: number; // 先制マーカー枚数
+  aim: number; // 照準マーカー枚数（snipeエース回収条件用）
 }
 
 export type MarkerKey = keyof Markers;
 
 export interface StatusEffects {
-  brainwashedTurns: number;  // 洗脳残りターン数（0=解除済み）
+  brainwashedTurns: number; // 洗脳残りターン数（0=解除済み）
   brainwashedBy: string | null; // 洗脳付与者のカードID
-  actionTax: number;         // 再行動コスト増加量
+  actionTax: number; // 再行動コスト増加量
   actionTaxBy: string | null; // actionTax付与者のカードID
-  dirLocked: number;         // 向き固定残りターン数
-  immune: number;            // 無敵残りターン数
+  dirLocked: number; // 向き固定残りターン数
+  immune: number; // 無敵残りターン数
 }
 
 export interface CharInstance {
@@ -72,19 +72,27 @@ export interface PlayerState {
   itemSet: string;
   vp: number;
   mana: number;
-  hand: string[];    // カードID配列
+  hand: string[]; // カードID配列
   deck: string[];
   discard: string[];
 }
 
-export type GameScreen = 'login' | 'title' | 'lobby' | 'waiting' | 'draft' | 'pass' | 'game' | 'over';
+export type GameScreen =
+  | "login"
+  | "title"
+  | "lobby"
+  | "waiting"
+  | "draft"
+  | "pass"
+  | "game"
+  | "over";
 
 export interface GameState {
   turn: number;
   active: 0 | 1;
   players: [PlayerState, PlayerState];
   board: Board;
-  boardAttrs: string[];  // 9マスの属性
+  boardAttrs: string[]; // 9マスの属性
   log: LogEntry[];
   winner: 0 | 1 | -1 | null; // -1=引き分け
   winReason: string;
@@ -95,27 +103,27 @@ export interface GameState {
 
 export interface LogEntry {
   text: string;
-  type: 'system' | 'damage' | 'heal' | 'info';
+  type: "system" | "damage" | "heal" | "info";
 }
 
 // ============================================================
 // UI 操作状態
 // ============================================================
 export type UiMode =
-  | 'idle'
-  | 'hand_selected'        // 手札選択済み → 配置先 or 対象選択待ち
-  | 'summon_dir_pending'   // 配置先確定 → 向き選択待ち
-  | 'char_selected'        // 盤面キャラ選択済み
-  | 'attack_targeting'     // 攻撃対象選択中
-  | 'item_targeting'       // アイテム対象選択中
-  | 'ult_targeting'        // ウルト対象選択中
-  | 'effect_targeting';    // カード効果の対象選択中
+  | "idle"
+  | "hand_selected" // 手札選択済み → 配置先 or 対象選択待ち
+  | "summon_dir_pending" // 配置先確定 → 向き選択待ち
+  | "char_selected" // 盤面キャラ選択済み
+  | "attack_targeting" // 攻撃対象選択中
+  | "item_targeting" // アイテム対象選択中
+  | "ult_targeting" // ウルト対象選択中
+  | "effect_targeting"; // カード効果の対象選択中
 
 export interface UiState {
   mode: UiMode;
   selectedHandIndex: number;
   selectedBoardIndex: number;
-  validCells: CellIndex[];   // ハイライト対象
+  validCells: CellIndex[]; // ハイライト対象
   pendingEffect: PendingEffect | null;
 }
 
@@ -130,6 +138,10 @@ export interface PendingEffect {
 // ユーティリティ
 // ============================================================
 
-export function appendLog(state: GameState, text: string, type: LogEntry['type']): GameState {
+export function appendLog(
+  state: GameState,
+  text: string,
+  type: LogEntry["type"],
+): GameState {
   return { ...state, log: [...state.log, { text, type }] };
 }

@@ -1,13 +1,13 @@
-import { setState } from './app.js';
-import type { GameState } from '../engine/types.js';
+import type { GameState } from "../engine/types.js";
+import { setState } from "./app.js";
 
 export function renderOver(state: GameState): HTMLElement {
-  const div = document.createElement('div');
-  div.className = 'screen-over';
+  const div = document.createElement("div");
+  div.className = "screen-over";
 
-  let winnerText = '';
+  let winnerText = "";
   if (state.winner === -1) {
-    winnerText = '引き分け';
+    winnerText = "引き分け";
   } else if (state.winner === 0) {
     winnerText = '<span class="p0-color">プレイヤー1</span>の勝利！';
   } else {
@@ -29,8 +29,8 @@ export function renderOver(state: GameState): HTMLElement {
     </div>
     <button class="btn" id="restart-btn">タイトルに戻る</button>
   `;
-  div.querySelector('#restart-btn')!.addEventListener('click', () => {
-    setState({ screen: 'title', gameState: null });
+  div.querySelector("#restart-btn")?.addEventListener("click", () => {
+    setState({ screen: "title", gameState: null });
   });
   return div;
 }

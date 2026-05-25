@@ -1,25 +1,25 @@
-import { getState, setState, startOnlineRoom } from './app.js';
-import { createRoom, joinRoom } from '../firebase/room.js';
-import { createDraftState } from '../engine/draft.js';
+import { createDraftState } from "../engine/draft.js";
+import { createRoom, joinRoom } from "../firebase/room.js";
+import { getState, setState, startOnlineRoom } from "./app.js";
 
 // createDraftState → DraftUiState の初期値と対応させる
 function initialDraftUi() {
   void createDraftState(); // engine の初期化は buildDeck 時なので不要、UI側のみ
   return {
-    step: 'faction' as const,
+    step: "faction" as const,
     pickIndex: 0,
     p0Factions: [] as string[],
     p1Factions: [] as string[],
-    p0Item: '',
-    p1Item: '',
+    p0Item: "",
+    p1Item: "",
     hoveredFaction: null,
     hoveredItem: null,
   };
 }
 
 export function renderLobby(): HTMLElement {
-  const div = document.createElement('div');
-  div.className = 'screen-lobby';
+  const div = document.createElement("div");
+  div.className = "screen-lobby";
 
   div.innerHTML = `
     <h2>オンライン対戦</h2>
@@ -37,59 +37,74 @@ export function renderLobby(): HTMLElement {
     </div>
   `;
 
-  div.querySelector('#btn-create')!.addEventListener('click', async () => {
-    const btn = div.querySelector('#btn-create') as HTMLButtonElement;
-    const errEl = div.querySelector('#join-error') as HTMLElement;
+  div.querySelector("#btn-create")?.addEventListener("click", async () => {
+    const btn = div.querySelector("#btn-create") as HTMLButtonElement;
+    const errEl = div.querySelector("#join-error") as HTMLElement;
     btn.disabled = true;
-    btn.textContent = '作成中...';
+    btn.textContent = "作成中...";
     try {
-      const roomId = await createRoom(getState().currentUser!.uid);
+      const roomId = await createRoom(getState().currentUser?.uid ?? "");
       startOnlineRoom(roomId, 0);
-      setState({ screen: 'waiting', online: true, roomId, myPlayerIndex: 0 });
+      setState({ screen: "waiting", online: true, roomId, myPlayerIndex: 0 });
     } catch (e) {
-      console.error('createRoom failed:', e);
+      console.error("createRoom failed:", e);
       errEl.textContent = `エラー: ${e instanceof Error ? e.message : String(e)}`;
       btn.disabled = false;
-      btn.textContent = '部屋を作る';
+      btn.textContent = "部屋を作る";
     }
   });
 
-  div.querySelector('#btn-join')!.addEventListener('click', async () => {
-    const input = div.querySelector('#room-code-input') as HTMLInputElement;
+  div.querySelector("#btn-join")?.addEventListener("click", async () => {
+    const input = div.querySelector("#room-code-input") as HTMLInputElement;
     const code = input.value.trim().toUpperCase();
     if (code.length !== 6) {
-      (div.querySelector('#join-error') as HTMLElement).textContent = '6文字のコードを入力してください';
+      (div.querySelector("#join-error") as HTMLElement).textContent =
+        "6文字のコードを入力してください";
       return;
     }
-    const btn = div.querySelector('#btn-join') as HTMLButtonElement;
-    const errEl = div.querySelector('#join-error') as HTMLElement;
+    const btn = div.querySelector("#btn-join") as HTMLButtonElement;
+    const errEl = div.querySelector("#join-error") as HTMLElement;
     btn.disabled = true;
-    btn.textContent = '参加中...';
+    btn.textContent = "参加中...";
 
     try {
-      const result = await joinRoom(code, getState().currentUser!.uid);
-      if (result === 'not_found') {
-        errEl.textContent = 'その部屋は存在しません';
-        btn.disabled = false; btn.textContent = '部屋に入る';
+      const result = await joinRoom(code, getState().currentUser?.uid ?? "");
+      if (result === "not_found") {
+        errEl.textContent = "その部屋は存在しません";
+        btn.disabled = false;
+        btn.textContent = "部屋に入る";
         return;
       }
-      if (result === 'full') {
-        errEl.textContent = 'その部屋はすでに満員です';
-        btn.disabled = false; btn.textContent = '部屋に入る';
+      if (result === "full") {
+        errEl.textContent = "その部屋はすでに満員です";
+        btn.disabled = false;
+        btn.textContent = "部屋に入る";
         return;
       }
       // ok → P1 として draft 開始
       startOnlineRoom(code, 1);
-      setState({ screen: 'draft', online: true, roomId: code, myPlayerIndex: 1, draftUi: initialDraftUi() });
+      setState({
+        screen: "draft",
+        online: true,
+        roomId: code,
+        myPlayerIndex: 1,
+        draftUi: initialDraftUi(),
+      });
     } catch (e) {
-      console.error('joinRoom failed:', e);
+      console.error("joinRoom failed:", e);
       errEl.textContent = `エラー: ${e instanceof Error ? e.message : String(e)}`;
-      btn.disabled = false; btn.textContent = '部屋に入る';
+      btn.disabled = false;
+      btn.textContent = "部屋に入る";
     }
   });
 
-  div.querySelector('#btn-back')!.addEventListener('click', () => {
-    setState({ screen: 'title', online: false, roomId: null, myPlayerIndex: null });
+  div.querySelector("#btn-back")?.addEventListener("click", () => {
+    setState({
+      screen: "title",
+      online: false,
+      roomId: null,
+      myPlayerIndex: null,
+    });
   });
 
   return div;

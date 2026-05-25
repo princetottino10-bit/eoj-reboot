@@ -1,9 +1,13 @@
-import type { Board, CellIndex, Direction, RelCoord, CharInstance } from './types.js';
-import type { EffectTarget } from './effectSpecs.js';
+import type { EffectTarget } from "./effectSpecs.js";
+import type {
+  Board,
+  CellIndex,
+  CharInstance,
+  Direction,
+  RelCoord,
+} from "./types.js";
 
-export {
-  DIR_UP, DIR_RIGHT, DIR_DOWN, DIR_LEFT,
-} from './types.js';
+export { DIR_DOWN, DIR_LEFT, DIR_RIGHT, DIR_UP } from "./types.js";
 
 // ============================================================
 // セル座標ユーティリティ
@@ -37,24 +41,42 @@ export function isValidCell(row: number, col: number): boolean {
 // LEFT  → forward=(0,-1), right=(-1,0): (rr,rc) → (-rc, -rr)
 
 /** JavaScript の -0 を +0 に正規化する */
-function z(n: number): number { return n === 0 ? 0 : n; }
+function z(n: number): number {
+  return n === 0 ? 0 : n;
+}
 
-export function relToAbs(rr: number, rc: number, dir: Direction): [number, number] {
+export function relToAbs(
+  rr: number,
+  rc: number,
+  dir: Direction,
+): [number, number] {
   switch (dir) {
-    case 0: return [z(-rr), z( rc)]; // UP
-    case 1: return [z( rc), z( rr)]; // RIGHT
-    case 2: return [z( rr), z(-rc)]; // DOWN
-    case 3: return [z(-rc), z(-rr)]; // LEFT
+    case 0:
+      return [z(-rr), z(rc)]; // UP
+    case 1:
+      return [z(rc), z(rr)]; // RIGHT
+    case 2:
+      return [z(rr), z(-rc)]; // DOWN
+    case 3:
+      return [z(-rc), z(-rr)]; // LEFT
   }
 }
 
 /** relToAbs の逆変換 */
-export function absToRel(dr: number, dc: number, dir: Direction): [number, number] {
+export function absToRel(
+  dr: number,
+  dc: number,
+  dir: Direction,
+): [number, number] {
   switch (dir) {
-    case 0: return [z(-dr), z( dc)]; // UP
-    case 1: return [z( dc), z( dr)]; // RIGHT
-    case 2: return [z( dr), z(-dc)]; // DOWN
-    case 3: return [z(-dc), z(-dr)]; // LEFT
+    case 0:
+      return [z(-dr), z(dc)]; // UP
+    case 1:
+      return [z(dc), z(dr)]; // RIGHT
+    case 2:
+      return [z(dr), z(-dc)]; // DOWN
+    case 3:
+      return [z(-dc), z(-dr)]; // LEFT
   }
 }
 
@@ -62,7 +84,12 @@ export function absToRel(dr: number, dc: number, dir: Direction): [number, numbe
 // 隣接セル（縦横のみ、対角不可）
 // ============================================================
 
-const ORTHO_DELTAS: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+const ORTHO_DELTAS: [number, number][] = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+];
 
 export function getAdjacentCells(idx: CellIndex): CellIndex[] {
   const r = cellRow(idx);
@@ -101,10 +128,10 @@ export function isBlindSpot(
 
 export function getAttackCells(
   fromIdx: CellIndex,
-  attackCells: RelCoord[] | 'all',
+  attackCells: RelCoord[] | "all",
   dir: Direction,
 ): CellIndex[] | null {
-  if (attackCells === 'all') return null;
+  if (attackCells === "all") return null;
 
   const fr = cellRow(fromIdx);
   const fc = cellCol(fromIdx);
@@ -124,7 +151,10 @@ export function getAttackCells(
 // 召喚可能マス
 // ============================================================
 
-export function getValidSummonCells(board: Board, playerIdx: 0 | 1): CellIndex[] {
+export function getValidSummonCells(
+  board: Board,
+  playerIdx: 0 | 1,
+): CellIndex[] {
   const friendlyIndices: CellIndex[] = [];
   for (let i = 0; i < 9; i++) {
     if (board[i]?.owner === playerIdx) friendlyIndices.push(i);
@@ -153,13 +183,20 @@ export function getValidSummonCells(board: Board, playerIdx: 0 | 1): CellIndex[]
 // カバー判定
 // ============================================================
 
-export function findCoverAlly(board: Board, targetIdx: CellIndex): CellIndex | null {
+export function findCoverAlly(
+  board: Board,
+  targetIdx: CellIndex,
+): CellIndex | null {
   const target = board[targetIdx];
   if (target == null) return null;
 
   for (const adj of getAdjacentCells(targetIdx)) {
     const ally = board[adj];
-    if (ally != null && ally.owner === target.owner && ally.keywords.includes('カバー')) {
+    if (
+      ally != null &&
+      ally.owner === target.owner &&
+      ally.keywords.includes("カバー")
+    ) {
       return adj;
     }
   }
@@ -174,7 +211,7 @@ export function findCoverAlly(board: Board, targetIdx: CellIndex): CellIndex | n
 export function pushBack(board: Board, charIdx: CellIndex): Board | null {
   const char = board[charIdx];
   if (!char) return null;
-  if (char.keywords.includes('不動')) return null;
+  if (char.keywords.includes("不動")) return null;
   const DR = [1, 0, -1, 0];
   const DC = [0, -1, 0, 1];
   const newRow = cellRow(charIdx) + (DR[char.dir] ?? 0);
@@ -206,47 +243,68 @@ export function resolveSelectCells(
 ): CellIndex[] {
   const opp = (1 - active) as 0 | 1;
   switch (target) {
-    case 'select_ally':
-      return board.map((c, i) => (c != null && c.owner === active && i !== originIdx ? i : -1))
-        .filter(i => i >= 0) as CellIndex[];
-    case 'select_adj_ally': {
+    case "select_ally":
+      return board
+        .map((c, i) =>
+          c != null && c.owner === active && i !== originIdx ? i : -1,
+        )
+        .filter((i) => i >= 0) as CellIndex[];
+    case "select_adj_ally": {
       if (originIdx === undefined) return [];
-      return getAdjacentCells(originIdx)
-        .filter(i => { const c = board[i]; return c != null && c.owner === active; }) as CellIndex[];
+      return getAdjacentCells(originIdx).filter((i) => {
+        const c = board[i];
+        return c != null && c.owner === active;
+      }) as CellIndex[];
     }
-    case 'select_enemy':
-      return board.map((c, i) => (c != null && c.owner === opp ? i : -1))
-        .filter(i => i >= 0) as CellIndex[];
-    case 'select_adj_enemy': {
+    case "select_enemy":
+      return board
+        .map((c, i) => (c != null && c.owner === opp ? i : -1))
+        .filter((i) => i >= 0) as CellIndex[];
+    case "select_adj_enemy": {
       if (originIdx === undefined) return [];
-      return getAdjacentCells(originIdx)
-        .filter(i => { const c = board[i]; return c != null && c.owner === opp; }) as CellIndex[];
+      return getAdjacentCells(originIdx).filter((i) => {
+        const c = board[i];
+        return c != null && c.owner === opp;
+      }) as CellIndex[];
     }
-    case 'select_any':
-      return board.map((c, i) => (c != null && i !== originIdx ? i : -1))
-        .filter(i => i >= 0) as CellIndex[];
+    case "select_any":
+      return board
+        .map((c, i) => (c != null && i !== originIdx ? i : -1))
+        .filter((i) => i >= 0) as CellIndex[];
     default:
       return [];
   }
 }
 
 /** Returns cells in the "front row" (one step ahead of caster's direction) occupied by targetOwner. */
-export function getFrontRowCells(board: Board, casterIdx: CellIndex, dir: Direction, targetOwner: 0 | 1): CellIndex[] {
+export function getFrontRowCells(
+  board: Board,
+  casterIdx: CellIndex,
+  dir: Direction,
+  targetOwner: 0 | 1,
+): CellIndex[] {
   const row = cellRow(casterIdx);
   const col = cellCol(casterIdx);
   const cells: CellIndex[] = [];
   if (dir === 0) {
     const r = row - 1;
-    if (r >= 0) for (let c = 0; c < 3; c++) cells.push((r * 3 + c) as CellIndex);
+    if (r >= 0)
+      for (let c = 0; c < 3; c++) cells.push((r * 3 + c) as CellIndex);
   } else if (dir === 2) {
     const r = row + 1;
-    if (r <= 2) for (let c = 0; c < 3; c++) cells.push((r * 3 + c) as CellIndex);
+    if (r <= 2)
+      for (let c = 0; c < 3; c++) cells.push((r * 3 + c) as CellIndex);
   } else if (dir === 1) {
     const c = col + 1;
-    if (c <= 2) for (let r = 0; r < 3; r++) cells.push((r * 3 + c) as CellIndex);
+    if (c <= 2)
+      for (let r = 0; r < 3; r++) cells.push((r * 3 + c) as CellIndex);
   } else {
     const c = col - 1;
-    if (c >= 0) for (let r = 0; r < 3; r++) cells.push((r * 3 + c) as CellIndex);
+    if (c >= 0)
+      for (let r = 0; r < 3; r++) cells.push((r * 3 + c) as CellIndex);
   }
-  return cells.filter(i => { const ch = board[i]; return ch != null && (ch as CharInstance).owner === targetOwner; });
+  return cells.filter((i) => {
+    const ch = board[i];
+    return ch != null && (ch as CharInstance).owner === targetOwner;
+  });
 }
