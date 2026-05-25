@@ -134,6 +134,30 @@ describe("calcDamage", () => {
       calcDamage(attacker, defender, { isBlind: true, teamDR: false }),
     ).toBe(3); // 3+1-1=3
   });
+
+  it("魔法攻撃: B位置でもATK+1しない", () => {
+    const attacker = makeChar({ owner: 0, atk: 2 });
+    const defender = makeChar({ owner: 1 });
+    expect(
+      calcDamage(attacker, defender, {
+        isBlind: true,
+        teamDR: false,
+        attackType: "magic",
+      }),
+    ).toBe(2);
+  });
+
+  it("物理攻撃(明示): B位置でATK+1", () => {
+    const attacker = makeChar({ owner: 0, atk: 2 });
+    const defender = makeChar({ owner: 1 });
+    expect(
+      calcDamage(attacker, defender, {
+        isBlind: true,
+        teamDR: false,
+        attackType: "physical",
+      }),
+    ).toBe(3);
+  });
 });
 
 // ============================================================
@@ -380,6 +404,25 @@ describe("resolveAttack", () => {
     expect(board[4]?.hp).toBe(5); // 反撃なし
   });
 
+  it("魔法攻撃: B位置でもダメージ+1しない", () => {
+    // P1(idx=1,UP) が P2(idx=4,DOWN) を真後ろから魔法攻撃
+    // P2(DOWN向き) の weakness[[-1,0]] → ローカル後方 = board idx=1 → B位置
+    board[4] = null;
+    const p2m = makeChar({ owner: 1, atk: 2, hp: 4, maxHp: 4, dir: DIR_DOWN });
+    const p1m = makeChar({ owner: 0, atk: 2, hp: 5, maxHp: 5, dir: DIR_UP });
+    board[4] = p2m;
+    board[1] = p1m;
+
+    const result = resolveAttack(board, 1, 4, {
+      teamDR: [false, false],
+      attackType: "magic",
+      weaknessCells: [[-1, 0]],
+    });
+    expect(result.isBlind).toBe(true);       // B位置は検知される
+    expect(result.defenderDamage).toBe(2);   // ボーナスなし: ATK=2のまま
+    expect(result.counterDamage).toBe(0);    // 魔法なので反撃なし
+  });
+
   it("defenderAttackCells を渡さないと反撃なし", () => {
     // デフォルト null → 反撃不可
     const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
@@ -589,5 +632,127 @@ describe("immune", () => {
     const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
     expect(result.counterDamage).toBe(0);
     expect(board[4]?.hp).toBe(5); // HP変化なし
+  });
+});
+
+// ============================================================
+// 撃破時のマナゲイン（defenderManaGain / attackerManaGain）
+// ============================================================
+describe("撃破時のマナゲイン", () => {
+  it("防衛者を撃破: defenderManaGain=1", () => {
+    const board = makeBoard();
+    const attacker = makeChar({ owner: 0, atk: 3, dir: DIR_UP });
+    const defender = makeChar({ owner: 1, hp: 1, maxHp: 1, dir: DIR_DOWN });
+    board[4] = attacker;
+    board[1] = defender;
+
+    const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
+    expect(board[1]).toBeNull();
+    expect(result.defenderManaGain).toBe(1);
+  });
+
+  it("防衛者を撃破しない: defenderManaGain=0", () => {
+    const board = makeBoard();
+    const attacker = makeChar({ owner: 0, atk: 1, dir: DIR_UP });
+    const defender = makeChar({ owner: 1, hp: 5, maxHp: 5, dir: DIR_DOWN });
+    board[4] = attacker;
+    board[1] = defender;
+
+    const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
+    expect(result.defenderManaGain).toBe(0);
+    expect(result.attackerManaGain).toBe(0);
+  });
+
+  it("通常反撃で攻撃者を撃破: attackerManaGain=1", () => {
+    const board = makeBoard();
+    const attacker = makeChar({ owner: 0, atk: 1, hp: 1, maxHp: 1, dir: DIR_UP });
+    const defender = makeChar({ owner: 1, atk: 3, hp: 5, maxHp: 5, dir: DIR_DOWN });
+    board[4] = attacker;
+    board[1] = defender;
+
+    const result = resolveAttack(board, 4, 1, {
+      teamDR: [false, false],
+      defenderAttackCells: [[1, 0]],
+    });
+    expect(board[4]).toBeNull();
+    expect(result.attackerManaGain).toBe(1);
+    expect(result.defenderManaGain).toBe(0); // 防衛者は生存
+  });
+
+  it("反撃で攻撃者を撃破しない: attackerManaGain=0", () => {
+    const board = makeBoard();
+    const attacker = makeChar({ owner: 0, atk: 2, hp: 5, maxHp: 5, dir: DIR_UP });
+    const defender = makeChar({ owner: 1, atk: 1, hp: 5, maxHp: 5, dir: DIR_DOWN });
+    board[4] = attacker;
+    board[1] = defender;
+
+    const result = resolveAttack(board, 4, 1, {
+      teamDR: [false, false],
+      defenderAttackCells: [[1, 0]],
+    });
+    expect(result.attackerManaGain).toBe(0);
+  });
+
+  it("先制反撃で攻撃者を撃破: attackerManaGain=1", () => {
+    const board = makeBoard();
+    const attacker = makeChar({ owner: 0, atk: 1, hp: 1, maxHp: 1, dir: DIR_UP });
+    const defender = makeChar({
+      owner: 1,
+      atk: 3,
+      hp: 5,
+      maxHp: 5,
+      dir: DIR_DOWN,
+      keywords: ["先制"],
+    });
+    board[4] = attacker;
+    board[1] = defender;
+
+    const result = resolveAttack(board, 4, 1, {
+      teamDR: [false, false],
+      defenderAttackCells: [[1, 0]],
+    });
+    expect(result.counterFirst).toBe(true);
+    expect(board[4]).toBeNull();
+    expect(result.attackerManaGain).toBe(1);
+  });
+
+  it("カバー役が撃破: defenderManaGain=1", () => {
+    const board = makeBoard();
+    const attacker = makeChar({ owner: 0, atk: 3, dir: DIR_UP });
+    const target = makeChar({ owner: 1, hp: 5, maxHp: 5, dir: DIR_DOWN });
+    const cover = makeChar({ owner: 1, hp: 1, maxHp: 1, keywords: ["カバー"] });
+    board[4] = attacker;
+    board[1] = target;
+    board[2] = cover;
+
+    const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
+    expect(board[2]).toBeNull(); // カバー役撃破
+    expect(result.defenderManaGain).toBe(1);
+    expect(result.attackerManaGain).toBe(0);
+  });
+
+  it("無敵キャラが対象: 撃破なし・マナゲインなし", () => {
+    const board = makeBoard();
+    const attacker = makeChar({ owner: 0, atk: 5, dir: DIR_UP });
+    const defender = makeChar({
+      owner: 1,
+      hp: 1,
+      maxHp: 1,
+      dir: DIR_DOWN,
+      status: {
+        brainwashedTurns: 0,
+        brainwashedBy: null,
+        actionTax: 0,
+        actionTaxBy: null,
+        dirLocked: 0,
+        immune: 1,
+      },
+    });
+    board[4] = attacker;
+    board[1] = defender;
+
+    const result = resolveAttack(board, 4, 1, { teamDR: [false, false] });
+    expect(result.defenderManaGain).toBe(0);
+    expect(result.attackerManaGain).toBe(0);
   });
 });

@@ -780,4 +780,36 @@ describe("resolveSummonAutoAttack", () => {
     expect(results).toHaveLength(1);
     expect(nb[5]?.hp).toBe(5);
   });
+
+  it("防衛者を撃破: result.defenderManaGain=1", () => {
+    const board = emptyBoard();
+    board[4] = makeChar(0, { dir: 0, atk: 5 });
+    board[1] = makeChar(1, { hp: 1, maxHp: 1 });
+
+    const def = makeDef({ attack_cells: [[1, 0]] });
+    const { results } = resolveSummonAutoAttack(
+      board,
+      4,
+      def,
+      [false, false],
+      noCost,
+    );
+    expect(results[0]?.result.defenderManaGain).toBe(1);
+  });
+
+  it("防衛者を撃破しない: result.defenderManaGain=0", () => {
+    const board = emptyBoard();
+    board[4] = makeChar(0, { dir: 0, atk: 1 });
+    board[1] = makeChar(1, { hp: 5, maxHp: 5 });
+
+    const def = makeDef({ attack_cells: [[1, 0]] });
+    const { results } = resolveSummonAutoAttack(
+      board,
+      4,
+      def,
+      [false, false],
+      noCost,
+    );
+    expect(results[0]?.result.defenderManaGain).toBe(0);
+  });
 });
