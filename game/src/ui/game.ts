@@ -1469,8 +1469,9 @@ function onCellClick(state: GameState, ui: GameUiExtra, idx: CellIndex): void {
     return;
   }
 
-  // 攻撃時コスト決定中はボードクリックを無視
+  // 召喚完了後・攻撃時コスト決定中はボードクリックを無視
   if (
+    ui.mode === "summon_done" ||
     ui.mode === "on_attack_cost_pending" ||
     ui.mode === "on_attack_discard_pending"
   )
