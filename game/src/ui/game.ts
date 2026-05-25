@@ -170,6 +170,33 @@ function hideCardDetail(): void {
   if (_detailOverlay) _detailOverlay.style.display = "none";
 }
 
+function buildWeaknessGrid(
+  weaknessCells: [number, number][] | undefined,
+): string {
+  const cells = weaknessCells ?? [[-1, 0]];
+  const gridCells: string[] = [];
+  for (let gridRow = 0; gridRow < 4; gridRow++) {
+    const coordRow = 2 - gridRow;
+    for (let gridCol = 0; gridCol < 3; gridCol++) {
+      const coordCol = gridCol - 1;
+      const isChar = coordRow === 0 && coordCol === 0;
+      const isWeak =
+        !isChar && cells.some(([r, c]) => r === coordRow && c === coordCol);
+      let cls = "cd-attack-cell";
+      let content = "";
+      if (isChar) {
+        cls += " char-pos";
+        content = "自";
+      } else if (isWeak) {
+        cls += " weakness-cell";
+        content = "★";
+      }
+      gridCells.push(`<div class="${cls}">${content}</div>`);
+    }
+  }
+  return `<div class="cd-attack-grid">${gridCells.join("")}</div>`;
+}
+
 function buildAttackGrid(attackCells: AttackCells): string {
   if (attackCells === null) return '<div class="cd-attack-none">攻撃不可</div>';
   if (attackCells === "all") return '<div class="cd-attack-all">全域攻撃</div>';
@@ -228,9 +255,15 @@ function buildCardDetailHtml(
       ${kw ? `<div class="cd-keywords">${kw}</div>` : ""}
       <div class="cd-effect">${def.effect}</div>
       ${ultHtml}
-      <div class="cd-attack-section">
-        <div class="cd-attack-label">攻撃範囲（前方↑）</div>
-        ${buildAttackGrid(def.attack_cells)}
+      <div class="cd-grids">
+        <div class="cd-attack-section">
+          <div class="cd-attack-label">攻撃範囲（前方↑）</div>
+          ${buildAttackGrid(def.attack_cells)}
+        </div>
+        <div class="cd-attack-section">
+          <div class="cd-attack-label">弱点位置（★）</div>
+          ${buildWeaknessGrid(def.weakness_cells)}
+        </div>
       </div>`;
   } else {
     const def = getItemDef(cardId);
@@ -1340,7 +1373,9 @@ function finalizeSummonTurn(
     setState({ gameState: newState, screen: "over" });
     return;
   }
-  onEndTurn(newState);
+  // 召喚結果を表示してプレイヤーが確認できるよう、自動ターン終了はしない。
+  // 盤面を更新して「ターン終了」ボタンで手動終了させる。
+  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
 function doSummon(
