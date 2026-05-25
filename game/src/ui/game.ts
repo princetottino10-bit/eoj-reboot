@@ -710,7 +710,7 @@ function buildCardDetailHtml(
         <span class="cd-name">${def.name}</span>
         <span class="cd-type">${def.faction}</span>
       </div>
-      <div class="cd-meta">${def.attribute} コスト${def.cost} | HP${def.hp} ATK${def.atk}</div>
+      <div class="cd-meta">${def.attribute} コスト${def.cost} 再行動${def.reactivation_cost} | HP${def.hp} ATK${def.atk}</div>
       ${currentHtml}
       ${kw ? `<div class="cd-keywords">${kw}</div>` : ""}
       <div class="cd-effect">${def.effect}</div>
