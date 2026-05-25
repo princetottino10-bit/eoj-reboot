@@ -114,6 +114,12 @@ export interface GameUiExtra {
     cardId: string;
     summonIdx: CellIndex;
   } | null;
+  /** Physical summon auto-attack: remaining targets to process after each attack */
+  physicalSummonAttackContext: {
+    cardId: string;
+    summonIdx: CellIndex;
+    pendingTargets: CellIndex[];
+  } | null;
   /** On-attack effect flow context */
   onAttackContext: {
     attackerIdx: CellIndex;
@@ -408,6 +414,86 @@ function handleSummonDone(state: GameState): void {
   }
 }
 
+/**
+ * 召喚自動攻撃（1体分）が終わった後の継続処理。
+ * physicalSummonAttackContext に残ターゲットがあれば次の攻撃へ、なければターン終了。
+ */
+function afterSummonAttack(state: GameState): void {
+  const ctx = getState().gameUiExtra.physicalSummonAttackContext;
+  if (ctx !== null && ctx.pendingTargets.length > 0 && state.board[ctx.summonIdx] != null) {
+    continueSummonPhysicalAttack(state, ctx.pendingTargets, ctx.cardId, ctx.summonIdx);
+    return;
+  }
+  handleSummonDone(state);
+}
+
+/**
+ * 物理自動攻撃ターゲットを1体ずつ処理する。
+ * on_attack 任意コストがある場合は on_attack_cost_pending フローへ。
+ * ない場合は直接 executeAttack を呼ぶ（残ターゲットは physicalSummonAttackContext に保存）。
+ */
+function continueSummonPhysicalAttack(
+  state: GameState,
+  pendingTargets: CellIndex[],
+  cardId: string,
+  summonIdx: CellIndex,
+): void {
+  const active = state.active;
+
+  // 召喚キャラの現在位置（スワップ等で変わる可能性あり）
+  const found = state.board.findIndex(
+    (c) => c !== null && c.owner === active && c.summonedOnTurn === state.turn,
+  ) as CellIndex;
+  const attackerIdx: CellIndex = found >= 0 ? found : summonIdx;
+
+  // 既に死んでいるターゲットをスキップ
+  let targets = pendingTargets;
+  while (targets.length > 0 && state.board[targets[0]] == null) {
+    targets = targets.slice(1);
+  }
+
+  if (state.board[attackerIdx] == null || targets.length === 0) {
+    handleSummonDone(state);
+    return;
+  }
+
+  const targetIdx = targets[0];
+  const remaining = targets.slice(1);
+
+  const { extraDamage, setPiercing, rotateAfterAttack, hasOptionalCostClause } =
+    computeOnAttackEffects(state, attackerIdx, targetIdx, active);
+
+  if (hasOptionalCostClause) {
+    setState({
+      gameState: state,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "on_attack_cost_pending",
+        onAttackContext: {
+          attackerIdx,
+          targetIdx,
+          isSummonAttack: true,
+          extraDamage,
+          setPiercing,
+          rotateAfterAttack,
+          costClauseActivated: false,
+        },
+        physicalSummonAttackContext: { cardId, summonIdx: attackerIdx, pendingTargets: remaining },
+      },
+    });
+    return;
+  }
+
+  // 任意コストなし: 残ターゲットを保存してから実行
+  setState({
+    gameUiExtra: {
+      ...resetGameUiExtra(),
+      physicalSummonAttackContext: { cardId, summonIdx: attackerIdx, pendingTargets: remaining },
+    },
+  });
+  executeAttack(state, attackerIdx, targetIdx, true, extraDamage, setPiercing, rotateAfterAttack);
+}
+
 function executeAttack(
   state: GameState,
   attackerIdx: CellIndex,
@@ -565,7 +651,7 @@ function executeAttack(
   }
 
   if (isSummonAttack) {
-    handleSummonDone(newState);
+    afterSummonAttack(newState);
   } else {
     setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
   }
@@ -1831,6 +1917,33 @@ function finalizeSummonTurn(
     }
     handleSummonDone(state);
     return;
+  }
+
+  // 物理攻撃: on_attack 任意コスト節があれば1体ずつ UI フローで処理
+  if (def.attack_cells !== null) {
+    const spec = getEffectSpec(cardId);
+    const hasOnAttackOptCost = spec.clauses.some(
+      (c) => c.trigger === "on_attack" && c.cost && !c.costMandatory,
+    );
+    if (hasOnAttackOptCost) {
+      const opp = (1 - active) as 0 | 1;
+      const summonedChar = state.board[summonIdx];
+      const cells = getAttackCells(
+        summonIdx,
+        def.attack_cells,
+        summonedChar?.dir ?? 0,
+      );
+      const targetIdxs = ((cells ?? []) as CellIndex[]).filter(
+        (idx) => state.board[idx] != null && state.board[idx]!.owner === opp,
+      );
+      if (targetIdxs.length > 0) {
+        continueSummonPhysicalAttack(state, targetIdxs, cardId, summonIdx);
+        return;
+      }
+      // 射程内に敵なし
+      handleSummonDone(state);
+      return;
+    }
   }
 
   const { board: boardAfterAtk, results } = resolveSummonAutoAttack(

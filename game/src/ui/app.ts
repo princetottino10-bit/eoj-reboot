@@ -57,6 +57,7 @@ const INITIAL_GAME_UI_EXTRA: GameUiExtra = {
   elementSwapBoardIdx: null,
   magicAttackContext: null,
   onAttackContext: null,
+  physicalSummonAttackContext: null,
 };
 
 let state: AppState = {
