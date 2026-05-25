@@ -10,6 +10,7 @@ import {
 } from '../engine/board.js';
 import { resolveAttack } from '../engine/combat.js';
 import { createCharInstance, attributeHpBonus } from '../engine/gamestate.js';
+import type { AttackCells } from '../engine/gamestate.js';
 import { applyAutoEffects, resolveSummonAutoAttack, getSummonEffect } from '../engine/effects.js';
 import {
   getEffectSpec, getItemSpec, getUltSpec, getFirstSelectTarget,
@@ -79,6 +80,163 @@ function markerStr(char: NonNullable<Board[number]>): string {
   if (char.keywords.includes('カバー')) parts.push('カバー');
   if (char.keywords.includes('要塞')) parts.push('要塞');
   return parts.join(' ');
+}
+
+// ============================================================
+// Card detail popup
+// ============================================================
+
+let _detailPopup: HTMLElement | null = null;
+let _detailOverlay: HTMLElement | null = null;
+// Suppresses the click event that fires after a long-press
+let _longPressActive = false;
+
+function ensureDetailPopup(): { popup: HTMLElement; overlay: HTMLElement } {
+  if (!_detailPopup) {
+    _detailPopup = document.createElement('div');
+    _detailPopup.id = 'card-detail-popup';
+    document.body.appendChild(_detailPopup);
+
+    _detailOverlay = document.createElement('div');
+    _detailOverlay.id = 'card-detail-overlay';
+    _detailOverlay.addEventListener('click', hideCardDetail);
+    document.body.appendChild(_detailOverlay);
+  }
+  return { popup: _detailPopup!, overlay: _detailOverlay! };
+}
+
+function hideCardDetail(): void {
+  if (_detailPopup) {
+    _detailPopup.style.display = 'none';
+    _detailPopup.classList.remove('modal-mode');
+  }
+  if (_detailOverlay) _detailOverlay.style.display = 'none';
+}
+
+function buildAttackGrid(attackCells: AttackCells): string {
+  if (attackCells === null) return '<div class="cd-attack-none">攻撃不可</div>';
+  if (attackCells === 'all') return '<div class="cd-attack-all">全域攻撃</div>';
+  const cells: string[] = [];
+  // 4 rows top→bottom: coord row +2, +1, 0 (char), -1
+  for (let gridRow = 0; gridRow < 4; gridRow++) {
+    const coordRow = 2 - gridRow;
+    for (let gridCol = 0; gridCol < 3; gridCol++) {
+      const coordCol = gridCol - 1;
+      const isChar = coordRow === 0 && coordCol === 0;
+      const isAttack = !isChar && (attackCells as [number, number][]).some(
+        ([r, c]) => r === coordRow && c === coordCol
+      );
+      let cls = 'cd-attack-cell';
+      let content = '';
+      if (isChar) { cls += ' char-pos'; content = '自'; }
+      else if (isAttack) { cls += ' attack-cell'; content = '●'; }
+      cells.push(`<div class="${cls}">${content}</div>`);
+    }
+  }
+  return `<div class="cd-attack-grid">${cells.join('')}</div>`;
+}
+
+function buildCardDetailHtml(cardId: string, boardChar?: NonNullable<Board[number]>): string {
+  if (isCharCard(cardId)) {
+    const def = getCharDef(cardId);
+    if (!def) return '';
+    const kw = def.keywords.join(' ');
+    const ult = def.ult;
+    const ultHtml = ult
+      ? `<div class="cd-ult">
+           <div class="cd-ult-header">Ult: ${ult.name}　VP${ult.vp_cost}（${ult.timing}）</div>
+           <div class="cd-ult-effect">${ult.effect}</div>
+         </div>`
+      : '';
+    const currentHtml = boardChar
+      ? `<div class="cd-current">現在: HP ${boardChar.hp}/${boardChar.maxHp} ATK ${boardChar.atk}</div>`
+      : '';
+    return `
+      <div class="cd-header">
+        <span class="cd-name">${def.name}</span>
+        <span class="cd-type">${def.faction}</span>
+      </div>
+      <div class="cd-meta">${def.attribute} コスト${def.cost} | HP${def.hp} ATK${def.atk}</div>
+      ${currentHtml}
+      ${kw ? `<div class="cd-keywords">${kw}</div>` : ''}
+      <div class="cd-effect">${def.effect}</div>
+      ${ultHtml}
+      <div class="cd-attack-section">
+        <div class="cd-attack-label">攻撃範囲（前方↑）</div>
+        ${buildAttackGrid(def.attack_cells)}
+      </div>`;
+  } else {
+    const def = getItemDef(cardId);
+    if (!def) return '';
+    return `
+      <div class="cd-header">
+        <span class="cd-name">${def.name}</span>
+        <span class="cd-type" style="color:#4ecdc4;">アイテム</span>
+      </div>
+      <div class="cd-meta">コスト${def.cost}</div>
+      <div class="cd-effect">${def.effect}</div>`;
+  }
+}
+
+function showCardDetailAt(anchor: HTMLElement, cardId: string, boardChar?: NonNullable<Board[number]>): void {
+  const { popup } = ensureDetailPopup();
+  popup.classList.remove('modal-mode');
+  popup.innerHTML = buildCardDetailHtml(cardId, boardChar);
+  popup.style.display = 'block';
+
+  const rect = anchor.getBoundingClientRect();
+  const pw = 230;
+  let left = rect.right + 10;
+  if (left + pw > window.innerWidth - 4) left = rect.left - pw - 10;
+  if (left < 4) left = 4;
+  popup.style.left = `${left}px`;
+  popup.style.top = `${Math.max(4, rect.top)}px`;
+
+  requestAnimationFrame(() => {
+    if (!_detailPopup) return;
+    const h = _detailPopup.offsetHeight;
+    const maxTop = window.innerHeight - h - 4;
+    if (parseFloat(_detailPopup.style.top) > maxTop) {
+      _detailPopup.style.top = `${Math.max(4, maxTop)}px`;
+    }
+  });
+}
+
+function showCardDetailModal(cardId: string, boardChar?: NonNullable<Board[number]>): void {
+  const { popup, overlay } = ensureDetailPopup();
+  popup.classList.add('modal-mode');
+  popup.innerHTML = buildCardDetailHtml(cardId, boardChar);
+  popup.style.display = 'block';
+  overlay.style.display = 'block';
+}
+
+function addCardDetailListeners(
+  el: HTMLElement,
+  cardId: string,
+  boardChar?: NonNullable<Board[number]>
+): void {
+  el.addEventListener('pointerenter', (e: PointerEvent) => {
+    if (e.pointerType === 'touch') return;
+    showCardDetailAt(el, cardId, boardChar);
+  });
+  el.addEventListener('pointerleave', (e: PointerEvent) => {
+    if (e.pointerType === 'touch') return;
+    hideCardDetail();
+  });
+
+  let pressTimer: ReturnType<typeof setTimeout> | null = null;
+  el.addEventListener('touchstart', () => {
+    pressTimer = setTimeout(() => {
+      _longPressActive = true;
+      showCardDetailModal(cardId, boardChar);
+    }, 500);
+  }, { passive: true });
+  const cancelPress = () => {
+    if (pressTimer !== null) { clearTimeout(pressTimer); pressTimer = null; }
+  };
+  el.addEventListener('touchend', cancelPress, { passive: true });
+  el.addEventListener('touchcancel', cancelPress, { passive: true });
+  el.addEventListener('touchmove', cancelPress, { passive: true });
 }
 
 // ============================================================
@@ -367,14 +525,24 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
         <div class="card-effect">${def?.effect ?? ''}</div>
       `;
     }
+    addCardDetailListeners(cardEl, cardId);
     if (isElementSwapMode && isMyTurn && isValidSwap) {
       cardEl.style.borderColor = '#00cc66';
-      cardEl.addEventListener('click', () => doElementSwap(state, ui, idx));
+      cardEl.addEventListener('click', () => {
+        if (_longPressActive) { _longPressActive = false; return; }
+        doElementSwap(state, ui, idx);
+      });
     } else if (isDiscardMode && isMyTurn) {
       cardEl.style.borderColor = '#ff6b6b';
-      cardEl.addEventListener('click', () => onDiscardCardClick(state, ui, idx));
+      cardEl.addEventListener('click', () => {
+        if (_longPressActive) { _longPressActive = false; return; }
+        onDiscardCardClick(state, ui, idx);
+      });
     } else if (!isElementSwapMode && canAfford && isMyTurn) {
-      cardEl.addEventListener('click', () => onHandCardClick(state, idx));
+      cardEl.addEventListener('click', () => {
+        if (_longPressActive) { _longPressActive = false; return; }
+        onHandCardClick(state, idx);
+      });
     }
     handCards.appendChild(cardEl);
   });
@@ -429,9 +597,14 @@ function buildCell(state: GameState, ui: GameUiExtra, idx: CellIndex): HTMLEleme
     cell.appendChild(charDiv);
   }
 
+  if (char) addCardDetailListeners(cell, char.cardId, char);
+
   const { online: cellOnline, myPlayerIndex: cellMyIdx } = getState();
   if (!cellOnline || state.active === cellMyIdx) {
-    cell.addEventListener('click', () => onCellClick(state, ui, idx));
+    cell.addEventListener('click', () => {
+      if (_longPressActive) { _longPressActive = false; return; }
+      onCellClick(state, ui, idx);
+    });
   }
   return cell;
 }

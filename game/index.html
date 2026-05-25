@@ -419,6 +419,75 @@
     .score-row { display: flex; justify-content: space-between; gap: 40px; padding: 4px 0; }
     .score-label { color: #888; }
     .score-val { font-weight: bold; font-size: 1.1rem; }
+
+    /* ── Card detail popup ── */
+    #card-detail-popup {
+      display: none;
+      position: fixed;
+      z-index: 500;
+      width: 230px;
+      background: #1a2040;
+      border: 2px solid #f0c040;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+      pointer-events: none;
+      font-size: 0.75rem;
+      line-height: 1.4;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    #card-detail-popup.modal-mode {
+      pointer-events: auto;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: min(280px, 90vw);
+    }
+    #card-detail-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 499;
+    }
+    .cd-header { display: flex; align-items: baseline; gap: 6px; margin-bottom: 4px; }
+    .cd-name { font-size: 0.88rem; font-weight: bold; color: #f0c040; }
+    .cd-type { font-size: 0.68rem; color: #888; }
+    .cd-meta { font-size: 0.7rem; color: #4ecdc4; }
+    .cd-current { font-size: 0.7rem; color: #ffa040; margin-top: 2px; }
+    .cd-keywords { font-size: 0.7rem; color: #51cf66; margin-top: 3px; }
+    .cd-effect { font-size: 0.7rem; color: #ccc; margin-top: 5px; line-height: 1.5; }
+    .cd-ult {
+      margin-top: 8px;
+      background: #12103a;
+      border: 1px solid #6040c0;
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+    .cd-ult-header { font-size: 0.7rem; color: #a080ff; font-weight: bold; }
+    .cd-ult-effect { font-size: 0.68rem; color: #ccc; margin-top: 2px; }
+    .cd-attack-section { margin-top: 8px; }
+    .cd-attack-label { font-size: 0.65rem; color: #888; margin-bottom: 3px; }
+    .cd-attack-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 22px);
+      grid-template-rows: repeat(4, 22px);
+      gap: 2px;
+    }
+    .cd-attack-cell {
+      width: 22px; height: 22px;
+      background: #0a0a1a;
+      border: 1px solid #2a2a3a;
+      border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.58rem;
+    }
+    .cd-attack-cell.char-pos { background: #163060; border-color: #4da6ff; color: #4da6ff; }
+    .cd-attack-cell.attack-cell { background: #300808; border-color: #ff6b6b; color: #ff6b6b; }
+    .cd-attack-all { font-size: 0.7rem; color: #ffa040; }
+    .cd-attack-none { font-size: 0.7rem; color: #666; }
   </style>
 </head>
 <body>
