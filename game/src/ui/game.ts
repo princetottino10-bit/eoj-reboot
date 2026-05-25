@@ -530,17 +530,20 @@ function buildHandSection(state: GameState, ui: GameUiExtra, active: 0 | 1, opp:
       cardEl.style.borderColor = '#00cc66';
       cardEl.addEventListener('click', () => {
         if (_longPressActive) { _longPressActive = false; return; }
+        hideCardDetail();
         doElementSwap(state, ui, idx);
       });
     } else if (isDiscardMode && isMyTurn) {
       cardEl.style.borderColor = '#ff6b6b';
       cardEl.addEventListener('click', () => {
         if (_longPressActive) { _longPressActive = false; return; }
+        hideCardDetail();
         onDiscardCardClick(state, ui, idx);
       });
     } else if (!isElementSwapMode && canAfford && isMyTurn) {
       cardEl.addEventListener('click', () => {
         if (_longPressActive) { _longPressActive = false; return; }
+        hideCardDetail();
         onHandCardClick(state, idx);
       });
     }
@@ -603,6 +606,7 @@ function buildCell(state: GameState, ui: GameUiExtra, idx: CellIndex): HTMLEleme
   if (!cellOnline || state.active === cellMyIdx) {
     cell.addEventListener('click', () => {
       if (_longPressActive) { _longPressActive = false; return; }
+      hideCardDetail();
       onCellClick(state, ui, idx);
     });
   }
