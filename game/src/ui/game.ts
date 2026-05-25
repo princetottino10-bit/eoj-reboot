@@ -448,21 +448,26 @@ function executeAttack(
         },
   ) as Board;
 
+  const preAttackLogs: string[] = [];
   if (extraDamage > 0) {
     const a = workBoard[attackerIdx];
-    if (a)
+    if (a) {
       workBoard[attackerIdx] = {
         ...a,
         tempAtkBuff: (a.tempAtkBuff ?? 0) + extraDamage,
       };
+      preAttackLogs.push(`攻撃時効果: ATK+${extraDamage}`);
+    }
   }
   if (setPiercing) {
     const a = workBoard[attackerIdx];
-    if (a)
+    if (a) {
       workBoard[attackerIdx] = {
         ...a,
         markers: { ...a.markers, piercing: a.markers.piercing + 1 },
       };
+      preAttackLogs.push("攻撃時効果: 貫通付与");
+    }
   }
 
   const defDef = getCharDef(targetChar.cardId);
@@ -487,6 +492,7 @@ function executeAttack(
     attackerIdx,
     def.reactivation_cost,
   );
+  for (const msg of preAttackLogs) newState = appendLog(newState, msg, "info");
 
   const atkName = getCardName(attacker.cardId);
   const defName = getCardName(targetChar.cardId);
@@ -1462,6 +1468,13 @@ function onCellClick(state: GameState, ui: GameUiExtra, idx: CellIndex): void {
     onElementSwapAllyClick(state, ui, idx);
     return;
   }
+
+  // 攻撃時コスト決定中はボードクリックを無視
+  if (
+    ui.mode === "on_attack_cost_pending" ||
+    ui.mode === "on_attack_discard_pending"
+  )
+    return;
 
   const char = state.board[idx];
   if (char && char.owner === active) {
