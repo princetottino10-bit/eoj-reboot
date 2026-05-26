@@ -23,9 +23,19 @@ import {
 } from "../engine/effectSpecs.js";
 import {
   applyAutoEffects,
+  applyOnAllyKilledEffects,
+  applyOnDamagedEffects,
+  applyOnDeathEffects,
+  applyOnKillEffects,
   getSummonEffect,
   resolveSummonAutoAttack,
 } from "../engine/effects.js";
+import {
+  getPassiveAtkBonus,
+  getPassiveReactivationCostDelta,
+  hasPassiveNoCounter,
+  hasPassiveOmniCounter,
+} from "../engine/passive.js";
 import type { AttackCells } from "../engine/gamestate.js";
 import { attributeHpBonus, createCharInstance } from "../engine/gamestate.js";
 import { applyItemEffect } from "../engine/items.js";
@@ -557,6 +567,8 @@ function executeAttack(
   }
 
   const defDef = getCharDef(targetChar.cardId);
+  const attackerPassiveAtkBonus = getPassiveAtkBonus(workBoard, attackerIdx);
+  const defenderPassiveAtkBonus = getPassiveAtkBonus(workBoard, targetIdx);
   const result = resolveAttack(workBoard, attackerIdx, targetIdx, {
     teamDR: state.teamDR,
     weaknessCells: (defDef?.weakness_cells ?? [[-1, 0]]) as RelCoord[],
@@ -567,16 +579,28 @@ function executeAttack(
       | "all"
       | null
       | [number, number][],
+    attackerPassiveAtkBonus,
+    defenderPassiveAtkBonus,
+    attackerNoCounterAttack: hasPassiveNoCounter(attacker.cardId),
+    defenderOmniCounter: hasPassiveOmniCounter(targetChar.cardId),
   });
 
   if (!isSummonAttack && workBoard[attackerIdx])
     // biome-ignore lint/style/noNonNullAssertion: null check above
     workBoard[attackerIdx] = { ...workBoard[attackerIdx]!, hasActed: true };
 
+  const passiveReactivationDelta = getPassiveReactivationCostDelta(
+    workBoard,
+    attackerIdx,
+  );
+  const effectiveReactivationCost = Math.max(
+    0,
+    def.reactivation_cost + passiveReactivationDelta,
+  );
   let newState = spendReactivationMana(
     { ...state, board: workBoard },
     attackerIdx,
-    def.reactivation_cost,
+    effectiveReactivationCost,
   );
   for (const msg of preAttackLogs) newState = appendLog(newState, msg, "info");
 
@@ -632,6 +656,51 @@ function executeAttack(
       np[active] = { ...np[active], mana: np[active].mana + result.attackerManaGain };
       newState = { ...newState, players: np };
       newState = appendLog(newState, `P${active + 1}: マナ+${result.attackerManaGain}（撃破補填）`, "info");
+    }
+
+    // ---- combat callbacks ----------------------------------------
+    const defenderOwner = targetChar.owner;
+    const attackerOwner = attacker.owner;
+
+    // 防衛者が撃破された
+    if (result.vpAwarded > 0) {
+      // on_kill: 攻撃者が生存していれば発動
+      if (newState.board[attackerIdx] != null) {
+        const { board: b, players: p } = applyOnKillEffects(newState, attackerIdx);
+        newState = { ...newState, board: b, players: p };
+      }
+      // on_death: 防衛者の on_death エフェクト
+      {
+        const { board: b, players: p } = applyOnDeathEffects(newState, targetChar.cardId, targetIdx, defenderOwner);
+        newState = { ...newState, board: b, players: p };
+      }
+      // on_ally_killed: 防衛者側の生存味方に発動
+      {
+        const { board: b, players: p } = applyOnAllyKilledEffects(newState, defenderOwner, targetIdx);
+        newState = { ...newState, board: b, players: p };
+      }
+    } else if (result.defenderDamage > 0 && newState.board[targetIdx] != null) {
+      // on_damaged: 防衛者がダメージを受けたが生存
+      const { board: b, players: p } = applyOnDamagedEffects(newState, targetIdx);
+      newState = { ...newState, board: b, players: p };
+    }
+
+    // 攻撃者が反撃で撃破された
+    if (result.counterVpAwarded > 0) {
+      // on_death: 攻撃者の on_death エフェクト
+      {
+        const { board: b, players: p } = applyOnDeathEffects(newState, attacker.cardId, attackerIdx, attackerOwner);
+        newState = { ...newState, board: b, players: p };
+      }
+      // on_ally_killed: 攻撃者側の生存味方に発動
+      {
+        const { board: b, players: p } = applyOnAllyKilledEffects(newState, attackerOwner, attackerIdx);
+        newState = { ...newState, board: b, players: p };
+      }
+    } else if (result.counterDamage > 0 && newState.board[attackerIdx] != null) {
+      // on_damaged: 攻撃者がカウンターダメージを受けたが生存
+      const { board: b, players: p } = applyOnDamagedEffects(newState, attackerIdx);
+      newState = { ...newState, board: b, players: p };
     }
   }
 
