@@ -245,6 +245,10 @@ export function applyAtom(
       }
       break;
     }
+    case "mana_gain": {
+      np[owner] = { ...np[owner], mana: np[owner].mana + atom.amount };
+      break;
+    }
   }
 
   return { board: nb, players: np };
@@ -477,4 +481,70 @@ export function resolveSummonAutoAttack(
   }
 
   return { board: workBoard, results };
+}
+
+// ============================================================
+// ターントリガー自動エフェクト（on_turn_start / on_turn_end）
+// ============================================================
+
+/**
+ * アクティブプレイヤーのキャラの on_turn_start 節のうち、
+ * UIインタラクション不要（pending でない）なものを適用する。
+ * aggro_v2_02 のようなオプションdiscardはUI側で別途処理する。
+ */
+export function applyOnTurnStartEffects(
+  state: GameState,
+): { board: Board; players: [PlayerState, PlayerState] } {
+  return applyAutoTriggerEffects(state, "on_turn_start");
+}
+
+/**
+ * アクティブプレイヤーのキャラの on_turn_end 節のうち、
+ * UIインタラクション不要（pending でない）なものを適用する。
+ */
+export function applyOnTurnEndEffects(
+  state: GameState,
+): { board: Board; players: [PlayerState, PlayerState] } {
+  return applyAutoTriggerEffects(state, "on_turn_end");
+}
+
+function applyAutoTriggerEffects(
+  state: GameState,
+  trigger: "on_turn_start" | "on_turn_end",
+): { board: Board; players: [PlayerState, PlayerState] } {
+  const owner = state.active;
+  let board = [...state.board] as Board;
+  let players: [PlayerState, PlayerState] = [
+    { ...state.players[0] },
+    { ...state.players[1] },
+  ];
+
+  for (let idx = 0; idx < 9; idx++) {
+    const char = board[idx];
+    if (char == null || char.owner !== owner) continue;
+    const spec = getEffectSpec(char.cardId);
+    for (const clause of spec.clauses) {
+      if (clause.trigger !== trigger) continue;
+      if (clauseHasPendingEffects(clause)) continue;
+      const tempState = { ...state, board, players };
+      if (
+        clause.condition &&
+        !evalCondition(
+          clause.condition,
+          board,
+          idx,
+          owner,
+          state.boardAttrs,
+        )
+      )
+        continue;
+      for (const atom of clause.effects) {
+        const r = applyAtom(board, players, idx, owner, atom);
+        board = r.board;
+        players = r.players;
+      }
+    }
+  }
+
+  return { board, players };
 }
