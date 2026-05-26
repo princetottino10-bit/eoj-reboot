@@ -30,6 +30,9 @@
 | ターン開始時ドロー | ✅ | `turn.ts: drawStep` |
 | ターン開始時フラグリセット（hasActed等） | ✅ | `turn.ts: startTurnPhase` |
 | ステータス効果のターン数tick | ✅ | `turn.ts: startTurnPhase` |
+| on_turn_start トリガー効果 | ✅ | `effects.ts: applyOnTurnStartEffects` → `turn.ts: startTurnPhase` から呼出 |
+| on_turn_end トリガー効果 | ✅ | `effects.ts: applyOnTurnEndEffects` → `turn.ts: endTurnCleanup` から呼出 |
+| passive効果評価（ATK補正・コスト補正・戦闘フラグ） | ✅ | `engine/passive.ts: getPassiveAtkBonus` 等、`game.ts` で攻撃時に参照 |
 
 ---
 
@@ -55,6 +58,8 @@
 | 向き固定中は向き変更不可 | ✅ | `game.ts: buildActionPanel`でUIボタン非表示 |
 | 反撃不可（no_counterattack passive） | ✅ | `passive.ts: hasPassiveNoCounter` + `AttackOptions.attackerNoCounterAttack` |
 | 全方位反撃（omnidirectional_counter passive） | ✅ | `passive.ts: hasPassiveOmniCounter` + `canCounterAttack`の omnidirectionalCounter 引数 |
+| on_kill / on_death / on_damaged トリガー効果 | ✅ | `effects.ts: applyOnKillEffects` 等、`game.ts` で戦闘結果に応じて呼出 |
+| on_ally_killed トリガー効果 | ✅ | `effects.ts: applyOnAllyKilledEffects`、`game.ts` で味方撃破時に呼出 |
 
 ---
 
