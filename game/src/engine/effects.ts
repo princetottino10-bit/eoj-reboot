@@ -297,6 +297,122 @@ export function applyAutoEffects(
   return { board, players };
 }
 
+// ============================================================
+// combat callback エフェクト適用（on_kill / on_death / on_damaged / on_ally_killed）
+// ============================================================
+
+/**
+ * 攻撃者（killerIdx）の on_kill 節を適用する。
+ * 攻撃者が既に撃破されている場合は何もしない。
+ */
+export function applyOnKillEffects(
+  state: GameState,
+  killerIdx: CellIndex,
+): { board: Board; players: [PlayerState, PlayerState] } {
+  const char = state.board[killerIdx];
+  if (char == null) return { board: [...state.board] as Board, players: [{ ...state.players[0] }, { ...state.players[1] }] };
+  const spec = getEffectSpec(char.cardId);
+  let board = [...state.board] as Board;
+  let players: [PlayerState, PlayerState] = [{ ...state.players[0] }, { ...state.players[1] }];
+  for (const clause of spec.clauses) {
+    if (clause.trigger !== "on_kill") continue;
+    if (clauseHasPendingEffects(clause)) continue;
+    if (clause.condition && !evalCondition(clause.condition, board, killerIdx, char.owner, state.boardAttrs)) continue;
+    for (const atom of clause.effects) {
+      const r = applyAtom(board, players, killerIdx, char.owner, atom);
+      board = r.board;
+      players = r.players;
+    }
+  }
+  return { board, players };
+}
+
+/**
+ * 撃破されたキャラの on_death 節を適用する。
+ * キャラはすでに board から除去されている前提。
+ * @param deadCardId 撃破されたカードID
+ * @param deadIdx 撃破されたキャラの最後の位置
+ * @param deadOwner 撃破されたキャラのオーナー
+ */
+export function applyOnDeathEffects(
+  state: GameState,
+  deadCardId: string,
+  deadIdx: CellIndex,
+  deadOwner: 0 | 1,
+): { board: Board; players: [PlayerState, PlayerState] } {
+  const spec = getEffectSpec(deadCardId);
+  let board = [...state.board] as Board;
+  let players: [PlayerState, PlayerState] = [{ ...state.players[0] }, { ...state.players[1] }];
+  for (const clause of spec.clauses) {
+    if (clause.trigger !== "on_death") continue;
+    if (clauseHasPendingEffects(clause)) continue;
+    if (clause.condition && !evalCondition(clause.condition, board, deadIdx, deadOwner, state.boardAttrs)) continue;
+    for (const atom of clause.effects) {
+      const r = applyAtom(board, players, deadIdx, deadOwner, atom);
+      board = r.board;
+      players = r.players;
+    }
+  }
+  return { board, players };
+}
+
+/**
+ * ダメージを受けたキャラの on_damaged 節を適用する。
+ * キャラが生存していることを前提とする。
+ */
+export function applyOnDamagedEffects(
+  state: GameState,
+  damagedIdx: CellIndex,
+): { board: Board; players: [PlayerState, PlayerState] } {
+  const char = state.board[damagedIdx];
+  if (char == null) return { board: [...state.board] as Board, players: [{ ...state.players[0] }, { ...state.players[1] }] };
+  const spec = getEffectSpec(char.cardId);
+  let board = [...state.board] as Board;
+  let players: [PlayerState, PlayerState] = [{ ...state.players[0] }, { ...state.players[1] }];
+  for (const clause of spec.clauses) {
+    if (clause.trigger !== "on_damaged") continue;
+    if (clauseHasPendingEffects(clause)) continue;
+    if (clause.condition && !evalCondition(clause.condition, board, damagedIdx, char.owner, state.boardAttrs)) continue;
+    for (const atom of clause.effects) {
+      const r = applyAtom(board, players, damagedIdx, char.owner, atom);
+      board = r.board;
+      players = r.players;
+    }
+  }
+  return { board, players };
+}
+
+/**
+ * 味方が撃破されたときに発動する on_ally_killed 節を、生存中の味方キャラ全員に適用する。
+ * @param killedOwner 撃破された味方のオーナー
+ * @param killedIdx 撃破された味方の最後の位置（自分とは別の味方に適用するため参照）
+ */
+export function applyOnAllyKilledEffects(
+  state: GameState,
+  killedOwner: 0 | 1,
+  killedIdx: CellIndex,
+): { board: Board; players: [PlayerState, PlayerState] } {
+  let board = [...state.board] as Board;
+  let players: [PlayerState, PlayerState] = [{ ...state.players[0] }, { ...state.players[1] }];
+  for (let idx = 0; idx < 9; idx++) {
+    if (idx === killedIdx) continue;
+    const char = board[idx];
+    if (char == null || char.owner !== killedOwner) continue;
+    const spec = getEffectSpec(char.cardId);
+    for (const clause of spec.clauses) {
+      if (clause.trigger !== "on_ally_killed") continue;
+      if (clauseHasPendingEffects(clause)) continue;
+      if (clause.condition && !evalCondition(clause.condition, board, idx, killedOwner, state.boardAttrs)) continue;
+      for (const atom of clause.effects) {
+        const r = applyAtom(board, players, idx, killedOwner, atom);
+        board = r.board;
+        players = r.players;
+      }
+    }
+  }
+  return { board, players };
+}
+
 export interface AutoAttackResult {
   targetIdx: CellIndex;
   result: AttackResult;
