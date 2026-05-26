@@ -119,6 +119,8 @@ export interface GameUiExtra {
   ultCasterIdx: CellIndex | null;
   /** Board index selected in element_swap step 1 */
   elementSwapBoardIdx: CellIndex | null;
+  /** aggro_v2_02 on_turn_start: 任意捨てでマナ+1 のキャラboard index (nullなら通常フロー) */
+  turnStartDiscardIdx: CellIndex | null;
   /** Magic summon attack context: which summoned char and card */
   magicAttackContext: {
     cardId: string;
@@ -1893,6 +1895,15 @@ function onDiscardCardClick(
     "info",
   );
 
+  // on_turn_start discard flow (aggro_v2_02): apply mana_gain then proceed
+  if (ui.turnStartDiscardIdx !== null) {
+    const np = [...newState.players] as typeof newState.players;
+    np[active] = { ...np[active], mana: np[active].mana + 1 };
+    newState = appendLog({ ...newState, players: np }, "マナ+1（aggro_v2_02効果）", "info");
+    proceedAfterTurnStart(newState);
+    return;
+  }
+
   // Ult discard flow (snipe_v2_09): proceed to enemy targeting
   if (ui.ultCasterIdx !== null) {
     const opp = (1 - active) as 0 | 1;
@@ -1934,6 +1945,12 @@ function onDiscardSkip(state: GameState, ui: GameUiExtra): void {
     setState({ gameUiExtra: resetGameUiExtra() });
     return;
   }
+  // on_turn_start discard flow (aggro_v2_02): skip without mana gain
+  if (ui.turnStartDiscardIdx !== null) {
+    const ns = appendLog(state, "スキップした（aggro_v2_02）", "info");
+    proceedAfterTurnStart(ns);
+    return;
+  }
   const { cardId, cellIdx } = ctx;
   const ns = appendLog(state, "スキップした", "info");
   finalizeSummonTurn(ns, cardId, cellIdx);
@@ -1956,15 +1973,44 @@ function onEndTurn(state: GameState): void {
     return;
   }
 
-  const { online } = getState();
-  if (online) {
-    // オンラインモード: パス画面不要。Firestore 経由で相手に通知
-    setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
-  } else {
+  // aggro_v2_02 on_turn_start: 任意捨て→マナ+1
+  const newActive = newState.active;
+  const aggroV202Idx = newState.board.findIndex(
+    (c) =>
+      c !== null && c.owner === newActive && c.cardId === "aggro_v2_02",
+  ) as CellIndex;
+  if (
+    aggroV202Idx >= 0 &&
+    newState.players[newActive].hand.length > 0
+  ) {
     setState({
       gameState: newState,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "discard_pending",
+        discardContext: {
+          cardId: "aggro_v2_02",
+          cellIdx: aggroV202Idx,
+          mandatory: false,
+        },
+        turnStartDiscardIdx: aggroV202Idx,
+      },
+    });
+    return;
+  }
+
+  proceedAfterTurnStart(newState);
+}
+
+function proceedAfterTurnStart(state: GameState): void {
+  const { online } = getState();
+  if (online) {
+    setState({ gameState: state, gameUiExtra: resetGameUiExtra() });
+  } else {
+    setState({
+      gameState: state,
       screen: "pass",
-      passForPlayer: newState.active,
+      passForPlayer: state.active,
       gameUiExtra: resetGameUiExtra(),
     });
   }
