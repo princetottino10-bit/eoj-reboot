@@ -53,29 +53,24 @@
 | 撃破時 brainwashedBy/actionTaxBy クリア | ✅ | `combat.ts: clearAffiliatedEffects`（applyDamageから呼出） |
 | 洗脳中は攻撃・向き変更不可 | ✅ | `game.ts: buildActionPanel`でUIボタン非表示 |
 | 向き固定中は向き変更不可 | ✅ | `game.ts: buildActionPanel`でUIボタン非表示 |
+| 反撃不可（no_counterattack passive） | ❌ | `combat.ts: canCounterAttack`が攻撃者の passive を未チェック |
+| 全方位反撃（omnidirectional_counter passive） | ❌ | `canCounterAttack`の blind-spot チェックを bypass する処理なし |
 
 ---
 
-## キャラクター効果（summon effect）
+## キャラクター効果（on_summon）
 
 | カード | ステータス | 効果 |
 |--------|-----------|------|
 | aggro_v2_03 | ✅ | 手札1枚捨て→隣接敵後退 |
 | aggro_v2_10 | ✅ | 1ドロー→手札1枚強制捨て |
-| aggro_v2_11 | ✅ | 即時効果（attack_bonus） |
-| aggro_v2_12 | ✅ | ウルト: 前列5ダメ・自HP1 |
-| synergy_v2_01 | ✅ | 防護マーカー付与 |
-| synergy_v2_02 | ✅ | 回避マーカー付与（隣接味方） |
-| synergy_v2_03 | ✅ | 貫通マーカー付与（隣接味方） |
-| synergy_v2_04 | ✅ | 防護マーカー付与 |
-| synergy_v2_09 | ✅ | 隣接味方HP+1 |
-| trick_v2_01 | ✅ | 敵90°回転 |
-| trick_v2_02 | ✅ | 隣接敵90°回転 |
-| trick_v2_04 | ✅ | 召喚位置と隣接味方を入れ替え |
-| trick_v2_06 | ✅ | 隣接敵後退 |
-| trick_v2_09 | ✅ | 隣接敵向き変更（向き選択） |
-| trick_v2_12 | ✅ | 全敵向き変更＋B位置3体以上でドロー |
+| aggro_v2_11 | ✅ | 隣接敵-3HP、攻撃済み味方2体以上でATK+2 |
+| tank_v2_02 | ✅ | 隣接味方に防護マーカー付与 |
+| tank_v2_04 | ✅ | 同属性マスならHP+1 |
+| tank_v2_05 | ✅ | 隣接味方HP+1 |
+| tank_v2_09 | ✅ | 自身＋隣接味方に防護マーカー＋隣接味方HP+1 |
 | tank_v2_11 | ✅ | 味方向き変更 |
+| tank_v2_12 | ✅ | 隣接味方HP+2＋自身防護マーカー |
 | control_v2_01 | ✅ | 隣接敵ATK-1 |
 | control_v2_02 | ✅ | 隣接敵再行動コスト+1 |
 | control_v2_03 | ✅ | 隣接敵ATK-2 |
@@ -83,10 +78,88 @@
 | control_v2_05 | ✅ | 隣接敵90°回転 |
 | control_v2_07 | ✅ | 敵洗脳（3ターン）+ 隣接敵ATK-1 |
 | control_v2_08 | ✅ | 隣接敵90°回転 |
+| control_v2_09 | ✅ | マナ2奪取（on_attack効果は別途） |
 | control_v2_10 | ✅ | 隣接敵ATK-1 + デバフ条件ドロー/ダメ |
 | control_v2_11 | ✅ | 隣接敵再行動コスト+1 |
+| synergy_v2_01 | ✅ | 防護マーカー付与 |
+| synergy_v2_02 | ✅ | 回避マーカー付与（隣接味方） |
+| synergy_v2_03 | ✅ | 貫通マーカー付与（隣接味方） |
+| synergy_v2_04 | ✅ | 回避マーカー付与（任意味方） |
+| synergy_v2_07 | ✅ | 隣接味方ATK+1 |
+| synergy_v2_08 | ✅ | 隣接味方HP+1、マーカー3体以上でATK+1 |
+| synergy_v2_09 | ✅ | 隣接味方HP+1 |
+| synergy_v2_11 | ✅ | 隣接味方HP+1、マーカー3体以上でATK+1 |
+| synergy_v2_12 | ✅ | 隣接味方ATK+1 |
 | snipe_v2_07 | ✅ | 手札1枚捨て→2ドロー |
-| snipe_v2_08 | ✅ | 即時効果（召喚時攻撃） |
+| trick_v2_01 | ✅ | 敵90°回転 |
+| trick_v2_02 | ✅ | 隣接敵90°回転 |
+| trick_v2_03 | ✅ | 手札1枚捨て→マナ+1 |
+| trick_v2_04 | ✅ | 召喚位置と隣接味方を入れ替え |
+| trick_v2_06 | ✅ | 隣接敵後退 |
+| trick_v2_09 | ✅ | 隣接敵向き変更（向き選択） |
+| trick_v2_12 | ✅ | 全敵向き変更＋B位置3体以上でドロー |
+
+---
+
+## キャラクター効果（on_attack）
+
+on_attack 効果は `ui/game.ts: computeOnAttackEffects / applyOnAttackPostEffects` で処理。  
+コストあり節は `on_attack_cost_pending` / `on_attack_discard_pending` UIフローで任意選択。
+
+| カード | ステータス | 効果 |
+|--------|-----------|------|
+| aggro_v2_07 | ✅ | 攻撃済み味方1体以上でダメージ+1 |
+| control_v2_09 | ✅ | 隣接敵に再行動コスト+1 |
+| synergy_v2_05 | ✅ | マーカー味方3体以上でダメージ+1 |
+| snipe_v2_01 | ✅ | 自HP-1コスト→ダメージ+1 |
+| snipe_v2_02 | ✅ | 手札1枚捨てコスト→ダメージ+1 |
+| snipe_v2_03 | ✅ | 手札1枚捨てコスト→ダメージ+1 |
+| snipe_v2_04 | ✅ | 自HP-1コスト→攻撃に貫通付与 |
+| snipe_v2_05 | ✅ | 自HP-1コスト→ダメージ+2 |
+| snipe_v2_06 | ✅ | 手札1枚捨てコスト→ダメージ+2 |
+| snipe_v2_08 | ✅ | 自HP-1コスト→ダメージ+1＋貫通付与 |
+| snipe_v2_09 | ✅ | 手札1枚捨てコスト→ダメージ+3 |
+| snipe_v2_10 | ✅ | 自HP-1＋手札1枚捨てコスト→ダメージ+3＋貫通付与 |
+| snipe_v2_11 | ✅ | マナ1コスト→ダメージ+2 |
+| snipe_v2_12 | ✅ | 自HP-1コスト→ダメージ+2＋貫通付与 |
+| trick_v2_05 | ✅ | B位置から攻撃時ダメージ+1 |
+| trick_v2_07 | ✅ | B位置から攻撃時ダメージ+1 |
+| trick_v2_08 | ✅ | 攻撃対象を任意向きに回転 |
+| trick_v2_11 | ✅ | B位置から攻撃時1ドロー |
+
+---
+
+## キャラクター効果（passive）
+
+passive 効果は「盤面状態に応じて常時発動」する効果。現在いずれも**未実装**。
+
+| カード | ステータス | 効果 | 備考 |
+|--------|-----------|------|------|
+| aggro_v2_09 | ❌ | 反撃されない（no_counterattack） | `canCounterAttack`で攻撃者の passive 未参照 |
+| aggro_v2_12 | ❌ | 攻撃済み味方3体以上で再行動コスト-2 | `reactivation_cost_delta` 評価なし |
+| tank_v2_06 | ❌ | 味方2体以上でATK+1（自身） | passive ATK 加算なし |
+| tank_v2_08 | ❌ | 隣接味方のATK+1 | passive ATK 加算なし |
+| tank_v2_10 | ❌ | 全方位反撃（omnidirectional_counter） | `canCounterAttack` の blind-spot 除外なし |
+| synergy_v2_10 | ❌ | マーカー味方2体以上でATK+1（自身） | passive ATK 加算なし |
+| trick_v2_10 | ❌ | 空きマス5以上でATK+1（自身） | passive ATK 加算なし |
+
+---
+
+## キャラクター効果（その他トリガー）
+
+on_kill・on_death・on_damaged・on_turn_start・on_turn_end・on_ally_killed はすべて**未実装**。
+
+| カード | ステータス | トリガー | 効果 |
+|--------|-----------|---------|------|
+| aggro_v2_02 | ❌ | on_turn_start | 手札1枚捨て（任意）→マナ+1 |
+| aggro_v2_04 | ❌ | on_kill | 撃破時ATK+1（自身） |
+| aggro_v2_08 | ❌ | on_death | 撃破時に隣接味方HP+2・ATK+1 |
+| tank_v2_07 | ❌ | on_damaged | 被ダメージ時ATK+1（自身） |
+| tank_v2_10 | ❌ | on_death | 撃破時に隣接味方ATK+1 |
+| control_v2_12 | ❌ | on_turn_start | デバフ敵2体以上で1ドロー、3体以上でマナ+1 |
+| synergy_v2_05 | ❌ | on_turn_end | マーカー味方4体以上で隣接味方HP+1 |
+| synergy_v2_06 | ❌ | on_ally_killed | 味方撃破時に防護マーカー獲得 |
+| synergy_v2_10 | ❌ | on_turn_end | マーカー味方3体以上で隣接味方HP+1 |
 
 ---
 
@@ -158,6 +231,9 @@
 
 | 項目 | 優先度 | 備考 |
 |------|-------|------|
-| on_attack効果（control_v2_09など） | 低 | 攻撃時に発動する効果は現在未実装 |
+| passive 効果全般 | 中 | ATK passive加算・再行動コスト減・反撃不可・全方位反撃など7カード分未実装 |
+| on_kill / on_death / on_damaged 効果 | 中 | combat.ts の applyDamage から呼出ポイント要追加 |
+| on_turn_start / on_turn_end 効果 | 中 | turn.ts の startTurnPhase / endTurnCleanup に追加が必要 |
+| on_ally_killed 効果 | 中 | 味方撃破検知ロジックが未実装 |
 | snipe エース回収（照準マーカー） | 低 | `aim`マーカーの付与手段未実装のため常に軽減0 |
 | キャラ個別効果の網羅テスト | 低 | `effects.test.ts`は自動効果のみカバー |
