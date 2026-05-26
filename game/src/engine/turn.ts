@@ -1,3 +1,7 @@
+import {
+  applyOnTurnEndEffects,
+  applyOnTurnStartEffects,
+} from "./effects.js";
 import type { CellIndex, GameState } from "./types.js";
 import { assertNonNull } from "./types.js";
 
@@ -56,7 +60,10 @@ export function startTurnPhase(state: GameState): GameState {
     };
     return { ...char, status: newStatus, hasActed: false, hasRotated: false };
   });
-  return { ...state, board: newBoard };
+  const afterFlags = { ...state, board: newBoard };
+  const { board: boardAfterTrigger, players: playersAfterTrigger } =
+    applyOnTurnStartEffects(afterFlags);
+  return { ...afterFlags, board: boardAfterTrigger, players: playersAfterTrigger };
 }
 
 // ============================================================
@@ -97,9 +104,13 @@ export function endTurnCleanup(state: GameState): GameState {
   const p = state.active;
   const opp = (1 - p) as 0 | 1;
 
+  // on_turn_end 自動エフェクト（アクティブプレイヤーのキャラ分）
+  const { board: boardAfterEnd, players: playersAfterEnd } =
+    applyOnTurnEndEffects(state);
+
   const newPlayers = [
-    { ...state.players[0] },
-    { ...state.players[1] },
+    { ...playersAfterEnd[0] },
+    { ...playersAfterEnd[1] },
   ] as typeof state.players;
   const hand = [...newPlayers[p].hand];
   const discard = [...newPlayers[p].discard];
@@ -112,7 +123,7 @@ export function endTurnCleanup(state: GameState): GameState {
   newTeamDR[opp] = false;
 
   // 現プレイヤーのキャラのtempAtkBuffをリセット
-  const newBoard = state.board.map((char) => {
+  const newBoard = boardAfterEnd.map((char) => {
     if (char === null || char.owner !== p) return char;
     return char.tempAtkBuff > 0 ? { ...char, tempAtkBuff: 0 } : char;
   });
