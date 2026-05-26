@@ -17,7 +17,7 @@ export interface DraftUiState {
 
 // Draft order: P0→P1→P1→P0 (factions), P0→P1 (items)
 const DRAFT_ORDER = [0, 1, 1, 0, 0, 1] as const;
-const ITEM_SETS = ["A", "B", "C", "D"];
+const ITEM_SETS = ["A", "B", "C", "D", "E"];
 
 function currentPicker(ui: DraftUiState): 0 | 1 {
   return DRAFT_ORDER[ui.pickIndex] as 0 | 1;

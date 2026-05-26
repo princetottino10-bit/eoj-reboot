@@ -43,8 +43,9 @@ export function createDraftState(): DraftState {
       "synergy",
       "snipe",
       "trick",
+      "geo",
     ],
-    availableItemSets: ["A", "B", "C", "D"],
+    availableItemSets: ["A", "B", "C", "D", "E"],
     factions: [[], []],
     itemSets: [null, null],
   };
