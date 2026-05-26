@@ -25,6 +25,14 @@ export interface AttackOptions {
   attackerCost?: number;
   /** 防衛者の attack_cells（反撃範囲判定用。null なら反撃不可） */
   defenderAttackCells?: "all" | null | [number, number][];
+  /** 攻撃者のpassive ATK補正（省略時は0） */
+  attackerPassiveAtkBonus?: number;
+  /** 防衛者のpassive ATK補正（省略時は0）。反撃ダメージに適用 */
+  defenderPassiveAtkBonus?: number;
+  /** 攻撃者が no_counterattack passive を持つか（省略時false） */
+  attackerNoCounterAttack?: boolean;
+  /** 防衛者が omnidirectional_counter passive を持つか（省略時false） */
+  defenderOmniCounter?: boolean;
 }
 
 export interface AttackResult {
@@ -103,9 +111,10 @@ export function calcDamage(
   attacker: CharInstance,
   defender: CharInstance,
   opts: DamageOptions,
+  passiveAtkBonus = 0,
 ): number {
   const hasPiercing = hasKw(attacker, "貫通");
-  let dmg = attacker.atk + (attacker.tempAtkBuff ?? 0);
+  let dmg = attacker.atk + (attacker.tempAtkBuff ?? 0) + passiveAtkBonus;
   if (opts.isBlind && opts.attackType !== "magic") dmg += 1;
   if (!hasPiercing && hasKw(defender, "防護")) dmg -= 1;
   if (opts.teamDR) dmg -= 1;
@@ -119,7 +128,7 @@ export function calcDamage(
 /**
  * 防衛者が反撃可能かを判定する。
  * 条件: 攻撃が物理であること（呼び出し側で確認）、かつ
- *   1. 攻撃者が防衛者の B 位置にいない
+ *   1. 攻撃者が防衛者の B 位置にいない（omnidirectionalCounter=true なら免除）
  *   2. 攻撃者が防衛者の attack_cells 射程内にいる
  */
 export function canCounterAttack(
@@ -128,8 +137,12 @@ export function canCounterAttack(
   defenderAttackCells: "all" | null | [number, number][],
   attackerIdx: CellIndex,
   weaknessCells: RelCoord[],
+  omnidirectionalCounter = false,
 ): boolean {
-  if (isBlindSpot(attackerIdx, defenderIdx, defenderDir, weaknessCells))
+  if (
+    !omnidirectionalCounter &&
+    isBlindSpot(attackerIdx, defenderIdx, defenderDir, weaknessCells)
+  )
     return false;
   if (defenderAttackCells === null) return false;
   if (defenderAttackCells === "all") return true;
@@ -299,14 +312,18 @@ export function resolveAttack(
 
   // 先制判定
   const defHasQuick = hasKw(defender, "先制");
+  const attackerPassiveAtk = opts.attackerPassiveAtkBonus ?? 0;
+  const defenderPassiveAtk = opts.defenderPassiveAtkBonus ?? 0;
   const canCounter =
     attackType === "physical" &&
+    !opts.attackerNoCounterAttack &&
     canCounterAttack(
       defenderIdx,
       defender.dir,
       opts.defenderAttackCells ?? null,
       attackerIdx,
       weakCells,
+      opts.defenderOmniCounter ?? false,
     );
 
   let counterDmg = 0;
@@ -321,7 +338,8 @@ export function resolveAttack(
     counterFirst = true;
     const counterDmgRaw = Math.max(
       0,
-      defender.atk -
+      defender.atk +
+        defenderPassiveAtk -
         (hasKw(attacker, "防護") ? 1 : 0) -
         (opts.teamDR[attackerOwner] ? 1 : 0),
     );
@@ -349,11 +367,12 @@ export function resolveAttack(
   }
 
   // メイン攻撃
-  const dmg = calcDamage(attacker, defender, {
-    isBlind: blind,
-    teamDR: opts.teamDR[defOwner],
-    attackType,
-  });
+  const dmg = calcDamage(
+    attacker,
+    defender,
+    { isBlind: blind, teamDR: opts.teamDR[defOwner], attackType },
+    attackerPassiveAtk,
+  );
   if (!hasPiercing) consumeMarker(defender, "防護");
 
   const { damage: defDmg, vpAwarded, manaGain: defMana } = applyDamage(
@@ -372,7 +391,8 @@ export function resolveAttack(
   ) {
     const counterDmgRaw = Math.max(
       0,
-      defender.atk -
+      defender.atk +
+        defenderPassiveAtk -
         (hasKw(attacker, "防護") ? 1 : 0) -
         (opts.teamDR[attackerOwner] ? 1 : 0),
     );

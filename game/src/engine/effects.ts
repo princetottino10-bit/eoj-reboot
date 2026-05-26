@@ -68,6 +68,14 @@ function countMarkerAllies(board: Board, owner: 0 | 1): number {
   ).length;
 }
 
+/** passive.ts から参照できるようにエクスポート */
+export function countMarkerAlliesForPassive(
+  board: Board,
+  owner: 0 | 1,
+): number {
+  return countMarkerAllies(board, owner);
+}
+
 function deepCopyBoard(board: Board): Board {
   return board.map((c) =>
     c === null
@@ -147,6 +155,8 @@ export function evalCondition(
       return countAlliesInBPosition(board, owner) >= cond.min;
     case "on_matching_attr_cell":
       return charAttr != null && boardAttrs[summonIdx] === charAttr;
+    case "empty_cell_count_gte":
+      return board.filter((c) => c === null).length >= cond.min;
     default:
       return false;
   }
