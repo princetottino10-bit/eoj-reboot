@@ -24,6 +24,7 @@ import {
 } from "../engine/effectSpecs.js";
 import {
   applyAutoEffects,
+  applyCellAttrChange,
   applyOnAllyKilledEffects,
   applyOnDamagedEffects,
   applyOnDeathEffects,
@@ -38,7 +39,7 @@ import {
   hasPassiveOmniCounter,
 } from "../engine/passive.js";
 import type { AttackCells } from "../engine/gamestate.js";
-import { attributeHpBonus, createCharInstance } from "../engine/gamestate.js";
+import { ATTR_OPPOSITES, attributeHpBonus, createCharInstance } from "../engine/gamestate.js";
 import { applyItemEffect } from "../engine/items.js";
 import {
   applyDiscardEffect,
@@ -85,7 +86,8 @@ export interface GameUiExtra {
     | "ult_dir_pending"
     | "element_swap_ally_pending"
     | "element_swap_hand_pending"
-    | "item_rotate_pending";
+    | "item_rotate_pending"
+    | "cell_attr_choose_pending";
   validCells: CellIndex[];
   dirPickerCell: CellIndex | null;
   summonHandIdx: number | null;
@@ -122,6 +124,8 @@ export interface GameUiExtra {
   ultCasterIdx: CellIndex | null;
   /** Board index selected in element_swap step 1 */
   elementSwapBoardIdx: CellIndex | null;
+  /** Cell index selected in cell_attr step 1 (before attr pick) */
+  pendingAttrCellIdx: CellIndex | null;
   /** aggro_v2_02 on_turn_start: 任意捨てでマナ+1 のキャラboard index (nullなら通常フロー) */
   turnStartDiscardIdx: CellIndex | null;
   /** Magic summon attack context: which summoned char and card */
@@ -166,6 +170,8 @@ const TARGET_HINT: Partial<Record<EffectTarget, string>> = {
   select_enemy: "対象の敵を選択",
   select_adj_enemy: "隣接敵を選択",
   select_any: "対象を選択",
+  select_any_cell: "属性を変えるマスを選択",
+  select_adj_cell: "属性を変える隣接マスを選択",
 };
 
 function markerStr(char: NonNullable<Board[number]>): string {
@@ -1404,6 +1410,20 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
     hint.className = "action-label";
     hint.textContent = "入れ替える手札のキャラを選択（緑枠）";
     actionPanel.appendChild(hint);
+  } else if (ui.mode === "cell_attr_choose_pending") {
+    const hint = document.createElement("div");
+    hint.className = "action-label";
+    hint.style.width = "100%";
+    hint.textContent = "変更後の属性を選択";
+    actionPanel.appendChild(hint);
+    for (const attr of ["拳", "念", "光", "闇", "虚"]) {
+      const btn = document.createElement("button");
+      btn.className = "btn btn-secondary";
+      btn.textContent = attr;
+      btn.addEventListener("click", () => onCellAttrChosen(state, ui, attr));
+      actionPanel.appendChild(btn);
+    }
+    actionPanel.appendChild(cancel());
   }
 
   return actionPanel;
@@ -2376,7 +2396,7 @@ function doSummon(
     effect.clauses,
     def.attribute,
   );
-  newState = { ...newState, board: r.board, players: r.players };
+  newState = { ...newState, board: r.board, players: r.players, boardAttrs: r.boardAttrs };
 
   if (!effect.hasPending) {
     // pending効果なし: ルール通り「効果→自動攻撃→ターン終了」を即時完結
@@ -2899,6 +2919,42 @@ function doResolveEffect(
 
   const active = state.active;
 
+  // on_summon に set_cell_attr があれば直接属性変更（またはattr選択へ）
+  const setCellAttrAtom = getEffectSpec(cardId).clauses
+    .filter((c) => c.trigger === "on_summon")
+    .flatMap((c) => c.effects)
+    .find((e) => e.type === "set_cell_attr") as
+    | { type: "set_cell_attr"; mode: string }
+    | undefined;
+  if (setCellAttrAtom) {
+    if (setCellAttrAtom.mode === "choose") {
+      // Two-step: cell chosen → now pick attribute
+      setState({
+        gameState: state,
+        gameUiExtra: {
+          ...resetGameUiExtra(),
+          mode: "cell_attr_choose_pending",
+          pendingCardId: cardId,
+          pendingCellIdx: summonIdx,
+          pendingAttrCellIdx: targetIdx,
+        },
+      });
+    } else {
+      // self_attr or opposite: resolve immediately
+      const char = state.board[summonIdx];
+      const charAttr = char ? (getCharDef(char.cardId)?.attribute ?? "虚") : "虚";
+      let newAttr: string | null = null;
+      if (setCellAttrAtom.mode === "self_attr") newAttr = charAttr;
+      else if (setCellAttrAtom.mode === "opposite")
+        newAttr = charAttr !== "虚" ? (ATTR_OPPOSITES[charAttr] ?? null) : null;
+      const newState = newAttr
+        ? applyCellAttrChange(state, targetIdx, newAttr)
+        : state;
+      finalizeSummonTurn(newState, cardId, summonIdx);
+    }
+    return;
+  }
+
   // on_summon に rotate degrees:'any' があれば対象選択後に方向選択へ
   const needsDirPick = getEffectSpec(cardId).clauses.some(
     (c) =>
@@ -3383,6 +3439,22 @@ function doElementSwap(
     return;
   }
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+}
+
+// ============================================================
+// Cell attribute change (geo cards)
+// ============================================================
+
+function onCellAttrChosen(state: GameState, ui: GameUiExtra, attr: string): void {
+  const cardId = ui.pendingCardId;
+  const summonIdx = ui.pendingCellIdx;
+  const cellIdx = ui.pendingAttrCellIdx;
+  if (!cardId || summonIdx === null || cellIdx === null) {
+    setState({ gameUiExtra: resetGameUiExtra() });
+    return;
+  }
+  const newState = applyCellAttrChange(state, cellIdx, attr);
+  finalizeSummonTurn(newState, cardId, summonIdx);
 }
 
 // ============================================================

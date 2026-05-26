@@ -271,6 +271,12 @@ export function resolveSelectCells(
       return board
         .map((c, i) => (c != null && i !== originIdx ? i : -1))
         .filter((i) => i >= 0) as CellIndex[];
+    case "select_any_cell":
+      return [0, 1, 2, 3, 4, 5, 6, 7, 8] as CellIndex[];
+    case "select_adj_cell": {
+      if (originIdx === undefined) return [];
+      return getAdjacentCells(originIdx);
+    }
     default:
       return [];
   }

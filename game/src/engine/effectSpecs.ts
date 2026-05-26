@@ -18,7 +18,11 @@ export type EffectTarget =
   | "select_enemy"
   | "select_adj_ally"
   | "select_adj_enemy"
-  | "select_any"; // 敵味方任意
+  | "select_any" // 敵味方任意
+  | "self_cell" // 自身が立つマス（set_cell_attr用）
+  | "adj_cells" // 隣接全マス（set_cell_attr用）
+  | "select_any_cell" // UI: 任意マス選択
+  | "select_adj_cell"; // UI: 隣接マス選択
 
 /** エフェクトが発動するタイミング */
 export type EffectTrigger =
@@ -89,7 +93,8 @@ export type EffectAtom =
   | { type: "team_damage_reduction" }
   | { type: "clear_has_acted"; target: EffectTarget }
   | { type: "no_counterattack" }
-  | { type: "omnidirectional_counter" };
+  | { type: "omnidirectional_counter" }
+  | { type: "set_cell_attr"; target: EffectTarget; mode: "opposite" | "self_attr" | "choose" };
 
 /** エフェクト発動の条件 */
 export type EffectCondition =
@@ -136,6 +141,8 @@ const SELECT_TARGETS = new Set<EffectTarget>([
   "select_adj_ally",
   "select_adj_enemy",
   "select_any",
+  "select_any_cell",
+  "select_adj_cell",
 ]);
 
 function atomNeedsUi(atom: EffectAtom): boolean {
@@ -143,7 +150,8 @@ function atomNeedsUi(atom: EffectAtom): boolean {
     ("target" in atom &&
       SELECT_TARGETS.has((atom as { target: EffectTarget }).target)) ||
     (atom.type === "rotate" && atom.degrees === "any") ||
-    atom.type === "discard"
+    atom.type === "discard" ||
+    (atom.type === "set_cell_attr" && atom.mode === "choose")
   );
 }
 
@@ -881,6 +889,41 @@ export const EFFECT_SPECS: Record<string, CardEffectSpec> = {
         trigger: "on_summon",
         condition: { type: "b_position_ally_count_gte", min: 3 },
         effects: [{ type: "draw", count: 1 }],
+      },
+    ],
+  },
+  // ==============================
+  // GEO (地脈)
+  // ==============================
+  geo_v2_01: {
+    clauses: [
+      {
+        trigger: "on_summon",
+        effects: [{ type: "set_cell_attr", target: "self_cell", mode: "self_attr" }],
+      },
+    ],
+  },
+  geo_v2_02: {
+    clauses: [
+      {
+        trigger: "on_summon",
+        effects: [{ type: "set_cell_attr", target: "adj_cells", mode: "opposite" }],
+      },
+    ],
+  },
+  geo_v2_03: {
+    clauses: [
+      {
+        trigger: "on_summon",
+        effects: [{ type: "set_cell_attr", target: "select_any_cell", mode: "self_attr" }],
+      },
+    ],
+  },
+  geo_v2_04: {
+    clauses: [
+      {
+        trigger: "on_summon",
+        effects: [{ type: "set_cell_attr", target: "select_adj_cell", mode: "choose" }],
       },
     ],
   },

@@ -52,7 +52,7 @@ export interface CardDatabase {
 // 属性
 // ============================================================
 
-const ATTR_OPPOSITES: Record<string, string> = {
+export const ATTR_OPPOSITES: Record<string, string> = {
   拳: "念",
   念: "拳",
   光: "闇",

@@ -55,6 +55,7 @@ const INITIAL_GAME_UI_EXTRA: GameUiExtra = {
   itemHandIdx: null,
   ultCasterIdx: null,
   elementSwapBoardIdx: null,
+  pendingAttrCellIdx: null,
   turnStartDiscardIdx: null,
   magicAttackContext: null,
   onAttackContext: null,

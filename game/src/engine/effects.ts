@@ -8,6 +8,8 @@ import type {
   EffectCondition,
   EffectTarget,
 } from "./effectSpecs.js";
+import { getCharDef } from "../data/cards.js";
+import { ATTR_OPPOSITES } from "./gamestate.js";
 import {
   clauseHasPendingEffects,
   getEffectSpec,
@@ -22,7 +24,7 @@ import type {
   PlayerState,
   RelCoord,
 } from "./types.js";
-import { assertNonNull } from "./types.js";
+import { appendLog, assertNonNull } from "./types.js";
 
 // ============================================================
 // 型
@@ -259,21 +261,112 @@ export function applyAtom(
 // ============================================================
 
 /**
- * on_summon 節のうち pending でないものを順番に適用し、新しい board と players を返す。
- * charAttr は on_matching_attr_cell 条件の評価に使用。
+ * 盤面マスの属性を変更し、そのマスに立つキャラへのHP補正を適用する。
+ * 同属性: +2HP（maxHp上限）、対立属性: -2HP（0以下で撃破）、虚/無関係: 変化なし
  */
+export function applyCellAttrChange(
+  state: GameState,
+  cellIdx: CellIndex,
+  newAttr: string,
+): GameState {
+  const oldAttr = state.boardAttrs[cellIdx];
+  if (oldAttr === newAttr) return state;
+
+  const newBoardAttrs = [...state.boardAttrs];
+  newBoardAttrs[cellIdx] = newAttr;
+  let newState = { ...state, boardAttrs: newBoardAttrs };
+
+  const occupant = state.board[cellIdx];
+  if (occupant) {
+    const charDef = getCharDef(occupant.cardId);
+    const charAttr = charDef?.attribute ?? "虚";
+    if (charAttr !== "虚" && newAttr !== "虚") {
+      let delta = 0;
+      if (newAttr === charAttr) delta = 2;
+      else if (ATTR_OPPOSITES[charAttr] === newAttr) delta = -2;
+
+      if (delta !== 0) {
+        const nb = [...newState.board] as Board;
+        const c = nb[cellIdx];
+        if (c) {
+          const newHp = Math.min(c.maxHp, c.hp + delta);
+          nb[cellIdx] = newHp <= 0 ? null : { ...c, hp: newHp };
+          const sign = delta > 0 ? `+${delta}` : `${delta}`;
+          newState = appendLog(
+            { ...newState, board: nb },
+            `属性変更: ${oldAttr}→${newAttr} ${charAttr}属性キャラにHP${sign}`,
+            delta > 0 ? "heal" : "damage",
+          );
+          return newState;
+        }
+      }
+    }
+  }
+
+  return appendLog(
+    newState,
+    `マス${cellIdx}の属性: ${oldAttr}→${newAttr}`,
+    "info",
+  );
+}
+
+function resolveCellAttrTargets(target: EffectTarget, summonIdx: CellIndex): CellIndex[] {
+  if (target === "self_cell") return [summonIdx];
+  if (target === "adj_cells") return getAdjacentCells(summonIdx);
+  return [];
+}
+
+function resolveSetCellAttrMode(
+  mode: string,
+  charAttr: string | undefined,
+): string | null {
+  if (mode === "self_attr") return charAttr ?? null;
+  if (mode === "opposite") {
+    if (!charAttr || charAttr === "虚") return null;
+    return ATTR_OPPOSITES[charAttr] ?? null;
+  }
+  return null;
+}
+
+function applySetCellAttrToBoard(
+  board: Board,
+  boardAttrs: string[],
+  cellIdx: CellIndex,
+  newAttr: string,
+): { board: Board; boardAttrs: string[] } {
+  if (boardAttrs[cellIdx] === newAttr) return { board, boardAttrs };
+  const na = [...boardAttrs];
+  na[cellIdx] = newAttr;
+  const nb = [...board] as Board;
+  const occupant = nb[cellIdx];
+  if (occupant) {
+    const charAttr = getCharDef(occupant.cardId)?.attribute ?? "虚";
+    if (charAttr !== "虚" && newAttr !== "虚") {
+      let delta = 0;
+      if (newAttr === charAttr) delta = 2;
+      else if (ATTR_OPPOSITES[charAttr] === newAttr) delta = -2;
+      if (delta !== 0) {
+        const newHp = Math.min(occupant.maxHp, occupant.hp + delta);
+        nb[cellIdx] = newHp <= 0 ? null : { ...occupant, hp: newHp };
+      }
+    }
+  }
+  return { board: nb, boardAttrs: na };
+}
+
 export function applyAutoEffects(
   state: GameState,
   summonIdx: CellIndex,
   owner: 0 | 1,
   clauses: EffectClause[],
   charAttr?: string,
-): { board: Board; players: [PlayerState, PlayerState] } {
+): { board: Board; players: [PlayerState, PlayerState]; boardAttrs: string[] } {
   let board = [...state.board] as Board;
   let players: [PlayerState, PlayerState] = [
     { ...state.players[0] },
     { ...state.players[1] },
   ];
+  let boardAttrs = [...state.boardAttrs];
 
   for (const clause of clauses) {
     if (clause.trigger !== "on_summon") continue;
@@ -285,20 +378,32 @@ export function applyAutoEffects(
         board,
         summonIdx,
         owner,
-        state.boardAttrs,
+        boardAttrs,
         charAttr,
       )
     )
       continue;
 
     for (const atom of clause.effects) {
-      const r = applyAtom(board, players, summonIdx, owner, atom);
-      board = r.board;
-      players = r.players;
+      if (atom.type === "set_cell_attr") {
+        const cellIdxs = resolveCellAttrTargets(atom.target, summonIdx);
+        const newAttr = resolveSetCellAttrMode(atom.mode, charAttr);
+        if (newAttr !== null) {
+          for (const ci of cellIdxs) {
+            const r = applySetCellAttrToBoard(board, boardAttrs, ci, newAttr);
+            board = r.board;
+            boardAttrs = r.boardAttrs;
+          }
+        }
+      } else {
+        const r = applyAtom(board, players, summonIdx, owner, atom);
+        board = r.board;
+        players = r.players;
+      }
     }
   }
 
-  return { board, players };
+  return { board, players, boardAttrs };
 }
 
 // ============================================================
