@@ -7,3 +7,17 @@ dependencies = [
     "fonttools>=4.63.0",
     "fpdf2>=2.8.7",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.14",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP"]
+
+[tool.ruff.format]
+quote-style = "double"

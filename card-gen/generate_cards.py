@@ -8,27 +8,28 @@ Font:   sudo apt install fonts-noto-cjk
 import json
 import sys
 from pathlib import Path
+
 from fpdf import FPDF
 
 # ── dimensions (mm) ──────────────────────────────────────────────────────────
 CARD_W, CARD_H = 63, 88
-A4_W,   A4_H   = 210, 297
-COLS,   ROWS   = 3, 3
+A4_W, A4_H = 210, 297
+COLS, ROWS = 3, 3
 
-H_GAP = (A4_W - COLS * CARD_W) / (COLS + 1)   # ~5.25 mm
-V_GAP = (A4_H - ROWS * CARD_H) / (ROWS + 1)   # ~8.25 mm
+H_GAP = (A4_W - COLS * CARD_W) / (COLS + 1)  # ~5.25 mm
+V_GAP = (A4_H - ROWS * CARD_H) / (ROWS + 1)  # ~8.25 mm
 
-HEADER_H  = 8
+HEADER_H = 8
 GRAPHIC_H = 36
-CELL      = 3.0   # range-grid cell size (mm)
-GRID_COLS       = 3              # grids are always 3 columns wide
-GRID_W          = GRID_COLS * CELL   # 9 mm
-GRID_GAP        = 4              # gap between side-by-side grids (mm)
-GRID_BOTTOM_PAD = 3              # breathing room below grids (mm)
+CELL = 3.0  # range-grid cell size (mm)
+GRID_COLS = 3  # grids are always 3 columns wide
+GRID_W = GRID_COLS * CELL  # 9 mm
+GRID_GAP = 4  # gap between side-by-side grids (mm)
+GRID_BOTTOM_PAD = 3  # breathing room below grids (mm)
 
 # Characters forbidden at line beginning / end (行頭・行末禁則)
 KINSOKU_START = frozenset("、。，．・：；？！）］｝」』】〉》〕～…‥ヽヾゝゞ々ー")
-KINSOKU_END   = frozenset("「『（【〈《〔")
+KINSOKU_END = frozenset("「『（【〈《〔")
 
 # ── font candidates (regular, bold) ──────────────────────────────────────────
 FONT_REGULAR = [
@@ -64,8 +65,7 @@ class CardPDF(FPDF):
     def init_font(self, regular: str, bold: str):
         if not regular:
             sys.exit(
-                "Error: Japanese font not found.\n"
-                "  Linux/WSL: sudo apt install fonts-noto-cjk"
+                "Error: Japanese font not found.\n  Linux/WSL: sudo apt install fonts-noto-cjk"
             )
         self.add_font("jp", fname=regular)
         self.add_font("jp", style="B", fname=bold if bold else regular)
@@ -94,8 +94,7 @@ class CardPDF(FPDF):
         # Name (right of attribute circle)
         self.jp(8, bold=True)
         if self.get_string_width(card["name"]) > 27:
-            print(f"[warn] name may truncate: {card.get('id', card['name'])!r}",
-                  file=sys.stderr)
+            print(f"[warn] name may truncate: {card.get('id', card['name'])!r}", file=sys.stderr)
         self.set_xy(x + 8, y + 1.5)
         self.cell(27, 4.5, card["name"])
 
@@ -122,25 +121,25 @@ class CardPDF(FPDF):
     # ── lower half ────────────────────────────────────────────────────────
     def _lower(self, card, x, y):
         top = y + HEADER_H + GRAPHIC_H
-        tw  = CARD_W - 3          # full text width
+        tw = CARD_W - 3  # full text width
 
         # ── grid geometry (anchored to bottom) ──
         attack_rows = self._attack_rows(card)
         grid_pair_h = 3 + max(attack_rows, 3) * CELL
-        grid_y      = y + CARD_H - GRID_BOTTOM_PAD - grid_pair_h
-        max_y       = grid_y - 1  # text must stay above grids
+        grid_y = y + CARD_H - GRID_BOTTOM_PAD - grid_pair_h
+        max_y = grid_y - 1  # text must stay above grids
 
-        total_gw    = 2 * GRID_W + GRID_GAP
-        attack_gx   = x + (CARD_W - total_gw) / 2
+        total_gw = 2 * GRID_W + GRID_GAP
+        attack_gx = x + (CARD_W - total_gw) / 2
         weakness_gx = attack_gx + GRID_W + GRID_GAP
 
         # grid start positions: bottom-aligned, except magic (全域) which uses top-align
         grid_bottom = grid_y + grid_pair_h
         if card.get("attack_cells") == "all":
-            attack_start_y   = grid_y
+            attack_start_y = grid_y
             weakness_start_y = grid_y
         else:
-            attack_start_y   = grid_bottom - (3 + attack_rows * CELL)
+            attack_start_y = grid_bottom - (3 + attack_rows * CELL)
             weakness_start_y = grid_bottom - (3 + 3 * CELL)
 
         # ── stats ──
@@ -170,8 +169,7 @@ class CardPDF(FPDF):
             self.jp(5.8)
             self.set_xy(x + 1.5, text_y)
             if not self._multi_cell_j(tw, 3.2, card["effect"], max_y=max_y):
-                print(f"[warn] effect clipped: {card.get('id', card['name'])!r}",
-                      file=sys.stderr)
+                print(f"[warn] effect clipped: {card.get('id', card['name'])!r}", file=sys.stderr)
             text_y = min(self.get_y(), max_y)
 
         if card["ult"] and text_y + 4 < max_y:
@@ -182,16 +180,14 @@ class CardPDF(FPDF):
 
             self.jp(6, bold=True)
             self.set_xy(x + 1.5, text_y + 1)
-            self.cell(tw, 3.2,
-                      f"Ult: {ult['name']}  {ult['vp_cost']}VP / {ult['timing']}")
-            text_y += 1 + 3.2   # cell() は y を進めないので手動で加算
+            self.cell(tw, 3.2, f"Ult: {ult['name']}  {ult['vp_cost']}VP / {ult['timing']}")
+            text_y += 1 + 3.2  # cell() は y を進めないので手動で加算
 
             if text_y < max_y:
                 self.jp(5.5)
                 self.set_xy(x + 1.5, text_y)
                 if not self._multi_cell_j(tw, 3.0, ult["effect"], max_y=max_y):
-                    print(f"[warn] ult clipped: {card.get('id', card['name'])!r}",
-                          file=sys.stderr)
+                    print(f"[warn] ult clipped: {card.get('id', card['name'])!r}", file=sys.stderr)
 
         # ── grids (bottom, side by side) ──
         self.set_draw_color(180, 180, 180)
@@ -201,14 +197,19 @@ class CardPDF(FPDF):
         self.jp(5, bold=True)
         self.set_xy(attack_gx, attack_start_y)
         self.cell(GRID_W, 3, "攻撃", align="C")
-        self._draw_grid(card.get("attack_cells"), is_attack=True,
-                        gx=attack_gx, gy=attack_start_y + 3)
+        self._draw_grid(
+            card.get("attack_cells"), is_attack=True, gx=attack_gx, gy=attack_start_y + 3
+        )
 
         self.jp(5, bold=True)
         self.set_xy(weakness_gx, weakness_start_y)
         self.cell(GRID_W, 3, "弱点", align="C")
-        self._draw_grid(card.get("weakness_cells", [[-1, 0]]),
-                        is_attack=False, gx=weakness_gx, gy=weakness_start_y + 3)
+        self._draw_grid(
+            card.get("weakness_cells", [[-1, 0]]),
+            is_attack=False,
+            gx=weakness_gx,
+            gy=weakness_start_y + 3,
+        )
 
         self._vp_box(card, x, y)
 
@@ -243,8 +244,8 @@ class CardPDF(FPDF):
         self.cell(11, 5, str(card["cost"]), border=1, align="C")
 
     def _item_body(self, card, x, y):
-        top   = y + HEADER_H + GRAPHIC_H
-        tw    = CARD_W - 3
+        top = y + HEADER_H + GRAPHIC_H
+        tw = CARD_W - 3
         max_y = y + CARD_H - 2
 
         # Sets
@@ -262,8 +263,9 @@ class CardPDF(FPDF):
             self.jp(5.8)
             self.set_xy(x + 1.5, text_y)
             if not self._multi_cell_j(tw, 3.2, card["effect"], max_y=max_y):
-                print(f"[warn] item effect clipped: {card.get('id', card['name'])!r}",
-                      file=sys.stderr)
+                print(
+                    f"[warn] item effect clipped: {card.get('id', card['name'])!r}", file=sys.stderr
+                )
 
         self._vp_box(card, x, y)
 
@@ -298,8 +300,9 @@ class CardPDF(FPDF):
                 lines.append(line)
         return lines
 
-    def _multi_cell_j(self, tw: float, line_h: float, text: str,
-                       max_y: float | None = None) -> bool:
+    def _multi_cell_j(
+        self, tw: float, line_h: float, text: str, max_y: float | None = None
+    ) -> bool:
         """Drop-in for multi_cell with kinsoku line-breaking.
         Returns False and appends … if text was clipped by max_y."""
         x = self.get_x()
@@ -339,9 +342,9 @@ class CardPDF(FPDF):
 
         if is_attack:
             active_set = {tuple(c) for c in (cells or [])}
-            coords     = list(cells or []) + [[0, 0]]
+            coords = list(cells or []) + [[0, 0]]
             min_r = min(-1, min(r for r, _ in coords))
-            max_r = max( 1, max(r for r, _ in coords))
+            max_r = max(1, max(r for r, _ in coords))
         else:
             active_set = {tuple(c) for c in (cells or [])}
             min_r, max_r = -1, 1
@@ -354,8 +357,7 @@ class CardPDF(FPDF):
                 if (row, col) == (0, 0):
                     label, rgb = "^", (180, 180, 180)
                 elif (row, col) in active_set:
-                    label, rgb = ("A", (255, 180, 180)) if is_attack \
-                                 else ("B", (180, 200, 255))
+                    label, rgb = ("A", (255, 180, 180)) if is_attack else ("B", (180, 200, 255))
                 else:
                     label, rgb = "", (255, 255, 255)
 
@@ -369,35 +371,37 @@ class CardPDF(FPDF):
 def generate(cards_path: Path, out_path: Path):
     data = json.loads(cards_path.read_text(encoding="utf-8"))
     characters = data["characters"]
-    items      = data.get("items", [])
+    items = data.get("items", [])
 
     pdf = CardPDF(unit="mm", format="A4")
     pdf.set_auto_page_break(False)
     pdf.init_font(find_font(FONT_REGULAR), find_font(FONT_BOLD))
-    pdf.faction_names   = data.get("faction_names", {})
+    pdf.faction_names = data.get("faction_names", {})
     pdf.keyword_effects = data.get("keyword_effects", {})
 
     per_page = COLS * ROWS
     for start in range(0, len(characters), per_page):
         pdf.add_page()
-        for i, card in enumerate(characters[start: start + per_page]):
+        for i, card in enumerate(characters[start : start + per_page]):
             pdf.draw_card(card, *card_pos(i))
 
     for start in range(0, len(items), per_page):
         pdf.add_page()
-        for i, card in enumerate(items[start: start + per_page]):
+        for i, card in enumerate(items[start : start + per_page]):
             pdf.draw_item_card(card, *card_pos(i))
 
     pdf.output(str(out_path))
     char_pages = (len(characters) + per_page - 1) // per_page
     item_pages = (len(items) + per_page - 1) // per_page
-    print(f"Generated: {out_path}  "
-          f"({len(characters)} chars/{char_pages}p, "
-          f"{len(items)} items/{item_pages}p)")
+    print(
+        f"Generated: {out_path}  "
+        f"({len(characters)} chars/{char_pages}p, "
+        f"{len(items)} items/{item_pages}p)"
+    )
 
 
 if __name__ == "__main__":
     root = Path(__file__).parent
     data = root.parent / "data"
-    out  = Path(sys.argv[1]) if len(sys.argv) > 1 else root / "cards.pdf"
+    out = Path(sys.argv[1]) if len(sys.argv) > 1 else root / "cards.pdf"
     generate(data / "cards.json", out)

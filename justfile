@@ -10,6 +10,16 @@ setup:
     cd card-gen && uv sync
     cd game && npm install
 
+# ── card-gen lint / format ────────────────────────────────
+
+# Python コードを lint (ruff check)
+lint-py:
+    cd card-gen && uv run ruff check .
+
+# Python コードを format (ruff format)
+fmt-py:
+    cd card-gen && uv run ruff format .
+
 # ── カード生成 ────────────────────────────────────────────
 
 # PDFを生成 (card-gen/cards.pdf)
