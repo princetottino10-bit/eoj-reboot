@@ -229,9 +229,5 @@ passive 効果は「盤面状態に応じて常時発動」する効果。`engin
 
 | 項目 | 優先度 | 備考 |
 |------|-------|------|
-| passive 効果全般 | ✅ | passive.ts で全7カード実装済み |
-| on_kill / on_death / on_damaged 効果 | ✅ | effects.ts + game.ts で実装済み |
-| on_turn_start / on_turn_end 効果 | ✅ | effects.ts + turn.ts で実装済み。aggro_v2_02のUI対応も完了 |
-| on_ally_killed 効果 | ✅ | effects.ts: applyOnAllyKilledEffects 実装済み |
 | snipe エース回収（照準マーカー） | 低 | `aim`マーカーの付与手段未実装のため常に軽減0 |
 | キャラ個別効果の網羅テスト | 低 | `effects.test.ts`は自動効果のみカバー |
