@@ -94,12 +94,11 @@ describe("createDraftState", () => {
     expect(createDraftState().step).toBe(0);
   });
 
-  it("全7派閥が available", () => {
+  it("全6派閥が available", () => {
     const draft = createDraftState();
     expect(draft.availableFactions.sort()).toEqual([
       "aggro",
       "control",
-      "geo",
       "snipe",
       "synergy",
       "tank",
@@ -107,9 +106,9 @@ describe("createDraftState", () => {
     ]);
   });
 
-  it("全5アイテムセットが available", () => {
+  it("全4アイテムセットが available", () => {
     const draft = createDraftState();
-    expect(draft.availableItemSets.sort()).toEqual(["A", "B", "C", "D", "E"]);
+    expect(draft.availableItemSets.sort()).toEqual(["A", "B", "C", "D"]);
   });
 
   it("各プレイヤーの選択はすべて空", () => {
