@@ -94,7 +94,7 @@ export type EffectAtom =
   | { type: "clear_has_acted"; target: EffectTarget }
   | { type: "no_counterattack" }
   | { type: "omnidirectional_counter" }
-  | { type: "set_cell_attr"; target: EffectTarget; mode: "opposite" | "self_attr" | "choose" };
+  | { type: "set_cell_attr"; target: EffectTarget; mode: "opposite" | "self_attr" };
 
 /** エフェクト発動の条件 */
 export type EffectCondition =
@@ -150,8 +150,7 @@ function atomNeedsUi(atom: EffectAtom): boolean {
     ("target" in atom &&
       SELECT_TARGETS.has((atom as { target: EffectTarget }).target)) ||
     (atom.type === "rotate" && atom.degrees === "any") ||
-    atom.type === "discard" ||
-    (atom.type === "set_cell_attr" && atom.mode === "choose")
+    atom.type === "discard"
   );
 }
 
@@ -923,7 +922,7 @@ export const EFFECT_SPECS: Record<string, CardEffectSpec> = {
     clauses: [
       {
         trigger: "on_summon",
-        effects: [{ type: "set_cell_attr", target: "select_adj_cell", mode: "choose" }],
+        effects: [{ type: "set_cell_attr", target: "select_adj_cell", mode: "self_attr" }],
       },
     ],
   },

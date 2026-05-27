@@ -2155,7 +2155,7 @@
     },
     {
       "id": "geo_v2_01",
-      "name": "地脈のカイン",
+      "name": "鉛影のカイン",
       "faction": "trick",
       "cost": 2,
       "vp": 1,
@@ -2171,7 +2171,7 @@
     },
     {
       "id": "geo_v2_02",
-      "name": "地脈のリナ",
+      "name": "紫闇のリナ",
       "faction": "control",
       "cost": 3,
       "vp": 1,
@@ -2187,7 +2187,7 @@
     },
     {
       "id": "geo_v2_03",
-      "name": "地脈のソウル",
+      "name": "翠光のソウル",
       "faction": "synergy",
       "cost": 2,
       "vp": 1,
@@ -2203,7 +2203,7 @@
     },
     {
       "id": "geo_v2_04",
-      "name": "地脈のダーク",
+      "name": "紅蓮のダーク",
       "faction": "aggro",
       "cost": 3,
       "vp": 1,
@@ -2214,7 +2214,7 @@
       "attack_cells": [[1, 0]],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、隣接マスを1つ選び、その属性を任意に変える。",
+      "effect": "召喚時、隣接マスを1つ選び、その属性を闇に変える。",
       "ult": null
     }
   ],

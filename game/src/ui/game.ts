@@ -86,8 +86,7 @@ export interface GameUiExtra {
     | "ult_dir_pending"
     | "element_swap_ally_pending"
     | "element_swap_hand_pending"
-    | "item_rotate_pending"
-    | "cell_attr_choose_pending";
+    | "item_rotate_pending";
   validCells: CellIndex[];
   dirPickerCell: CellIndex | null;
   summonHandIdx: number | null;
@@ -124,8 +123,6 @@ export interface GameUiExtra {
   ultCasterIdx: CellIndex | null;
   /** Board index selected in element_swap step 1 */
   elementSwapBoardIdx: CellIndex | null;
-  /** Cell index selected in cell_attr step 1 (before attr pick) */
-  pendingAttrCellIdx: CellIndex | null;
   /** aggro_v2_02 on_turn_start: 任意捨てでマナ+1 のキャラboard index (nullなら通常フロー) */
   turnStartDiscardIdx: CellIndex | null;
   /** Magic summon attack context: which summoned char and card */
@@ -1410,20 +1407,6 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
     hint.className = "action-label";
     hint.textContent = "入れ替える手札のキャラを選択（緑枠）";
     actionPanel.appendChild(hint);
-  } else if (ui.mode === "cell_attr_choose_pending") {
-    const hint = document.createElement("div");
-    hint.className = "action-label";
-    hint.style.width = "100%";
-    hint.textContent = "変更後の属性を選択";
-    actionPanel.appendChild(hint);
-    for (const attr of ["拳", "念", "光", "闇", "虚"]) {
-      const btn = document.createElement("button");
-      btn.className = "btn btn-secondary";
-      btn.textContent = attr;
-      btn.addEventListener("click", () => onCellAttrChosen(state, ui, attr));
-      actionPanel.appendChild(btn);
-    }
-    actionPanel.appendChild(cancel());
   }
 
   return actionPanel;
@@ -2927,31 +2910,16 @@ function doResolveEffect(
     | { type: "set_cell_attr"; mode: string }
     | undefined;
   if (setCellAttrAtom) {
-    if (setCellAttrAtom.mode === "choose") {
-      // Two-step: cell chosen → now pick attribute
-      setState({
-        gameState: state,
-        gameUiExtra: {
-          ...resetGameUiExtra(),
-          mode: "cell_attr_choose_pending",
-          pendingCardId: cardId,
-          pendingCellIdx: summonIdx,
-          pendingAttrCellIdx: targetIdx,
-        },
-      });
-    } else {
-      // self_attr or opposite: resolve immediately
-      const char = state.board[summonIdx];
-      const charAttr = char ? (getCharDef(char.cardId)?.attribute ?? "虚") : "虚";
-      let newAttr: string | null = null;
-      if (setCellAttrAtom.mode === "self_attr") newAttr = charAttr;
-      else if (setCellAttrAtom.mode === "opposite")
-        newAttr = charAttr !== "虚" ? (ATTR_OPPOSITES[charAttr] ?? null) : null;
-      const newState = newAttr
-        ? applyCellAttrChange(state, targetIdx, newAttr)
-        : state;
-      finalizeSummonTurn(newState, cardId, summonIdx);
-    }
+    const char = state.board[summonIdx];
+    const charAttr = char ? (getCharDef(char.cardId)?.attribute ?? "虚") : "虚";
+    let newAttr: string | null = null;
+    if (setCellAttrAtom.mode === "self_attr") newAttr = charAttr;
+    else if (setCellAttrAtom.mode === "opposite")
+      newAttr = charAttr !== "虚" ? (ATTR_OPPOSITES[charAttr] ?? null) : null;
+    const newState = newAttr
+      ? applyCellAttrChange(state, targetIdx, newAttr)
+      : state;
+    finalizeSummonTurn(newState, cardId, summonIdx);
     return;
   }
 
@@ -3439,22 +3407,6 @@ function doElementSwap(
     return;
   }
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
-}
-
-// ============================================================
-// Cell attribute change (geo cards)
-// ============================================================
-
-function onCellAttrChosen(state: GameState, ui: GameUiExtra, attr: string): void {
-  const cardId = ui.pendingCardId;
-  const summonIdx = ui.pendingCellIdx;
-  const cellIdx = ui.pendingAttrCellIdx;
-  if (!cardId || summonIdx === null || cellIdx === null) {
-    setState({ gameUiExtra: resetGameUiExtra() });
-    return;
-  }
-  const newState = applyCellAttrChange(state, cellIdx, attr);
-  finalizeSummonTurn(newState, cardId, summonIdx);
 }
 
 // ============================================================
