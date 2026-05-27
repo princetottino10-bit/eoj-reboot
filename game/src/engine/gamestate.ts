@@ -177,6 +177,7 @@ export function createInitialGameState(
         hand: d0.hand,
         deck: d0.deck,
         discard: [],
+        skipNextTurn: false,
       },
       {
         factions: [...draft.factions[1]],
@@ -186,6 +187,7 @@ export function createInitialGameState(
         hand: d1.hand,
         deck: d1.deck,
         discard: [],
+        skipNextTurn: false,
       },
     ],
     board: Array(9).fill(null),

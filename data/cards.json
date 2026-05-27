@@ -1,11 +1,11 @@
 {
   "faction_names": {
-    "aggro":   "紅蓮",
-    "tank":    "蒼盾",
+    "aggro": "紅蓮",
+    "tank": "蒼盾",
     "control": "紫闇",
     "synergy": "翠光",
-    "snipe":   "銀眼",
-    "trick":   "鉛影"
+    "snipe": "銀眼",
+    "trick": "鉛影"
   },
   "keyword_effects": {
     "先制": "反撃時、攻撃側より先にダメージ",
@@ -2163,7 +2163,12 @@
       "atk": 2,
       "reactivation_cost": 1,
       "attribute": "拳",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、自身のいるマスの属性を拳に変える。",
@@ -2179,7 +2184,12 @@
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "念",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、自身の隣接マス全ての属性を対立属性（拳→念）に変える。",
@@ -2195,7 +2205,12 @@
       "atk": 2,
       "reactivation_cost": 1,
       "attribute": "光",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、任意のマスを1つ選び、その属性を光に変える。",
@@ -2211,7 +2226,12 @@
       "atk": 3,
       "reactivation_cost": 2,
       "attribute": "闇",
-      "attack_cells": [[1, 0]],
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "召喚時、隣接マスを1つ選び、その属性を闇に変える。",
@@ -2256,36 +2276,13 @@
       ]
     },
     {
-      "id": "item_04",
-      "name": "強化弾",
-      "cost": 1,
-      "vp": 1,
-      "effect": "このターン、味方1体のATK+2",
-      "sets": [
-        "A",
-        "B"
-      ]
-    },
-    {
-      "id": "item_05",
-      "name": "弱体化ガス",
-      "cost": 1,
-      "vp": 1,
-      "effect": "敵1体のATK-2",
-      "sets": [
-        "B",
-        "D"
-      ]
-    },
-    {
       "id": "item_06",
       "name": "手榴弾",
       "cost": 1,
       "vp": 1,
-      "effect": "敵1体に2ダメージ",
+      "effect": "敵1体に3ダメージ",
       "sets": [
-        "A",
-        "C"
+        "A"
       ]
     },
     {
@@ -2293,40 +2290,9 @@
       "name": "拘束鎖",
       "cost": 2,
       "vp": 1,
-      "effect": "敵1体を180°回転 / 1ターン【向き固定（回転できなくなる）】",
+      "effect": "任意の1体を任意の向きに変え、1ターン向き固定",
       "sets": [
         "C"
-      ]
-    },
-    {
-      "id": "item_20",
-      "name": "混乱ガス",
-      "cost": 1,
-      "vp": 1,
-      "effect": "敵1体の向きを90°回転",
-      "sets": [
-        "A"
-      ]
-    },
-    {
-      "id": "item_bounce_enemy",
-      "name": "帰還の風",
-      "cost": 2,
-      "vp": 1,
-      "effect": "敵C2以下のキャラを持ち主の手札に戻す",
-      "sets": [
-        "C"
-      ]
-    },
-    {
-      "id": "item_element_swap",
-      "name": "属性召喚",
-      "cost": 2,
-      "vp": 1,
-      "effect": "属性一致で手札のキャラと場のキャラを入替える",
-      "sets": [
-        "A",
-        "D"
       ]
     },
     {
@@ -2356,15 +2322,105 @@
       "vp": 1,
       "effect": "味方1体を再行動可能にする",
       "sets": [
+        "D"
+      ]
+    },
+    {
+      "id": "item_compass_fog",
+      "name": "迷いの羅針霧",
+      "cost": 1,
+      "vp": 1,
+      "effect": "任意の1体を任意の向きに変える",
+      "sets": [
+        "A"
+      ]
+    },
+    {
+      "id": "item_piercing_bullet",
+      "name": "徹甲弾",
+      "cost": 1,
+      "vp": 1,
+      "effect": "敵1体に2ダメージ【貫通】（防護・回避を無視）",
+      "sets": [
+        "A"
+      ]
+    },
+    {
+      "id": "item_artillery",
+      "name": "砲撃指令",
+      "cost": 2,
+      "vp": 1,
+      "effect": "敵全体に1ダメージ",
+      "sets": [
+        "A"
+      ]
+    },
+    {
+      "id": "item_heroize",
+      "name": "英雄化",
+      "cost": 2,
+      "vp": 1,
+      "effect": "味方1体のATK永続+1・先制（quickness）マーカー付与",
+      "sets": [
+        "B"
+      ]
+    },
+    {
+      "id": "item_atk_steal",
+      "name": "ATK強奪",
+      "cost": 2,
+      "vp": 1,
+      "effect": "敵1体のATK永続-1、次に味方1体のATK永続+1",
+      "sets": [
+        "B"
+      ]
+    },
+    {
+      "id": "item_time_freeze",
+      "name": "時間凍結",
+      "cost": 3,
+      "vp": 1,
+      "effect": "相手の次のターンをスキップする",
+      "sets": [
         "C"
       ]
     },
     {
-      "id": "item_self_bounce",
-      "name": "再起の印",
+      "id": "item_transpose",
+      "name": "転置の秘術",
+      "cost": 2,
+      "vp": 1,
+      "effect": "任意の2体のキャラを位置交換する",
+      "sets": [
+        "C"
+      ]
+    },
+    {
+      "id": "item_bind_ring",
+      "name": "呪縛の指輪",
+      "cost": 2,
+      "vp": 1,
+      "effect": "敵1体：1ターン向き固定 + このターン再行動コスト+2",
+      "sets": [
+        "C"
+      ]
+    },
+    {
+      "id": "item_death_note",
+      "name": "断末魔の手記",
       "cost": 1,
       "vp": 1,
-      "effect": "味方1体を手札に戻す（再召喚で効果再発動）",
+      "effect": "手札を2枚選んで捨て、3枚ドロー",
+      "sets": [
+        "D"
+      ]
+    },
+    {
+      "id": "item_geo_crack",
+      "name": "地割れの書",
+      "cost": 2,
+      "vp": 1,
+      "effect": "手札を1枚選んで捨て、任意のマスの属性をそのカードの属性に変更する",
       "sets": [
         "D"
       ]

@@ -51,6 +51,7 @@ function makePlayer(opts: Partial<PlayerState> = {}): PlayerState {
     hand: [],
     deck: [],
     discard: [],
+    skipNextTurn: false,
     ...opts,
   };
 }
@@ -107,40 +108,31 @@ describe("item_03: HP+3", () => {
 });
 
 // ============================================================
-// item_04: このターンATK+2 (tempAtkBuff)
+// item_heroize: 英雄化 (ATK+1永続 + quickness)
 // ============================================================
-describe("item_04: このターンATK+2", () => {
-  it("tempAtkBuffが+2される", () => {
+describe("item_heroize: 英雄化", () => {
+  it("味方のATKが永続+1される", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(0, { atk: 3, tempAtkBuff: 0 });
+    board[4] = makeChar(0, { atk: 2 });
     const state = makeState(board);
-    const result = applyItemEffect(state, "item_04", 4, 0);
-    expect(result.board[4]?.tempAtkBuff).toBe(2);
+    const result = applyItemEffect(state, "item_heroize", 4, 0);
+    expect(result.board[4]?.atk).toBe(3);
   });
 
-  it("atkは変わらない（tempAtkBuffだけ変更）", () => {
+  it("quicknessマーカーが付与される", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(0, { atk: 3, tempAtkBuff: 0 });
+    board[4] = makeChar(0);
     const state = makeState(board);
-    const result = applyItemEffect(state, "item_04", 4, 0);
-    expect(result.board[4]?.atk).toBe(3); // atkは不変
-    expect(result.board[4]?.tempAtkBuff).toBe(2); // tempAtkBuffが+2
-  });
-
-  it("既存のtempAtkBuffに累積する", () => {
-    const board: Board = Array(9).fill(null);
-    board[4] = makeChar(0, { atk: 3, tempAtkBuff: 1 });
-    const state = makeState(board);
-    const result = applyItemEffect(state, "item_04", 4, 0);
-    expect(result.board[4]?.tempAtkBuff).toBe(3);
+    const result = applyItemEffect(state, "item_heroize", 4, 0);
+    expect(result.board[4]?.markers.quickness).toBe(1);
   });
 
   it("敵には効果なし", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(1, { atk: 3 }); // P1
+    board[4] = makeChar(1, { atk: 2 }); // P1
     const state = makeState(board);
-    const result = applyItemEffect(state, "item_04", 4, 0); // P0が使用
-    expect(result.board[4]?.tempAtkBuff).toBe(0);
+    const result = applyItemEffect(state, "item_heroize", 4, 0);
+    expect(result.board[4]?.atk).toBe(2); // 不変
   });
 });
 
@@ -202,73 +194,69 @@ describe("item_reactivate: 再行動可能", () => {
 });
 
 // ============================================================
-// item_self_bounce: 味方を手札に戻す
+// item_time_freeze: 時間凍結（相手のターンスキップ）
 // ============================================================
-describe("item_self_bounce: 手札に戻す", () => {
-  it("盤面から取り除き手札に追加", () => {
+describe("item_time_freeze: 時間凍結", () => {
+  it("相手プレイヤーのskipNextTurnがtrueになる", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(0, { cardId: "aggro_v2_01" });
-    const state = makeState(board, {
-      players: [makePlayer({ hand: [] }), makePlayer()],
-    });
-    const result = applyItemEffect(state, "item_self_bounce", 4, 0);
-    expect(result.board[4]).toBeNull();
-    expect(result.players[0].hand).toContain("aggro_v2_01");
+    const state = makeState(board);
+    const result = applyItemEffect(state, "item_time_freeze", undefined, 0);
+    expect(result.players[1].skipNextTurn).toBe(true);
   });
 
-  it("敵には効果なし（盤面から取り除かない）", () => {
+  it("自分のskipNextTurnは変化しない", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(1, { cardId: "aggro_v2_01" }); // P1のキャラ
     const state = makeState(board);
-    const result = applyItemEffect(state, "item_self_bounce", 4, 0);
-    expect(result.board[4]).not.toBeNull();
+    const result = applyItemEffect(state, "item_time_freeze", undefined, 0);
+    expect(result.players[0].skipNextTurn).toBe(false);
   });
 });
 
 // ============================================================
-// item_05: 敵ATK-2
+// item_bind_ring: 呪縛の指輪 (dir_lock 1T + action_tax +2)
 // ============================================================
-describe("item_05: 敵ATK-2", () => {
-  it("敵のATKを2下げる", () => {
+describe("item_bind_ring: 呪縛の指輪", () => {
+  it("敵のdirLockedが1になる", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(1, { atk: 4 }); // P1の敵
+    board[4] = makeChar(1);
     const state = makeState(board);
-    const result = applyItemEffect(state, "item_05", 4, 0);
-    expect(result.board[4]?.atk).toBe(2);
+    const result = applyItemEffect(state, "item_bind_ring", 4, 0);
+    expect(result.board[4]?.status.dirLocked).toBe(1);
   });
 
-  it("ATKが0未満にならない", () => {
+  it("敵のactionTaxが2増える", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(1, { atk: 1 });
+    board[4] = makeChar(1);
     const state = makeState(board);
-    const result = applyItemEffect(state, "item_05", 4, 0);
-    expect(result.board[4]?.atk).toBe(0);
+    const result = applyItemEffect(state, "item_bind_ring", 4, 0);
+    expect(result.board[4]?.status.actionTax).toBe(2);
   });
 
   it("味方には効果なし", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(0, { atk: 4 }); // P0の味方
+    board[4] = makeChar(0); // P0の味方
     const state = makeState(board);
-    const result = applyItemEffect(state, "item_05", 4, 0);
-    expect(result.board[4]?.atk).toBe(4);
+    const result = applyItemEffect(state, "item_bind_ring", 4, 0);
+    expect(result.board[4]?.status.dirLocked).toBe(0);
+    expect(result.board[4]?.status.actionTax).toBe(0);
   });
 });
 
 // ============================================================
-// item_06: 敵に2ダメ
+// item_06: 敵に3ダメ
 // ============================================================
-describe("item_06: 敵に2ダメ", () => {
-  it("敵に2ダメージ", () => {
+describe("item_06: 敵に3ダメ", () => {
+  it("敵に3ダメージ", () => {
     const board: Board = Array(9).fill(null);
     board[4] = makeChar(1, { hp: 5, maxHp: 5 });
     const state = makeState(board);
     const result = applyItemEffect(state, "item_06", 4, 0);
-    expect(result.board[4]?.hp).toBe(3);
+    expect(result.board[4]?.hp).toBe(2);
   });
 
   it("撃破時にVP獲得とclearAffiliatedEffects", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(1, { hp: 2, maxHp: 2, cardId: "control_v2_01" });
+    board[4] = makeChar(1, { hp: 3, maxHp: 3, cardId: "control_v2_01" });
     // 洗脳付与者として登録
     board[1] = makeChar(0, {
       status: {
@@ -278,6 +266,7 @@ describe("item_06: 敵に2ダメ", () => {
         actionTaxBy: null,
         dirLocked: 0,
         immune: 0,
+        skipNextTurn: 0,
       },
     });
     const state = makeState(board, {
@@ -300,54 +289,44 @@ describe("item_06: 敵に2ダメ", () => {
 });
 
 // ============================================================
-// item_14: 180°回転・向き固定
+// item_14: 拘束鎖（任意方向・向き固定）
 // ============================================================
-describe("item_14: 180°回転・向き固定1ターン", () => {
-  it("敵を180°回転させて向き固定", () => {
+describe("item_14: 拘束鎖", () => {
+  it("rotate degrees:'any' のためエンジンは向きを変えない（UI側で処理）", () => {
     const board: Board = Array(9).fill(null);
     board[4] = makeChar(1, { dir: 0 }); // UP向き
     const state = makeState(board);
     const result = applyItemEffect(state, "item_14", 4, 0);
-    expect(result.board[4]?.dir).toBe(2); // DOWN向き
+    expect(result.board[4]?.dir).toBe(0); // unchanged (UI側で方向確定)
+  });
+
+  it("dir_lockが1ターンセットされる", () => {
+    const board: Board = Array(9).fill(null);
+    board[4] = makeChar(1, { dir: 0 });
+    const state = makeState(board);
+    const result = applyItemEffect(state, "item_14", 4, 0);
     expect(result.board[4]?.status.dirLocked).toBe(1);
   });
 });
 
 // ============================================================
-// item_20: 90°回転
+// item_piercing_bullet: 徹甲弾（貫通2ダメ）
 // ============================================================
-describe("item_20: 敵を90°回転", () => {
-  it("UIが回転方向を決めるため applyItemEffect は状態を変えない", () => {
-    // degrees:'either' の回転はUI側で処理するため engine は no-op
+describe("item_piercing_bullet: 徹甲弾", () => {
+  it("敵に2ダメージ", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(1, { dir: 0 });
+    board[4] = makeChar(1, { hp: 5, maxHp: 5 });
     const state = makeState(board);
-    const result = applyItemEffect(state, "item_20", 4, 0);
-    expect(result.board[4]?.dir).toBe(0); // unchanged
-  });
-});
-
-// ============================================================
-// item_bounce_enemy: 相手手札に戻す
-// ============================================================
-describe("item_bounce_enemy: 相手手札に戻す", () => {
-  it("敵を相手の手札に戻す", () => {
-    const board: Board = Array(9).fill(null);
-    board[4] = makeChar(1, { cardId: "aggro_v2_01" });
-    const state = makeState(board, {
-      players: [makePlayer(), makePlayer({ hand: [] })],
-    });
-    const result = applyItemEffect(state, "item_bounce_enemy", 4, 0);
-    expect(result.board[4]).toBeNull();
-    expect(result.players[1].hand).toContain("aggro_v2_01");
+    const result = applyItemEffect(state, "item_piercing_bullet", 4, 0);
+    expect(result.board[4]?.hp).toBe(3);
   });
 
   it("味方には効果なし", () => {
     const board: Board = Array(9).fill(null);
-    board[4] = makeChar(0, { cardId: "aggro_v2_01" });
+    board[4] = makeChar(0, { hp: 5 });
     const state = makeState(board);
-    const result = applyItemEffect(state, "item_bounce_enemy", 4, 0);
-    expect(result.board[4]).not.toBeNull();
+    const result = applyItemEffect(state, "item_piercing_bullet", 4, 0);
+    expect(result.board[4]?.hp).toBe(5);
   });
 });
 

@@ -94,7 +94,11 @@ export type EffectAtom =
   | { type: "clear_has_acted"; target: EffectTarget }
   | { type: "no_counterattack" }
   | { type: "omnidirectional_counter" }
-  | { type: "set_cell_attr"; target: EffectTarget; mode: "opposite" | "self_attr" };
+  | { type: "set_cell_attr"; target: EffectTarget; mode: "opposite" | "self_attr" | "discard_attr" }
+  | { type: "skip_turn" }
+  | { type: "set_acted"; target: EffectTarget }
+  | { type: "swap_chars_two" }
+  | { type: "discard_pick"; count: number };
 
 /** エフェクト発動の条件 */
 export type EffectCondition =
@@ -1110,6 +1114,7 @@ export const ULT_SPECS: Record<string, UltSpec> = {
 // ============================================================
 
 export const ITEM_SPECS: Record<string, ItemSpec> = {
+  // ── 全セット共通 ────────────────────────────────────────────
   item_01: {
     clauses: [{ trigger: "on_use", effects: [{ type: "draw", count: 2 }] }],
   },
@@ -1118,84 +1123,42 @@ export const ITEM_SPECS: Record<string, ItemSpec> = {
       { trigger: "on_use", effects: [{ type: "mana_gain", amount: 1 }] },
     ],
   },
-  item_03: {
-    clauses: [
-      {
-        trigger: "on_use",
-        effects: [{ type: "heal", target: "select_ally", amount: 3 }],
-      },
-    ],
-  },
-  item_04: {
-    clauses: [
-      {
-        trigger: "on_use",
-        effects: [
-          { type: "atk_delta", target: "select_ally", delta: 2, turns: 1 },
-        ],
-      },
-    ],
-  },
-  item_05: {
-    clauses: [
-      {
-        trigger: "on_use",
-        effects: [
-          {
-            type: "atk_delta",
-            target: "select_enemy",
-            delta: -2,
-            permanent: true,
-          },
-        ],
-      },
-    ],
-  },
+
+  // ── Set A: 速撃 ────────────────────────────────────────────
   item_06: {
     clauses: [
       {
         trigger: "on_use",
-        effects: [{ type: "hp_delta", target: "select_enemy", amount: -2 }],
+        effects: [{ type: "hp_delta", target: "select_enemy", amount: -3 }],
       },
     ],
   },
-  item_14: {
+  item_piercing_bullet: {
     clauses: [
       {
         trigger: "on_use",
-        effects: [
-          { type: "rotate", target: "select_enemy", degrees: 180 },
-          { type: "dir_lock", target: "select_enemy", turns: 1 },
-        ],
+        effects: [{ type: "hp_delta", target: "select_enemy", amount: -2, piercing: true }],
       },
     ],
   },
-  item_20: {
+  item_artillery: {
     clauses: [
       {
         trigger: "on_use",
-        effects: [
-          { type: "rotate", target: "select_enemy", degrees: "either" },
-        ],
+        effects: [{ type: "hp_delta", target: "all_enemies", amount: -1 }],
       },
     ],
   },
-  item_bounce_enemy: {
+  item_compass_fog: {
     clauses: [
       {
         trigger: "on_use",
-        effects: [{ type: "bounce", target: "select_enemy", maxCost: 2 }],
+        effects: [{ type: "rotate", target: "select_any", degrees: "any" }],
       },
     ],
   },
-  item_element_swap: {
-    clauses: [
-      {
-        trigger: "on_use",
-        effects: [{ type: "element_swap", target: "select_ally" }],
-      },
-    ],
-  },
+
+  // ── Set B: 武装 ────────────────────────────────────────────
   item_grant_piercing: {
     clauses: [
       {
@@ -1216,6 +1179,92 @@ export const ITEM_SPECS: Record<string, ItemSpec> = {
       },
     ],
   },
+  item_heroize: {
+    clauses: [
+      {
+        trigger: "on_use",
+        effects: [
+          { type: "atk_delta", target: "select_ally", delta: 1, permanent: true },
+          { type: "give_marker", target: "select_ally", marker: "quickness" },
+        ],
+      },
+    ],
+  },
+  // ATK強奪: UIで2ステップ処理（spec参照用）
+  item_atk_steal: {
+    clauses: [
+      {
+        trigger: "on_use",
+        effects: [
+          { type: "atk_delta", target: "select_enemy", delta: -1, permanent: true },
+          { type: "atk_delta", target: "select_ally", delta: 1, permanent: true },
+        ],
+      },
+    ],
+  },
+
+  // ── Set C: 封殺 ────────────────────────────────────────────
+  item_time_freeze: {
+    clauses: [
+      {
+        trigger: "on_use",
+        effects: [{ type: "skip_turn" }],
+      },
+    ],
+  },
+  // 転置の秘術: UIで2ステップ処理（spec参照用）
+  item_transpose: {
+    clauses: [
+      {
+        trigger: "on_use",
+        effects: [{ type: "swap_chars_two" }],
+      },
+    ],
+  },
+  item_14: {
+    clauses: [
+      {
+        trigger: "on_use",
+        effects: [
+          { type: "rotate", target: "select_any", degrees: "any" },
+          { type: "dir_lock", target: "select_any", turns: 1 },
+        ],
+      },
+    ],
+  },
+  item_bind_ring: {
+    clauses: [
+      {
+        trigger: "on_use",
+        effects: [
+          { type: "dir_lock", target: "select_enemy", turns: 1 },
+          { type: "action_tax", target: "select_enemy", amount: 2 },
+        ],
+      },
+    ],
+  },
+
+  // ── Set D: 継戦 ────────────────────────────────────────────
+  // 断末魔の手記: UIで処理（spec参照用）
+  item_death_note: {
+    clauses: [
+      {
+        trigger: "on_use",
+        effects: [
+          { type: "discard_pick", count: 2 },
+          { type: "draw", count: 3 },
+        ],
+      },
+    ],
+  },
+  item_03: {
+    clauses: [
+      {
+        trigger: "on_use",
+        effects: [{ type: "heal", target: "select_ally", amount: 3 }],
+      },
+    ],
+  },
   item_reactivate: {
     clauses: [
       {
@@ -1224,11 +1273,12 @@ export const ITEM_SPECS: Record<string, ItemSpec> = {
       },
     ],
   },
-  item_self_bounce: {
+  // 地割れの書: UIで処理（spec参照用）
+  item_geo_crack: {
     clauses: [
       {
         trigger: "on_use",
-        effects: [{ type: "bounce", target: "select_ally" }],
+        effects: [{ type: "set_cell_attr", target: "select_any_cell", mode: "discard_attr" }],
       },
     ],
   },

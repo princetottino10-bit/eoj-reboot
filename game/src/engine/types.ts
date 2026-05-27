@@ -76,6 +76,7 @@ export interface PlayerState {
   hand: string[]; // カードID配列
   deck: string[];
   discard: string[];
+  skipNextTurn: boolean; // 時間凍結: 次のターンをスキップ
 }
 
 export type GameScreen =

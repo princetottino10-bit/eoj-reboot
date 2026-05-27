@@ -38,6 +38,41 @@ function applyItemAtom(
     np[active] = { ...np[active], mana: np[active].mana + atom.amount };
     return appendLog({ ...state, players: np }, `マナ+${atom.amount}`, "info");
   }
+  if (atom.type === "skip_turn") {
+    const opp2 = (1 - active) as 0 | 1;
+    const np = [...state.players] as typeof state.players;
+    np[opp2] = { ...np[opp2], skipNextTurn: true };
+    return appendLog({ ...state, players: np }, "時間凍結！相手の次のターンをスキップ", "system");
+  }
+
+  // ── 全対象アトム（targetIdx不要） ──
+  if (atom.type === "hp_delta" && atom.target === "all_enemies") {
+    const opp2 = (1 - active) as 0 | 1;
+    const nb2 = [...state.board] as Board;
+    let ns = state;
+    let killVp = 0;
+    for (let i = 0; i < 9; i++) {
+      const c2 = nb2[i];
+      if (c2 && c2.owner === opp2) {
+        const newHp = c2.hp + atom.amount;
+        if (newHp <= 0) {
+          nb2[i] = null;
+          clearAffiliatedEffects(nb2, c2.cardId);
+          killVp++;
+        } else {
+          nb2[i] = { ...c2, hp: newHp };
+        }
+      }
+    }
+    const np2 = [...state.players] as typeof state.players;
+    if (killVp > 0) np2[active] = { ...np2[active], vp: np2[active].vp + killVp };
+    ns = appendLog(
+      { ...state, board: nb2, players: np2 },
+      `砲撃！敵全体に${Math.abs(atom.amount)}ダメージ${killVp > 0 ? `（${killVp}体撃破）` : ""}`,
+      "damage",
+    );
+    return ns;
+  }
 
   if (targetIdx === undefined) return state;
   const nb = [...state.board] as Board;
@@ -83,6 +118,7 @@ function applyItemAtom(
       );
     }
     case "hp_delta": {
+      // piercing: 防護・回避マーカーを無視してダメージ（アイテムでは固定ダメージ扱い）
       const newHp = c.hp + atom.amount;
       if (newHp <= 0) {
         nb[targetIdx] = null;
@@ -92,21 +128,42 @@ function applyItemAtom(
           np[active] = { ...np[active], vp: np[active].vp + 1 };
           return appendLog(
             { ...state, board: nb, players: np },
-            `${Math.abs(atom.amount)}ダメ（撃破！1VP）`,
+            `${Math.abs(atom.amount)}ダメ${atom.piercing ? "【貫通】" : ""}（撃破！1VP）`,
             "system",
           );
         }
         return appendLog(
           { ...state, board: nb },
-          `${Math.abs(atom.amount)}ダメ`,
+          `${Math.abs(atom.amount)}ダメ${atom.piercing ? "【貫通】" : ""}`,
           "damage",
         );
       }
       nb[targetIdx] = { ...c, hp: newHp };
       return appendLog(
         { ...state, board: nb },
-        atom.amount < 0 ? `${Math.abs(atom.amount)}ダメ` : `HP+${atom.amount}`,
+        atom.amount < 0
+          ? `${Math.abs(atom.amount)}ダメ${atom.piercing ? "【貫通】" : ""}`
+          : `HP+${atom.amount}`,
         atom.amount < 0 ? "damage" : "heal",
+      );
+    }
+    case "action_tax": {
+      nb[targetIdx] = {
+        ...c,
+        status: { ...c.status, actionTax: c.status.actionTax + atom.amount },
+      };
+      return appendLog(
+        { ...state, board: nb },
+        `${getCardName(c.cardId)} 再行動コスト+${atom.amount}`,
+        "info",
+      );
+    }
+    case "set_acted": {
+      nb[targetIdx] = { ...c, hasActed: true, hasRotated: true };
+      return appendLog(
+        { ...state, board: nb },
+        `${getCardName(c.cardId)} 行動不可（このターン）`,
+        "info",
       );
     }
     case "rotate": {

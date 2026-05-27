@@ -86,7 +86,14 @@ export interface GameUiExtra {
     | "ult_dir_pending"
     | "element_swap_ally_pending"
     | "element_swap_hand_pending"
-    | "item_rotate_pending";
+    | "item_rotate_pending"
+    | "item_dir_pending"
+    | "item_swap_first_pending"
+    | "item_swap_second_pending"
+    | "item_discard_pick_pending"
+    | "item_geo_discard_pending"
+    | "item_geo_cell_pending"
+    | "item_atk_steal_second_pending";
   validCells: CellIndex[];
   dirPickerCell: CellIndex | null;
   summonHandIdx: number | null;
@@ -110,6 +117,37 @@ export interface GameUiExtra {
     cardId: string;
     targetIdx: CellIndex;
     handIdx: number;
+  } | null;
+  /** Item effect: after target chosen, show absolute direction picker (any) */
+  itemDirContext: {
+    cardId: string;
+    targetIdx: CellIndex;
+    handIdx: number;
+  } | null;
+  /** 転置の秘術: 2ステップ位置交換 */
+  itemSwapContext: {
+    cardId: string;
+    handIdx: number;
+    firstIdx: CellIndex | null;
+  } | null;
+  /** 断末魔の手記: 手札から選んで捨てる */
+  itemDiscardPickContext: {
+    cardId: string;
+    handIdx: number;
+    discardCount: number;
+    drawCount: number;
+    discardedSoFar: string[];
+  } | null;
+  /** 地割れの書: 捨てたカードの属性→マス属性変更 */
+  itemGeoCrackContext: {
+    handIdx: number;
+    discardedAttr: string | null;
+  } | null;
+  /** ATK強奪: 2段目（味方選択） */
+  itemAtkStealContext: {
+    cardId: string;
+    handIdx: number;
+    enemyIdx: CellIndex;
   } | null;
   /** Discard-from-hand effect context */
   discardContext: {
@@ -1113,6 +1151,13 @@ export function renderGame(state: GameState, ui: GameUiExtra): HTMLElement {
       ),
     );
   }
+  if (ui.mode === "item_dir_pending" && ui.itemDirContext !== null) {
+    div.appendChild(
+      buildDirPickerOverlay("向きを選択", (dir) =>
+        onItemDirPicked(state, ui, dir),
+      ),
+    );
+  }
 
   return div;
 }
@@ -1357,6 +1402,11 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
     ui.mode === "effect_dir_pending" ||
     ui.mode === "effect_rotate_pending" ||
     ui.mode === "item_rotate_pending" ||
+    ui.mode === "item_dir_pending" ||
+    ui.mode === "item_swap_first_pending" ||
+    ui.mode === "item_swap_second_pending" ||
+    ui.mode === "item_atk_steal_second_pending" ||
+    ui.mode === "item_geo_cell_pending" ||
     ui.mode === "on_attack_rotate_pending"
   ) {
     actionPanel.appendChild(cancel());
@@ -1370,18 +1420,41 @@ function buildActionPanel(state: GameState, ui: GameUiExtra): HTMLElement {
       hint.textContent = "攻撃対象を選択";
     else if (ui.mode === "on_attack_rotate_pending")
       hint.textContent = "向きを選択してください（オーバーレイ）";
-    else if (ui.mode === "effect_dir_pending")
+    else if (ui.mode === "effect_dir_pending" || ui.mode === "item_dir_pending")
       hint.textContent = "向きを選択してください（オーバーレイ）";
     else if (
       ui.mode === "effect_rotate_pending" ||
       ui.mode === "item_rotate_pending"
     )
       hint.textContent = "回転方向を選択してください（オーバーレイ）";
+    else if (ui.mode === "item_swap_first_pending")
+      hint.textContent = "転置の秘術: 1体目を選択";
+    else if (ui.mode === "item_swap_second_pending")
+      hint.textContent = "転置の秘術: 2体目を選択";
+    else if (ui.mode === "item_atk_steal_second_pending")
+      hint.textContent = "ATK強奪: 強化する味方を選択";
+    else if (ui.mode === "item_geo_cell_pending")
+      hint.textContent = `地割れの書: 属性を変えるマスを選択`;
     else
       hint.textContent =
         ui.itemHandIdx !== null
           ? "アイテム効果の対象を選択"
           : "効果の対象を選択";
+    actionPanel.appendChild(hint);
+  } else if (ui.mode === "item_discard_pick_pending") {
+    actionPanel.appendChild(cancel());
+    const ctx = ui.itemDiscardPickContext;
+    const hint = document.createElement("div");
+    hint.className = "action-label";
+    hint.textContent = ctx
+      ? `断末魔の手記: 手札から捨てるカードを選択（あと${ctx.discardCount - ctx.discardedSoFar.length}枚）`
+      : "手札を選択";
+    actionPanel.appendChild(hint);
+  } else if (ui.mode === "item_geo_discard_pending") {
+    actionPanel.appendChild(cancel());
+    const hint = document.createElement("div");
+    hint.className = "action-label";
+    hint.textContent = "地割れの書: 属性の元にするカードを手札から選択";
     actionPanel.appendChild(hint);
   } else if (ui.mode === "ult_targeting") {
     actionPanel.appendChild(cancel());
@@ -1428,7 +1501,10 @@ function buildHandSection(
   const handCards = document.createElement("div");
   handCards.className = "hand-cards";
   const isDiscardMode =
-    ui.mode === "discard_pending" || ui.mode === "on_attack_discard_pending";
+    ui.mode === "discard_pending" ||
+    ui.mode === "on_attack_discard_pending" ||
+    ui.mode === "item_discard_pick_pending" ||
+    ui.mode === "item_geo_discard_pending";
   const isElementSwapMode = ui.mode === "element_swap_hand_pending";
   const isSummonDone = ui.mode === "summon_done";
 
@@ -1704,27 +1780,82 @@ function onHandCardClick(state: GameState, handIdx: number): void {
   const cost = itemDef.cost;
   if (state.players[active].mana < cost) return;
 
-  if (cardId === "item_element_swap") {
-    const allAllies = state.board
-      .map((c, i) => (c !== null && c.owner === active ? i : -1))
+  // ── 特殊フロー アイテム ────────────────────────────────────
+
+  // ATK強奪: 敵選択 → 味方選択の2ステップ
+  if (cardId === "item_atk_steal") {
+    const enemies = resolveSelectCells("select_enemy", state.board, active);
+    if (enemies.length === 0) { addLog("敵がいません", "system"); return; }
+    setState({
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "effect_targeting",
+        validCells: enemies,
+        itemHandIdx: handIdx,
+        pendingCardId: cardId,
+        itemAtkStealContext: { cardId, handIdx, enemyIdx: -1 as CellIndex },
+      },
+    });
+    addLog("ATK強奪: 対象の敵を選択", "info");
+    return;
+  }
+
+  // 転置の秘術: 1体目選択
+  if (cardId === "item_transpose") {
+    const allChars = state.board
+      .map((c, i) => (c !== null ? i : -1))
       .filter((i) => i >= 0) as CellIndex[];
-    if (allAllies.length === 0) {
-      addLog("味方がいません", "system");
+    if (allChars.length < 2) { addLog("交換できるキャラがいません", "system"); return; }
+    setState({
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "item_swap_first_pending",
+        validCells: allChars,
+        itemSwapContext: { cardId, handIdx, firstIdx: null },
+      },
+    });
+    addLog("転置の秘術: 1体目を選択", "info");
+    return;
+  }
+
+  // 断末魔の手記: 手札捨て選択モード
+  if (cardId === "item_death_note") {
+    const handSize = state.players[active].hand.length;
+    if (handSize <= 2) {
+      // 手札が2枚以下（アイテム含む）なら捨てるものがない or 全部捨てる
+      addLog("手札が足りません", "system");
       return;
     }
     setState({
       gameUiExtra: {
         ...resetGameUiExtra(),
-        mode: "element_swap_ally_pending",
-        validCells: allAllies,
-        itemHandIdx: handIdx,
-        pendingCardId: cardId,
+        mode: "item_discard_pick_pending",
+        itemDiscardPickContext: { cardId, handIdx, discardCount: 2, drawCount: 3, discardedSoFar: [] },
       },
     });
+    addLog("断末魔の手記: 捨てるカードを2枚選択", "info");
     return;
   }
 
-  // 対象選択不要なアイテムは即時発動
+  // 地割れの書: 手札から捨てるカード選択
+  if (cardId === "item_geo_crack") {
+    const handSize = state.players[active].hand.length;
+    if (handSize <= 1) {
+      addLog("手札が足りません（アイテム以外が必要）", "system");
+      return;
+    }
+    setState({
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "item_geo_discard_pending",
+        itemGeoCrackContext: { handIdx, discardedAttr: null },
+      },
+    });
+    addLog("地割れの書: 属性の元にするカードを選択", "info");
+    return;
+  }
+
+  // 対象選択不要なアイテムは即時発動（時間凍結・砲撃指令など）
   const itemSpec = getItemSpec(cardId);
   if (!itemSpec || getFirstSelectTarget(itemSpec.clauses, "on_use") === null) {
     doApplyImmediateItem(state, handIdx, cardId);
@@ -1792,6 +1923,51 @@ function onCellClick(state: GameState, ui: GameUiExtra, idx: CellIndex): void {
   if (ui.mode === "on_attack_sacrifice_pending") {
     if (!ui.validCells.includes(idx)) return;
     onOnAttackSacrificePicked(state, ui, idx);
+    return;
+  }
+
+  // ── 新アイテムフロー ───────────────────────────────────────
+
+  if (ui.mode === "item_swap_first_pending") {
+    if (!ui.validCells.includes(idx)) return;
+    const ctx = ui.itemSwapContext;
+    if (!ctx) return;
+    const remaining = state.board
+      .map((c, i) => (c !== null && i !== idx ? i : -1))
+      .filter((i) => i >= 0) as CellIndex[];
+    setState({
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "item_swap_second_pending",
+        validCells: remaining,
+        itemSwapContext: { ...ctx, firstIdx: idx },
+      },
+    });
+    addLog("転置の秘術: 2体目を選択", "info");
+    return;
+  }
+
+  if (ui.mode === "item_swap_second_pending") {
+    if (!ui.validCells.includes(idx)) return;
+    const ctx = ui.itemSwapContext;
+    if (!ctx || ctx.firstIdx === null) return;
+    doTransposeFinalize(state, ctx.cardId, ctx.handIdx, ctx.firstIdx, idx);
+    return;
+  }
+
+  if (ui.mode === "item_atk_steal_second_pending") {
+    if (!ui.validCells.includes(idx)) return;
+    const ctx = ui.itemAtkStealContext;
+    if (!ctx) return;
+    doAtkStealFinalize(state, ctx.cardId, ctx.handIdx, ctx.enemyIdx, idx);
+    return;
+  }
+
+  if (ui.mode === "item_geo_cell_pending") {
+    if (!ui.validCells.includes(idx)) return;
+    const ctx = ui.itemGeoCrackContext;
+    if (!ctx || !ctx.discardedAttr) return;
+    doGeoCrackFinalize(state, ctx.handIdx, idx, ctx.discardedAttr);
     return;
   }
 
@@ -1994,11 +2170,248 @@ function onItemRotatePicked(
   setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
 }
 
+// item_dir_pending: 4方向選択後（迷いの羅針霧・拘束鎖など）
+function onItemDirPicked(
+  state: GameState,
+  ui: GameUiExtra,
+  dir: Direction,
+): void {
+  const ctx = ui.itemDirContext;
+  if (!ctx) return;
+  const { cardId, targetIdx, handIdx } = ctx;
+  const active = state.active;
+
+  const cost = getItemDef(cardId)?.cost ?? 0;
+  const newHand = [...state.players[active].hand];
+  newHand.splice(handIdx, 1);
+  const newDiscard = [...state.players[active].discard, cardId];
+  const ps = [...state.players] as typeof state.players;
+  ps[active] = { ...ps[active], hand: newHand, discard: newDiscard, mana: ps[active].mana - cost };
+  let newState = { ...state, players: ps };
+
+  // rotate対象に絶対向きをセット
+  const nb = [...newState.board] as Board;
+  const target = nb[targetIdx];
+  if (target) {
+    const DIR_NAMES = ["↑(北)", "→(東)", "↓(南)", "←(西)"] as const;
+    nb[targetIdx] = { ...target, dir };
+    newState = appendLog(
+      { ...newState, board: nb },
+      `${getCardName(target.cardId)} の向きを ${DIR_NAMES[dir]} に変えた`,
+      "info",
+    );
+  }
+
+  // rotate以外のエフェクト（dir_lockなど）をtargetIdxに適用
+  const spec = getItemSpec(cardId);
+  const clause = spec?.clauses.find((c) => c.trigger === "on_use");
+  if (clause) {
+    for (const atom of clause.effects) {
+      if (atom.type === "rotate") continue;
+      if (atom.type === "dir_lock") {
+        const nb2 = [...newState.board] as Board;
+        const c2 = nb2[targetIdx];
+        if (c2) {
+          nb2[targetIdx] = { ...c2, status: { ...c2.status, dirLocked: atom.turns } };
+          newState = appendLog({ ...newState, board: nb2 }, `向き固定${atom.turns}ターン`, "info");
+        }
+      }
+    }
+  }
+
+  newState = applyVictoryCheck(newState, null);
+  if (newState.winner !== null) {
+    setState({ gameState: newState, screen: "over" });
+    return;
+  }
+  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+}
+
+// ============================================================
+// 新アイテム finalize ヘルパー
+// ============================================================
+
+function doTransposeFinalize(
+  state: GameState,
+  cardId: string,
+  handIdx: number,
+  firstIdx: CellIndex,
+  secondIdx: CellIndex,
+): void {
+  const active = state.active;
+  const cost = getItemDef(cardId)?.cost ?? 0;
+  const newHand = [...state.players[active].hand];
+  newHand.splice(handIdx, 1);
+  const np = [...state.players] as typeof state.players;
+  np[active] = { ...np[active], hand: newHand, discard: [...np[active].discard, cardId], mana: np[active].mana - cost };
+
+  const nb = [...state.board] as Board;
+  const a = nb[firstIdx];
+  const b = nb[secondIdx];
+  nb[firstIdx] = b;
+  nb[secondIdx] = a;
+
+  const nameA = a ? getCardName(a.cardId) : "空";
+  const nameB = b ? getCardName(b.cardId) : "空";
+  let newState = appendLog(
+    { ...state, board: nb, players: np },
+    `転置の秘術: ${nameA} ↔ ${nameB}`,
+    "info",
+  );
+  newState = applyVictoryCheck(newState, null);
+  if (newState.winner !== null) { setState({ gameState: newState, screen: "over" }); return; }
+  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+}
+
+function doAtkStealFinalize(
+  state: GameState,
+  cardId: string,
+  handIdx: number,
+  enemyIdx: CellIndex,
+  allyIdx: CellIndex,
+): void {
+  const active = state.active;
+  const cost = getItemDef(cardId)?.cost ?? 0;
+  const newHand = [...state.players[active].hand];
+  newHand.splice(handIdx, 1);
+  const np = [...state.players] as typeof state.players;
+  np[active] = { ...np[active], hand: newHand, discard: [...np[active].discard, cardId], mana: np[active].mana - cost };
+
+  const nb = [...state.board] as Board;
+  const enemy = nb[enemyIdx];
+  const ally = nb[allyIdx];
+  if (enemy) nb[enemyIdx] = { ...enemy, atk: Math.max(0, enemy.atk - 1) };
+  if (ally) nb[allyIdx] = { ...ally, atk: ally.atk + 1 };
+
+  const eName = enemy ? getCardName(enemy.cardId) : "?";
+  const aName = ally ? getCardName(ally.cardId) : "?";
+  let newState = appendLog(
+    { ...state, board: nb, players: np },
+    `ATK強奪: ${eName}のATK-1 → ${aName}のATK+1（永続）`,
+    "info",
+  );
+  newState = applyVictoryCheck(newState, null);
+  if (newState.winner !== null) { setState({ gameState: newState, screen: "over" }); return; }
+  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+}
+
+function doGeoCrackFinalize(
+  state: GameState,
+  itemHandIdx: number,
+  cellIdx: CellIndex,
+  discardedAttr: string,
+): void {
+  const active = state.active;
+  // アイテムのコストはgeo_discardステップですでに消費済み
+  let newState = applyCellAttrChange(state, cellIdx, discardedAttr);
+  newState = appendLog(newState, `地割れの書: マス${cellIdx}の属性を${discardedAttr}に変更`, "info");
+  void itemHandIdx;
+  newState = applyVictoryCheck(newState, null);
+  if (newState.winner !== null) { setState({ gameState: newState, screen: "over" }); return; }
+  setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+}
+
 function onDiscardCardClick(
   state: GameState,
   ui: GameUiExtra,
   handIdx: number,
 ): void {
+  // 断末魔の手記: 手札から2枚選んで捨て
+  if (ui.mode === "item_discard_pick_pending") {
+    const ctx = ui.itemDiscardPickContext;
+    if (!ctx) return;
+    const active = state.active;
+    const newHand = [...state.players[active].hand];
+    const discarded = assertNonNull(newHand.splice(handIdx, 1)[0]);
+    const newDiscard = [...state.players[active].discard, discarded];
+    const np = [...state.players] as typeof state.players;
+    np[active] = { ...np[active], hand: newHand, discard: newDiscard };
+    let newState = appendLog({ ...state, players: np }, `${getCardName(discarded)} を捨てた`, "info");
+
+    const newDiscardedSoFar = [...ctx.discardedSoFar, discarded];
+    // 捨てたハンドインデックスが ctx.handIdx より前なら調整
+    const adjustedItemHandIdx = handIdx < ctx.handIdx ? ctx.handIdx - 1 : ctx.handIdx;
+
+    if (newDiscardedSoFar.length < ctx.discardCount) {
+      setState({
+        gameState: newState,
+        gameUiExtra: {
+          ...resetGameUiExtra(),
+          mode: "item_discard_pick_pending",
+          itemDiscardPickContext: { ...ctx, handIdx: adjustedItemHandIdx, discardedSoFar: newDiscardedSoFar },
+        },
+      });
+      addLog(`断末魔の手記: あと${ctx.discardCount - newDiscardedSoFar.length}枚選択`, "info");
+    } else {
+      // 全捨て完了 → アイテムコスト支払い + ドロー
+      const cost = getItemDef(ctx.cardId)?.cost ?? 0;
+      const nh2 = [...newState.players[active].hand];
+      // アイテム自身を手札から除去（indexは調整後）
+      nh2.splice(adjustedItemHandIdx, 1);
+      const nd2 = [...newState.players[active].discard, ctx.cardId];
+      const np2 = [...newState.players] as typeof newState.players;
+      np2[active] = { ...np2[active], hand: nh2, discard: nd2, mana: np2[active].mana - cost };
+      newState = { ...newState, players: np2 };
+      // ドロー
+      for (let i = 0; i < ctx.drawCount; i++) {
+        const deck = [...newState.players[active].deck];
+        const hand2 = [...newState.players[active].hand];
+        if (deck.length > 0) hand2.push(assertNonNull(deck.pop()));
+        const np3 = [...newState.players] as typeof newState.players;
+        np3[active] = { ...np3[active], deck, hand: hand2 };
+        newState = { ...newState, players: np3 };
+      }
+      newState = appendLog(newState, `断末魔の手記: ${ctx.drawCount}枚ドロー`, "info");
+      setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+    }
+    return;
+  }
+
+  // 地割れの書: 捨てるカード選択
+  if (ui.mode === "item_geo_discard_pending") {
+    const ctx = ui.itemGeoCrackContext;
+    if (!ctx) return;
+    const active = state.active;
+    const newHand = [...state.players[active].hand];
+    const discarded = assertNonNull(newHand.splice(handIdx, 1)[0]);
+
+    // 捨てたカードの属性を取得
+    const charDef = getCharDef(discarded);
+    const discardedAttr = charDef?.attribute ?? null;
+
+    const newDiscard = [...state.players[active].discard, discarded];
+    const np = [...state.players] as typeof state.players;
+    // アイテムコストを支払い、アイテム自身も除去
+    const cost = getItemDef("item_geo_crack")?.cost ?? 0;
+    const adjustedItemHandIdx = handIdx < ctx.handIdx ? ctx.handIdx - 1 : ctx.handIdx;
+    const nh2 = [...newHand];
+    nh2.splice(adjustedItemHandIdx, 1);
+    const nd2 = [...newDiscard, "item_geo_crack"];
+    np[active] = { ...np[active], hand: nh2, discard: nd2, mana: np[active].mana - cost };
+
+    let newState: GameState = { ...state, players: np };
+    if (!discardedAttr) {
+      newState = appendLog(newState, `${getCardName(discarded)} は属性を持たない（アイテム？）`, "system");
+      setState({ gameState: newState, gameUiExtra: resetGameUiExtra() });
+      return;
+    }
+    newState = appendLog(newState, `${getCardName(discarded)} を捨てた（属性: ${discardedAttr}）`, "info");
+
+    // マス選択フェーズへ
+    const allCells = [0, 1, 2, 3, 4, 5, 6, 7, 8] as CellIndex[];
+    setState({
+      gameState: newState,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "item_geo_cell_pending",
+        validCells: allCells,
+        itemGeoCrackContext: { handIdx: adjustedItemHandIdx, discardedAttr },
+      },
+    });
+    addLog(`地割れの書: ${discardedAttr}属性に変えるマスを選択`, "info");
+    return;
+  }
+
   // On-attack discard flow
   if (ui.mode === "on_attack_discard_pending") {
     const attackCtx = ui.onAttackContext;
@@ -2114,6 +2527,24 @@ function onEndTurn(state: GameState): void {
     return;
   }
 
+  // 時間凍結: 新アクティブプレイヤーのターンをスキップ
+  const newActive = newState.active;
+  if (newState.players[newActive].skipNextTurn) {
+    const np = [...newState.players] as typeof newState.players;
+    np[newActive] = { ...np[newActive], skipNextTurn: false };
+    newState = appendLog(
+      { ...newState, players: np },
+      `P${newActive + 1}のターンをスキップ！（時間凍結）`,
+      "system",
+    );
+    newState = endTurnCleanup(newState);
+    newState = applyVictoryCheck(newState, newActive);
+    if (newState.winner !== null) {
+      setState({ gameState: newState, screen: "over" });
+      return;
+    }
+  }
+
   newState = startTurnPhase(newState);
   newState = drawStep(newState);
   newState = applyVictoryCheck(newState, null);
@@ -2123,14 +2554,14 @@ function onEndTurn(state: GameState): void {
   }
 
   // aggro_v2_02 on_turn_start: 任意捨て→マナ+1
-  const newActive = newState.active;
+  const newActive2 = newState.active;
   const aggroV202Idx = newState.board.findIndex(
     (c) =>
-      c !== null && c.owner === newActive && c.cardId === "aggro_v2_02",
+      c !== null && c.owner === newActive2 && c.cardId === "aggro_v2_02",
   ) as CellIndex;
   if (
     aggroV202Idx >= 0 &&
-    newState.players[newActive].hand.length > 0
+    newState.players[newActive2].hand.length > 0
   ) {
     setState({
       gameState: newState,
@@ -3009,6 +3440,48 @@ function doResolveItemEffect(
         itemRotateContext: { cardId, targetIdx, handIdx },
       },
     });
+    return;
+  }
+
+  // item に rotate degrees:'any' があれば4方向選択へ（迷いの羅針霧・拘束鎖など）
+  const needsDirPick =
+    itemSpec?.clauses.some(
+      (c) =>
+        c.trigger === "on_use" &&
+        c.effects.some(
+          (e) =>
+            e.type === "rotate" &&
+            (e as { degrees: unknown }).degrees === "any",
+        ),
+    ) ?? false;
+  if (needsDirPick) {
+    setState({
+      gameState: state,
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "item_dir_pending",
+        itemDirContext: { cardId, targetIdx, handIdx },
+      },
+    });
+    return;
+  }
+
+  // ATK強奪の1段目（敵選択済み→味方選択へ）
+  if (cardId === "item_atk_steal" && ui.itemAtkStealContext) {
+    const enemies = resolveSelectCells("select_ally", state.board, state.active);
+    if (enemies.length === 0) {
+      setState({ gameUiExtra: resetGameUiExtra() });
+      return;
+    }
+    setState({
+      gameUiExtra: {
+        ...resetGameUiExtra(),
+        mode: "item_atk_steal_second_pending",
+        validCells: enemies,
+        itemAtkStealContext: { cardId, handIdx, enemyIdx: targetIdx },
+      },
+    });
+    addLog("ATK強奪: 強化する味方を選択", "info");
     return;
   }
 
