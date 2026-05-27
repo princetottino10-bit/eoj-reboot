@@ -2155,7 +2155,7 @@
     },
     {
       "id": "geo_v2_01",
-      "name": "鉛影のカイン",
+      "name": "（未定）",
       "faction": "trick",
       "cost": 2,
       "vp": 1,
@@ -2171,7 +2171,7 @@
     },
     {
       "id": "geo_v2_02",
-      "name": "紫闇のリナ",
+      "name": "（未定）",
       "faction": "control",
       "cost": 3,
       "vp": 1,
@@ -2187,7 +2187,7 @@
     },
     {
       "id": "geo_v2_03",
-      "name": "翠光のソウル",
+      "name": "（未定）",
       "faction": "synergy",
       "cost": 2,
       "vp": 1,
@@ -2203,7 +2203,7 @@
     },
     {
       "id": "geo_v2_04",
-      "name": "紅蓮のダーク",
+      "name": "（未定）",
       "faction": "aggro",
       "cost": 3,
       "vp": 1,
