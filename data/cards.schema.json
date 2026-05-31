@@ -246,7 +246,6 @@
         "id",
         "faction",
         "name",
-        "vp_cost",
         "condition",
         "effect"
       ],
@@ -272,10 +271,6 @@
         },
         "name": {
           "type": "string"
-        },
-        "vp_cost": {
-          "type": "integer",
-          "minimum": 0
         },
         "condition": {
           "type": "string"

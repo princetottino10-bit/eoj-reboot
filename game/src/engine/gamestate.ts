@@ -11,7 +11,6 @@ export type AttackCells = "all" | null | [number, number][];
 
 export interface UltDef {
   name: string;
-  vp_cost?: number;
   timing?: string;
   condition?: string;
   effect: string;
@@ -22,7 +21,6 @@ export interface FactionUltDef {
   faction: string;
   source_card_id?: string;
   name: string;
-  vp_cost: number;
   condition: string;
   effect: string;
 }

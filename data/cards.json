@@ -258,7 +258,7 @@
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "場にいる間、自分が召喚したクリーチャーの召喚時効果は2回発動する。前左右3マスから1体を選んで攻撃する。",
+      "effect": "召喚時、次のターン中、自分が召喚したクリーチャーの召喚時効果は2回発動する。前左右3マスから1体を選んで攻撃する。",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "choice"
@@ -2115,7 +2115,7 @@
       "faction": "aggro",
       "cost": 4,
       "vp": 3,
-      "hp": 4,
+      "hp": 2,
       "atk": 4,
       "reactivation_cost": 3,
       "attribute": "無",
@@ -2678,6 +2678,41 @@
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
+    },
+    {
+      "id": "fire_018",
+      "name": "鉄壁の歩兵",
+      "faction": "defense",
+      "cost": 3,
+      "vp": 2,
+      "hp": 4,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "場にいる間、自分のクリーチャーが受ける反撃ダメージを-1する(最低1)。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     }
   ],
   "items": [
@@ -2722,14 +2757,6 @@
       "faction": "cip"
     },
     {
-      "id": "spell_fire_007",
-      "name": "黒い雷",
-      "attribute": "火",
-      "cost": 5,
-      "effect": "1列(縦または横)の敵クリーチャー全てに3ダメージ。",
-      "faction": "spell"
-    },
-    {
       "id": "spell_water_001",
       "name": "蜃気楼",
       "attribute": "水",
@@ -2752,14 +2779,6 @@
       "cost": 3,
       "effect": "自分のクリーチャー1体は、次の相手ターン中、攻撃対象に選ばれない。",
       "faction": "defense"
-    },
-    {
-      "id": "spell_water_005",
-      "name": "鏡合わせの宿命",
-      "attribute": "水",
-      "cost": 2,
-      "effect": "自軍クリーチャー1体と敵クリーチャー1体を選ぶ。両者の体力を低い方の値に揃える。",
-      "faction": "meta"
     },
     {
       "id": "spell_earth_001",
@@ -2930,22 +2949,6 @@
       "effect": "自分のクリーチャー1体の召喚時効果を3回連続発動する。"
     },
     {
-      "id": "spell_earth_012",
-      "name": "記憶の召喚",
-      "attribute": "土",
-      "cost": 2,
-      "faction": "cip",
-      "effect": "自分のクリーチャー1体の召喚時効果を発動する。追加で、自分のデッキから召喚時効果を持つクリーチャー1枚を手札に加える(デッキはシャッフル)。"
-    },
-    {
-      "id": "spell_water_013",
-      "name": "戦場の流転",
-      "attribute": "水",
-      "cost": 3,
-      "faction": "mobility",
-      "effect": "自分の場のクリーチャー全てを隣接する空きマスに移動する(プレイヤーが移動先を選ぶ。空きマスがないクリーチャーは移動しない)。"
-    },
-    {
       "id": "spell_water_014",
       "name": "影渡りの陣",
       "attribute": "水",
@@ -2954,12 +2957,44 @@
       "effect": "自分のクリーチャー1体を、場の任意の空きマスに直接移動する(他のクリーチャーを飛び越えてもよい)。"
     },
     {
-      "id": "spell_neutral_009",
-      "name": "死中の活",
+      "id": "spell_water_015",
+      "name": "魔導書の頁",
+      "attribute": "水",
+      "cost": 1,
+      "faction": "spell",
+      "effect": "手札のスペル1枚を捨てる。カードを2枚引く。このターンに既にスペルを唱えていれば、追加でマナを1得る。"
+    },
+    {
+      "id": "spell_neutral_010",
+      "name": "妨害の旋律",
       "attribute": "無",
+      "cost": 3,
+      "faction": "meta",
+      "effect": "発動時にフィールドのマスを1つ指定する。次の相手ターン中、指定したマスへの召喚コストは+2、指定したマスにいるクリーチャーの再行動コストは+2される。"
+    },
+    {
+      "id": "spell_water_016",
+      "name": "召喚の解放",
+      "attribute": "水",
       "cost": 0,
+      "faction": "cip",
+      "effect": "手札のクリーチャー1枚を捨てる。捨てたクリーチャーの召喚時効果を発動する。"
+    },
+    {
+      "id": "spell_water_017",
+      "name": "旋風一閃",
+      "attribute": "水",
+      "cost": 2,
+      "faction": "mobility",
+      "effect": "自軍クリーチャー1体を場の任意の空きマスに移動する。移動先に隣接している全てのクリーチャー(敵味方問わず)に1ダメージ。"
+    },
+    {
+      "id": "spell_neutral_011",
+      "name": "不可侵の結界",
+      "attribute": "無",
+      "cost": 2,
       "faction": "defense",
-      "effect": "自分のクリーチャーが撃破される代わりに、マナを5支払ってそれを防ぐ(体力1で残る)。マナが足りない場合は撃破される。"
+      "effect": "自軍クリーチャー1体は、次の相手ターン中、魔道攻撃とスペルからダメージを受けない。"
     }
   ],
   "faction_ults": [
@@ -2968,7 +3003,6 @@
       "faction": "spell",
       "source_card_id": "fire_ace_001",
       "name": "全知の詠唱",
-      "vp_cost": 4,
       "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
       "effect": "自分の墓地のスペル1枚を選び、このターン無料で2回使用する。"
     },
@@ -2977,7 +3011,6 @@
       "faction": "aggro",
       "source_card_id": "fire_ace_002",
       "name": "殲滅令",
-      "vp_cost": 4,
       "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
       "effect": "このターン、自分のクリーチャー全てに『連撃』を付与する。このターン、自分のクリーチャーが敵を撃破して得るVPは+1される。"
     },
@@ -2986,7 +3019,6 @@
       "faction": "cip",
       "source_card_id": "water_ace_001",
       "name": "無限再演",
-      "vp_cost": 4,
       "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
       "effect": "このターン、自分の場の全クリーチャーの召喚時効果をもう1回ずつ発動する。"
     },
@@ -2995,7 +3027,6 @@
       "faction": "meta",
       "source_card_id": "earth_ace_001",
       "name": "大粛清",
-      "vp_cost": 5,
       "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
       "effect": "敵クリーチャーまたは敵プレイヤーに合計6ダメージを割り振る。"
     },
@@ -3004,7 +3035,6 @@
       "faction": "defense",
       "source_card_id": "earth_ace_002",
       "name": "代行召喚",
-      "vp_cost": 3,
       "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
       "effect": "手札からマナコスト5以下のクリーチャー1体を、空きマスにコスト無料で召喚する。このウルトを使用したターンは、自分のターン終了時の陣取り勝利判定を行わない。"
     }

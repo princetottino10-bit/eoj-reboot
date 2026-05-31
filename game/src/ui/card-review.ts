@@ -190,7 +190,7 @@ function cardId(entry: ReviewCard): string {
 }
 
 function typeLabel(entry: ReviewCard | undefined): string {
-  if (entry?.kind === "item") return "\u30a2\u30a4\u30c6\u30e0";
+  if (entry?.kind === "item") return "\u30b9\u30da\u30eb";
   if (entry?.kind === "ult") return "\u30a6\u30eb\u30c8";
   return "\u30ad\u30e3\u30e9\u30af\u30bf\u30fc";
 }
@@ -201,7 +201,7 @@ function statLine(entry: ReviewCard): string {
     return `${card.attribute ?? "-"} / Cost ${card.cost} / ${card.faction ?? "-"}`;
   }
   if (entry.kind === "ult") {
-    return `${FACTION_NAMES[card.faction] ?? card.faction} / VP ${card.vp_cost} / \u30c7\u30c3\u30ad\u5916`;
+    return `${FACTION_NAMES[card.faction] ?? card.faction} / \u30c7\u30c3\u30ad\u5916`;
   }
   return `${card.attribute} / Cost ${card.cost} / HP ${card.hp} / ATK ${card.atk} / VP ${card.vp} / 再 ${card.reactivation_cost}`;
 }
@@ -280,7 +280,7 @@ function renderCardFace(entry: ReviewCard): string {
         <div class="review-card-top">
           <span>ULT</span>
           <strong>${escapeHtml(card.name)}</strong>
-          <span>VP${card.vp_cost}</span>
+          <span>OUT</span>
         </div>
         <div class="review-card-sub">${escapeHtml(FACTION_NAMES[card.faction] ?? card.faction)} / ${escapeHtml(card.id)}</div>
         <div class="review-ult-condition">${escapeHtml(card.condition || "-")}</div>
@@ -338,7 +338,6 @@ function renderInspector(entry: ReviewCard): string {
         <dt>ID</dt><dd>${escapeHtml(entry.card.id)}</dd>
         <dt>\u7a2e\u5225</dt><dd>\u30c7\u30c3\u30ad\u5916\u30a6\u30eb\u30c8</dd>
         <dt>\u9663\u55b6</dt><dd>${escapeHtml(FACTION_NAMES[entry.card.faction] ?? entry.card.faction)}</dd>
-        <dt>VP\u30b3\u30b9\u30c8</dt><dd>${entry.card.vp_cost}</dd>
         <dt>\u5143\u30ab\u30fc\u30c9</dt><dd>${escapeHtml(entry.card.source_card_id ?? "-")}</dd>
       </dl>
     `;
@@ -403,7 +402,7 @@ function renderReview(): void {
       <header class="review-header">
         <div>
           <h1>カード検品</h1>
-          <p>${CARD_DB.characters.length} characters / ${CARD_DB.items.length} items / ${CARD_DB.faction_ults.length} ults</p>
+          <p>${CARD_DB.characters.length} creatures / ${CARD_DB.items.length} spells / ${CARD_DB.faction_ults.length} ults</p>
         </div>
         <div class="review-actions">
           <button id="export-json" class="review-action-btn">JSON出力</button>
@@ -416,7 +415,7 @@ function renderReview(): void {
         <select id="review-kind">
           <option value="all" ${state.kind === "all" ? "selected" : ""}>すべて</option>
           <option value="character" ${state.kind === "character" ? "selected" : ""}>キャラクター</option>
-          <option value="item" ${state.kind === "item" ? "selected" : ""}>アイテム</option>
+          <option value="item" ${state.kind === "item" ? "selected" : ""}>\u30b9\u30da\u30eb</option>
           <option value="ult" ${state.kind === "ult" ? "selected" : ""}>\u30a6\u30eb\u30c8</option>
         </select>
         <select id="review-faction">

@@ -782,7 +782,6 @@ function buildCardDetailHtml(
     const ult = def.ult;
     const ultMeta = ult
       ? [
-          ult.vp_cost != null ? `VP${ult.vp_cost}` : null,
           ult.timing ?? ult.condition ?? null,
         ].filter(Boolean).join(" / ")
       : "";

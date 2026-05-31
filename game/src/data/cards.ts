@@ -49,7 +49,7 @@ export function getCardName(cardId: string): string {
 }
 
 export function getCardCost(cardId: string): number {
-  return CHAR_MAP.get(cardId)?.cost ?? ITEM_MAP.get(cardId)?.cost ?? ULT_MAP.get(cardId)?.vp_cost ?? 0;
+  return CHAR_MAP.get(cardId)?.cost ?? ITEM_MAP.get(cardId)?.cost ?? 0;
 }
 
 export const FACTIONS = Object.keys(CARD_DB.faction_names);

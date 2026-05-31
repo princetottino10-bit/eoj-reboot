@@ -1,7 +1,7 @@
 {
-  "exported_at": "2026-05-31T07:29:28.652Z",
+  "exported_at": "2026-05-31T08:49:46.095Z",
   "source": "eoj-card-review",
-  "card_count": 62,
+  "card_count": 84,
   "notes": {
     "fire_001": {
       "checks": {
@@ -247,7 +247,7 @@
       "checks": {
         "effect": true
       },
-      "memo": "体力加算効果は削除\nフィールドのクリーチャーのステータスが変動したターン、このクリーチャーの再行動コストは０になる"
+      "memo": "クリーチャーの攻撃／反撃以外でフィールドの他のクリーチャーのステータスが変動したターン、このクリーチャーの再行動コストは０になる"
     },
     "neutral_001": {
       "checks": {
@@ -368,6 +368,130 @@
       "memo": "削除"
     },
     "draw_008": {
+      "checks": {},
+      "memo": "削除"
+    },
+    "spell_fire_001": {
+      "checks": {
+        "cost": true
+      },
+      "memo": "コスト１"
+    },
+    "spell_fire_002": {
+      "checks": {
+        "cost": true
+      },
+      "memo": "0"
+    },
+    "spell_fire_004": {
+      "checks": {
+        "effect": true
+      },
+      "memo": ""
+    },
+    "spell_fire_007": {
+      "checks": {},
+      "memo": "削除"
+    },
+    "spell_water_001": {
+      "checks": {
+        "effect": true
+      },
+      "memo": ""
+    },
+    "spell_water_004": {
+      "checks": {
+        "cost": true
+      },
+      "memo": "1"
+    },
+    "spell_water_005": {
+      "checks": {},
+      "memo": "削除"
+    },
+    "spell_earth_001": {
+      "checks": {
+        "cost": true
+      },
+      "memo": "1"
+    },
+    "spell_earth_002": {
+      "checks": {
+        "cost": true
+      },
+      "memo": "1"
+    },
+    "spell_earth_003": {
+      "checks": {
+        "cost": false,
+        "counter": false,
+        "effect": true
+      },
+      "memo": "手札のカードを1枚捨てるを交換に追加"
+    },
+    "spell_earth_004": {
+      "checks": {},
+      "memo": "魔道攻撃は対象外"
+    },
+    "spell_earth_007": {
+      "checks": {
+        "cost": true,
+        "effect": true
+      },
+      "memo": "C4　召喚されたクリーチャーは攻撃できない"
+    },
+    "spell_wood_002": {
+      "checks": {
+        "cost": true,
+        "effect": true
+      },
+      "memo": "コスト１\nクリーチャー2体を選び体力を＋２する"
+    },
+    "spell_neutral_001": {
+      "checks": {
+        "effect": true
+      },
+      "memo": "効果に「カードを1枚引く」を追加"
+    },
+    "spell_neutral_007": {
+      "checks": {
+        "effect": true
+      },
+      "memo": "魔道キャラは対象外"
+    },
+    "spell_water_011": {
+      "checks": {
+        "effect": true
+      },
+      "memo": "「次のターン終了時まで」にして、C2に変更"
+    },
+    "spell_earth_011": {
+      "checks": {
+        "cost": true
+      },
+      "memo": "２に変更"
+    },
+    "spell_fire_008": {
+      "checks": {
+        "cost": true
+      },
+      "memo": "１"
+    },
+    "spell_water_012": {
+      "checks": {
+        "effect": true
+      },
+      "memo": "2回に修正"
+    },
+    "spell_earth_012": {
+      "checks": {},
+      "memo": "削除"
+    },
+    "spell_water_013": {
+      "checks": {},
+      "memo": "削除"
+    },
+    "spell_neutral_009": {
       "checks": {},
       "memo": "削除"
     }
