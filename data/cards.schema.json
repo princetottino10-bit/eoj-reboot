@@ -1,0 +1,333 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Oricard - EOJ-inspired Original Card Game",
+  "type": "object",
+  "required": [
+    "faction_names",
+    "keyword_effects",
+    "characters",
+    "items",
+    "faction_ults"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "faction_names": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "keyword_effects": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "characters": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Character"
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Item"
+      }
+    },
+    "faction_ults": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FactionUlt"
+      }
+    }
+  },
+  "definitions": {
+    "Coord": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "Character": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "faction",
+        "cost",
+        "vp",
+        "hp",
+        "atk",
+        "reactivation_cost",
+        "attribute",
+        "attack_cells",
+        "counter_cells",
+        "weakness_cells",
+        "attack_type",
+        "keywords",
+        "effect",
+        "ult",
+        "has_overlay",
+        "attack_mode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z_]+_[0-9]{3}$"
+        },
+        "name": {
+          "type": "string"
+        },
+        "faction": {
+          "type": "string",
+          "enum": [
+            "cip",
+            "aggro",
+            "spell",
+            "inheritance",
+            "mobility",
+            "defense",
+            "meta"
+          ]
+        },
+        "cost": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "hp": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "atk": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reactivation_cost": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "attribute": {
+          "type": "string",
+          "enum": [
+            "火",
+            "水",
+            "土",
+            "木",
+            "無"
+          ]
+        },
+        "attack_cells": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "all"
+              ]
+            },
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Coord"
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "counter_cells": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "all"
+              ]
+            },
+            {
+              "type": "null"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Coord"
+              },
+              "minItems": 1
+            }
+          ]
+        },
+        "weakness_cells": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Coord"
+          }
+        },
+        "attack_type": {
+          "type": "string",
+          "enum": [
+            "物理",
+            "魔道"
+          ]
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "連撃",
+              "挑発",
+              "先制",
+              "不屈",
+              "暗殺",
+              "偏食",
+              "重ね召喚",
+              "魔道攻撃"
+            ]
+          }
+        },
+        "effect": {
+          "type": "string"
+        },
+        "ult": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/Ult"
+            }
+          ]
+        },
+        "has_overlay": {
+          "type": "boolean"
+        },
+        "attack_mode": {
+          "type": "string",
+          "enum": [
+            "simultaneous",
+            "choice",
+            "none"
+          ],
+          "description": "simultaneous=attack_cells全マスに同時攻撃, choice=attack_cellsから1体選択, none=攻撃不可"
+        }
+      }
+    },
+    "Ult": {
+      "type": "object",
+      "required": [
+        "name",
+        "condition",
+        "effect"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "condition": {
+          "type": "string"
+        },
+        "effect": {
+          "type": "string"
+        }
+      }
+    },
+    "FactionUlt": {
+      "type": "object",
+      "required": [
+        "id",
+        "faction",
+        "name",
+        "condition",
+        "effect"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "faction": {
+          "type": "string",
+          "enum": [
+            "cip",
+            "aggro",
+            "spell",
+            "inheritance",
+            "mobility",
+            "defense",
+            "meta"
+          ]
+        },
+        "source_card_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "condition": {
+          "type": "string"
+        },
+        "effect": {
+          "type": "string"
+        }
+      }
+    },
+    "Item": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "attribute",
+        "cost",
+        "effect",
+        "faction"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "attribute": {
+          "type": "string",
+          "enum": [
+            "火",
+            "水",
+            "土",
+            "木",
+            "無"
+          ]
+        },
+        "cost": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "effect": {
+          "type": "string"
+        },
+        "faction": {
+          "type": "string",
+          "enum": [
+            "cip",
+            "aggro",
+            "spell",
+            "inheritance",
+            "mobility",
+            "defense",
+            "meta"
+          ]
+        }
+      }
+    }
+  }
+}
