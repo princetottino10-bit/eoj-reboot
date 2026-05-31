@@ -407,7 +407,6 @@ function renderReview(): void {
         <div class="review-actions">
           <button id="export-json" class="review-action-btn">JSON出力</button>
           <button id="export-md" class="review-action-btn">Markdown出力</button>
-          <a class="review-exit" href="/">ゲームへ</a>
         </div>
       </header>
 
