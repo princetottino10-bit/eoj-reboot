@@ -4,7 +4,7 @@
 
 export interface CardData {
   characters: { id: string; faction: string }[];
-  items: { id: string; sets: string[] }[];
+  items: { id: string; sets?: string[]; faction?: string }[];
 }
 
 export interface DraftState {
@@ -33,17 +33,20 @@ export const DRAFT_PICK_TYPES = [
 // 状態生成
 // ============================================================
 
-export function createDraftState(): DraftState {
+const DEFAULT_FACTIONS = [
+  "aggro",
+  "cip",
+  "spell",
+  "inheritance",
+  "mobility",
+  "defense",
+  "meta",
+];
+
+export function createDraftState(availableFactions = DEFAULT_FACTIONS): DraftState {
   return {
     step: 0,
-    availableFactions: [
-      "aggro",
-      "tank",
-      "control",
-      "synergy",
-      "snipe",
-      "trick",
-    ],
+    availableFactions: [...availableFactions],
     availableItemSets: ["A", "B", "C", "D"],
     factions: [[], []],
     itemSets: [null, null],
@@ -127,7 +130,11 @@ export function buildDeck(
     .filter((c) => factions.includes(c.faction))
     .map((c) => c.id);
   const itemIds = cards.items
-    .filter((i) => i.sets.includes(itemSet))
+    .filter((i) =>
+      Array.isArray(i.sets)
+        ? i.sets.includes(itemSet)
+        : i.faction != null && factions.includes(i.faction)
+    )
     .map((i) => i.id);
   return shuffle([...charIds, ...itemIds]);
 }

@@ -1,680 +1,600 @@
 {
   "faction_names": {
-    "aggro":   "紅蓮",
-    "tank":    "蒼盾",
-    "control": "紫闇",
-    "synergy": "翠光",
-    "snipe":   "銀眼",
-    "trick":   "鉛影"
+    "cip": "顕現",
+    "aggro": "猛攻",
+    "spell": "詠唱",
+    "inheritance": "継承",
+    "mobility": "機動",
+    "defense": "守護",
+    "meta": "対抗"
   },
   "keyword_effects": {
-    "先制": "反撃時、攻撃側より先にダメージ",
-    "防護": "受けるダメージ-1（最低0）",
-    "不動": "押し出し・引き寄せで動かない",
-    "カバー": "隣接味方への攻撃を代わりに受ける",
-    "要塞": "自ら攻撃不可、反撃のみ可能",
-    "回避": "物理攻撃を1回無効化（消費）",
-    "貫通": "攻撃時、防護・回避を無視"
+    "連撃": "再行動コスト1回分で2回攻撃できる",
+    "挑発": "召喚時およびターン開始時、隣接する敵クリーチャー全ての向きをこのクリーチャーの方向に強制変更する",
+    "先制": "防御時、攻撃を仕掛けた相手より先に反撃する",
+    "不屈": "撃破されるとき、ゲーム中1回まで、破壊される代わりに体力1で残る",
+    "暗殺": "対象の弱点範囲を突いて攻撃したとき、さらに追加で1ダメージを与える",
+    "偏食": "木属性のクリーチャーまたは木属性フィールドにいるクリーチャーにしか攻撃できない",
+    "重ね召喚": "場の味方クリーチャー1体を生贄に捧げ、そのマスに重ねて召喚できる。マナコストは差額分のみ。召喚されたターンは攻撃不可、ターン終了とならない",
+    "魔道攻撃": "フィールド全体から対象を選べる。攻撃補正を行わず、反撃を受けない"
   },
   "characters": [
     {
-      "id": "aggro_v2_01",
-      "name": "烈刃のライ",
-      "faction": "aggro",
-      "cost": 1,
-      "vp": 1,
-      "hp": 1,
-      "atk": 2,
-      "reactivation_cost": 1,
-      "attribute": "拳",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "",
-      "ult": null
-    },
-    {
-      "id": "aggro_v2_02",
-      "name": "奔流のナギ",
-      "faction": "aggro",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 2,
-      "attribute": "念",
-      "attack_cells": "all",
-      "attack_type": "魔法",
-      "weakness_cells": [
-        [
-          -1,
-          -1
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "ターン開始時、手札を1枚捨ててもよい。そうしたならマナ+1。",
-      "ult": null
-    },
-    {
-      "id": "aggro_v2_03",
-      "name": "烈火のカグラ",
-      "faction": "aggro",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "光",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [
-        "先制"
-      ],
-      "effect": "召喚時、手札を1枚捨ててもよい。捨てたなら隣接する敵1体を1マス後退させる(後退できない場合は発動しない、後退時の向きはそのまま)。",
-      "ult": null
-    },
-    {
-      "id": "aggro_v2_04",
-      "name": "蝕牙のドク",
-      "faction": "aggro",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "闇",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "このキャラが敵を撃破した時、このキャラのATKを+1する。",
-      "ult": null
-    },
-    {
-      "id": "aggro_v2_05",
-      "name": "蒼刃のハヤテ",
-      "faction": "aggro",
-      "cost": 2,
-      "vp": 1,
-      "hp": 3,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "虚",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          0,
-          -1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [
-        "先制"
-      ],
-      "effect": "",
-      "ult": null
-    },
-    {
-      "id": "aggro_v2_06",
-      "name": "爆裂のノヴァ",
-      "faction": "aggro",
-      "cost": 3,
-      "vp": 2,
-      "hp": 4,
-      "atk": 4,
-      "reactivation_cost": 2,
-      "attribute": "拳",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "",
-      "ult": null
-    },
-    {
-      "id": "aggro_v2_07",
-      "name": "破軍のレオ",
-      "faction": "aggro",
-      "cost": 1,
-      "vp": 1,
-      "hp": 1,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "念",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "このターン、他の味方が1体以上攻撃しているなら、攻撃時にATKを+1する。",
-      "ult": null
-    },
-    {
-      "id": "aggro_v2_08",
-      "name": "紅蓮のヒカリ",
-      "faction": "aggro",
-      "cost": 3,
-      "vp": 2,
-      "hp": 4,
-      "atk": 3,
-      "reactivation_cost": 2,
-      "attribute": "光",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          -1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "このキャラが破壊された時、隣接する味方すべてのHPを2回復する。このキャラが破壊された時、隣接する味方すべてのATKを+1する。",
-      "ult": null
-    },
-    {
-      "id": "aggro_v2_09",
-      "name": "穿陣のセラ",
+      "id": "fire_001",
+      "name": "双剣の戦士",
       "faction": "aggro",
       "cost": 4,
       "vp": 2,
       "hp": 3,
-      "atk": 4,
+      "atk": 2,
+      "reactivation_cost": 2,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [
+        "連撃"
+      ],
+      "effect": "前方1マスから1体を選んで攻撃する。連撃により1回の再行動コストで2回攻撃できる。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "fire_002",
+      "name": "篝火の見張り",
+      "faction": "meta",
+      "cost": 2,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 1,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "相手がこのクリーチャーに隣接するマスにクリーチャーを召喚したとき、このクリーチャーの向きをそのマスに向けられる。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "fire_003",
+      "name": "篝火の継承",
+      "faction": "inheritance",
+      "cost": 3,
+      "vp": 2,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 2,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "召喚時、墓地からコスト2以下のクリーチャー1体を選び、その攻撃力をこのクリーチャーに加算する。そのクリーチャーは墓地から除外する（永続）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "fire_005",
+      "name": "燃え盛る門",
+      "faction": "meta",
+      "cost": 3,
+      "vp": 2,
+      "hp": 4,
+      "atk": 1,
+      "reactivation_cost": 3,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "相手がこのクリーチャーに隣接するマスにクリーチャーを召喚するたび、そのクリーチャーに1ダメージ。全方向1マスから1体を選んで攻撃する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "fire_007",
+      "name": "連環の指揮者",
+      "faction": "cip",
+      "cost": 5,
+      "vp": 3,
+      "hp": 4,
+      "atk": 2,
       "reactivation_cost": 4,
-      "attribute": "闇",
+      "attribute": "火",
       "attack_cells": [
-        [
-          1,
-          -1
-        ],
         [
           1,
           0
         ],
         [
-          1,
+          0,
+          -1
+        ],
+        [
+          0,
           1
         ]
       ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "このキャラは反撃できない。",
-      "ult": {
-        "name": "穿陣突破",
-        "vp_cost": 2,
-        "timing": "次ターン以降",
-        "effect": "次の攻撃は範囲内の障害物無視＋貫通付与。"
-      }
-    },
-    {
-      "id": "aggro_v2_10",
-      "name": "雷閃のゼロ",
-      "faction": "aggro",
-      "cost": 1,
-      "vp": 1,
-      "hp": 1,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "光",
-      "attack_cells": "all",
-      "attack_type": "魔法",
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
       "weakness_cells": [
         [
           -1,
-          -1
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "召喚時、カードを1枚引き、その後手札を1枚捨てる。",
-      "ult": null
-    },
-    {
-      "id": "aggro_v2_11",
-      "name": "覇王のカイザー",
-      "faction": "aggro",
-      "cost": 4,
-      "vp": 2,
-      "hp": 6,
-      "atk": 4,
-      "reactivation_cost": 3,
-      "attribute": "拳",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          2,
           0
         ]
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、隣接する敵それぞれに3ダメージを与える。このターン攻撃した味方が2体以上なら、このキャラのATKを+2する。",
-      "ult": null
+      "effect": "場にいる間、自分が召喚したクリーチャーの召喚時効果は2回発動する。前左右3マスから1体を選んで攻撃する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
     },
     {
-      "id": "aggro_v2_12",
-      "name": "終焉のジーク",
-      "faction": "aggro",
-      "cost": 5,
-      "vp": 3,
-      "hp": 6,
-      "atk": 5,
-      "reactivation_cost": 3,
-      "attribute": "念",
-      "attack_cells": [
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "このターン攻撃した味方が3体以上なら、このキャラの再行動コストを2下げる。",
-      "ult": {
-        "name": "終焉一閃",
-        "vp_cost": 3,
-        "timing": "次ターン以降",
-        "effect": "前方ライン全敵に5ダメージ。発動後、自分のHPを1にする。"
-      }
-    },
-    {
-      "id": "tank_v2_01",
-      "name": "磐石のガルド",
-      "faction": "tank",
-      "cost": 1,
+      "id": "fire_009",
+      "name": "連鎖の発火点",
+      "faction": "inheritance",
+      "cost": 3,
       "vp": 1,
       "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "拳",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [
-        "防護"
-      ],
-      "effect": "",
-      "ult": null
-    },
-    {
-      "id": "tank_v2_02",
-      "name": "黎明のイヴ",
-      "faction": "tank",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "光",
-      "attack_cells": "all",
-      "attack_type": "魔法",
-      "weakness_cells": [
-        [
-          -1,
-          -1
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "召喚時、隣接味方に防護を与える。",
-      "ult": null
-    },
-    {
-      "id": "tank_v2_03",
-      "name": "剛槍のロア",
-      "faction": "tank",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 2,
-      "attribute": "光",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          2,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [
-        "防護"
-      ],
-      "effect": "",
-      "ult": null
-    },
-    {
-      "id": "tank_v2_04",
-      "name": "地脈のミナ",
-      "faction": "tank",
-      "cost": 1,
-      "vp": 1,
-      "hp": 1,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "闇",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "自属性マスに召喚されたならHP+1を得る。",
-      "ult": null
-    },
-    {
-      "id": "tank_v2_05",
-      "name": "慈光のノエル",
-      "faction": "tank",
-      "cost": 2,
-      "vp": 1,
-      "hp": 3,
       "atk": 2,
       "reactivation_cost": 2,
-      "attribute": "光",
-      "attack_cells": "all",
-      "attack_type": "魔法",
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "weakness_cells": [
         [
           -1,
-          -1
-        ],
-        [
-          -1,
           0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
         ]
       ],
+      "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、隣接味方を1回復する。",
-      "ult": null
+      "effect": "このクリーチャーが撃破されたとき、自分の場の攻撃範囲が1体のみのクリーチャー1体に、次の自分のターン中「連撃」を付与する。連撃を持つクリーチャーは1回の再行動コストで2回攻撃できる。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
     },
     {
-      "id": "tank_v2_06",
-      "name": "豪陣のヴァル",
-      "faction": "tank",
+      "id": "fire_010",
+      "name": "詠唱の余熱",
+      "faction": "spell",
       "cost": 3,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 2,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          2,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "自分がこのターン2枚目以降のスペルを唱えるたび、敵クリーチャー1体に1ダメージ。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "fire_011",
+      "name": "詠唱の残り火",
+      "faction": "spell",
+      "cost": 3,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 2,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "自分がスペルを唱えるたび、マナを1得る（1ターンに2回まで）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "fire_014",
+      "name": "血路の開拓者",
+      "faction": "mobility",
+      "cost": 4,
       "vp": 2,
       "hp": 3,
       "atk": 3,
       "reactivation_cost": 2,
-      "attribute": "拳",
+      "attribute": "火",
       "attack_cells": [
         [
           1,
-          0
-        ],
-        [
-          2,
           0
         ]
       ],
-      "attack_type": "物理",
-      "keywords": [
-        "防護"
-      ],
-      "effect": "隣接味方が2体以上いるならATK+1。",
-      "ult": null
-    },
-    {
-      "id": "tank_v2_07",
-      "name": "憤怒のバルク",
-      "faction": "tank",
-      "cost": 3,
-      "vp": 2,
-      "hp": 4,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "念",
-      "attack_cells": [
+      "counter_cells": [
         [
           1,
           0
-        ],
+        ]
+      ],
+      "weakness_cells": [
         [
           -1,
           0
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
         ]
       ],
       "attack_type": "物理",
-      "keywords": [
-        "不動"
-      ],
-      "effect": "ダメージを受けた時、ATK+1。",
-      "ult": null
+      "keywords": [],
+      "effect": "攻撃して敵を撃破したとき、撃破したマスへ移動する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "tank_v2_08",
-      "name": "誓盾のルミナ",
-      "faction": "tank",
-      "cost": 5,
-      "vp": 3,
-      "hp": 5,
-      "atk": 4,
-      "reactivation_cost": 3,
-      "attribute": "念",
+      "id": "fire_015",
+      "name": "疾風の足軽",
+      "faction": "mobility",
+      "cost": 2,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 1,
+      "attribute": "火",
       "attack_cells": [
         [
           1,
           0
         ]
       ],
-      "attack_type": "物理",
-      "keywords": [
-        "カバー"
-      ],
-      "effect": "味方をカバーするため、隣接味方はATK+1を得る。",
-      "ult": {
-        "name": "絶対盾",
-        "vp_cost": 2,
-        "timing": "召喚ターン可",
-        "effect": "次の敵ターン中、味方全員の被ダメージを-1。"
-      }
-    },
-    {
-      "id": "tank_v2_09",
-      "name": "聖域のセルマ",
-      "faction": "tank",
-      "cost": 4,
-      "vp": 2,
-      "hp": 5,
-      "atk": 3,
-      "reactivation_cost": 2,
-      "attribute": "虚",
-      "attack_cells": [
+      "counter_cells": [
         [
           1,
           0
         ]
       ],
-      "attack_type": "物理",
-      "keywords": [
-        "カバー"
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
       ],
-      "effect": "召喚時、自分と隣接する味方に防護(受けるダメージ-1)を付与する。召喚時、隣接する味方をHP1回復する。",
-      "ult": null
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "攻撃する前に、隣接する空きマスへ移動できる（移動してから攻撃、その攻撃は移動先の向きで行う）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "tank_v2_10",
-      "name": "不動のナギサ",
-      "faction": "tank",
-      "cost": 5,
-      "vp": 3,
+      "id": "fire_016",
+      "name": "創界の竜",
+      "faction": "cip",
+      "cost": 7,
+      "vp": 4,
       "hp": 7,
       "atk": 4,
+      "reactivation_cost": 4,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [
+        "重ね召喚"
+      ],
+      "effect": "重ね召喚：自分の場のクリーチャー1体の上に重ねて召喚できる。召喚時、自分の場のクリーチャー1体の召喚時効果を発動する。前左右3マスから1体を選んで攻撃する。",
+      "ult": null,
+      "has_overlay": true,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "fire_ace_001",
+      "name": "詠唱の極致",
+      "faction": "spell",
+      "cost": 7,
+      "vp": 4,
+      "hp": 5,
+      "atk": 2,
+      "reactivation_cost": 4,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "場にいる間、自分がスペルを使うたび、そのスペルのダメージ+1。さらにマナを1得て、カードを1枚引く。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "fire_ace_002",
+      "name": "戦煙の覇王",
+      "faction": "aggro",
+      "cost": 7,
+      "vp": 4,
+      "hp": 6,
+      "atk": 3,
+      "reactivation_cost": 4,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "このエースに隣接する自分のクリーチャーは、敵を攻撃するとき攻撃力+1。前左右3マスを同時攻撃する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "water_001",
+      "name": "誘引のセイレーン",
+      "faction": "mobility",
+      "cost": 3,
+      "vp": 2,
+      "hp": 3,
+      "atk": 1,
       "reactivation_cost": 3,
-      "attribute": "虚",
+      "attribute": "水",
       "attack_cells": [
         [
           1,
@@ -686,58 +606,1016 @@
         ],
         [
           0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "召喚時、マナ1を払ってよい。そうしたなら、敵クリーチャー1体を隣接する空きマスに強制移動させる（向きは変えない）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "water_002",
+      "name": "写し身の術師",
+      "faction": "cip",
+      "cost": 4,
+      "vp": 2,
+      "hp": 4,
+      "atk": 1,
+      "reactivation_cost": 3,
+      "attribute": "水",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "召喚時、場の任意クリーチャー1体の攻撃力をコピーする。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "water_004",
+      "name": "詠唱者の研鑽",
+      "faction": "spell",
+      "cost": 3,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 2,
+      "attribute": "水",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "場にいる間、自分のスペルのマナコストを1軽減(最低1)。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "water_005",
+      "name": "風読みの占術師",
+      "faction": "cip",
+      "cost": 3,
+      "vp": 1,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 2,
+      "attribute": "水",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "召喚時、自デッキトップ2枚を見て1枚を手札、1枚をデッキの一番下に置く。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "water_006",
+      "name": "共鳴の歌い手",
+      "faction": "spell",
+      "cost": 3,
+      "vp": 2,
+      "hp": 3,
+      "atk": 1,
+      "reactivation_cost": 3,
+      "attribute": "水",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "自分のスペル使用時、このクリーチャーに隣接する自分の他のクリーチャーはそのターン攻撃力+1。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "water_007",
+      "name": "写し鏡の双子",
+      "faction": "cip",
+      "cost": 3,
+      "vp": 2,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "水",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "召喚時、場の自分の他のクリーチャー1体の召喚時効果をコピーして発動する。前後同時攻撃。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "water_008",
+      "name": "凍て月の魔女",
+      "faction": "spell",
+      "cost": 4,
+      "vp": 2,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "水",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "攻撃を受けたクリーチャーは、次のターン再行動できず、効果が無効化される。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "water_009",
+      "name": "残響の詠唱者",
+      "faction": "spell",
+      "cost": 2,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 2,
+      "attribute": "水",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "場にいる間、自分のスペルが墓地に置かれるとき、代わりにデッキの一番下に戻る。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "water_010",
+      "name": "鏡界の門番",
+      "faction": "defense",
+      "cost": 4,
+      "vp": 2,
+      "hp": 4,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "水",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "相手が自分のクリーチャーを対象とする敵スペルを唱えるとき、追加でマナ1を要求する。前方2マスを同時攻撃する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "water_012",
+      "name": "風見の哨戒兵",
+      "faction": "mobility",
+      "cost": 3,
+      "vp": 1,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "水",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "自分または相手のクリーチャーが移動または向きを変更するたび、カードを1枚引く。前方2マスから1体を選んで攻撃する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "water_013",
+      "name": "移ろいの祠",
+      "faction": "mobility",
+      "cost": 3,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 2,
+      "attribute": "水",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "自分または相手のクリーチャーが移動または向きを変更するたび、マナを1得る（1ターンに1回まで）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "water_014",
+      "name": "道標の渡り鳥",
+      "faction": "mobility",
+      "cost": 3,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 2,
+      "attribute": "水",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "相手のクリーチャーが移動または向きを変更するたび、このクリーチャーの攻撃力+1（そのターンのみ）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "water_015",
+      "name": "占術の対価",
+      "faction": "cip",
+      "cost": 3,
+      "vp": 1,
+      "hp": 2,
+      "atk": 2,
+      "reactivation_cost": 2,
+      "attribute": "水",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "自分のクリーチャーの召喚時効果が発動するたび、マナを1得る。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "water_016",
+      "name": "影渡る巨翼",
+      "faction": "mobility",
+      "cost": 7,
+      "vp": 4,
+      "hp": 6,
+      "atk": 4,
+      "reactivation_cost": 3,
+      "attribute": "水",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [
+        "重ね召喚"
+      ],
+      "effect": "召喚時、場のクリーチャーを3体まで選び、向きを自由に変更する（敵も選べる）。前方2マスから1体を選んで攻撃する。",
+      "ult": null,
+      "has_overlay": true,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "water_017",
+      "name": "風読みの伝令",
+      "faction": "mobility",
+      "cost": 2,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 1,
+      "attribute": "水",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "自分のクリーチャーが移動または向きを変更するたび、マナを1得る（1ターンに1回まで）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "water_ace_001",
+      "name": "創世の写し手",
+      "faction": "cip",
+      "cost": 7,
+      "vp": 4,
+      "hp": 6,
+      "atk": 4,
+      "reactivation_cost": 4,
+      "attribute": "水",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
           -1
         ],
         [
           0,
           1
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "召喚時、自分のデッキから任意のクリーチャー1体を手札に加える（デッキはシャッフル）。前左右3マスから1体を選んで攻撃する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "earth_002",
+      "name": "影武者の宴",
+      "faction": "cip",
+      "cost": 3,
+      "vp": 2,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "土",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "召喚時、墓地のクリーチャー1体を選び、その召喚時効果を発動する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "earth_004",
+      "name": "影渡りの斥候",
+      "faction": "mobility",
+      "cost": 2,
+      "vp": 1,
+      "hp": 2,
+      "atk": 2,
+      "reactivation_cost": 2,
+      "attribute": "土",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "自分のターン開始時、隣接する空きマスに強制移動する。向きは自由に変更できる。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "earth_008",
+      "name": "継承の祭司",
+      "faction": "inheritance",
+      "cost": 3,
+      "vp": 2,
+      "hp": 3,
+      "atk": 1,
+      "reactivation_cost": 3,
+      "attribute": "土",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "召喚時、墓地のクリーチャー1体を選び、その攻撃力または体力を加算する。そのクリーチャーは墓地から除外する（永続）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "earth_009",
+      "name": "沈黙の見届け",
+      "faction": "meta",
+      "cost": 3,
+      "vp": 2,
+      "hp": 4,
+      "atk": 1,
+      "reactivation_cost": 3,
+      "attribute": "土",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "場にいる間、両プレイヤーはスペルのマナコスト+1。前方2マスから1体を選んで攻撃する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "earth_010",
+      "name": "戦果の記録係",
+      "faction": "aggro",
+      "cost": 3,
+      "vp": 1,
+      "hp": 3,
+      "atk": 1,
+      "reactivation_cost": 3,
+      "attribute": "土",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "自分のクリーチャーが敵を撃破するたび、カードを1枚引く(1ターンに2回まで)。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "earth_011",
+      "name": "略奪の狼煙",
+      "faction": "aggro",
+      "cost": 3,
+      "vp": 2,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "土",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "このクリーチャーの攻撃時の再行動コストは1。自分のクリーチャーが敵を撃破するたび、マナを1得る（1ターンに2回まで）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "earth_012",
+      "name": "影の徒党員",
+      "faction": "aggro",
+      "cost": 1,
+      "vp": 1,
+      "hp": 1,
+      "atk": 2,
+      "reactivation_cost": 2,
+      "attribute": "土",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "earth_ace_001",
+      "name": "終焉の統べ手",
+      "faction": "meta",
+      "cost": 7,
+      "vp": 5,
+      "hp": 5,
+      "atk": 2,
+      "reactivation_cost": 4,
+      "attribute": "土",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "召喚時、自分の場のクリーチャー1体を破壊してよい。破壊した場合、敵クリーチャー全ての体力を-2する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "earth_ace_002",
+      "name": "守護者",
+      "faction": "defense",
+      "cost": 7,
+      "vp": 3,
+      "hp": 6,
+      "atk": 3,
+      "reactivation_cost": 5,
+      "attribute": "土",
+      "attack_cells": "all",
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "weakness_cells": [],
       "attack_type": "物理",
       "keywords": [
-        "要塞",
-        "カバー"
+        "先制",
+        "不屈"
       ],
-      "effect": "前後左右どこから攻撃されても反撃できる(カバー時も含む)。破壊時、隣接する味方全体のATK+1。",
-      "ult": {
-        "name": "不動の聖域",
-        "vp_cost": 3,
-        "timing": "召喚ターン可",
-        "effect": "隣接する味方全員のHPを全回復し、防護を付与する。"
-      }
+      "effect": "攻撃を受けた際、先に反撃を行う。ゲーム中1回、撃破される代わりに体力1で残る。全方向から1体を選んで攻撃する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
     },
     {
-      "id": "tank_v2_11",
-      "name": "導陣のアーク",
-      "faction": "tank",
-      "cost": 2,
-      "vp": 1,
-      "hp": 1,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "拳",
+      "id": "earth_017",
+      "name": "静寂の聖盾",
+      "faction": "defense",
+      "cost": 7,
+      "vp": 4,
+      "hp": 5,
+      "atk": 2,
+      "reactivation_cost": 5,
+      "attribute": "土",
       "attack_cells": [
         [
           1,
           0
         ]
       ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [],
       "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、味方1体を好きな方向に向ける。",
-      "ult": null
+      "keywords": [
+        "重ね召喚"
+      ],
+      "effect": "召喚時、自分の場のクリーチャー全ての体力を+1(永続)。",
+      "ult": null,
+      "has_overlay": true,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "tank_v2_12",
-      "name": "凱城のバスティア",
-      "faction": "tank",
-      "cost": 4,
-      "vp": 2,
-      "hp": 4,
+      "id": "wood_002",
+      "name": "偏食家",
+      "faction": "aggro",
+      "cost": 3,
+      "vp": 3,
+      "hp": 2,
       "atk": 3,
+      "reactivation_cost": 1,
+      "attribute": "木",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃",
+        "偏食"
+      ],
+      "effect": "魔道攻撃を持つ。偏食により木属性のクリーチャーまたは木属性フィールドにいるクリーチャーにしか攻撃できない(敵味方問わず)。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "wood_003",
+      "name": "鼓舞の旗印",
+      "faction": "inheritance",
+      "cost": 3,
+      "vp": 1,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 2,
+      "attribute": "木",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "このクリーチャーがいる限り、隣接するクリーチャーの攻撃力を+1する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "wood_004",
+      "name": "鼓舞の連鎖",
+      "faction": "inheritance",
+      "cost": 4,
+      "vp": 1,
+      "hp": 3,
+      "atk": 2,
       "reactivation_cost": 3,
-      "attribute": "闇",
+      "attribute": "木",
       "attack_cells": [
         [
           1,
@@ -746,117 +1624,276 @@
         [
           -1,
           0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "隣接するフィールドに自陣のクリーチャーがいるとき、1体につきこのクリーチャーの攻撃力は+1される。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "wood_007",
+      "name": "苗床の魔導士",
+      "faction": "spell",
+      "cost": 4,
+      "vp": 2,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "木",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "召喚時、自分の墓地のスペル1枚を手札に戻す。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "wood_008",
+      "name": "隠れ鎌のリザード",
+      "faction": "aggro",
+      "cost": 3,
+      "vp": 2,
+      "hp": 2,
+      "atk": 2,
+      "reactivation_cost": 2,
+      "attribute": "木",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
         ]
       ],
       "attack_type": "物理",
       "keywords": [
-        "カバー"
+        "暗殺"
       ],
-      "effect": "召喚時、隣接する味方を2回復する。召喚時、このキャラに防護を与える。",
-      "ult": null
+      "effect": "弱点範囲を突いて攻撃したとき、通常のボーナスに加えてさらに+1ダメージ。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "control_v2_01",
-      "name": "錯声のレン",
-      "faction": "control",
-      "cost": 1,
+      "id": "wood_009",
+      "name": "木霊の祈祷師",
+      "faction": "meta",
+      "cost": 3,
       "vp": 1,
       "hp": 2,
       "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "虚",
+      "reactivation_cost": 2,
+      "attribute": "木",
       "attack_cells": "all",
-      "attack_type": "魔法",
+      "counter_cells": null,
       "weakness_cells": [
         [
           -1,
-          -1
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "召喚時、隣接する敵1体のATK-1。",
-      "ult": null
-    },
-    {
-      "id": "control_v2_02",
-      "name": "凍夜のユキ",
-      "faction": "control",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "闇",
-      "attack_cells": [
-        [
-          1,
           0
         ]
       ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する敵1体の再行動コスト+1。",
-      "ult": null
-    },
-    {
-      "id": "control_v2_03",
-      "name": "蝕影のメア",
-      "faction": "control",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "闇",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
       ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する敵1体のATK-2。",
-      "ult": null
+      "effect": "場にいる間、自分のクリーチャーが撃破されて相手が得るVPは-1される(最低1)。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
     },
     {
-      "id": "control_v2_04",
-      "name": "刻鎖のクロト",
-      "faction": "control",
-      "cost": 3,
+      "id": "wood_010",
+      "name": "茨の絡みつき",
+      "faction": "meta",
+      "cost": 4,
       "vp": 2,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "木",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "このクリーチャーが攻撃した敵は、次の相手ターン中、再行動できない(攻撃も向き変更も移動も不可)。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "wood_011",
+      "name": "大樹の祭主",
+      "faction": "inheritance",
+      "cost": 5,
+      "vp": 4,
+      "hp": 4,
+      "atk": 3,
+      "reactivation_cost": 3,
+      "attribute": "木",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "このクリーチャーがいる限り、すべてのクリーチャーの体力は+1される。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "wood_012",
+      "name": "千の蔓植物",
+      "faction": "aggro",
+      "cost": 4,
+      "vp": 2,
+      "hp": 4,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "木",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "全方位4方向同時に攻撃する(各方向の隣接1体に攻撃力分のダメージ)。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "wood_013",
+      "name": "古龍の血脈",
+      "faction": "inheritance",
+      "cost": 5,
+      "vp": 3,
       "hp": 5,
       "atk": 3,
-      "reactivation_cost": 2,
-      "attribute": "虚",
+      "reactivation_cost": 3,
+      "attribute": "木",
       "attack_cells": [
         [
           1,
@@ -867,725 +1904,717 @@
           0
         ]
       ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、隣接する敵1体の再行動コスト+1。",
-      "ult": null
+      "effect": "フィールドのクリーチャーのステータスが変動したターン、このクリーチャーの再行動コストは0になる。前2体貫通攻撃。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "control_v2_05",
-      "name": "歪律のエコー",
-      "faction": "control",
+      "id": "neutral_001",
+      "name": "偶像の番人",
+      "faction": "defense",
+      "cost": 4,
+      "vp": 2,
+      "hp": 4,
+      "atk": 3,
+      "reactivation_cost": 3,
+      "attribute": "無",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "場にいる間、自分のクリーチャーは、相手が発動した向き変更・移動の効果を受けない。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "neutral_003",
+      "name": "鋼の鼓動",
+      "faction": "defense",
+      "cost": 3,
+      "vp": 3,
+      "hp": 3,
+      "atk": 1,
+      "reactivation_cost": 3,
+      "attribute": "無",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "weakness_cells": [],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "前方2マスのクリーチャーの召喚コストと再行動コストを+2する。前方2マスを同時攻撃する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "neutral_004",
+      "name": "監視者の塔",
+      "faction": "meta",
+      "cost": 3,
+      "vp": 2,
+      "hp": 3,
+      "atk": 1,
+      "reactivation_cost": 2,
+      "attribute": "無",
+      "attack_cells": null,
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "監視：相手のクリーチャーの召喚時効果が発動するたび、自分はマナを1得る(1ターンに1回まで)。警鐘：相手がウルトを発動したとき、自分はカードを3枚引き、マナを3得る。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "none"
+    },
+    {
+      "id": "neutral_008",
+      "name": "古の番神",
+      "faction": "defense",
+      "cost": 4,
+      "vp": 2,
+      "hp": 4,
+      "atk": 3,
+      "reactivation_cost": 4,
+      "attribute": "無",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [],
+      "attack_type": "魔道",
+      "keywords": [
+        "魔道攻撃"
+      ],
+      "effect": "このクリーチャーは敵の効果で移動・退却させられない。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
+    },
+    {
+      "id": "neutral_010",
+      "name": "沈黙の祠",
+      "faction": "meta",
+      "cost": 3,
+      "vp": 2,
+      "hp": 4,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "無",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "場にいる間、相手はターンに2枚目以降のスペルを唱えられない。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "neutral_011",
+      "name": "黄昏の使徒",
+      "faction": "aggro",
+      "cost": 4,
+      "vp": 3,
+      "hp": 4,
+      "atk": 4,
+      "reactivation_cost": 3,
+      "attribute": "無",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "攻撃して敵を撃破したとき、追加でVP1を得る。前後2マス同時攻撃。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "neutral_012",
+      "name": "鏡像の門",
+      "faction": "cip",
+      "cost": 3,
+      "vp": 2,
+      "hp": 4,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "無",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "召喚時、相手のクリーチャー1体を選び、そのクリーチャーの召喚時効果を発動できる。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "water_020",
+      "name": "占術の見習い",
+      "faction": "cip",
       "cost": 1,
       "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
-      "attribute": "拳",
-      "attack_cells": "all",
-      "attack_type": "魔法",
-      "weakness_cells": [
-        [
-          -1,
-          -1
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "召喚時、隣接する敵1体を90°回転させる。",
-      "ult": null
-    },
-    {
-      "id": "control_v2_06",
-      "name": "断弦のリラ",
-      "faction": "control",
-      "cost": 3,
-      "vp": 2,
-      "hp": 3,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "拳",
+      "attribute": "水",
       "attack_cells": [
         [
           1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "召喚時、自デッキトップ1枚を見る。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "neutral_013",
+      "name": "哨戒の犬",
+      "faction": "meta",
+      "cost": 1,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 1,
+      "attribute": "無",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "このクリーチャーは魔道攻撃を受けない。相手が自分のターンに召喚を行うたび、自分はカードを1枚引く（1ターンに1回まで）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "earth_013",
+      "name": "小鬼の見張り",
+      "faction": "aggro",
+      "cost": 1,
+      "vp": 1,
+      "hp": 1,
+      "atk": 2,
+      "reactivation_cost": 1,
+      "attribute": "土",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
           0
         ]
       ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "",
-      "ult": null
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "control_v2_07",
-      "name": "幻惑のセツナ",
-      "faction": "control",
-      "cost": 4,
-      "vp": 2,
-      "hp": 4,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "念",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、敵1体を洗脳(行動不能にする)する。召喚時、隣接する敵1体のATK-1。",
-      "ult": null
-    },
-    {
-      "id": "control_v2_08",
-      "name": "暗影のヴェラ",
-      "faction": "control",
-      "cost": 2,
-      "vp": 1,
-      "hp": 3,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "闇",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する敵1体を90°回転させる。",
-      "ult": null
-    },
-    {
-      "id": "control_v2_09",
-      "name": "簒奪のオルド",
-      "faction": "control",
-      "cost": 5,
-      "vp": 3,
-      "hp": 6,
-      "atk": 4,
-      "reactivation_cost": 3,
-      "attribute": "虚",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          2,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、相手のマナを2奪う。攻撃時、隣接する敵1体の再行動コスト+1。",
-      "ult": {
-        "name": "能力簒奪",
-        "vp_cost": 3,
-        "timing": "次ターン以降",
-        "effect": "敵1体のATKを2奪う(対象のATK-2、このキャラのATK+2、永続)。"
-      }
-    },
-    {
-      "id": "control_v2_10",
-      "name": "崩心のミスズ",
-      "faction": "control",
-      "cost": 4,
-      "vp": 2,
-      "hp": 6,
-      "atk": 4,
-      "reactivation_cost": 3,
-      "attribute": "念",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する敵1体のATK-1。召喚時、デバフ持ちの敵が1体以上いるなら、カードを1枚引く。召喚時、デバフ持ちの敵が3体以上いるなら、隣接する敵1体に1ダメージを与える。",
-      "ult": {
-        "name": "全体崩壊",
-        "vp_cost": 3,
-        "timing": "次ターン以降",
-        "effect": "敵全員のATKを-1(永続)。"
-      }
-    },
-    {
-      "id": "control_v2_11",
-      "name": "禁域のノア",
-      "faction": "control",
+      "id": "earth_014",
+      "name": "古文書の番人",
+      "faction": "spell",
       "cost": 1,
       "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
-      "attribute": "光",
+      "attribute": "土",
       "attack_cells": [
         [
           1,
           0
         ]
       ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する敵1体の再行動コスト+1。",
-      "ult": null
-    },
-    {
-      "id": "control_v2_12",
-      "name": "掌握のイデア",
-      "faction": "control",
-      "cost": 4,
-      "vp": 2,
-      "hp": 5,
-      "atk": 4,
-      "reactivation_cost": 3,
-      "attribute": "光",
-      "attack_cells": [
+      "counter_cells": [
         [
           1,
           0
-        ],
+        ]
+      ],
+      "weakness_cells": [
         [
           -1,
           0
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
         ]
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "デバフ持ちの敵が2体以上いるなら、カードを1枚引く。デバフ持ちの敵が3体以上いるなら、マナ+1。",
-      "ult": null
+      "effect": "召喚時、自分の墓地のスペル1枚をデッキに戻す(シャッフル)。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "synergy_v2_01",
-      "name": "護刻のアルト",
-      "faction": "synergy",
-      "cost": 1,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "拳",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、味方1体に防護(受けるダメージ-1)を付与。",
-      "ult": null
-    },
-    {
-      "id": "synergy_v2_02",
-      "name": "風刻のミウ",
-      "faction": "synergy",
+      "id": "wood_015",
+      "name": "芽吹きの種",
+      "faction": "inheritance",
       "cost": 1,
       "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
-      "attribute": "念",
-      "attack_cells": "all",
-      "attack_type": "魔法",
+      "attribute": "木",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "weakness_cells": [
         [
           -1,
-          -1
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "召喚時、隣接する味方1体に回避(物理攻撃を1回無効化)を付与。",
-      "ult": null
-    },
-    {
-      "id": "synergy_v2_03",
-      "name": "穿光のレオン",
-      "faction": "synergy",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "光",
-      "attack_cells": [
-        [
-          1,
           0
         ]
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、隣接する味方1体に貫通(防護・回避を無視)を付与。",
-      "ult": null
+      "effect": "このクリーチャーが撃破されたとき、自分の場のクリーチャー1体の攻撃力を次のターンのみ+2する（強制）。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "synergy_v2_04",
-      "name": "霞纏のシロ",
-      "faction": "synergy",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "闇",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、味方1体に回避(物理攻撃を1回無効化)を付与。",
-      "ult": null
-    },
-    {
-      "id": "synergy_v2_05",
-      "name": "律動のセツ",
-      "faction": "synergy",
-      "cost": 2,
-      "vp": 1,
-      "hp": 3,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "念",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "マーカーバフ持ちの味方が3体以上いるなら、攻撃時ATK+1。マーカーバフ持ちの味方が4体以上いるなら、ターン終了時、隣接味方を1回復。",
-      "ult": null
-    },
-    {
-      "id": "synergy_v2_06",
-      "name": "遺志のユラ",
-      "faction": "synergy",
-      "cost": 3,
-      "vp": 2,
-      "hp": 3,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "念",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "味方が破壊された時、自分に防護を得る。(防護=次に受けるダメージを-1。重ねがけ可。)",
-      "ult": null
-    },
-    {
-      "id": "synergy_v2_07",
-      "name": "凱歌のフィオ",
-      "faction": "synergy",
-      "cost": 3,
-      "vp": 2,
-      "hp": 2,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "拳",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する味方全体のATK+1。",
-      "ult": null
-    },
-    {
-      "id": "synergy_v2_08",
-      "name": "凝光のアム",
-      "faction": "synergy",
-      "cost": 4,
-      "vp": 2,
-      "hp": 4,
-      "atk": 4,
-      "reactivation_cost": 2,
-      "attribute": "光",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          2,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する味方全体を1回復。マーカーバフ持ちの味方が3体以上いるなら、隣接する味方全体のATK+1。",
-      "ult": null
-    },
-    {
-      "id": "synergy_v2_09",
-      "name": "残影のレム",
-      "faction": "synergy",
+      "id": "wood_016",
+      "name": "駆けの斥候",
+      "faction": "mobility",
       "cost": 1,
       "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
-      "attribute": "闇",
-      "attack_cells": "all",
-      "attack_type": "魔法",
-      "weakness_cells": [
-        [
-          -1,
-          -1
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "召喚時、隣接する味方1体のHP+1。",
-      "ult": null
-    },
-    {
-      "id": "synergy_v2_10",
-      "name": "調和のアリア",
-      "faction": "synergy",
-      "cost": 5,
-      "vp": 3,
-      "hp": 5,
-      "atk": 4,
-      "reactivation_cost": 3,
-      "attribute": "虚",
+      "attribute": "木",
       "attack_cells": [
         [
           1,
           0
-        ],
+        ]
+      ],
+      "counter_cells": [
         [
-          2,
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
           0
         ]
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "マーカーバフ持ちの味方が2体以上いるなら、自分のATK+1。マーカーバフ持ちの味方が3体以上いるなら、隣接味方全体を1回復。",
-      "ult": {
-        "name": "完全調和",
-        "vp_cost": 3,
-        "timing": "次ターン以降",
-        "effect": "味方全員のATK+1・HP+1(永続)。"
-      }
+      "effect": "自分のターン開始時、このクリーチャーは隣接する空きマスに移動する(強制。移動先はプレイヤーが選ぶ。向きは変更しない。空きマスがなければ移動しない)。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "synergy_v2_11",
-      "name": "星導のアルス",
-      "faction": "synergy",
-      "cost": 4,
-      "vp": 2,
+      "id": "earth_015",
+      "name": "番犬の仔",
+      "faction": "meta",
+      "cost": 1,
+      "vp": 1,
+      "hp": 1,
+      "atk": 1,
+      "reactivation_cost": 1,
+      "attribute": "土",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "相手がこのクリーチャーに隣接するマスにクリーチャーを召喚したとき、そのクリーチャーに1ダメージ。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "neutral_014",
+      "name": "守りの衛士",
+      "faction": "defense",
+      "cost": 2,
+      "vp": 1,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 2,
+      "attribute": "無",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "wood_017",
+      "name": "挑発の槍兵",
+      "faction": "defense",
+      "cost": 1,
+      "vp": 1,
+      "hp": 2,
+      "atk": 1,
+      "reactivation_cost": 1,
+      "attribute": "木",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "召喚時、隣接する敵クリーチャー全ての向きをこのクリーチャーの方向に強制変更する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "wood_018",
+      "name": "大樹の守人",
+      "faction": "defense",
+      "cost": 6,
+      "vp": 3,
       "hp": 5,
       "atk": 4,
       "reactivation_cost": 4,
-      "attribute": "拳",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          -1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する味方全体を1回復。マーカーバフ持ちの味方が3体以上いるなら、隣接する味方全体のATK+1。",
-      "ult": null
-    },
-    {
-      "id": "synergy_v2_12",
-      "name": "輝陣のイリス",
-      "faction": "synergy",
-      "cost": 5,
-      "vp": 3,
-      "hp": 5,
-      "atk": 4,
-      "reactivation_cost": 3,
-      "attribute": "光",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          0,
-          1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する味方全体のATK+1。",
-      "ult": {
-        "name": "輝光陣",
-        "vp_cost": 3,
-        "timing": "召喚ターン可",
-        "effect": "味方全員に防護・回避・貫通・先制を1ターン付与。"
-      }
-    },
-    {
-      "id": "snipe_v2_01",
-      "name": "痛覚のソウ",
-      "faction": "snipe",
-      "cost": 1,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "拳",
+      "attribute": "木",
       "attack_cells": [
         [
           1,
           0
         ]
       ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "weakness_cells": [],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "攻撃時、自分に1ダメージを受けてもよい。受けたなら追加で1ダメージを与える。",
-      "ult": null
+      "effect": "場にいる間、自分のクリーチャー全ての体力+1（永続）。自分のターン開始時、カードを1枚引く。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "snipe_v2_02",
-      "name": "残光のニコラ",
-      "faction": "snipe",
-      "cost": 1,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "虚",
-      "attack_cells": "all",
-      "attack_type": "魔法",
-      "weakness_cells": [
-        [
-          -1,
-          -1
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "攻撃時、手札を1枚捨ててもよい。捨てたなら追加で1ダメージを与える。",
-      "ult": null
-    },
-    {
-      "id": "snipe_v2_03",
-      "name": "燼炎のミュウ",
-      "faction": "snipe",
-      "cost": 1,
-      "vp": 1,
-      "hp": 1,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "念",
-      "attack_cells": "all",
-      "attack_type": "魔法",
-      "weakness_cells": [
-        [
-          -1,
-          -1
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "攻撃時、手札を1枚捨ててもよい。捨てたなら追加で1ダメージを与える。",
-      "ult": null
-    },
-    {
-      "id": "snipe_v2_04",
-      "name": "業火のシラ",
-      "faction": "snipe",
+      "id": "water_021",
+      "name": "写し身の弟子",
+      "faction": "inheritance",
       "cost": 2,
-      "vp": 1,
-      "hp": 3,
+      "vp": 2,
+      "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
-      "attribute": "拳",
+      "attribute": "水",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "召喚時、自分の場の他のクリーチャー1体のATKをこのクリーチャーにコピー(永続)。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
+    },
+    {
+      "id": "neutral_016",
+      "name": "鋼の継承者",
+      "faction": "inheritance",
+      "cost": 4,
+      "vp": 2,
+      "hp": 3,
+      "atk": 0,
+      "reactivation_cost": 3,
+      "attribute": "無",
       "attack_cells": [
         [
           1,
@@ -1596,714 +2625,388 @@
           0
         ]
       ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "攻撃時、自分に1ダメージを受けてもよい。受けたなら攻撃は貫通(防護・回避を無視)する。",
-      "ult": null
-    },
-    {
-      "id": "snipe_v2_05",
-      "name": "凶弾のフィカ",
-      "faction": "snipe",
-      "cost": 2,
-      "vp": 1,
-      "hp": 3,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "闇",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          0,
-          -1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "攻撃時、自分に1ダメージを受けてもよい。受けたなら追加で2ダメージを与える。",
-      "ult": null
-    },
-    {
-      "id": "snipe_v2_06",
-      "name": "散華のルカ",
-      "faction": "snipe",
-      "cost": 2,
-      "vp": 1,
-      "hp": 3,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "光",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          0,
-          1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "攻撃時、手札を1枚捨ててもよい。捨てたなら追加で2ダメージを与える。",
-      "ult": null
-    },
-    {
-      "id": "snipe_v2_07",
-      "name": "透徹のクオン",
-      "faction": "snipe",
-      "cost": 3,
-      "vp": 2,
-      "hp": 4,
-      "atk": 2,
-      "reactivation_cost": 2,
-      "attribute": "念",
-      "attack_cells": [
+      "counter_cells": [
         [
           1,
           0
         ]
       ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、手札を1枚捨ててもよい。捨てたならカードを2枚引く。",
-      "ult": null
-    },
-    {
-      "id": "snipe_v2_08",
-      "name": "死線のヴァル",
-      "faction": "snipe",
-      "cost": 3,
-      "vp": 2,
-      "hp": 4,
-      "atk": 3,
-      "reactivation_cost": 2,
-      "attribute": "闇",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          -1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "攻撃時、自分に1ダメージを受けてもよい。受けたなら追加で1ダメージを与え、攻撃は貫通(防護・回避を無視)する。",
-      "ult": null
-    },
-    {
-      "id": "snipe_v2_09",
-      "name": "狂咲のシュリ",
-      "faction": "snipe",
-      "cost": 4,
-      "vp": 2,
-      "hp": 4,
-      "atk": 3,
-      "reactivation_cost": 3,
-      "attribute": "光",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          0,
-          -1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "攻撃時、手札を1枚捨ててもよい。捨てたなら追加で3ダメージを与える。",
-      "ult": {
-        "name": "狂咲弾",
-        "vp_cost": 2,
-        "timing": "召喚ターン可",
-        "effect": "手札を1枚捨て、敵1体に貫通4ダメージを与える。"
-      }
-    },
-    {
-      "id": "snipe_v2_10",
-      "name": "絶弾のサクラ",
-      "faction": "snipe",
-      "cost": 4,
-      "vp": 2,
-      "hp": 5,
-      "atk": 3,
-      "reactivation_cost": 3,
-      "attribute": "拳",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          2,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "攻撃時、自分に1ダメージを受け、かつ手札を1枚捨ててもよい。両方払ったなら追加で3ダメージを与え、攻撃は貫通(防護・回避を無視)する。",
-      "ult": null
-    },
-    {
-      "id": "snipe_v2_11",
-      "name": "虚弾のヴェル",
-      "faction": "snipe",
-      "cost": 4,
-      "vp": 2,
-      "hp": 5,
-      "atk": 3,
-      "reactivation_cost": 3,
-      "attribute": "念",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "攻撃時、マナを1払ってもよい。払ったなら追加で2ダメージを与える。",
-      "ult": null
-    },
-    {
-      "id": "snipe_v2_12",
-      "name": "終末のロギア",
-      "faction": "snipe",
-      "cost": 5,
-      "vp": 3,
-      "hp": 5,
-      "atk": 4,
-      "reactivation_cost": 3,
-      "attribute": "闇",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          0,
-          1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "攻撃時、自分に1ダメージを受けてもよい。受けたなら追加で2ダメージを与え、攻撃は貫通(防護・回避を無視)する。",
-      "ult": {
-        "name": "終焉の射",
-        "vp_cost": 3,
-        "timing": "召喚ターン可",
-        "effect": "自分にHP2のダメージを受け、任意の敵1体に貫通5ダメージを与える(盤面距離無視)。"
-      }
-    },
-    {
-      "id": "trick_v2_01",
-      "name": "凜風のツバキ",
-      "faction": "trick",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "念",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、敵1体を90度回転させる。",
-      "ult": null
-    },
-    {
-      "id": "trick_v2_02",
-      "name": "細波のハク",
-      "faction": "trick",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "念",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する敵1体を90度回転させる。",
-      "ult": null
-    },
-    {
-      "id": "trick_v2_03",
-      "name": "空蝉のカイト",
-      "faction": "trick",
-      "cost": 1,
-      "vp": 1,
-      "hp": 1,
-      "atk": 1,
-      "reactivation_cost": 2,
-      "attribute": "虚",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、手札を1枚捨ててもよい。そうしたならマナ+1。",
-      "ult": null
-    },
-    {
-      "id": "trick_v2_04",
-      "name": "転位のリップル",
-      "faction": "trick",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "闇",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、味方1体と位置を入れ替える(両者の向きはそのまま)。",
-      "ult": null
-    },
-    {
-      "id": "trick_v2_05",
-      "name": "幻影のシノブ",
-      "faction": "trick",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 1,
-      "attribute": "虚",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [
-        "回避"
-      ],
-      "effect": "攻撃時、攻撃対象のB位置にいる場合、ATK+1。",
-      "ult": null
-    },
-    {
-      "id": "trick_v2_06",
-      "name": "詭計のルシア",
-      "faction": "trick",
-      "cost": 2,
-      "vp": 1,
-      "hp": 2,
-      "atk": 1,
-      "reactivation_cost": 2,
-      "attribute": "闇",
-      "attack_cells": "all",
-      "attack_type": "魔法",
       "weakness_cells": [
         [
           -1,
-          -1
-        ],
-        [
-          -1,
           0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "召喚時、隣接する敵1体を1マス後退させる(後退できない場合は発動しない、後退時の向きはそのまま)。",
-      "ult": null
-    },
-    {
-      "id": "trick_v2_07",
-      "name": "灼影のミラージュ",
-      "faction": "trick",
-      "cost": 3,
-      "vp": 2,
-      "hp": 3,
-      "atk": 4,
-      "reactivation_cost": 2,
-      "attribute": "光",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          0,
-          -1
         ]
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "攻撃時、攻撃対象のB位置にいる場合、追加で1ダメージを与える。",
-      "ult": null
+      "effect": "召喚時、自分の墓地のクリーチャー1体を選び、そのATKをこのクリーチャーに加算する（永続）。前方2マスを貫通攻撃する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     },
     {
-      "id": "trick_v2_08",
-      "name": "転刃のシュラ",
-      "faction": "trick",
+      "id": "water_022",
+      "name": "詠唱の弟子",
+      "faction": "spell",
       "cost": 2,
       "vp": 1,
-      "hp": 3,
-      "atk": 2,
-      "reactivation_cost": 1,
-      "attribute": "拳",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "攻撃時、攻撃対象を任意の方向に回転させる。",
-      "ult": null
-    },
-    {
-      "id": "trick_v2_09",
-      "name": "狂宴のジョーカー",
-      "faction": "trick",
-      "cost": 5,
-      "vp": 3,
-      "hp": 5,
-      "atk": 4,
-      "reactivation_cost": 3,
-      "attribute": "拳",
-      "attack_cells": [
-        [
-          1,
-          0
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する敵1体を任意の方向に回転させる。",
-      "ult": {
-        "name": "狂宴の交錯",
-        "vp_cost": 3,
-        "timing": "召喚ターン可",
-        "effect": "敵味方含む任意のキャラ2体の位置を入れ替える。入れ替え後、両者の向きを任意に決められる。"
-      }
-    },
-    {
-      "id": "trick_v2_10",
-      "name": "霧中のアオイ",
-      "faction": "trick",
-      "cost": 4,
-      "vp": 2,
-      "hp": 5,
-      "atk": 3,
-      "reactivation_cost": 2,
-      "attribute": "念",
-      "attack_cells": [
-        [
-          1,
-          0
-        ]
-      ],
-      "attack_type": "物理",
-      "keywords": [],
-      "effect": "空きマスが5個以上ならATK+1。",
-      "ult": null
-    },
-    {
-      "id": "trick_v2_11",
-      "name": "暗転のカレン",
-      "faction": "trick",
-      "cost": 1,
-      "vp": 1,
-      "hp": 1,
+      "hp": 2,
       "atk": 1,
       "reactivation_cost": 1,
-      "attribute": "闇",
-      "attack_cells": "all",
-      "attack_type": "魔法",
+      "attribute": "水",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "weakness_cells": [
         [
           -1,
-          -1
-        ],
-        [
-          -1,
-          0
-        ],
-        [
-          -1,
-          1
-        ],
-        [
-          0,
-          -1
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          -1
-        ],
-        [
-          1,
-          0
-        ],
-        [
-          1,
-          1
-        ]
-      ],
-      "keywords": [],
-      "effect": "攻撃時、攻撃対象のB位置にいる場合、カードを1枚引く。",
-      "ult": null
-    },
-    {
-      "id": "trick_v2_12",
-      "name": "静謐のサヤ",
-      "faction": "trick",
-      "cost": 4,
-      "vp": 2,
-      "hp": 4,
-      "atk": 4,
-      "reactivation_cost": 3,
-      "attribute": "光",
-      "attack_cells": [
-        [
-          1,
           0
         ]
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、敵1体を任意の方向に回転させる。相手キャラのB位置にいる味方が3体以上いるなら、カードを1枚引く。",
-      "ult": {
-        "name": "静謐結界",
-        "vp_cost": 2,
-        "timing": "召喚ターン可",
-        "effect": "このキャラは次のターンの終了時までダメージを受けず、効果も受けない。"
-      }
+      "effect": "自分がスペルを唱えるたび、カードを1枚引く。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     }
   ],
   "items": [
     {
-      "id": "item_01",
-      "name": "緊急補給",
+      "id": "spell_fire_001",
+      "name": "鏡像の双剣",
+      "attribute": "火",
+      "cost": 3,
+      "effect": "自軍クリーチャー1体に、このターン『連撃』を付与する。",
+      "faction": "aggro"
+    },
+    {
+      "id": "spell_fire_002",
+      "name": "玉砕の決意",
+      "attribute": "火",
+      "cost": 2,
+      "effect": "自分のクリーチャー1体の攻撃力をこのターン2倍にする。ターン終了時、そのクリーチャーを破壊する。",
+      "faction": "aggro"
+    },
+    {
+      "id": "spell_fire_003",
+      "name": "鋳潰しの炉",
+      "attribute": "火",
       "cost": 0,
-      "vp": 1,
-      "effect": "2枚ドロー",
-      "sets": [
-        "A",
-        "B",
-        "C",
-        "D"
-      ]
+      "effect": "手札のクリーチャー1枚を捨て、捨てたクリーチャーのマナコスト分のマナを得る。",
+      "faction": "spell"
     },
     {
-      "id": "item_02",
-      "name": "マナ結晶",
+      "id": "spell_fire_004",
+      "name": "焔の連弾",
+      "attribute": "火",
+      "cost": 3,
+      "effect": "敵クリーチャー1体に2ダメージ。このターンに既に別のスペルを唱えている場合、4ダメージになる。",
+      "faction": "spell"
+    },
+    {
+      "id": "spell_fire_005",
+      "name": "鎖の解放者の声",
+      "attribute": "火",
+      "cost": 2,
+      "effect": "自軍クリーチャー1体の召喚時効果を再発動する。",
+      "faction": "cip"
+    },
+    {
+      "id": "spell_fire_007",
+      "name": "黒い雷",
+      "attribute": "火",
+      "cost": 5,
+      "effect": "1列(縦または横)の敵クリーチャー全てに3ダメージ。",
+      "faction": "spell"
+    },
+    {
+      "id": "spell_water_001",
+      "name": "蜃気楼",
+      "attribute": "水",
+      "cost": 2,
+      "effect": "自分のクリーチャー1体を別の空きマスに移動させる(向きは自由)。",
+      "faction": "mobility"
+    },
+    {
+      "id": "spell_water_003",
+      "name": "氷漬けの檻",
+      "attribute": "水",
+      "cost": 2,
+      "effect": "敵クリーチャー1体は、次の自分のターン終了時まで攻撃も反撃もできない。",
+      "faction": "meta"
+    },
+    {
+      "id": "spell_water_004",
+      "name": "蒼天の盟約",
+      "attribute": "水",
+      "cost": 3,
+      "effect": "自分のクリーチャー1体は、次の相手ターン中、攻撃対象に選ばれない。",
+      "faction": "defense"
+    },
+    {
+      "id": "spell_water_005",
+      "name": "鏡合わせの宿命",
+      "attribute": "水",
+      "cost": 2,
+      "effect": "自軍クリーチャー1体と敵クリーチャー1体を選ぶ。両者の体力を低い方の値に揃える。",
+      "faction": "meta"
+    },
+    {
+      "id": "spell_earth_001",
+      "name": "二面の仮面",
+      "attribute": "土",
+      "cost": 2,
+      "effect": "自軍クリーチャー1体と敵クリーチャー1体を選ぶ。このターン、両者の攻撃力を入れ替える。",
+      "faction": "aggro"
+    },
+    {
+      "id": "spell_earth_002",
+      "name": "鼓動の継承",
+      "attribute": "土",
+      "cost": 2,
+      "effect": "自軍クリーチャー1体を破壊し、その体力を別の自軍クリーチャー1体に永続加算する。",
+      "faction": "inheritance"
+    },
+    {
+      "id": "spell_earth_003",
+      "name": "黒霧の呼びかけ",
+      "attribute": "土",
+      "cost": 2,
+      "effect": "墓地のクリーチャー1体を手札に戻す。",
+      "faction": "inheritance"
+    },
+    {
+      "id": "spell_earth_004",
+      "name": "暗夜の手引き",
+      "attribute": "土",
+      "cost": 2,
+      "effect": "自軍クリーチャー1体は、次の自分のターン終了時まで、攻撃時に対象の弱点範囲を突いた攻撃として扱う(向きや位置に関係なく弱点ボーナスを得る)。",
+      "faction": "aggro"
+    },
+    {
+      "id": "spell_earth_005",
+      "name": "影継ぎの儀",
+      "attribute": "土",
+      "cost": 2,
+      "effect": "場の自軍クリーチャー1体に、墓地のクリーチャー1体の攻撃力または体力を加算する(永続、除外なし)。",
+      "faction": "inheritance"
+    },
+    {
+      "id": "spell_earth_006",
+      "name": "反属性の呪い",
+      "attribute": "土",
+      "cost": 2,
+      "effect": "敵クリーチャー1体がいるマスの属性を、そのクリーチャーの反属性に変更する。",
+      "faction": "meta"
+    },
+    {
+      "id": "spell_earth_007",
+      "name": "二度目の夜明け",
+      "attribute": "土",
+      "cost": 5,
+      "effect": "墓地のクリーチャー1体を空きマスに召喚する(コスト無料)。このカード使用後、ターンは即座に終了する。",
+      "faction": "inheritance"
+    },
+    {
+      "id": "spell_earth_009",
+      "name": "万象の鼓動",
+      "attribute": "土",
       "cost": 0,
-      "vp": 1,
-      "effect": "マナ+1",
-      "sets": [
-        "A",
-        "B",
-        "C",
-        "D"
-      ]
+      "effect": "このカードを使用するためには、自分のクリーチャー1体を破壊する必要がある。破壊したクリーチャーのマナコスト+2のマナを得る。",
+      "faction": "meta"
     },
     {
-      "id": "item_03",
-      "name": "応急キット",
-      "cost": 1,
-      "vp": 1,
-      "effect": "味方1体のHP3回復",
-      "sets": [
-        "D"
-      ]
+      "id": "spell_earth_010",
+      "name": "巡る輪廻",
+      "attribute": "土",
+      "cost": 0,
+      "effect": "自分の墓地のクリーチャー1体を選び、デッキの一番下に戻す。マナを3得る。",
+      "faction": "meta"
     },
     {
-      "id": "item_04",
-      "name": "強化弾",
-      "cost": 1,
-      "vp": 1,
-      "effect": "このターン、味方1体のATK+2",
-      "sets": [
-        "A",
-        "B"
-      ]
+      "id": "spell_wood_001",
+      "name": "大地の塗り替え",
+      "attribute": "木",
+      "cost": 3,
+      "effect": "任意のマス1つの属性を、自分が指定した属性に変更する。",
+      "faction": "mobility"
     },
     {
-      "id": "item_05",
-      "name": "弱体化ガス",
-      "cost": 1,
-      "vp": 1,
-      "effect": "敵1体のATK-2",
-      "sets": [
-        "B",
-        "D"
-      ]
-    },
-    {
-      "id": "item_06",
-      "name": "手榴弾",
-      "cost": 1,
-      "vp": 1,
-      "effect": "敵1体に2ダメージ",
-      "sets": [
-        "A",
-        "C"
-      ]
-    },
-    {
-      "id": "item_14",
-      "name": "拘束鎖",
+      "id": "spell_wood_002",
+      "name": "萌芽のスペル",
+      "attribute": "木",
       "cost": 2,
-      "vp": 1,
-      "effect": "敵1体を180°回転 / 1ターン【向き固定（回転できなくなる）】",
-      "sets": [
-        "C"
-      ]
+      "effect": "自分のクリーチャー1体の体力を+2する(永続)。",
+      "faction": "inheritance"
     },
     {
-      "id": "item_20",
-      "name": "混乱ガス",
-      "cost": 1,
-      "vp": 1,
-      "effect": "敵1体の向きを90°回転",
-      "sets": [
-        "A"
-      ]
+      "id": "spell_neutral_001",
+      "name": "召喚士の帰還",
+      "attribute": "無",
+      "cost": 0,
+      "effect": "自分のクリーチャー1体を手札に戻す。そのクリーチャーの召喚コスト分のマナを得る。",
+      "faction": "mobility"
     },
     {
-      "id": "item_bounce_enemy",
-      "name": "帰還の風",
+      "id": "spell_neutral_002",
+      "name": "払い戻し",
+      "attribute": "無",
+      "cost": 0,
+      "effect": "手札のスペル1枚を捨て、捨てたスペルのマナコスト分のマナを得る。",
+      "faction": "spell"
+    },
+    {
+      "id": "spell_neutral_003",
+      "name": "色彩の供犠",
+      "attribute": "無",
       "cost": 2,
-      "vp": 1,
-      "effect": "敵C2以下のキャラを持ち主の手札に戻す",
-      "sets": [
-        "C"
-      ]
+      "effect": "手札を1枚捨てる。任意のマス1つの属性を、捨てたカードの属性に変更する。",
+      "faction": "cip"
     },
     {
-      "id": "item_element_swap",
-      "name": "属性召喚",
+      "id": "spell_neutral_006",
+      "name": "五星の祈り",
+      "attribute": "無",
+      "cost": 3,
+      "effect": "自分が確保しているマスが4つの場合のみ使用可能。デッキの上から5枚を見て、その中からクリーチャー1体を選び、空きマスにコスト無料で召喚する(向き自由)。残りのカードはデッキの一番下に好きな順で戻す。このスペル使用後、このターンは自分のターン終了時の陣取り勝利判定を行わない。さらに、これ以降のゲーム中、このプレイヤーはVPを獲得できなくなる。",
+      "faction": "defense"
+    },
+    {
+      "id": "spell_water_010",
+      "name": "詠唱の連鎖",
+      "attribute": "水",
+      "cost": 0,
+      "faction": "spell",
+      "effect": "手札のスペル1枚を選び、そのマナコストを支払って2回発動する。発動後、カードを1枚引く。"
+    },
+    {
+      "id": "spell_neutral_007",
+      "name": "身代わりの誓い",
+      "attribute": "無",
+      "cost": 0,
+      "faction": "defense",
+      "effect": "自分のクリーチャー1体を選ぶ。次の相手のターン中、相手の攻撃は全てそのクリーチャーが受け、そのクリーチャーは反撃範囲外からの攻撃に対しても反撃を行う。"
+    },
+    {
+      "id": "spell_water_011",
+      "name": "守護の旋律",
+      "attribute": "水",
+      "cost": 1,
+      "faction": "defense",
+      "effect": "このターン中、自分のクリーチャーが受けるダメージを-1する(最低1)。"
+    },
+    {
+      "id": "spell_earth_011",
+      "name": "再臨の儀",
+      "attribute": "土",
+      "cost": 3,
+      "faction": "cip",
+      "effect": "自分の墓地のクリーチャー1体を選び、そのクリーチャーの召喚時効果を発動する(クリーチャーは墓地に残る)。"
+    },
+    {
+      "id": "spell_fire_008",
+      "name": "突撃命令",
+      "attribute": "火",
       "cost": 2,
-      "vp": 1,
-      "effect": "属性一致で手札のキャラと場のキャラを入替える",
-      "sets": [
-        "A",
-        "D"
-      ]
+      "faction": "aggro",
+      "effect": "自分のクリーチャー1体は、次の攻撃時、攻撃力+2される。"
     },
     {
-      "id": "item_grant_piercing",
-      "name": "貫通の矢",
-      "cost": 1,
-      "vp": 1,
-      "effect": "味方1体に【貫通（防護・回避を無視）】を付与",
-      "sets": [
-        "B"
-      ]
+      "id": "spell_water_012",
+      "name": "創界の祝詞",
+      "attribute": "水",
+      "cost": 3,
+      "faction": "cip",
+      "effect": "自分のクリーチャー1体の召喚時効果を3回連続発動する。"
     },
     {
-      "id": "item_grant_protection",
-      "name": "加護の紋章",
-      "cost": 1,
-      "vp": 1,
-      "effect": "味方1体に【防護（受けるダメージ-1）】を付与",
-      "sets": [
-        "B"
-      ]
+      "id": "spell_earth_012",
+      "name": "記憶の召喚",
+      "attribute": "土",
+      "cost": 2,
+      "faction": "cip",
+      "effect": "自分のクリーチャー1体の召喚時効果を発動する。追加で、自分のデッキから召喚時効果を持つクリーチャー1枚を手札に加える(デッキはシャッフル)。"
     },
     {
-      "id": "item_reactivate",
-      "name": "次元歪曲",
-      "cost": 1,
-      "vp": 1,
-      "effect": "味方1体を再行動可能にする",
-      "sets": [
-        "C"
-      ]
+      "id": "spell_water_013",
+      "name": "戦場の流転",
+      "attribute": "水",
+      "cost": 3,
+      "faction": "mobility",
+      "effect": "自分の場のクリーチャー全てを隣接する空きマスに移動する(プレイヤーが移動先を選ぶ。空きマスがないクリーチャーは移動しない)。"
     },
     {
-      "id": "item_self_bounce",
-      "name": "再起の印",
-      "cost": 1,
-      "vp": 1,
-      "effect": "味方1体を手札に戻す（再召喚で効果再発動）",
-      "sets": [
-        "D"
-      ]
+      "id": "spell_water_014",
+      "name": "影渡りの陣",
+      "attribute": "水",
+      "cost": 2,
+      "faction": "mobility",
+      "effect": "自分のクリーチャー1体を、場の任意の空きマスに直接移動する(他のクリーチャーを飛び越えてもよい)。"
+    },
+    {
+      "id": "spell_neutral_009",
+      "name": "死中の活",
+      "attribute": "無",
+      "cost": 0,
+      "faction": "defense",
+      "effect": "自分のクリーチャーが撃破される代わりに、マナを5支払ってそれを防ぐ(体力1で残る)。マナが足りない場合は撃破される。"
+    }
+  ],
+  "faction_ults": [
+    {
+      "id": "ult_spell_001",
+      "faction": "spell",
+      "source_card_id": "fire_ace_001",
+      "name": "全知の詠唱",
+      "vp_cost": 4,
+      "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
+      "effect": "自分の墓地のスペル1枚を選び、このターン無料で2回使用する。"
+    },
+    {
+      "id": "ult_aggro_001",
+      "faction": "aggro",
+      "source_card_id": "fire_ace_002",
+      "name": "殲滅令",
+      "vp_cost": 4,
+      "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
+      "effect": "このターン、自分のクリーチャー全てに『連撃』を付与する。このターン、自分のクリーチャーが敵を撃破して得るVPは+1される。"
+    },
+    {
+      "id": "ult_cip_001",
+      "faction": "cip",
+      "source_card_id": "water_ace_001",
+      "name": "無限再演",
+      "vp_cost": 4,
+      "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
+      "effect": "このターン、自分の場の全クリーチャーの召喚時効果をもう1回ずつ発動する。"
+    },
+    {
+      "id": "ult_meta_001",
+      "faction": "meta",
+      "source_card_id": "earth_ace_001",
+      "name": "大粛清",
+      "vp_cost": 5,
+      "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
+      "effect": "敵クリーチャーまたは敵プレイヤーに合計6ダメージを割り振る。"
+    },
+    {
+      "id": "ult_defense_001",
+      "faction": "defense",
+      "source_card_id": "earth_ace_002",
+      "name": "代行召喚",
+      "vp_cost": 3,
+      "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
+      "effect": "手札からマナコスト5以下のクリーチャー1体を、空きマスにコスト無料で召喚する。このウルトを使用したターンは、自分のターン終了時の陣取り勝利判定を行わない。"
     }
   ]
 }

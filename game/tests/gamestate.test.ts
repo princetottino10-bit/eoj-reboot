@@ -45,36 +45,36 @@ const MOCK_DB: CardDatabase = {
     ),
     ...Array.from({ length: 12 }, (_, i) =>
       makeCharDef({
-        id: `tank_v2_${String(i + 1).padStart(2, "0")}`,
-        faction: "tank",
+        id: `cip_v2_${String(i + 1).padStart(2, "0")}`,
+        faction: "cip",
         attribute: "光",
       }),
     ),
     ...Array.from({ length: 12 }, (_, i) =>
       makeCharDef({
-        id: `control_v2_${String(i + 1).padStart(2, "0")}`,
-        faction: "control",
+        id: `spell_v2_${String(i + 1).padStart(2, "0")}`,
+        faction: "spell",
         attribute: "念",
       }),
     ),
     ...Array.from({ length: 12 }, (_, i) =>
       makeCharDef({
-        id: `synergy_v2_${String(i + 1).padStart(2, "0")}`,
-        faction: "synergy",
+        id: `inheritance_v2_${String(i + 1).padStart(2, "0")}`,
+        faction: "inheritance",
         attribute: "闇",
       }),
     ),
     ...Array.from({ length: 12 }, (_, i) =>
       makeCharDef({
-        id: `snipe_v2_${String(i + 1).padStart(2, "0")}`,
-        faction: "snipe",
+        id: `mobility_v2_${String(i + 1).padStart(2, "0")}`,
+        faction: "mobility",
         attribute: "虚",
       }),
     ),
     ...Array.from({ length: 12 }, (_, i) =>
       makeCharDef({
-        id: `trick_v2_${String(i + 1).padStart(2, "0")}`,
-        faction: "trick",
+        id: `defense_v2_${String(i + 1).padStart(2, "0")}`,
+        faction: "defense",
         attribute: "拳",
       }),
     ),
@@ -219,7 +219,7 @@ describe("STANDARD_BOARD_ATTRS", () => {
   it("9マス分ある", () => {
     expect(STANDARD_BOARD_ATTRS).toHaveLength(9);
   });
-  it("拳×2, 念×2, 光×2, 闇×2, 虚×1", () => {
+  it("火×2, 水×2, 土×2, 木×2, 無×1", () => {
     const counts = STANDARD_BOARD_ATTRS.reduce<Record<string, number>>(
       (acc, a) => {
         acc[a] = (acc[a] ?? 0) + 1;
@@ -227,11 +227,11 @@ describe("STANDARD_BOARD_ATTRS", () => {
       },
       {},
     );
-    expect(counts.拳).toBe(2);
-    expect(counts.念).toBe(2);
-    expect(counts.光).toBe(2);
-    expect(counts.闇).toBe(2);
-    expect(counts.虚).toBe(1);
+    expect(counts.火).toBe(2);
+    expect(counts.水).toBe(2);
+    expect(counts.土).toBe(2);
+    expect(counts.木).toBe(2);
+    expect(counts.無).toBe(1);
   });
 });
 
@@ -240,28 +240,28 @@ describe("STANDARD_BOARD_ATTRS", () => {
 // ============================================================
 describe("attributeHpBonus", () => {
   it("同属性 → +2", () => {
-    expect(attributeHpBonus("拳", "拳")).toBe(2);
-    expect(attributeHpBonus("光", "光")).toBe(2);
+    expect(attributeHpBonus("火", "火")).toBe(2);
+    expect(attributeHpBonus("土", "土")).toBe(2);
   });
-  it("対立属性 拳⇔念 → -2", () => {
-    expect(attributeHpBonus("拳", "念")).toBe(-2);
-    expect(attributeHpBonus("念", "拳")).toBe(-2);
+  it("対立属性 火⇔水 → -2", () => {
+    expect(attributeHpBonus("火", "水")).toBe(-2);
+    expect(attributeHpBonus("水", "火")).toBe(-2);
   });
-  it("対立属性 光⇔闇 → -2", () => {
-    expect(attributeHpBonus("光", "闇")).toBe(-2);
-    expect(attributeHpBonus("闇", "光")).toBe(-2);
+  it("対立属性 土⇔木 → -2", () => {
+    expect(attributeHpBonus("土", "木")).toBe(-2);
+    expect(attributeHpBonus("木", "土")).toBe(-2);
   });
-  it("キャラが虚 → 常に 0（対立関係なし）", () => {
-    expect(attributeHpBonus("虚", "拳")).toBe(0);
-    expect(attributeHpBonus("虚", "虚")).toBe(0);
+  it("キャラが無 → 常に 0（対立関係なし）", () => {
+    expect(attributeHpBonus("無", "火")).toBe(0);
+    expect(attributeHpBonus("無", "無")).toBe(0);
   });
-  it("マスが虚 → 常に 0", () => {
-    expect(attributeHpBonus("拳", "虚")).toBe(0);
-    expect(attributeHpBonus("光", "虚")).toBe(0);
+  it("マスが無 → 常に 0", () => {
+    expect(attributeHpBonus("火", "無")).toBe(0);
+    expect(attributeHpBonus("土", "無")).toBe(0);
   });
   it("無関係な属性の組み合わせ → 0", () => {
-    expect(attributeHpBonus("拳", "光")).toBe(0);
-    expect(attributeHpBonus("念", "闇")).toBe(0);
+    expect(attributeHpBonus("火", "土")).toBe(0);
+    expect(attributeHpBonus("水", "木")).toBe(0);
   });
 });
 
@@ -337,9 +337,9 @@ describe("createCharInstance", () => {
 describe("createInitialGameState", () => {
   const FIXED_ATTRS = ["拳", "念", "光", "闇", "虚", "拳", "念", "光", "闇"];
   const draft = completeDraft(
-    ["aggro", "tank"],
+    ["aggro", "cip"],
     "A",
-    ["control", "synergy"],
+    ["spell", "inheritance"],
     "B",
   );
 
@@ -448,8 +448,8 @@ describe("createInitialGameState", () => {
     const state = createInitialGameState(draft, MOCK_DB, {
       boardAttrs: FIXED_ATTRS,
     });
-    expect(state.players[0].factions.sort()).toEqual(["aggro", "tank"]);
-    expect(state.players[1].factions.sort()).toEqual(["control", "synergy"]);
+    expect(state.players[0].factions.sort()).toEqual(["aggro", "cip"]);
+    expect(state.players[1].factions.sort()).toEqual(["inheritance", "spell"]);
   });
 
   it("アイテムセットが players に保存される", () => {

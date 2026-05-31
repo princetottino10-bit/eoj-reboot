@@ -195,7 +195,7 @@ function handleItemPick(item: string): void {
 }
 
 function startGame(ui: DraftUiState): void {
-  let draft = createDraftState();
+  let draft = createDraftState(FACTIONS);
   // biome-ignore lint/style/noNonNullAssertion: guaranteed by draft completion (pickIndex === 6)
   draft = makePick(draft, ui.p0Factions[0]!);
   // biome-ignore lint/style/noNonNullAssertion: guaranteed by draft completion (pickIndex === 6)

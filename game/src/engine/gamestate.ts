@@ -11,8 +11,19 @@ export type AttackCells = "all" | null | [number, number][];
 
 export interface UltDef {
   name: string;
+  vp_cost?: number;
+  timing?: string;
+  condition?: string;
+  effect: string;
+}
+
+export interface FactionUltDef {
+  id: string;
+  faction: string;
+  source_card_id?: string;
+  name: string;
   vp_cost: number;
-  timing: string;
+  condition: string;
   effect: string;
 }
 
@@ -27,25 +38,31 @@ export interface CharCardDef {
   reactivation_cost: number;
   attribute: string;
   attack_cells: AttackCells;
+  counter_cells?: AttackCells;
   attack_type: string;
   keywords: string[];
   effect: string;
   ult: UltDef | null;
   weakness_cells?: [number, number][];
+  has_overlay?: boolean;
+  attack_mode?: "simultaneous" | "choice" | "none";
 }
 
 export interface ItemCardDef {
   id: string;
   name: string;
+  attribute?: string;
   cost: number;
-  vp: number;
+  vp?: number;
   effect: string;
-  sets: string[];
+  sets?: string[];
+  faction?: string;
 }
 
 export interface CardDatabase {
   characters: CharCardDef[];
   items: ItemCardDef[];
+  faction_ults?: FactionUltDef[];
 }
 
 // ============================================================
@@ -57,19 +74,23 @@ const ATTR_OPPOSITES: Record<string, string> = {
   念: "拳",
   光: "闇",
   闇: "光",
+  火: "水",
+  水: "火",
+  土: "木",
+  木: "土",
 };
 
 /** 標準盤面属性セット（拳×2, 念×2, 光×2, 闇×2, 虚×1） */
 export const STANDARD_BOARD_ATTRS: string[] = [
-  "拳",
-  "拳",
-  "念",
-  "念",
-  "光",
-  "光",
-  "闇",
-  "闇",
-  "虚",
+  "火",
+  "火",
+  "水",
+  "水",
+  "土",
+  "土",
+  "木",
+  "木",
+  "無",
 ];
 
 /**
@@ -77,7 +98,7 @@ export const STANDARD_BOARD_ATTRS: string[] = [
  * 同属性: +2, 対立属性: -2, それ以外（虚含む）: 0
  */
 export function attributeHpBonus(charAttr: string, cellAttr: string): number {
-  if (charAttr === "虚" || cellAttr === "虚") return 0;
+  if (charAttr === "虚" || cellAttr === "虚" || charAttr === "無" || cellAttr === "無") return 0;
   if (charAttr === cellAttr) return 2;
   if (ATTR_OPPOSITES[charAttr] === cellAttr) return -2;
   return 0;

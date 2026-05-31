@@ -446,7 +446,7 @@ export function resolveSummonAutoAttack(
   const owner = summoned.owner;
   const opp = (1 - owner) as 0 | 1;
   const attackType =
-    charDef.attack_type === "魔法" ? ("magic" as const) : ("physical" as const);
+    charDef.attack_type === "物理" ? ("physical" as const) : ("magic" as const);
 
   let targetIdxs: CellIndex[];
   if (charDef.attack_cells === "all") {

@@ -22,30 +22,30 @@ const MOCK_CARDS: CardData = {
       id: `aggro_v2_${String(i + 1).padStart(2, "0")}`,
       faction: "aggro",
     })),
-    // tank: 12枚
+    // cip: 12枚
     ...Array.from({ length: 12 }, (_, i) => ({
-      id: `tank_v2_${String(i + 1).padStart(2, "0")}`,
-      faction: "tank",
+      id: `cip_v2_${String(i + 1).padStart(2, "0")}`,
+      faction: "cip",
     })),
-    // control: 12枚
+    // spell: 12枚
     ...Array.from({ length: 12 }, (_, i) => ({
-      id: `control_v2_${String(i + 1).padStart(2, "0")}`,
-      faction: "control",
+      id: `spell_v2_${String(i + 1).padStart(2, "0")}`,
+      faction: "spell",
     })),
-    // synergy: 12枚
+    // inheritance: 12枚
     ...Array.from({ length: 12 }, (_, i) => ({
-      id: `synergy_v2_${String(i + 1).padStart(2, "0")}`,
-      faction: "synergy",
+      id: `inheritance_v2_${String(i + 1).padStart(2, "0")}`,
+      faction: "inheritance",
     })),
-    // snipe: 12枚
+    // mobility: 12枚
     ...Array.from({ length: 12 }, (_, i) => ({
-      id: `snipe_v2_${String(i + 1).padStart(2, "0")}`,
-      faction: "snipe",
+      id: `mobility_v2_${String(i + 1).padStart(2, "0")}`,
+      faction: "mobility",
     })),
-    // trick: 12枚
+    // defense: 12枚
     ...Array.from({ length: 12 }, (_, i) => ({
-      id: `trick_v2_${String(i + 1).padStart(2, "0")}`,
-      faction: "trick",
+      id: `defense_v2_${String(i + 1).padStart(2, "0")}`,
+      faction: "defense",
     })),
   ],
   items: [
@@ -98,11 +98,12 @@ describe("createDraftState", () => {
     const draft = createDraftState();
     expect(draft.availableFactions.sort()).toEqual([
       "aggro",
-      "control",
-      "snipe",
-      "synergy",
-      "tank",
-      "trick",
+      "cip",
+      "defense",
+      "inheritance",
+      "meta",
+      "mobility",
+      "spell",
     ]);
   });
 
@@ -201,8 +202,8 @@ describe("makePick: 派閥ピック", () => {
 
   it("2回目のピックは次のプレイヤー（P2）", () => {
     let draft = makePick(createDraftState(), "aggro"); // P1: aggro
-    draft = makePick(draft, "tank"); // P2: tank
-    expect(draft.factions[1]).toContain("tank");
+    draft = makePick(draft, "cip"); // P2: cip
+    expect(draft.factions[1]).toContain("cip");
   });
 
   it("存在しない派閥はピックできない（例外）", () => {
@@ -220,9 +221,9 @@ describe("makePick: アイテムセットピック", () => {
   function advanceTo4(): DraftState {
     let d = createDraftState();
     d = makePick(d, "aggro"); // P1
-    d = makePick(d, "tank"); // P2
-    d = makePick(d, "control"); // P2
-    d = makePick(d, "synergy"); // P1
+    d = makePick(d, "cip"); // P2
+    d = makePick(d, "spell"); // P2
+    d = makePick(d, "inheritance"); // P1
     return d; // step=4
   }
 
@@ -255,9 +256,9 @@ describe("makePick: フルドラフト完走", () => {
   it("6ピック後に isDraftComplete = true", () => {
     let d = createDraftState();
     d = makePick(d, "aggro"); // P1: faction
-    d = makePick(d, "tank"); // P2: faction
-    d = makePick(d, "control"); // P2: faction
-    d = makePick(d, "synergy"); // P1: faction
+    d = makePick(d, "cip"); // P2: faction
+    d = makePick(d, "spell"); // P2: faction
+    d = makePick(d, "inheritance"); // P1: faction
     d = makePick(d, "A"); // P1: itemSet
     d = makePick(d, "B"); // P2: itemSet
     expect(isDraftComplete(d)).toBe(true);
@@ -266,14 +267,14 @@ describe("makePick: フルドラフト完走", () => {
   it("フルドラフト後の各プレイヤーの選択が正しい", () => {
     let d = createDraftState();
     d = makePick(d, "aggro");
-    d = makePick(d, "tank");
-    d = makePick(d, "control");
-    d = makePick(d, "synergy");
+    d = makePick(d, "cip");
+    d = makePick(d, "spell");
+    d = makePick(d, "inheritance");
     d = makePick(d, "A");
     d = makePick(d, "B");
 
-    expect(d.factions[0].sort()).toEqual(["aggro", "synergy"]);
-    expect(d.factions[1].sort()).toEqual(["control", "tank"]);
+    expect(d.factions[0].sort()).toEqual(["aggro", "inheritance"]);
+    expect(d.factions[1].sort()).toEqual(["cip", "spell"]);
     expect(d.itemSets[0]).toBe("A");
     expect(d.itemSets[1]).toBe("B");
   });
@@ -284,31 +285,31 @@ describe("makePick: フルドラフト完走", () => {
 // ============================================================
 describe("buildDeck", () => {
   it("30枚のデッキを返す（キャラ24 + アイテム6）", () => {
-    const deck = buildDeck(["aggro", "tank"], "A", MOCK_CARDS);
+    const deck = buildDeck(["aggro", "cip"], "A", MOCK_CARDS);
     expect(deck).toHaveLength(30);
   });
 
   it("選択した派閥のキャラが各12枚含まれる", () => {
-    const deck = buildDeck(["aggro", "tank"], "A", MOCK_CARDS);
+    const deck = buildDeck(["aggro", "cip"], "A", MOCK_CARDS);
     const aggroCards = deck.filter((id) => id.startsWith("aggro"));
-    const tankCards = deck.filter((id) => id.startsWith("tank"));
+    const cipCards = deck.filter((id) => id.startsWith("cip"));
     expect(aggroCards).toHaveLength(12);
-    expect(tankCards).toHaveLength(12);
+    expect(cipCards).toHaveLength(12);
   });
 
   it("他の派閥のカードは含まれない", () => {
-    const deck = buildDeck(["aggro", "tank"], "A", MOCK_CARDS);
+    const deck = buildDeck(["aggro", "cip"], "A", MOCK_CARDS);
     const others = deck.filter(
       (id) =>
         !id.startsWith("aggro") &&
-        !id.startsWith("tank") &&
+        !id.startsWith("cip") &&
         !id.startsWith("item"),
     );
     expect(others).toHaveLength(0);
   });
 
   it("選択したアイテムセットのアイテムが6枚含まれる", () => {
-    const deck = buildDeck(["aggro", "tank"], "A", MOCK_CARDS);
+    const deck = buildDeck(["aggro", "cip"], "A", MOCK_CARDS);
     const itemCards = deck.filter((id) => id.startsWith("item"));
     expect(itemCards).toHaveLength(6);
   });
@@ -317,7 +318,7 @@ describe("buildDeck", () => {
     const setAItems = MOCK_CARDS.items
       .filter((i) => i.sets.includes("A"))
       .map((i) => i.id);
-    const deck = buildDeck(["aggro", "tank"], "A", MOCK_CARDS);
+    const deck = buildDeck(["aggro", "cip"], "A", MOCK_CARDS);
     const itemCards = deck.filter((id) => id.startsWith("item"));
     expect(itemCards.sort()).toEqual(setAItems.sort());
   });
@@ -326,22 +327,22 @@ describe("buildDeck", () => {
     const setBItems = MOCK_CARDS.items
       .filter((i) => i.sets.includes("B"))
       .map((i) => i.id);
-    const deck = buildDeck(["aggro", "tank"], "B", MOCK_CARDS);
+    const deck = buildDeck(["aggro", "cip"], "B", MOCK_CARDS);
     const itemCards = deck.filter((id) => id.startsWith("item"));
     expect(itemCards.sort()).toEqual(setBItems.sort());
   });
 
   it("カードは重複しない", () => {
-    const deck = buildDeck(["aggro", "tank"], "A", MOCK_CARDS);
+    const deck = buildDeck(["aggro", "cip"], "A", MOCK_CARDS);
     expect(new Set(deck).size).toBe(deck.length);
   });
 
   it("シャッフルされている（元の順番とは異なる可能性が高い）", () => {
     // 同じ入力で複数回生成して、少なくとも1回は順番が違うことを確認
-    const ref = buildDeck(["aggro", "tank"], "A", MOCK_CARDS);
+    const ref = buildDeck(["aggro", "cip"], "A", MOCK_CARDS);
     let diffCount = 0;
     for (let i = 0; i < 10; i++) {
-      const deck = buildDeck(["aggro", "tank"], "A", MOCK_CARDS);
+      const deck = buildDeck(["aggro", "cip"], "A", MOCK_CARDS);
       if (JSON.stringify(deck) !== JSON.stringify(ref)) diffCount++;
     }
     // シャッフルされているので10回中少なくとも1回は違う順番のはず

@@ -574,10 +574,10 @@ function executeAttack(
   const result = resolveAttack(workBoard, attackerIdx, targetIdx, {
     teamDR: state.teamDR,
     weaknessCells: (defDef?.weakness_cells ?? [[-1, 0]]) as RelCoord[],
-    attackType: def.attack_type === "魔法" ? "magic" : "physical",
+    attackType: def.attack_type === "物理" ? "physical" : "magic",
     defenderCost: defDef?.cost ?? 1,
     attackerCost: def.cost,
-    defenderAttackCells: (defDef?.attack_cells ?? null) as
+    defenderAttackCells: (defDef?.counter_cells ?? defDef?.attack_cells ?? null) as
       | "all"
       | null
       | [number, number][],
@@ -780,9 +780,15 @@ function buildCardDetailHtml(
     if (!def) return "";
     const kw = def.keywords.join(" ");
     const ult = def.ult;
+    const ultMeta = ult
+      ? [
+          ult.vp_cost != null ? `VP${ult.vp_cost}` : null,
+          ult.timing ?? ult.condition ?? null,
+        ].filter(Boolean).join(" / ")
+      : "";
     const ultHtml = ult
       ? `<div class="cd-ult">
-           <div class="cd-ult-header">Ult: ${ult.name}　VP${ult.vp_cost}（${ult.timing}）</div>
+           <div class="cd-ult-header">Ult: ${ult.name}${ultMeta ? `（${ultMeta}）` : ""}</div>
            <div class="cd-ult-effect">${ult.effect}</div>
          </div>`
       : "";
@@ -2097,7 +2103,7 @@ function finalizeSummonTurn(
       const d = getCharDef(id);
       return {
         cost: d?.cost ?? 1,
-        attackCells: (d?.attack_cells ?? null) as
+        attackCells: (d?.counter_cells ?? d?.attack_cells ?? null) as
           | "all"
           | null
           | [number, number][],

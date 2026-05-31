@@ -1,0 +1,375 @@
+{
+  "exported_at": "2026-05-31T07:29:28.652Z",
+  "source": "eoj-card-review",
+  "card_count": 62,
+  "notes": {
+    "fire_001": {
+      "checks": {
+        "attack": true
+      },
+      "memo": "攻撃範囲は前方1マスのみ"
+    },
+    "fire_002": {
+      "checks": {
+        "attack": true
+      },
+      "memo": "後ろは攻撃範囲外＋弱点で"
+    },
+    "fire_003": {
+      "checks": {
+        "attack": true,
+        "effect": true
+      },
+      "memo": "攻撃範囲前後でいい\n対象にできるクリーチャーはC2まで\nクリーチャーは除外する"
+    },
+    "fire_005": {
+      "checks": {
+        "attack": true
+      },
+      "memo": "範囲から1体選択に変更"
+    },
+    "fire_009": {
+      "checks": {
+        "stats": true
+      },
+      "memo": "ATK2\n対象は火属性以外でもOKだけど\n攻撃範囲が1体のクリーチャーのみ\n連撃の効果を記載しておく"
+    },
+    "fire_010": {
+      "checks": {
+        "counter": true
+      },
+      "memo": ""
+    },
+    "fire_014": {
+      "checks": {
+        "stats": true
+      },
+      "memo": "ATK3"
+    },
+    "fire_016": {
+      "checks": {},
+      "memo": "重ね召喚の内容を明示的に"
+    },
+    "fire_ace_001": {
+      "checks": {
+        "effect": true
+      },
+      "memo": "スペルを使うたびダメージ＋１、マナ＋１，1枚ドロー"
+    },
+    "fire_ace_002": {
+      "checks": {
+        "attack": true
+      },
+      "memo": "左右も攻撃範囲にする"
+    },
+    "water_001": {
+      "checks": {
+        "effect": true
+      },
+      "memo": "召喚時効果に変更\nコストはマナ１のみ"
+    },
+    "water_002": {
+      "checks": {
+        "counter": true
+      },
+      "memo": "反撃範囲なし\nATKは？に変更"
+    },
+    "water_005": {
+      "checks": {
+        "stats": true
+      },
+      "memo": "ATK2"
+    },
+    "water_006": {
+      "checks": {
+        "counter": true,
+        "effect": false
+      },
+      "memo": "反撃範囲なし"
+    },
+    "water_008": {
+      "checks": {},
+      "memo": "ATK2\n攻撃を受けたクリーチャーは次のターン再行動ができず、効果が無効化されう"
+    },
+    "water_010": {
+      "checks": {
+        "counter": true,
+        "attack": true
+      },
+      "memo": "攻撃範囲は前方2マス同時攻撃\nATK2"
+    },
+    "water_012": {
+      "checks": {
+        "attack": true,
+        "effect": true,
+        "stats": true
+      },
+      "memo": "攻撃範囲は前方2マスから選択\nATK2\n\nターン制限なし\n相手でもOK"
+    },
+    "water_013": {
+      "checks": {
+        "weakness": true,
+        "counter": false,
+        "effect": true
+      },
+      "memo": "弱点なし\n相手でもOK"
+    },
+    "water_014": {
+      "checks": {
+        "effect": true
+      },
+      "memo": "相手のクリーチャーが移動または無期を変更するたび、このクリーチャーの攻撃力＋１"
+    },
+    "water_015": {
+      "checks": {
+        "stats": true,
+        "effect": true
+      },
+      "memo": "ターン制限なし\nATK2"
+    },
+    "water_016": {
+      "checks": {
+        "weakness": true,
+        "attack": true,
+        "stats": true
+      },
+      "memo": "攻撃範囲は前方2マス\n弱点は後ろ\nATK4\n場のクリーチャーを３体まで選んで向きを変更する　敵でもOK"
+    },
+    "water_017": {
+      "checks": {},
+      "memo": "自分のクリーチャーが移動または向きを変更するたび、マナを1得る(1ターンに1回まで)。\nうつろいの祠と同じ　どちらか属性を変更"
+    },
+    "water_ace_001": {
+      "checks": {
+        "effect": true,
+        "stats": true
+      },
+      "memo": "ATK４\n任意のクリーチャーを加えられるように"
+    },
+    "earth_004": {
+      "checks": {
+        "stats": true,
+        "effect": true
+      },
+      "memo": "移動は強制　向きは自由に変更\nATK2 再行動2"
+    },
+    "earth_008": {
+      "checks": {
+        "effect": true
+      },
+      "memo": "除外アリに変更"
+    },
+    "earth_009": {
+      "checks": {
+        "attack": true,
+        "weakness": true
+      },
+      "memo": "攻撃範囲は前方2マスから選択\n弱点は後ろ"
+    },
+    "earth_011": {
+      "checks": {},
+      "memo": "このクリーチャーの攻撃時の再行動コストは１\nATK2"
+    },
+    "earth_012": {
+      "checks": {},
+      "memo": "C1に変更\n再行動２に変更"
+    },
+    "earth_ace_002": {
+      "checks": {
+        "attack": true,
+        "counter": false,
+        "stats": true
+      },
+      "memo": "「先制と不屈を持つ」テキスト不要\n全方向に攻撃可能　選択して1体\nＡＴＫは3に修正"
+    },
+    "earth_017": {
+      "checks": {
+        "stats": true,
+        "attack": true
+      },
+      "memo": "HP5\nATK2"
+    },
+    "wood_002": {
+      "checks": {},
+      "memo": "ＡＴＫ3 再行動１　ＨＰ２"
+    },
+    "wood_003": {
+      "checks": {
+        "stats": true,
+        "effect": true
+      },
+      "memo": "ATK2\nこのクリーチャーがいる限り隣接するクリーチャーの攻撃力を＋１する　に変更\n"
+    },
+    "wood_004": {
+      "checks": {
+        "attack": true,
+        "counter": true,
+        "weakness": true
+      },
+      "memo": "攻撃範囲、反撃範囲は前後に変更\n弱点は左右\nATKは2\n隣接するフィールドに自陣のクリーチャーがいるとき1体につきこのクリーチャーの攻撃力は＋１される"
+    },
+    "wood_007": {
+      "checks": {
+        "weakness": true,
+        "stats": true
+      },
+      "memo": "ATK2\n前後左右弱点"
+    },
+    "wood_008": {
+      "checks": {
+        "effect": true,
+        "weakness": true
+      },
+      "memo": "通常のボーナスに加えて、にテキストを修正　右側も弱点"
+    },
+    "wood_010": {
+      "checks": {
+        "attack": true,
+        "counter": true,
+        "weakness": true
+      },
+      "memo": "攻撃範囲は前方\n弱点は後方\nATKは2　VPも2"
+    },
+    "wood_011": {
+      "checks": {
+        "stats": true,
+        "effect": true
+      },
+      "memo": "ATK3\nVP4\nこのクリーチャーがいる限りすべてのクリーチャーの体力が＋１されるに変更"
+    },
+    "wood_012": {
+      "checks": {
+        "stats": true
+      },
+      "memo": "ATK2"
+    },
+    "wood_013": {
+      "checks": {
+        "effect": true
+      },
+      "memo": "体力加算効果は削除\nフィールドのクリーチャーのステータスが変動したターン、このクリーチャーの再行動コストは０になる"
+    },
+    "neutral_001": {
+      "checks": {
+        "stats": true,
+        "effect": true
+      },
+      "memo": "場にいる間、自分のクリーチャーは相手が発動した向きの変更・移動の効果を受けない\nATK3\nHP4"
+    },
+    "neutral_003": {
+      "checks": {
+        "stats": true,
+        "attack": true,
+        "effect": true
+      },
+      "memo": "HP3\nVP3\n前方2マス同時攻撃に変更\n前方2マスの召喚ｺｽﾄ、再行動コストを＋２する"
+    },
+    "neutral_004": {
+      "checks": {
+        "stats": true
+      },
+      "memo": "HP3 VP2 ATK1\n"
+    },
+    "neutral_008": {
+      "checks": {
+        "attack": true,
+        "stats": true,
+        "effect": true
+      },
+      "memo": "HP4\nATK3\n魔道攻撃に変更"
+    },
+    "neutral_010": {
+      "checks": {
+        "stats": true
+      },
+      "memo": "HP4\nATK2\n"
+    },
+    "neutral_011": {
+      "checks": {},
+      "memo": "コスト4\nATK4"
+    },
+    "neutral_012": {
+      "checks": {
+        "stats": true,
+        "cost": true
+      },
+      "memo": "召喚時、相手のクリーチャー1体を選択肢、そのクリーチャーの召喚時効果を発動できる　に変更\nATK2 コスト3"
+    },
+    "neutral_013": {
+      "checks": {
+        "stats": true,
+        "counter": true
+      },
+      "memo": "HP2に変更\nこのクリーチャーは魔道攻撃を受けない\n左右も弱点"
+    },
+    "earth_013": {
+      "checks": {},
+      "memo": "再行動２に再度修正"
+    },
+    "earth_014": {
+      "checks": {
+        "cost": true,
+        "stats": true
+      },
+      "memo": "C1に変更\nA１に変更"
+    },
+    "wood_015": {
+      "checks": {},
+      "memo": "次のターンのみ＋2に変更"
+    },
+    "neutral_014": {
+      "checks": {},
+      "memo": "ATK２"
+    },
+    "wood_017": {
+      "checks": {},
+      "memo": "C1に変更"
+    },
+    "neutral_015": {
+      "checks": {},
+      "memo": "削除"
+    },
+    "wood_018": {
+      "checks": {
+        "effect": true
+      },
+      "memo": "移動、退去させられない効果削除\nHP５\nATK４"
+    },
+    "water_021": {
+      "checks": {},
+      "memo": "ATKは？で\nVPは２で"
+    },
+    "neutral_016": {
+      "checks": {
+        "counter": false,
+        "stats": true,
+        "attack": true
+      },
+      "memo": "ATK０\n前方2マス貫通攻撃に変更\n墓地を除外"
+    },
+    "water_022": {
+      "checks": {},
+      "memo": "ターン制限なし"
+    },
+    "draw_002": {
+      "checks": {},
+      "memo": "魔法攻撃に変更"
+    },
+    "draw_005": {
+      "checks": {},
+      "memo": "ATK2"
+    },
+    "draw_006": {
+      "checks": {},
+      "memo": "削除"
+    },
+    "draw_007": {
+      "checks": {},
+      "memo": "削除"
+    },
+    "draw_008": {
+      "checks": {},
+      "memo": "削除"
+    }
+  }
+}
