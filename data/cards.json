@@ -444,8 +444,8 @@
       "faction": "cip",
       "cost": 7,
       "vp": 4,
-      "hp": 7,
-      "atk": 4,
+      "hp": 6,
+      "atk": 3,
       "reactivation_cost": 4,
       "attribute": "火",
       "attack_cells": [
@@ -649,7 +649,12 @@
       "atk": 1,
       "reactivation_cost": 3,
       "attribute": "水",
-      "attack_cells": "all",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "counter_cells": null,
       "weakness_cells": [
         [
@@ -657,14 +662,12 @@
           0
         ]
       ],
-      "attack_type": "魔道",
-      "keywords": [
-        "魔道攻撃"
-      ],
+      "attack_type": "物理",
+      "keywords": [],
       "effect": "召喚時、場の任意クリーチャー1体の攻撃力をコピーする。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "simultaneous"
     },
     {
       "id": "water_004",
