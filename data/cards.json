@@ -1325,7 +1325,7 @@
       "id": "earth_010",
       "name": "戦果の記録係",
       "faction": "aggro",
-      "cost": 3,
+      "cost": 2,
       "vp": 1,
       "hp": 3,
       "atk": 1,
@@ -1543,7 +1543,7 @@
     },
     {
       "id": "wood_002",
-      "name": "偏食家",
+      "name": "連勝の戦鬼",
       "faction": "aggro",
       "cost": 3,
       "vp": 3,
@@ -1551,7 +1551,12 @@
       "atk": 3,
       "reactivation_cost": 1,
       "attribute": "木",
-      "attack_cells": "all",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "counter_cells": null,
       "weakness_cells": [
         [
@@ -1559,15 +1564,12 @@
           0
         ]
       ],
-      "attack_type": "魔道",
-      "keywords": [
-        "魔道攻撃",
-        "偏食"
-      ],
-      "effect": "魔道攻撃を持つ。偏食により木属性のクリーチャーまたは木属性フィールドにいるクリーチャーにしか攻撃できない(敵味方問わず)。",
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "敵を撃破するたび、このクリーチャーのATKを+1する(永続)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "simultaneous"
     },
     {
       "id": "wood_003",
@@ -1702,7 +1704,7 @@
       "id": "wood_008",
       "name": "隠れ鎌のリザード",
       "faction": "aggro",
-      "cost": 3,
+      "cost": 2,
       "vp": 2,
       "hp": 2,
       "atk": 2,
@@ -2119,7 +2121,7 @@
       "id": "neutral_011",
       "name": "黄昏の使徒",
       "faction": "aggro",
-      "cost": 4,
+      "cost": 5,
       "vp": 3,
       "hp": 2,
       "atk": 4,
@@ -2312,7 +2314,7 @@
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "",
+      "effect": "敵を撃破したとき、マナを1得る。",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
