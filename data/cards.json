@@ -1010,7 +1010,12 @@
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "水",
-      "attack_cells": "all",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "counter_cells": null,
       "weakness_cells": [
         [
@@ -1018,14 +1023,12 @@
           0
         ]
       ],
-      "attack_type": "魔道",
-      "keywords": [
-        "魔道攻撃"
-      ],
+      "attack_type": "物理",
+      "keywords": [],
       "effect": "自分のクリーチャーの召喚時効果が発動するたび、マナを1得る。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "simultaneous"
     },
     {
       "id": "water_016",
@@ -2196,7 +2199,7 @@
       "weakness_cells": [],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、相手のクリーチャー1体を選び、そのクリーチャーの召喚時効果を発動できる。",
+      "effect": "召喚時、自分または相手のクリーチャー1体を選び、その召喚時効果を発動する。",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
@@ -2231,7 +2234,7 @@
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、自デッキトップ1枚を見る。",
+      "effect": "召喚時、自デッキトップ2枚を見て、1枚を手札に加え、残りをデッキトップに戻す。",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
