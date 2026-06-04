@@ -335,14 +335,14 @@
     },
     {
       "id": "fire_011",
-      "name": "詠唱の残り火",
+      "name": "詠唱の余韻",
       "faction": "spell",
       "cost": 3,
       "vp": 1,
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 2,
-      "attribute": "火",
+      "attribute": "無",
       "attack_cells": [
         [
           1,
@@ -641,14 +641,14 @@
     },
     {
       "id": "water_002",
-      "name": "写し身の術師",
+      "name": "岩写しの術師",
       "faction": "cip",
       "cost": 4,
       "vp": 2,
       "hp": 4,
       "atk": 1,
       "reactivation_cost": 3,
-      "attribute": "水",
+      "attribute": "土",
       "attack_cells": [
         [
           1,
@@ -678,7 +678,7 @@
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 2,
-      "attribute": "水",
+      "attribute": "土",
       "attack_cells": [
         [
           1,
@@ -735,7 +735,7 @@
       "hp": 3,
       "atk": 1,
       "reactivation_cost": 3,
-      "attribute": "水",
+      "attribute": "木",
       "attack_cells": "all",
       "counter_cells": null,
       "weakness_cells": [],
@@ -750,14 +750,14 @@
     },
     {
       "id": "water_007",
-      "name": "写し鏡の双子",
+      "name": "双苗の写し身",
       "faction": "cip",
       "cost": 3,
       "vp": 2,
       "hp": 3,
       "atk": 2,
       "reactivation_cost": 3,
-      "attribute": "水",
+      "attribute": "木",
       "attack_cells": [
         [
           1,
@@ -831,7 +831,7 @@
       "hp": 2,
       "atk": 1,
       "reactivation_cost": 2,
-      "attribute": "水",
+      "attribute": "無",
       "attack_cells": "all",
       "counter_cells": null,
       "weakness_cells": [
@@ -1005,14 +1005,14 @@
     },
     {
       "id": "water_015",
-      "name": "占術の対価",
+      "name": "対価の供物",
       "faction": "cip",
       "cost": 2,
       "vp": 1,
       "hp": 2,
       "atk": 2,
       "reactivation_cost": 2,
-      "attribute": "水",
+      "attribute": "無",
       "attack_cells": [
         [
           1,
@@ -1333,7 +1333,7 @@
       "hp": 3,
       "atk": 1,
       "reactivation_cost": 3,
-      "attribute": "土",
+      "attribute": "水",
       "attack_cells": [
         [
           1,
@@ -1403,7 +1403,7 @@
       "hp": 1,
       "atk": 2,
       "reactivation_cost": 2,
-      "attribute": "土",
+      "attribute": "水",
       "attack_cells": [
         [
           1,
@@ -1553,7 +1553,7 @@
       "hp": 2,
       "atk": 3,
       "reactivation_cost": 1,
-      "attribute": "木",
+      "attribute": "無",
       "attack_cells": [
         [
           1,
@@ -1978,7 +1978,7 @@
       "hp": 3,
       "atk": 1,
       "reactivation_cost": 3,
-      "attribute": "無",
+      "attribute": "水",
       "attack_cells": [
         [
           1,
@@ -2214,14 +2214,14 @@
     },
     {
       "id": "water_020",
-      "name": "占術の見習い",
+      "name": "若枝の占い手",
       "faction": "cip",
       "cost": 1,
       "vp": 1,
       "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
-      "attribute": "水",
+      "attribute": "木",
       "attack_cells": [
         [
           1,
@@ -2467,14 +2467,14 @@
     },
     {
       "id": "neutral_014",
-      "name": "守りの衛士",
+      "name": "焔の衛士",
       "faction": "defense",
       "cost": 2,
       "vp": 1,
       "hp": 3,
       "atk": 2,
       "reactivation_cost": 2,
-      "attribute": "無",
+      "attribute": "火",
       "attack_cells": [
         [
           1,
