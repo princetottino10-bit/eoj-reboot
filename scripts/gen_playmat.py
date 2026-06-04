@@ -5,11 +5,11 @@ from fpdf import FPDF
 
 FONT = '/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf'
 import os
-DATA = os.path.join(os.path.dirname(__file__), '..', 'data', 'cards-testkit.json')
-OUT  = os.path.join(os.path.dirname(__file__), '..', 'oricard-playmat.pdf')
+DATA = os.path.join(os.path.dirname(__file__),'..','data','cards-testkit.json')
+OUT  = os.path.join(os.path.dirname(__file__),'..','oricard-playmat.pdf')
 
 d = json.load(open(DATA))
-KW = d['keyword_effects']
+KW = d['keyword_effects']  # 早見表はJSONから直読みするため自動反映
 
 # 属性カラー
 COL = {
