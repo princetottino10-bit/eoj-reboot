@@ -105,65 +105,84 @@ def reg_marks(corners):
         pdf.line(x, y-4, x, y+4)
 
 # ---------------------------------------------------------------
-# 盤面を A4横2枚に分割 (切らずに上下を突き合わせ＝3×3盤面)
-#   盤面270x270 を水平中央(board y=135)で上下半分に分け、
-#   継ぎ目を紙端へ寄せる。2枚を突き合わせる(または継ぎ目を数mm重ねる)と盤面完成。
+# 盤面を A4横2枚に分割 (切らずに突き合わせ＝3×3盤面)
+#   行境界で分割: 上ページ=行0+1(180mm), 下ページ=行2(90mm)
+#   継ぎ目を紙端ぎりぎりに寄せ、▲マークを合わせて突き合わせ
 # ---------------------------------------------------------------
-PW, PH = 297, 210                  # A4 landscape
-bmx = (PW - BOARD_W) / 2           # 13.5  水平センタリング
-SEAM = 7                           # 継ぎ目側の余白(プリンタ非印刷域ぶん)
-HALF_Y = BOARD_H / 2               # 135  分割位置(board座標)
+PW, PH = 297, 210          # A4 landscape
+bmx = (PW - BOARD_W) / 2  # 13.5  水平センタリング
+SEAM_GAP = 5               # プリンタ余白ぶん(印刷不可領域の目安)
+
+TOP_ROWS_H  = CELL_H * 2   # 180mm  行0+1
+BOT_ROWS_H  = CELL_H * 1   # 90mm   行2
 
 def seam_ticks(seam_py, point_down):
-    """継ぎ目の整列ガイド(列境界に三角マーク)"""
-    set_fill((0, 0, 0)); set_draw((0, 0, 0)); pdf.set_line_width(0.4)
-    d = 2.6 if point_down else -2.6
+    set_fill((0,0,0)); set_draw((0,0,0)); pdf.set_line_width(0.4)
+    d = 3.0 if point_down else -3.0
     for k in range(4):
         xv = bmx + k*CELL_W
         pdf.line(xv, seam_py, xv, seam_py + d)
-        # 小三角
-        pdf.polygon([(xv-1.4, seam_py + d), (xv+1.4, seam_py + d), (xv, seam_py)], style='F')
+        pdf.polygon([(xv-1.8, seam_py+d), (xv+1.8, seam_py+d), (xv, seam_py)], style='F')
 
 def board_half(is_top):
     pdf.add_page(orientation='L')
+
     if is_top:
-        seam_py = PH - SEAM            # 継ぎ目=紙の下端付近
-        oy = seam_py - HALF_Y          # board原点y
-        title = '盤面（上半分）'
-        # 見出し(上の余白)
-        set_text((20,20,20)); pdf.set_font('ipa','',12)
-        pdf.set_xy(bmx, 14); pdf.cell(BOARD_W, 7,
-            '盤面（上半分）  ※下端で「盤面（下半分）」と突き合わせ', align='C')
+        # 行0+1(180mm)を下端に寄せ、継ぎ目=紙の下端から SEAM_GAP
+        rows_h = TOP_ROWS_H
+        seam_py = PH - SEAM_GAP          # 継ぎ目y（紙の下端付近）
+        oy = seam_py - rows_h            # board原点y（行0の上端）
+        hdr_y = max(4, oy - 11)
+        set_text((20,20,20)); pdf.set_font('ipa','',11)
+        pdf.set_xy(bmx, hdr_y)
+        pdf.cell(BOARD_W, 7, '盤面 (1/2)  ─  下端を「盤面 (2/2)」の上端に突き合わせ', align='C')
     else:
-        seam_py = SEAM                 # 継ぎ目=紙の上端付近
-        oy = seam_py - HALF_Y
-        # 見出し(下の余白)
-        set_text((20,20,20)); pdf.set_font('ipa','',12)
-        pdf.set_xy(bmx, PH-22); pdf.cell(BOARD_W, 7,
-            '盤面（下半分）  ※上端で「盤面（上半分）」と突き合わせ', align='C')
-    # 9マス描画
+        # 行2(90mm)を上端に寄せ、継ぎ目=紙の上端から SEAM_GAP
+        rows_h = BOT_ROWS_H
+        seam_py = SEAM_GAP               # 継ぎ目y（紙の上端付近）
+        oy = seam_py - TOP_ROWS_H        # board原点y（行0基準で揃える）
+        hdr_y = seam_py + rows_h + 6
+        set_text((20,20,20)); pdf.set_font('ipa','',11)
+        pdf.set_xy(bmx, hdr_y)
+        pdf.cell(BOARD_W, 7, '盤面 (2/2)  ─  上端を「盤面 (1/2)」の下端に突き合わせ', align='C')
+
+    # 9マス描画（全9マス、窓外は後でマスク）
     draw_board(bmx, oy)
-    # 不要側を白でマスク
+
+    # 窓外を白でマスク
     set_fill((255,255,255))
     if is_top:
-        pdf.rect(0, seam_py, PW, PH-seam_py, 'F')   # 継ぎ目より下(下半分ぶん)を消す
-        pdf.rect(0, 0, PW, oy, 'F')                 # board上端より上
+        # 継ぎ目より下（行2のはみ出し）を消す
+        pdf.rect(0, seam_py, PW, PH - seam_py + 1, 'F')
+        # board上端より上を消す
+        if oy > 0:
+            pdf.rect(0, 0, PW, oy, 'F')
     else:
-        pdf.rect(0, 0, PW, seam_py, 'F')            # 継ぎ目より上(上半分ぶん)を消す
-        pdf.rect(0, oy+BOARD_H, PW, PH-(oy+BOARD_H), 'F')  # board下端より下
-    pdf.rect(0, 0, bmx, PH, 'F')                     # 左帯
-    pdf.rect(bmx+BOARD_W, 0, PW-(bmx+BOARD_W), PH, 'F')  # 右帯
+        # 継ぎ目より上（行0+1のはみ出し）を消す
+        pdf.rect(0, 0, PW, seam_py, 'F')
+        # board下端より下を消す
+        board_bot = oy + BOARD_H
+        if board_bot < PH:
+            pdf.rect(0, board_bot, PW, PH - board_bot + 1, 'F')
+    # 左右帯
+    pdf.rect(0, 0, bmx, PH, 'F')
+    pdf.rect(bmx + BOARD_W, 0, PW - (bmx + BOARD_W), PH, 'F')
+
     # 継ぎ目ライン + 整列三角
-    set_draw((150,150,150)); pdf.set_line_width(0.3)
-    pdf.line(bmx, seam_py, bmx+BOARD_W, seam_py)
+    set_draw((160,160,160)); pdf.set_line_width(0.25)
+    pdf.set_dash_pattern(dash=2, gap=1.5)
+    pdf.line(bmx, seam_py, bmx + BOARD_W, seam_py)
+    pdf.set_dash_pattern()
     seam_ticks(seam_py, point_down=is_top)
+
     # 案内文
-    set_text((120,120,120)); pdf.set_font('ipa','',8)
-    note = '切らずに、▲印を合わせて2枚を突き合わせ（または継ぎ目を数mm重ねて）裏からテープ留め'
+    set_text((130,130,130)); pdf.set_font('ipa','',8)
+    note = '切らずに ▲印を合わせて突き合わせ → 裏からテープ留め → 3×3盤面が完成'
     if is_top:
-        pdf.set_xy(bmx, 22); pdf.cell(BOARD_W, 5, note, align='C')
+        note_y = oy - 5 if oy > 8 else seam_py + 3
+        pdf.set_xy(bmx, note_y); pdf.cell(BOARD_W, 5, note, align='C')
     else:
-        pdf.set_xy(bmx, PH-16); pdf.cell(BOARD_W, 5, note, align='C')
+        pdf.set_xy(bmx, hdr_y + 8); pdf.cell(BOARD_W, 5, note, align='C')
 
 board_half(is_top=True)
 board_half(is_top=False)
