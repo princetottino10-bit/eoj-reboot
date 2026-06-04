@@ -1361,7 +1361,7 @@
     },
     {
       "id": "earth_011",
-      "name": "略奪の狼煙",
+      "name": "投石の射手",
       "faction": "aggro",
       "cost": 3,
       "vp": 2,
@@ -1389,7 +1389,7 @@
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "このクリーチャーの攻撃時の再行動コストは1。自分のクリーチャーが敵を撃破するたび、マナを1得る（1ターンに2回まで）。",
+      "effect": "このクリーチャーが土属性のマスにいるとき、前方2マス目の敵にも攻撃できる(間の味方や敵を飛び越える)。",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
@@ -1568,8 +1568,10 @@
         ]
       ],
       "attack_type": "物理",
-      "keywords": [],
-      "effect": "敵を撃破するたび、このクリーチャーのATKを+1する(永続)。",
+      "keywords": [
+        "先制"
+      ],
+      "effect": "先制。攻撃時、相手のATKよりこのクリーチャーのATKが高ければ、与えるダメージ+2(強気)。",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
@@ -1964,7 +1966,7 @@
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "場にいる間、自分のクリーチャーは、相手が発動した向き変更・移動の効果を受けない。",
+      "effect": "隣接する自分のクリーチャーが攻撃されるとき、このクリーチャーが代わりにその攻撃を受けることができる(カバー)。",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
@@ -2536,8 +2538,10 @@
         ]
       ],
       "attack_type": "物理",
-      "keywords": [],
-      "effect": "召喚時、隣接する敵クリーチャー全ての向きをこのクリーチャーの方向に強制変更する。",
+      "keywords": [
+        "挑発"
+      ],
+      "effect": "",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
