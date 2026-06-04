@@ -105,46 +105,68 @@ def reg_marks(corners):
         pdf.line(x, y-4, x, y+4)
 
 # ---------------------------------------------------------------
-# 盤面を A4 タイルに分割 (分割線はマス境界に合わせ、各マスは必ず1枚に収める)
-#   列を [0,1]|[2]、行を [0,1]|[2] で分割
-#   タイル: 左上=160x210(4マス) / 右上=80x210 / 左下=160x105 / 右下=80x105
+# 盤面を A4横2枚に分割 (切らずに上下を突き合わせ＝3×3盤面)
+#   盤面270x270 を水平中央(board y=135)で上下半分に分け、
+#   継ぎ目を紙端へ寄せる。2枚を突き合わせる(または継ぎ目を数mm重ねる)と盤面完成。
 # ---------------------------------------------------------------
-COL_GROUPS = [(0, 2), (2, 3)]   # col index ranges
-ROW_GROUPS = [(0, 2), (2, 3)]
-MARGIN_Y = 22
-TILE_LABELS = [['左上', '右上'], ['左下', '右下']]
+PW, PH = 297, 210                  # A4 landscape
+bmx = (PW - BOARD_W) / 2           # 13.5  水平センタリング
+SEAM = 7                           # 継ぎ目側の余白(プリンタ非印刷域ぶん)
+HALF_Y = BOARD_H / 2               # 135  分割位置(board座標)
 
-for tr, (r0, r1) in enumerate(ROW_GROUPS):
-    for tc, (c0, c1) in enumerate(COL_GROUPS):
-        pdf.add_page()
-        win_x0, win_x1 = c0 * CELL_W, c1 * CELL_W
-        win_y0, win_y1 = r0 * CELL_H, r1 * CELL_H
-        tile_w, tile_h = win_x1 - win_x0, win_y1 - win_y0
-        margin_x = (210 - tile_w) / 2
-        ox = margin_x - win_x0
-        oy = MARGIN_Y - win_y0
-        # 見出し
-        set_text((20, 20, 20)); pdf.set_font('ipa', '', 11)
-        pdf.set_xy(10, 9)
-        pdf.cell(190, 6, f'盤面タイル [{TILE_LABELS[tr][tc]}]  ※4枚を貼り合わせ＝3×3盤面', align='C')
-        # 9マス描画 (タイルオフセット)
-        draw_board(ox, oy)
-        # 窓外を白でマスク (隣マスのはみ出しを消す)
-        set_fill((255, 255, 255))
-        wl, wt = margin_x, MARGIN_Y
-        wr, wb = margin_x + tile_w, MARGIN_Y + tile_h
-        pdf.rect(0, 0, 210, wt, 'F')
-        pdf.rect(0, wb, 210, 297 - wb, 'F')
-        pdf.rect(0, 0, wl, 297, 'F')
-        pdf.rect(wr, 0, 210 - wr, 297, 'F')
-        # 窓枠 + レジマーク
-        set_draw((0, 0, 0)); pdf.set_line_width(0.4)
-        pdf.rect(wl, wt, tile_w, tile_h)
-        reg_marks([(wl, wt), (wr, wt), (wl, wb), (wr, wb)])
-        # 貼り合わせ案内
-        set_text((120, 120, 120)); pdf.set_font('ipa', '', 8)
-        pdf.set_xy(10, wb + 3)
-        pdf.cell(190, 4, '枠線で切り、十字マークを合わせて隣のタイルと貼り合わせてください', align='C')
+def seam_ticks(seam_py, point_down):
+    """継ぎ目の整列ガイド(列境界に三角マーク)"""
+    set_fill((0, 0, 0)); set_draw((0, 0, 0)); pdf.set_line_width(0.4)
+    d = 2.6 if point_down else -2.6
+    for k in range(4):
+        xv = bmx + k*CELL_W
+        pdf.line(xv, seam_py, xv, seam_py + d)
+        # 小三角
+        pdf.polygon([(xv-1.4, seam_py + d), (xv+1.4, seam_py + d), (xv, seam_py)], style='F')
+
+def board_half(is_top):
+    pdf.add_page(orientation='L')
+    if is_top:
+        seam_py = PH - SEAM            # 継ぎ目=紙の下端付近
+        oy = seam_py - HALF_Y          # board原点y
+        title = '盤面（上半分）'
+        # 見出し(上の余白)
+        set_text((20,20,20)); pdf.set_font('ipa','',12)
+        pdf.set_xy(bmx, 14); pdf.cell(BOARD_W, 7,
+            '盤面（上半分）  ※下端で「盤面（下半分）」と突き合わせ', align='C')
+    else:
+        seam_py = SEAM                 # 継ぎ目=紙の上端付近
+        oy = seam_py - HALF_Y
+        # 見出し(下の余白)
+        set_text((20,20,20)); pdf.set_font('ipa','',12)
+        pdf.set_xy(bmx, PH-22); pdf.cell(BOARD_W, 7,
+            '盤面（下半分）  ※上端で「盤面（上半分）」と突き合わせ', align='C')
+    # 9マス描画
+    draw_board(bmx, oy)
+    # 不要側を白でマスク
+    set_fill((255,255,255))
+    if is_top:
+        pdf.rect(0, seam_py, PW, PH-seam_py, 'F')   # 継ぎ目より下(下半分ぶん)を消す
+        pdf.rect(0, 0, PW, oy, 'F')                 # board上端より上
+    else:
+        pdf.rect(0, 0, PW, seam_py, 'F')            # 継ぎ目より上(上半分ぶん)を消す
+        pdf.rect(0, oy+BOARD_H, PW, PH-(oy+BOARD_H), 'F')  # board下端より下
+    pdf.rect(0, 0, bmx, PH, 'F')                     # 左帯
+    pdf.rect(bmx+BOARD_W, 0, PW-(bmx+BOARD_W), PH, 'F')  # 右帯
+    # 継ぎ目ライン + 整列三角
+    set_draw((150,150,150)); pdf.set_line_width(0.3)
+    pdf.line(bmx, seam_py, bmx+BOARD_W, seam_py)
+    seam_ticks(seam_py, point_down=is_top)
+    # 案内文
+    set_text((120,120,120)); pdf.set_font('ipa','',8)
+    note = '切らずに、▲印を合わせて2枚を突き合わせ（または継ぎ目を数mm重ねて）裏からテープ留め'
+    if is_top:
+        pdf.set_xy(bmx, 22); pdf.cell(BOARD_W, 5, note, align='C')
+    else:
+        pdf.set_xy(bmx, PH-16); pdf.cell(BOARD_W, 5, note, align='C')
+
+board_half(is_top=True)
+board_half(is_top=False)
 
 # ---------------------------------------------------------------
 # プレイヤーボード (A4横, 2枚印刷想定)
@@ -152,82 +174,119 @@ for tr, (r0, r1) in enumerate(ROW_GROUPS):
 def player_board():
     pdf.add_page(orientation='L')   # 297 x 210
     W, H = 297, 210
-    set_text((20, 20, 20)); pdf.set_font('ipa', '', 13)
-    pdf.set_xy(10, 6); pdf.cell(W-20, 7, 'プレイヤーボード  ※各プレイヤー1枚（計2枚印刷）', align='C')
 
-    def zone(x, y, w, h, title, sub='', col=(70, 70, 70)):
-        set_draw(col); pdf.set_line_width(0.6); set_fill((248, 248, 248))
-        pdf.rect(x, y, w, h, 'DF')
-        set_text(col); pdf.set_font('ipa', '', 10)
-        pdf.set_xy(x+2, y+1.5); pdf.cell(w-4, 5, title)
-        if sub:
-            set_text((150, 150, 150)); pdf.set_font('ipa', '', 7)
-            pdf.set_xy(x+2, y+h-5); pdf.cell(w-4, 4, sub)
+    # パレット
+    INK   = (44, 48, 62)
+    SUB   = (132, 138, 152)
+    LINE  = (224, 227, 234)
+    PANEL = (249, 250, 252)
+    MANA  = (58, 118, 196);  MANA_BG = (236, 243, 251)
+    VP    = (196, 146, 40);  VP_BG   = (252, 247, 233);  VP_WIN = (214, 76, 72)
+    ULT   = (150, 82, 140)
+    GRAVE = (108, 112, 124)
+    DECK  = (52, 96, 150)
+    FLOW  = (52, 140, 128)
 
-    cw, ch = 63.5, 88   # スタンダードカードスロット
-    top = 17
+    def shadow(x, y, w, h, r=2.4):
+        set_fill((228, 230, 236))
+        pdf.rect(x+1.3, y+1.4, w, h, 'F', round_corners=True, corner_radius=r)
 
-    def card_slot(x, y, title, sub, accent=(70,70,70)):
-        set_draw(accent); pdf.set_line_width(0.8); set_fill((250,250,250))
-        pdf.rect(x, y, cw, ch, 'DF')
-        set_text(accent); pdf.set_font('ipa','',11)
-        pdf.set_xy(x+2, y+3); pdf.cell(cw-4, 6, title, align='C')
-        if sub:
-            set_text((150,150,150)); pdf.set_font('ipa','',7)
-            nlines = sub.count('\n') + 1
-            pdf.set_xy(x+2, y+ch-3.6*nlines-3); pdf.multi_cell(cw-4, 3.5, sub, align='C')
+    def panel(x, y, w, h, r=2.4, fill=PANEL, draw=LINE, lw=0.5):
+        set_fill(fill); set_draw(draw); pdf.set_line_width(lw)
+        pdf.rect(x, y, w, h, 'DF', round_corners=True, corner_radius=r)
 
-    def track(x, y, w, title, hint, n, hi_idx, hi_col):
+    def header_strip(x, y, w, title, accent, h=8.5, hint='', tcol=(255,255,255)):
+        """角丸パネル上部のアクセント見出し帯"""
+        set_fill(accent)
+        pdf.rect(x, y, w, h+2.4, 'F', round_corners=True, corner_radius=2.4)
+        set_fill(accent)
+        pdf.rect(x, y+2.4, w, h, 'F')  # 下側を四角く戻して帯に
+        set_text(tcol); pdf.set_font('ipa', '', 10)
+        pdf.set_xy(x+4, y+1.3); pdf.cell(w*0.6, 6, title)
+        if hint:
+            set_text((255,255,255)); pdf.set_font('ipa', '', 7)
+            pdf.set_xy(x, y+2); pdf.cell(w-4, 5, hint, align='R')
+
+    cw, ch = 63.5, 88
+    top = 23
+
+    # ===== 外枠フレーム =====
+    panel(6, 6, W-12, H-12, r=3, fill=(255,255,255), draw=(236,238,243), lw=0.6)
+
+    # ===== タイトル帯 =====
+    set_fill(INK)
+    pdf.rect(10, 9, W-20, 11, 'F', round_corners=True, corner_radius=2.6)
+    set_text((255,255,255)); pdf.set_font('ipa','',12)
+    pdf.set_xy(14, 10.5); pdf.cell(120, 8, 'プレイヤーボード')
+    set_text((176,182,196)); pdf.set_font('ipa','',8)
+    pdf.set_xy(W-120, 11.5); pdf.cell(106, 6, '異能学園総選挙 TESTKIT  /  各プレイヤー1枚（計2枚印刷）', align='R')
+
+    # ===== トラック =====
+    def track(x, y, w, title, hint, n, accent, cell_bg, hi_idx, hi_col):
         h = 30
-        zone(x, y, w, h, title, '')
-        set_text((150,150,150)); pdf.set_font('ipa','',7.5)
-        pdf.set_xy(x, y+1.5); pdf.cell(w-3, 5, hint, align='R')
+        shadow(x, y, w, h)
+        panel(x, y, w, h)
+        header_strip(x, y, w, title, accent, h=8, hint=hint)
         cellw = (w-8)/n
-        gy = y + 12
+        gy = y + 13.5
         for i in range(n):
             gx = x + 4 + i*cellw
-            set_draw((180,180,180)); pdf.set_line_width(0.3)
             if i in hi_idx:
-                set_fill(hi_col); tcol=(255,255,255)
+                set_fill(hi_col); set_draw(hi_col); tcol=(255,255,255)
             else:
-                set_fill((255,255,255)); tcol=(60,60,60)
-            pdf.rect(gx, gy, cellw-1, 14, 'DF')
+                set_fill(cell_bg); set_draw((215,219,226)); tcol=(96,102,116)
+            pdf.set_line_width(0.4)
+            pdf.rect(gx, gy, cellw-1.4, 13, 'DF', round_corners=True, corner_radius=1.4)
             set_text(tcol); pdf.set_font('ipa','',9)
-            pdf.set_xy(gx, gy+4); pdf.cell(cellw-1, 6, str(i), align='C')
+            pdf.set_xy(gx, gy+3.6); pdf.cell(cellw-1.4, 6, str(i), align='C')
 
-    # --- 上段: マナ / VP トラック (横一列16マス) ---
-    track(10, top, 277, 'マナプール', '毎ターン+2 / 撃破で+1 / 上限なし', 16, set(), None)
-    track(10, top+36, 277, 'VPトラック', '15点で勝利！ / 撃破・マス制圧で獲得', 16,
-          {15}, (232,88,74))
-    # --- 下段左: ターンの流れ ---
-    fx = 10
-    bt = top + 76   # 下段トップ
-    zone(fx, bt, 70, 114, 'ターンの流れ')
-    set_text((60,60,60)); pdf.set_font('ipa','',8)
-    flow = ['① ドロー',
-            '   1枚＋マナ2',
-            '   (先攻1T目はドローのみ無',
-            '    マナ2は得る)',
-            '② アクション',
-            '   マナの続く限り:',
-            '   ・スペル使用',
-            '   ・攻撃(コスト消費)',
-            '   ・回転90°(1体1回)',
-            '③ 召喚',
-            '   →ターン強制終了',
-            '   初回:任意/以降:隣接',
-            '   召喚ロック=4体以上',
-            '④ リゾルブ',
-            '   手札7チェック',
-            '   勝利判定']
-    yy = bt+9
-    for ln in flow:
-        pdf.set_xy(fx+2, yy); pdf.cell(66, 4, ln); yy += 4.6
-    # --- 下段右: ウルト / 墓地 / デッキ (デッキ右側) ---
-    cy = bt + 12
-    card_slot(88, cy, 'ウルト', 'デッキ外1枚\n各陣営2枚から選択\nF6体以上・1G1回で解禁', (170,80,80))
-    card_slot(156, cy, '墓地', '撃破/使用済み', (110,110,110))
-    card_slot(224, cy, 'デッキ', '30枚 / 山札\n切れたら切り直して継続', (60,90,150))
+    track(10, top, 277, 'マナプール', '毎ターン +2  /  撃破で +1  /  上限なし',
+          16, MANA, MANA_BG, set(), None)
+    track(10, top+36, 277, 'VPトラック', '15点で勝利！ /  撃破・マス制圧で獲得',
+          16, VP, VP_BG, {15}, VP_WIN)
+
+    # ===== 下段 =====
+    bt = top + 74
+    # --- ターンの流れ ---
+    fx, fw, fh = 10, 70, 113
+    shadow(fx, bt, fw, fh)
+    panel(fx, bt, fw, fh)
+    header_strip(fx, bt, fw, 'ターンの流れ', FLOW, h=8)
+    groups = [
+        ('① ドロー', ['1枚＋マナ2', '先攻1T目はドローのみ無', '（マナ2は得る）']),
+        ('② アクション', ['マナの続く限り任意:', '・スペル使用', '・攻撃（コスト消費）', '・回転90°（1体1回）']),
+        ('③ 召喚', ['1体配置→ターン終了', '初回:任意 / 以降:隣接', '召喚ロック=4体以上']),
+        ('④ リゾルブ', ['手札7チェック', '勝利判定']),
+    ]
+    yy = bt + 12
+    for gt, subs in groups:
+        set_text(FLOW); pdf.set_font('ipa','',8.5)
+        pdf.set_xy(fx+3, yy); pdf.cell(fw-6, 4.5, gt); yy += 4.8
+        set_text((96,100,112)); pdf.set_font('ipa','',7.5)
+        for s in subs:
+            pdf.set_xy(fx+6, yy); pdf.cell(fw-9, 4, s); yy += 4.0
+        yy += 1.2
+
+    # --- カードスロット (ウルト / 墓地 / デッキ) ---
+    def card_slot(x, y, title, sub, accent):
+        shadow(x, y, cw, ch)
+        panel(x, y, cw, ch, fill=(255,255,255), draw=(226,229,236))
+        header_strip(x, y, cw, title, accent, h=8)
+        # 中央のカード配置ガイド
+        set_draw((222,225,232)); pdf.set_line_width(0.3)
+        gm = 6
+        _dashed_rect(x+gm, y+16, cw-2*gm, ch-16-14)
+        set_text((188,192,202)); pdf.set_font('ipa','',7)
+        pdf.set_xy(x, y+ (ch+16-14)/2 +2); pdf.cell(cw, 5, 'カードを置く', align='C')
+        if sub:
+            set_text(SUB); pdf.set_font('ipa','',6.8)
+            nlines = sub.count('\n') + 1
+            pdf.set_xy(x+2, y+ch-3.4*nlines-2.5); pdf.multi_cell(cw-4, 3.4, sub, align='C')
+
+    cy = bt
+    card_slot(88,  cy, 'ウルト', 'デッキ外1枚 / 各陣営2枚から選択\nF6体以上・1ゲーム1回で解禁', ULT)
+    card_slot(156, cy, '墓地', '撃破・使用済みカード', GRAVE)
+    card_slot(224, cy, 'デッキ', '30枚 / 山札\n切れたら切り直して継続', DECK)
 
 player_board()
 
@@ -267,7 +326,7 @@ pdf.set_xy(14,y)
 pdf.multi_cell(W-28,5,
     '勝利: ①9マス中5マスを支配（過半数）／ ②VP15点に到達 のいずれか。4マス支配=チェック。\n'
     'デッキ切れによる敗北は無し（山札が尽きたら切り直して継続）。\n'
-    'VP: クリーチャー撃破で獲得（コスト≤2→1点 / ≤4→2点 / 5以上→3点）。自滅でもVP・マナは入る。\n'
+    'VP: クリーチャー撃破で獲得（コスト2以下→1点 / 3〜4→2点 / 5以上→3点）。自滅でもVP・マナは入る。\n'
     'マナ: 毎ターン+2、撃破でオーナー+1、上限なし。召喚/攻撃/回転/スペルに使用。')
 
 # ターンの流れ
