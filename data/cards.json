@@ -736,17 +736,30 @@
       "atk": 1,
       "reactivation_cost": 3,
       "attribute": "木",
-      "attack_cells": "all",
-      "counter_cells": null,
-      "weakness_cells": [],
-      "attack_type": "魔道",
-      "keywords": [
-        "魔道攻撃"
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
       ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
       "effect": "自分のスペル使用時、このクリーチャーに隣接する自分の他のクリーチャーはそのターン攻撃力+1。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "simultaneous"
     },
     {
       "id": "water_007",
@@ -832,22 +845,30 @@
       "atk": 1,
       "reactivation_cost": 2,
       "attribute": "無",
-      "attack_cells": "all",
-      "counter_cells": null,
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
       "weakness_cells": [
         [
           -1,
           0
         ]
       ],
-      "attack_type": "魔道",
-      "keywords": [
-        "魔道攻撃"
-      ],
+      "attack_type": "物理",
+      "keywords": [],
       "effect": "場にいる間、自分のスペルが墓地に置かれるとき、代わりにデッキの一番下に戻る。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "simultaneous"
     },
     {
       "id": "water_010",
