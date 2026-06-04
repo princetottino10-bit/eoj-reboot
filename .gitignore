@@ -5,3 +5,7 @@ dist/
 
 tmp_*
 *.log
+
+# generated print artifacts
+oricard-playmat.pdf
+*.print-kit.pdf
