@@ -1262,7 +1262,7 @@
       "weakness_cells": [],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、自分または相手のクリーチャー1体を選び、その召喚時効果を発動する。",
+      "effect": "召喚時、このクリーチャーのコスト以下の相手クリーチャー1体を再行動させることができる。その攻撃の対象は相手クリーチャーも選べる。",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
