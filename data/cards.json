@@ -2320,7 +2320,7 @@
       "cost": 1,
       "vp": 1,
       "hp": 1,
-      "atk": 2,
+      "atk": 1,
       "reactivation_cost": 1,
       "attribute": "土",
       "attack_cells": [
