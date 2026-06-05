@@ -803,7 +803,7 @@
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、場の自分の他のクリーチャー1体の召喚時効果をコピーして発動する。前後同時攻撃。",
+      "effect": "召喚時、場の自分の他のクリーチャー1体の召喚時効果をコピーして発動する（この効果はこのカードの召喚時効果として扱う）。前後同時攻撃。",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
