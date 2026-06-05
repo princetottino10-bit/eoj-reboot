@@ -2791,6 +2791,53 @@
       "ult": null,
       "has_overlay": false,
       "attack_mode": "choice"
+    },
+    {
+      "id": "earth_001",
+      "name": "援護の射手",
+      "faction": "defense",
+      "cost": 3,
+      "vp": 2,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "木",
+      "attack_cells": [
+        [
+          2,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          2,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "前方1マスを飛び越えて2マス先を攻撃する。前方1マスに自分のクリーチャーがいる間、このクリーチャーへの攻撃ダメージを1軽減する。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "simultaneous"
     }
   ],
   "items": [
