@@ -646,7 +646,7 @@
       "cost": 4,
       "vp": 2,
       "hp": 4,
-      "atk": 1,
+      "atk": 0,
       "reactivation_cost": 3,
       "attribute": "土",
       "attack_cells": [
