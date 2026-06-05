@@ -402,7 +402,7 @@
       "keywords": [
         "魔道攻撃"
       ],
-      "effect": "召喚時、自デッキトップ2枚を見て1枚を手札、1枚をデッキの一番下に置く。",
+      "effect": "召喚時、このクリーチャーのコストの半分（端数切り捨て）のマナを獲得する。",
       "ult": null,
       "has_overlay": false,
       "attack_mode": "choice"
