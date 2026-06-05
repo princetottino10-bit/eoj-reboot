@@ -1695,6 +1695,41 @@
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
+    },
+    {
+      "id": "fire_004",
+      "name": "陣形の鼓舞者",
+      "faction": "aggro",
+      "cost": 3,
+      "vp": 2,
+      "hp": 2,
+      "atk": 2,
+      "reactivation_cost": 3,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "attack_mode": "simultaneous",
+      "keywords": [],
+      "has_overlay": false,
+      "effect": "召喚時、隣接する味方が1体以上いる場合マナ+1を得る。2体以上いる場合、さらにカードを1枚引く。",
+      "ult": null
     }
   ],
   "items": [
