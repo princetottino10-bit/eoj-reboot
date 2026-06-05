@@ -1032,7 +1032,7 @@
       "faction": "aggro",
       "cost": 4,
       "vp": 2,
-      "hp": 4,
+      "hp": 2,
       "atk": 2,
       "reactivation_cost": 3,
       "attribute": "木",
@@ -1562,6 +1562,45 @@
       "ult": null,
       "has_overlay": false,
       "attack_mode": "simultaneous"
+    },
+    {
+      "id": "fire_019",
+      "name": "遠見の術師",
+      "faction": "cip",
+      "cost": 2,
+      "vp": 1,
+      "hp": 2,
+      "atk": 2,
+      "reactivation_cost": 2,
+      "attribute": "火",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "counter_cells": [
+        [
+          1,
+          0
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [],
+      "effect": "召喚時、場の任意のクリーチャー1体の向きを90度回転させる。",
+      "ult": null,
+      "has_overlay": false,
+      "attack_mode": "choice"
     }
   ],
   "items": [
