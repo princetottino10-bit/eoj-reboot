@@ -303,16 +303,10 @@ def main():
 
     def next_slot(faction=None):
         nonlocal slot, cur_faction
-        # ファクション切り替え or ページ満→改ページ
-        if faction and faction != cur_faction:
-            # 残スロットをスキップして新ページへ
-            slot = 9
-            cur_faction = faction
+        cur_faction = faction
         if slot >= 9:
             pdf.add_page()
             slot = 0
-            if cur_faction:
-                draw_faction_header(pdf, cur_faction)
         col = slot % COLS; row = slot // COLS
         ix = LM + col*CW; iy = TM + row*CH
         slot += 1
