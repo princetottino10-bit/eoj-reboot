@@ -8,4 +8,6 @@ tmp_*
 
 # generated print artifacts
 oricard-playmat.pdf
+oricard-testkit-printkit.pdf
 *.print-kit.pdf
+*printkit.pdf
