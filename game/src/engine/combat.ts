@@ -98,8 +98,8 @@ function consumeMarker(char: CharInstance, kw: string): void {
 // ============================================================
 
 export function vpForCost(cost: number): number {
-  if (cost <= 2) return 1;
-  if (cost <= 4) return 2;
+  if (cost <= 4) return 1;
+  if (cost <= 6) return 2;
   return 3;
 }
 
@@ -115,7 +115,7 @@ export function calcDamage(
 ): number {
   const hasPiercing = hasKw(attacker, "貫通");
   let dmg = attacker.atk + (attacker.tempAtkBuff ?? 0) + passiveAtkBonus;
-  if (opts.isBlind && opts.attackType !== "magic") dmg += 1;
+  if (opts.isBlind && opts.attackType !== "magic") dmg += 2;
   if (!hasPiercing && hasKw(defender, "防護")) dmg -= 1;
   if (opts.teamDR) dmg -= 1;
   return Math.max(0, dmg);

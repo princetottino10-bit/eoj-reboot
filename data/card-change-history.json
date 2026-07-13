@@ -1,10 +1,11 @@
 {
-  "updated_at": "2026-05-31T08:59:33.365Z",
+  "updated_at": "2026-06-27T13:52:34.318Z",
   "source": "card text normalization",
   "changes": {
     "fire_001": [
       "攻撃範囲を前方1マスのみに変更",
-      "効果文を前方1マス表記に更新"
+      "効果文を前方1マス表記に更新",
+      "Sheet-based stat pass: increased HP from 3 to 4."
     ],
     "fire_002": [
       "後方を攻撃範囲から除外",
@@ -32,7 +33,8 @@
       "重ね召喚の説明を効果文に追記"
     ],
     "fire_ace_001": [
-      "スペル使用時にダメージ+1、マナ+1、1ドローする効果文に変更"
+      "スペル使用時にダメージ+1、マナ+1、1ドローする効果文に変更",
+      "Balance: changed attack range to front/left/right choice 1 while keeping physical attack."
     ],
     "fire_ace_002": [
       "攻撃範囲に左右を追加",
@@ -45,17 +47,22 @@
     ],
     "water_005": [
       "ATKを2に変更",
-      "デッキトップをデッキの上からに統一"
+      "デッキトップをデッキの上からに統一",
+      "Balance: reduced HP from 3 to 2 for 3-cost magic attacker.",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ],
     "water_008": [
       "ATKを2に変更",
-      "被攻撃クリーチャーの再行動不可/効果無効化に効果文を変更"
+      "被攻撃クリーチャーの再行動不可/効果無効化に効果文を変更",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ],
     "water_010": [
       "ATKを2に変更",
       "攻撃範囲を前方2マスに変更",
       "攻撃方式を同時攻撃に変更",
-      "効果文に前方2マス同時攻撃を追記"
+      "効果文に前方2マス同時攻撃を追記",
+      "守護の弱点なしカードに背後弱点(-1,0)を追加",
+      "Defense range normalization: counter range matched to attack range."
     ],
     "water_012": [
       "ATKを2に変更",
@@ -73,7 +80,8 @@
     ],
     "water_015": [
       "ATKを2に変更",
-      "ターン制限を削除"
+      "ターン制限を削除",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ],
     "water_016": [
       "ATKを4に変更",
@@ -96,35 +104,46 @@
       "空きマスを空いているマスに統一"
     ],
     "earth_008": [
-      "墓地の対象クリーチャーを除外する効果文に変更"
+      "墓地の対象クリーチャーを除外する効果文に変更",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ],
     "earth_009": [
       "攻撃/反撃範囲を前方2マスに変更",
       "弱点を後方に変更",
       "攻撃方式を範囲から1体選択に変更"
     ],
+    "earth_010": [
+      "Sheet-based stat pass: increased HP from 3 to 4."
+    ],
     "earth_011": [
       "攻撃時の再行動コストが1になる効果文に変更"
     ],
     "earth_012": [
       "コストを1に変更",
-      "再行動コストを2に変更"
+      "再行動コストを2に変更",
+      "影の徒党員のATKを2から1に変更",
+      "影の徒党員を2マナ / HP2 / ATK1に変更"
     ],
     "earth_ace_002": [
       "ATKを3に変更",
       "攻撃範囲を全方向に変更",
       "攻撃方式を範囲から1体選択に変更",
-      "『先制と不屈を持つ』の重複説明を効果文から削除"
+      "『先制と不屈を持つ』の重複説明を効果文から削除",
+      "守護者の攻撃を物理・周囲4マス・範囲から1体選択に変更",
+      "守護の弱点なしカードに背後弱点(-1,0)を追加"
     ],
     "earth_017": [
       "HPを5に変更",
-      "ATKを2に変更"
+      "ATKを2に変更",
+      "守護の弱点なしカードに背後弱点(-1,0)を追加",
+      "Defense range normalization: counter range matched to attack range."
     ],
     "wood_002": [
       "HPを2に変更",
       "ATKを3に変更",
       "再行動コストを1に変更",
-      "VP?3???"
+      "VP?3???",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ],
     "wood_003": [
       "ATKを2に変更",
@@ -138,7 +157,8 @@
     ],
     "wood_007": [
       "ATKを2に変更",
-      "前後左右を弱点に変更"
+      "前後左右を弱点に変更",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ],
     "wood_008": [
       "右側を弱点に追加",
@@ -146,14 +166,20 @@
     ],
     "fire_010": [
       "レビューでは反撃確認のみ。現状値を維持",
-      "このターンをこのターン中に統一"
+      "このターンをこのターン中に統一",
+      "Sheet-based stat pass: increased HP from 2 to 3."
+    ],
+    "fire_011": [
+      "Sheet-based stat pass: increased HP from 2 to 3."
     ],
     "water_002": [
       "魔道キャラのため反撃範囲なしを維持",
-      "ATKは未確定のため共有レビューに保留"
+      "ATKは未確定のため共有レビューに保留",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ],
     "water_006": [
-      "魔道キャラのため反撃範囲なしを維持"
+      "魔道キャラのため反撃範囲なしを維持",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ],
     "wood_010": [
       "VPを2に変更",
@@ -165,10 +191,12 @@
     "wood_011": [
       "ATKを3に変更",
       "VPを4に変更",
-      "すべてのクリーチャーの体力+1の常在効果文に変更"
+      "すべてのクリーチャーの体力+1の常在効果文に変更",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ],
     "wood_012": [
-      "ATKを2に変更"
+      "ATKを2に変更",
+      "Balance: changed to HP3/ATK1 and added rear weakness for 4-target attack."
     ],
     "wood_013": [
       "体力加算効果を削除",
@@ -184,7 +212,8 @@
       "VPを3に変更",
       "攻撃/反撃範囲を前方2マスに変更",
       "攻撃方式を同時攻撃に変更",
-      "前方2マスの召喚コスト/再行動コスト+2の効果文に変更"
+      "前方2マスの召喚コスト/再行動コスト+2の効果文に変更",
+      "守護の弱点なしカードに背後弱点(-1,0)を追加"
     ],
     "neutral_004": [
       "HPを3に変更",
@@ -195,7 +224,10 @@
       "HPを4に変更",
       "ATKを3に変更",
       "魔道攻撃に変更",
-      "魔道キャラのため反撃範囲なしに変更"
+      "魔道キャラのため反撃範囲なしに変更",
+      "守護の弱点なしカードに背後弱点(-1,0)を追加",
+      "Balance: changed to HP3/ATK2 for 4-cost magic defense unit.",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ],
     "neutral_010": [
       "HPを4に変更",
@@ -219,16 +251,21 @@
       "再行動コストを1に変更"
     ],
     "earth_014": [
-      "????1???"
+      "????1???",
+      "C1 balance: reduced HP from 2 to 1 because it keeps a light summon effect."
     ],
     "wood_015": [
       "撃破時の攻撃力上昇を次のターンのみ+2に変更"
     ],
     "neutral_014": [
-      "ATK?2???"
+      "守護の弱点なしカードに背後弱点(-1,0)を追加",
+      "Balance: reduced ATK from 2 to 1 for 2-cost defense unit.",
+      "Defense range normalization: counter range matched to attack range."
     ],
     "wood_017": [
-      "????1???"
+      "????1???",
+      "挑発キーワードを追加し、召喚時およびターン開始時の挙動を効果文に明記",
+      "C1 balance: removed Taunt keyword and effect."
     ],
     "neutral_015": [
       "????????????"
@@ -236,7 +273,9 @@
     "wood_018": [
       "HPを5に変更",
       "ATKを4に変更",
-      "移動・退却耐性を削除"
+      "移動・退却耐性を削除",
+      "守護の弱点なしカードに背後弱点(-1,0)を追加",
+      "Defense range normalization: counter range matched to attack range."
     ],
     "water_021": [
       "VP?2????ATK??????????",
@@ -359,7 +398,8 @@
       "効果期間を次のターン終了時までに変更"
     ],
     "spell_earth_011": [
-      "コストを2に変更"
+      "コストを2に変更",
+      "スペル削減調整により「再臨の儀」を削除"
     ],
     "spell_fire_008": [
       "コストを1に変更"
@@ -406,22 +446,43 @@
       "空きマスを空いているマスに統一"
     ],
     "ult_spell_001": [
-      "このターンをこのターン中に統一"
+      "このターンをこのターン中に統一",
+      "発動条件を「相手の場にクリーチャーが3体以上いる」に変更"
     ],
     "ult_aggro_001": [
-      "このターンをこのターン中に統一"
+      "このターンをこのターン中に統一",
+      "発動条件を「相手の場にクリーチャーが3体以上いる」に変更"
     ],
     "ult_cip_001": [
-      "このターンをこのターン中に統一"
+      "このターンをこのターン中に統一",
+      "発動条件を「相手の場にクリーチャーが3体以上いる」に変更"
     ],
     "ult_defense_001": [
       "コスト無料をコストを支払わずに統一",
-      "空きマスを空いているマスに統一"
+      "空きマスを空いているマスに統一",
+      "発動条件を「相手の場にクリーチャーが3体以上いる」に変更"
+    ],
+    "ult_meta_001": [
+      "発動条件を「相手の場にクリーチャーが3体以上いる」に変更"
+    ],
+    "water_009": [
+      "Balance: reduced HP from 2 to 1 for 2-cost magic attacker.",
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
+    ],
+    "water_004": [
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
+    ],
+    "earth_ace_001": [
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
+    ],
+    "wood_009": [
+      "Magic attacker weakness normalized to all adjacent directions except front: rear/left/right."
     ]
   },
   "global_changes": [
     "attack_type が魔道のキャラクター13枚は、反撃範囲をすべてなしに変更",
     "知略(draw)陣営を削除し、所属キャラクター10枚・アイテム6枚・ウルト1枚をマスターから除外",
-    "効果文の表記ゆれを一部統一: 27件"
+    "効果文の表記ゆれを一部統一: 27件",
+    "4陣営の再行動コストを、ATK基準とシートの再行動マナ基準を土台に、複数対象・魔道・攻撃誘発で補正する方針へ調整"
   ]
 }

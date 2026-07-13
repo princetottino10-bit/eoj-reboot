@@ -71,7 +71,9 @@
         "effect",
         "ult",
         "has_overlay",
-        "attack_mode"
+        "attack_mode",
+        "attack_range_count",
+        "attack_target_count"
       ],
       "additionalProperties": false,
       "properties": {
@@ -217,6 +219,16 @@
             "none"
           ],
           "description": "simultaneous=attack_cells全マスに同時攻撃, choice=attack_cellsから1体選択, none=攻撃不可"
+        },
+        "attack_range_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of attackable cells. attack_cells=\"all\" counts as 8 cells on a 3x3 board excluding self."
+        },
+        "attack_target_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum number of units hit by one attack. choice=1, simultaneous=attack_range_count, none=0."
         }
       }
     },

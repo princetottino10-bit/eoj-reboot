@@ -1,5 +1,5 @@
 {
-  "exported_at": "2026-05-31T08:49:46.095Z",
+  "exported_at": "2026-06-27T13:01:04.754Z",
   "source": "eoj-card-review",
   "card_count": 84,
   "notes": {
@@ -464,12 +464,6 @@
         "effect": true
       },
       "memo": "「次のターン終了時まで」にして、C2に変更"
-    },
-    "spell_earth_011": {
-      "checks": {
-        "cost": true
-      },
-      "memo": "２に変更"
     },
     "spell_fire_008": {
       "checks": {

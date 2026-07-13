@@ -36,6 +36,8 @@ export interface CharCardDef {
   reactivation_cost: number;
   attribute: string;
   attack_cells: AttackCells;
+  attack_range_count: number;
+  attack_target_count: number;
   counter_cells?: AttackCells;
   attack_type: string;
   keywords: string[];

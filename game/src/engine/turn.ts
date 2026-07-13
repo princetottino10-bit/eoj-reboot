@@ -5,7 +5,7 @@ import {
 import type { CellIndex, GameState } from "./types.js";
 import { assertNonNull } from "./types.js";
 
-export const HAND_LIMIT = 7;
+export const END_TURN_HAND_SIZE = 5;
 
 // ============================================================
 // 再行動マナ消費
@@ -112,12 +112,16 @@ export function endTurnCleanup(state: GameState): GameState {
     { ...playersAfterEnd[0] },
     { ...playersAfterEnd[1] },
   ] as typeof state.players;
+  const deck = [...newPlayers[p].deck];
   const hand = [...newPlayers[p].hand];
   const discard = [...newPlayers[p].discard];
-  if (hand.length > HAND_LIMIT) {
-    discard.push(...hand.splice(HAND_LIMIT));
+  while (hand.length < END_TURN_HAND_SIZE && deck.length > 0) {
+    hand.push(assertNonNull(deck.pop()));
   }
-  newPlayers[p] = { ...newPlayers[p], hand, discard };
+  if (hand.length > END_TURN_HAND_SIZE) {
+    discard.push(...hand.splice(END_TURN_HAND_SIZE));
+  }
+  newPlayers[p] = { ...newPlayers[p], deck, hand, discard };
 
   const newTeamDR: [boolean, boolean] = [state.teamDR[0], state.teamDR[1]];
   newTeamDR[opp] = false;

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   drawStep,
+  END_TURN_HAND_SIZE,
   endTurnCleanup,
-  HAND_LIMIT,
   spendReactivationMana,
   startTurnPhase,
 } from "../src/engine/turn.js";
@@ -86,8 +86,8 @@ function makeState(opts: Partial<GameState> = {}): GameState {
 // 定数
 // ============================================================
 describe("定数", () => {
-  it("HAND_LIMIT = 7", () => {
-    expect(HAND_LIMIT).toBe(7);
+  it("END_TURN_HAND_SIZE = 5", () => {
+    expect(END_TURN_HAND_SIZE).toBe(5);
   });
 });
 
@@ -306,38 +306,63 @@ describe("endTurnCleanup: ターン数", () => {
 });
 
 describe("endTurnCleanup: 手札上限", () => {
-  it(`${HAND_LIMIT}枚以内なら捨てない`, () => {
-    const hand = Array(7)
+  it(`${END_TURN_HAND_SIZE}枚以内なら捨てない`, () => {
+    const hand = Array(5)
       .fill("c")
       .map((_, i) => `c${i}`);
     const state = makeState({ players: [makePlayer({ hand }), makePlayer()] });
     const next = endTurnCleanup(state);
-    expect(next.players[0].hand).toHaveLength(7);
+    expect(next.players[0].hand).toHaveLength(5);
     expect(next.players[0].discard).toHaveLength(0);
   });
 
-  it("8枚なら1枚を捨てる", () => {
-    const hand = Array(8)
+  it("6枚なら1枚を捨てる", () => {
+    const hand = Array(6)
       .fill("c")
       .map((_, i) => `c${i}`);
     const state = makeState({ players: [makePlayer({ hand }), makePlayer()] });
     const next = endTurnCleanup(state);
-    expect(next.players[0].hand).toHaveLength(7);
+    expect(next.players[0].hand).toHaveLength(5);
     expect(next.players[0].discard).toHaveLength(1);
   });
 
-  it("10枚なら3枚を捨てる", () => {
+  it("draws up to 5 cards at end of turn", () => {
+    const state = makeState({
+      players: [
+        makePlayer({ hand: ["h0", "h1", "h2"], deck: ["d0", "d1", "d2"] }),
+        makePlayer(),
+      ],
+    });
+    const next = endTurnCleanup(state);
+    expect(next.players[0].hand).toEqual(["h0", "h1", "h2", "d2", "d1"]);
+    expect(next.players[0].deck).toEqual(["d0"]);
+    expect(next.players[0].discard).toHaveLength(0);
+  });
+
+  it("draws as many as possible if deck has fewer cards", () => {
+    const state = makeState({
+      players: [
+        makePlayer({ hand: ["h0", "h1", "h2"], deck: ["d0"] }),
+        makePlayer(),
+      ],
+    });
+    const next = endTurnCleanup(state);
+    expect(next.players[0].hand).toEqual(["h0", "h1", "h2", "d0"]);
+    expect(next.players[0].deck).toEqual([]);
+  });
+
+  it("10枚なら5枚を捨てる", () => {
     const hand = Array(10)
       .fill("c")
       .map((_, i) => `c${i}`);
     const state = makeState({ players: [makePlayer({ hand }), makePlayer()] });
     const next = endTurnCleanup(state);
-    expect(next.players[0].hand).toHaveLength(7);
-    expect(next.players[0].discard).toHaveLength(3);
+    expect(next.players[0].hand).toHaveLength(5);
+    expect(next.players[0].discard).toHaveLength(5);
   });
 
   it("P1の手札超過はP1から捨てる", () => {
-    const hand = Array(8)
+    const hand = Array(6)
       .fill("c")
       .map((_, i) => `c${i}`);
     const state = makeState({
@@ -345,7 +370,7 @@ describe("endTurnCleanup: 手札上限", () => {
       players: [makePlayer(), makePlayer({ hand })],
     });
     const next = endTurnCleanup(state);
-    expect(next.players[1].hand).toHaveLength(7);
+    expect(next.players[1].hand).toHaveLength(5);
     expect(next.players[0].hand).toHaveLength(0);
   });
 });

@@ -25,9 +25,9 @@
       "faction": "aggro",
       "cost": 4,
       "vp": 2,
-      "hp": 3,
+      "hp": 4,
       "atk": 2,
-      "reactivation_cost": 2,
+      "reactivation_cost": 3,
       "attribute": "火",
       "attack_cells": [
         [
@@ -54,7 +54,9 @@
       "effect": "前方1マスから1体を選んで攻撃する。連撃により1回の再行動コストで2回攻撃できる。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "fire_002",
@@ -109,7 +111,9 @@
       "effect": "相手がこのクリーチャーに隣接するマスにクリーチャーを召喚したとき、このクリーチャーの向きをそのマスに向けられる。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 3,
+      "attack_target_count": 3
     },
     {
       "id": "fire_003",
@@ -156,7 +160,9 @@
       "effect": "召喚時、墓地からコスト2以下のクリーチャー1体を選び、その攻撃力をこのクリーチャーに加算する。そのクリーチャーは墓地から除外する（永続）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "fire_005",
@@ -210,7 +216,9 @@
       "effect": "相手がこのクリーチャーに隣接するマスにクリーチャーを召喚するたび、そのクリーチャーに1ダメージ。全方向1マスから1体を選んで攻撃する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 4,
+      "attack_target_count": 1
     },
     {
       "id": "fire_007",
@@ -220,7 +228,7 @@
       "vp": 3,
       "hp": 4,
       "atk": 2,
-      "reactivation_cost": 4,
+      "reactivation_cost": 2,
       "attribute": "火",
       "attack_cells": [
         [
@@ -261,7 +269,9 @@
       "effect": "召喚時、次のターン中、自分が召喚したクリーチャーの召喚時効果は2回発動する。前左右3マスから1体を選んで攻撃する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 3,
+      "attack_target_count": 1
     },
     {
       "id": "fire_009",
@@ -296,7 +306,9 @@
       "effect": "このクリーチャーが撃破されたとき、自分の場の攻撃範囲が1体のみのクリーチャー1体に、次の自分のターン中「連撃」を付与する。連撃を持つクリーチャーは1回の再行動コストで2回攻撃できる。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "fire_010",
@@ -304,9 +316,9 @@
       "faction": "spell",
       "cost": 3,
       "vp": 1,
-      "hp": 2,
+      "hp": 3,
       "atk": 1,
-      "reactivation_cost": 2,
+      "reactivation_cost": 1,
       "attribute": "火",
       "attack_cells": [
         [
@@ -331,7 +343,9 @@
       "effect": "自分がこのターン2枚目以降のスペルを唱えるたび、敵クリーチャー1体に1ダメージ。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "fire_011",
@@ -339,9 +353,9 @@
       "faction": "spell",
       "cost": 3,
       "vp": 1,
-      "hp": 2,
+      "hp": 3,
       "atk": 1,
-      "reactivation_cost": 2,
+      "reactivation_cost": 1,
       "attribute": "火",
       "attack_cells": [
         [
@@ -366,7 +380,9 @@
       "effect": "自分がスペルを唱えるたび、マナを1得る（1ターンに2回まで）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "fire_014",
@@ -401,7 +417,9 @@
       "effect": "攻撃して敵を撃破したとき、撃破したマスへ移動する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "fire_015",
@@ -436,7 +454,9 @@
       "effect": "攻撃する前に、隣接する空きマスへ移動できる（移動してから攻撃、その攻撃は移動先の向きで行う）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "fire_016",
@@ -446,7 +466,7 @@
       "vp": 4,
       "hp": 7,
       "atk": 4,
-      "reactivation_cost": 4,
+      "reactivation_cost": 3,
       "attribute": "火",
       "attack_cells": [
         [
@@ -489,7 +509,9 @@
       "effect": "重ね召喚：自分の場のクリーチャー1体の上に重ねて召喚できる。召喚時、自分の場のクリーチャー1体の召喚時効果を発動する。前左右3マスから1体を選んで攻撃する。",
       "ult": null,
       "has_overlay": true,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 3,
+      "attack_target_count": 1
     },
     {
       "id": "fire_ace_001",
@@ -499,12 +521,20 @@
       "vp": 4,
       "hp": 5,
       "atk": 2,
-      "reactivation_cost": 4,
+      "reactivation_cost": 3,
       "attribute": "火",
       "attack_cells": [
         [
           1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "counter_cells": [
@@ -532,7 +562,9 @@
       "effect": "場にいる間、自分がスペルを使うたび、そのスペルのダメージ+1。さらにマナを1得て、カードを1枚引く。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "choice",
+      "attack_range_count": 3,
+      "attack_target_count": 1
     },
     {
       "id": "fire_ace_002",
@@ -583,7 +615,9 @@
       "effect": "このエースに隣接する自分のクリーチャーは、敵を攻撃するとき攻撃力+1。前左右3マスを同時攻撃する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 3,
+      "attack_target_count": 3
     },
     {
       "id": "water_001",
@@ -593,7 +627,7 @@
       "vp": 2,
       "hp": 3,
       "atk": 1,
-      "reactivation_cost": 3,
+      "reactivation_cost": 2,
       "attribute": "水",
       "attack_cells": [
         [
@@ -637,7 +671,9 @@
       "effect": "召喚時、マナ1を払ってよい。そうしたなら、敵クリーチャー1体を隣接する空きマスに強制移動させる（向きは変えない）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 4,
+      "attack_target_count": 4
     },
     {
       "id": "water_002",
@@ -655,6 +691,14 @@
         [
           -1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "attack_type": "魔道",
@@ -664,7 +708,9 @@
       "effect": "召喚時、場の任意クリーチャー1体の攻撃力をコピーする。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "water_004",
@@ -682,6 +728,14 @@
         [
           -1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "attack_type": "魔道",
@@ -691,7 +745,9 @@
       "effect": "場にいる間、自分のスペルのマナコストを1軽減(最低1)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "water_005",
@@ -699,7 +755,7 @@
       "faction": "cip",
       "cost": 3,
       "vp": 1,
-      "hp": 3,
+      "hp": 2,
       "atk": 2,
       "reactivation_cost": 2,
       "attribute": "水",
@@ -709,6 +765,14 @@
         [
           -1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "attack_type": "魔道",
@@ -718,7 +782,9 @@
       "effect": "召喚時、自デッキトップ2枚を見て1枚を手札、1枚をデッキの一番下に置く。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "water_006",
@@ -728,11 +794,24 @@
       "vp": 2,
       "hp": 3,
       "atk": 1,
-      "reactivation_cost": 3,
+      "reactivation_cost": 2,
       "attribute": "水",
       "attack_cells": "all",
       "counter_cells": null,
-      "weakness_cells": [],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
       "attack_type": "魔道",
       "keywords": [
         "魔道攻撃"
@@ -740,7 +819,9 @@
       "effect": "自分のスペル使用時、このクリーチャーに隣接する自分の他のクリーチャーはそのターン攻撃力+1。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "water_007",
@@ -750,7 +831,7 @@
       "vp": 2,
       "hp": 3,
       "atk": 2,
-      "reactivation_cost": 3,
+      "reactivation_cost": 2,
       "attribute": "水",
       "attack_cells": [
         [
@@ -787,7 +868,9 @@
       "effect": "召喚時、場の自分の他のクリーチャー1体の召喚時効果をコピーして発動する。前後同時攻撃。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "water_008",
@@ -805,6 +888,14 @@
         [
           -1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "attack_type": "魔道",
@@ -814,7 +905,9 @@
       "effect": "攻撃を受けたクリーチャーは、次のターン再行動できず、効果が無効化される。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "water_009",
@@ -822,7 +915,7 @@
       "faction": "spell",
       "cost": 2,
       "vp": 1,
-      "hp": 2,
+      "hp": 1,
       "atk": 1,
       "reactivation_cost": 2,
       "attribute": "水",
@@ -832,6 +925,14 @@
         [
           -1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "attack_type": "魔道",
@@ -841,7 +942,9 @@
       "effect": "場にいる間、自分のスペルが墓地に置かれるとき、代わりにデッキの一番下に戻る。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "water_010",
@@ -869,25 +972,24 @@
           0
         ],
         [
-          -1,
+          2,
           0
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          0,
-          -1
         ]
       ],
-      "weakness_cells": [],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "相手が自分のクリーチャーを対象とする敵スペルを唱えるとき、追加でマナ1を要求する。前方2マスを同時攻撃する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "water_012",
@@ -930,7 +1032,9 @@
       "effect": "自分または相手のクリーチャーが移動または向きを変更するたび、カードを1枚引く。前方2マスから1体を選んで攻撃する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 2,
+      "attack_target_count": 1
     },
     {
       "id": "water_013",
@@ -960,7 +1064,9 @@
       "effect": "自分または相手のクリーチャーが移動または向きを変更するたび、マナを1得る（1ターンに1回まで）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "water_014",
@@ -995,7 +1101,9 @@
       "effect": "相手のクリーチャーが移動または向きを変更するたび、このクリーチャーの攻撃力+1（そのターンのみ）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "water_015",
@@ -1013,6 +1121,14 @@
         [
           -1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "attack_type": "魔道",
@@ -1022,7 +1138,9 @@
       "effect": "自分のクリーチャーの召喚時効果が発動するたび、マナを1得る。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "water_016",
@@ -1067,7 +1185,9 @@
       "effect": "召喚時、場のクリーチャーを3体まで選び、向きを自由に変更する（敵も選べる）。前方2マスから1体を選んで攻撃する。",
       "ult": null,
       "has_overlay": true,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 2,
+      "attack_target_count": 1
     },
     {
       "id": "water_017",
@@ -1114,7 +1234,9 @@
       "effect": "自分のクリーチャーが移動または向きを変更するたび、マナを1得る（1ターンに1回まで）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "water_ace_001",
@@ -1124,7 +1246,7 @@
       "vp": 4,
       "hp": 6,
       "atk": 4,
-      "reactivation_cost": 4,
+      "reactivation_cost": 3,
       "attribute": "水",
       "attack_cells": [
         [
@@ -1165,7 +1287,9 @@
       "effect": "召喚時、自分のデッキから任意のクリーチャー1体を手札に加える（デッキはシャッフル）。前左右3マスから1体を選んで攻撃する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 3,
+      "attack_target_count": 1
     },
     {
       "id": "earth_002",
@@ -1175,7 +1299,7 @@
       "vp": 2,
       "hp": 3,
       "atk": 2,
-      "reactivation_cost": 3,
+      "reactivation_cost": 1,
       "attribute": "土",
       "attack_cells": [
         [
@@ -1200,7 +1324,9 @@
       "effect": "召喚時、墓地のクリーチャー1体を選び、その召喚時効果を発動する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "earth_004",
@@ -1243,7 +1369,9 @@
       "effect": "自分のターン開始時、隣接する空きマスに強制移動する。向きは自由に変更できる。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "earth_008",
@@ -1261,6 +1389,14 @@
         [
           -1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "attack_type": "魔道",
@@ -1270,7 +1406,9 @@
       "effect": "召喚時、墓地のクリーチャー1体を選び、その攻撃力または体力を加算する。そのクリーチャーは墓地から除外する（永続）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "earth_009",
@@ -1313,7 +1451,9 @@
       "effect": "場にいる間、両プレイヤーはスペルのマナコスト+1。前方2マスから1体を選んで攻撃する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 2,
+      "attack_target_count": 1
     },
     {
       "id": "earth_010",
@@ -1321,9 +1461,9 @@
       "faction": "aggro",
       "cost": 3,
       "vp": 1,
-      "hp": 3,
+      "hp": 4,
       "atk": 1,
-      "reactivation_cost": 3,
+      "reactivation_cost": 1,
       "attribute": "土",
       "attack_cells": [
         [
@@ -1348,7 +1488,9 @@
       "effect": "自分のクリーチャーが敵を撃破するたび、カードを1枚引く(1ターンに2回まで)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "earth_011",
@@ -1358,7 +1500,7 @@
       "vp": 2,
       "hp": 3,
       "atk": 2,
-      "reactivation_cost": 3,
+      "reactivation_cost": 2,
       "attribute": "土",
       "attack_cells": [
         [
@@ -1383,16 +1525,18 @@
       "effect": "このクリーチャーの攻撃時の再行動コストは1。自分のクリーチャーが敵を撃破するたび、マナを1得る（1ターンに2回まで）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "earth_012",
       "name": "影の徒党員",
       "faction": "aggro",
-      "cost": 1,
+      "cost": 2,
       "vp": 1,
-      "hp": 1,
-      "atk": 2,
+      "hp": 2,
+      "atk": 1,
       "reactivation_cost": 2,
       "attribute": "土",
       "attack_cells": [
@@ -1422,7 +1566,9 @@
       "effect": "",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "earth_ace_001",
@@ -1440,6 +1586,14 @@
         [
           -1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "attack_type": "魔道",
@@ -1449,7 +1603,9 @@
       "effect": "召喚時、自分の場のクリーチャー1体を破壊してよい。破壊した場合、敵クリーチャー全ての体力を-2する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "earth_ace_002",
@@ -1459,9 +1615,26 @@
       "vp": 3,
       "hp": 6,
       "atk": 3,
-      "reactivation_cost": 5,
+      "reactivation_cost": 3,
       "attribute": "土",
-      "attack_cells": "all",
+      "attack_cells": [
+        [
+          1,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
       "counter_cells": [
         [
           1,
@@ -1480,7 +1653,12 @@
           -1
         ]
       ],
-      "weakness_cells": [],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [
         "先制",
@@ -1489,7 +1667,9 @@
       "effect": "攻撃を受けた際、先に反撃を行う。ゲーム中1回、撃破される代わりに体力1で残る。全方向から1体を選んで攻撃する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 4,
+      "attack_target_count": 1
     },
     {
       "id": "earth_017",
@@ -1499,7 +1679,7 @@
       "vp": 4,
       "hp": 5,
       "atk": 2,
-      "reactivation_cost": 5,
+      "reactivation_cost": 3,
       "attribute": "土",
       "attack_cells": [
         [
@@ -1511,7 +1691,38 @@
         [
           1,
           0
-        ],
+        ]
+      ],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "attack_type": "物理",
+      "keywords": [
+        "重ね召喚"
+      ],
+      "effect": "召喚時、自分の場のクリーチャー全ての体力を+1(永続)。",
+      "ult": null,
+      "has_overlay": true,
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
+    },
+    {
+      "id": "wood_002",
+      "name": "偏食家",
+      "faction": "aggro",
+      "cost": 3,
+      "vp": 3,
+      "hp": 2,
+      "atk": 3,
+      "reactivation_cost": 2,
+      "attribute": "木",
+      "attack_cells": "all",
+      "counter_cells": null,
+      "weakness_cells": [
         [
           -1,
           0
@@ -1525,34 +1736,6 @@
           -1
         ]
       ],
-      "weakness_cells": [],
-      "attack_type": "物理",
-      "keywords": [
-        "重ね召喚"
-      ],
-      "effect": "召喚時、自分の場のクリーチャー全ての体力を+1(永続)。",
-      "ult": null,
-      "has_overlay": true,
-      "attack_mode": "simultaneous"
-    },
-    {
-      "id": "wood_002",
-      "name": "偏食家",
-      "faction": "aggro",
-      "cost": 3,
-      "vp": 3,
-      "hp": 2,
-      "atk": 3,
-      "reactivation_cost": 1,
-      "attribute": "木",
-      "attack_cells": "all",
-      "counter_cells": null,
-      "weakness_cells": [
-        [
-          -1,
-          0
-        ]
-      ],
       "attack_type": "魔道",
       "keywords": [
         "魔道攻撃",
@@ -1561,7 +1744,9 @@
       "effect": "魔道攻撃を持つ。偏食により木属性のクリーチャーまたは木属性フィールドにいるクリーチャーにしか攻撃できない(敵味方問わず)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "wood_003",
@@ -1604,7 +1789,9 @@
       "effect": "このクリーチャーがいる限り、隣接するクリーチャーの攻撃力を+1する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "wood_004",
@@ -1651,7 +1838,9 @@
       "effect": "隣接するフィールドに自陣のクリーチャーがいるとき、1体につきこのクリーチャーの攻撃力は+1される。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "wood_007",
@@ -1666,10 +1855,6 @@
       "attack_cells": "all",
       "counter_cells": null,
       "weakness_cells": [
-        [
-          1,
-          0
-        ],
         [
           -1,
           0
@@ -1690,7 +1875,9 @@
       "effect": "召喚時、自分の墓地のスペル1枚を手札に戻す。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "wood_008",
@@ -1700,7 +1887,7 @@
       "vp": 2,
       "hp": 2,
       "atk": 2,
-      "reactivation_cost": 2,
+      "reactivation_cost": 3,
       "attribute": "木",
       "attack_cells": [
         [
@@ -1739,7 +1926,9 @@
       "effect": "弱点範囲を突いて攻撃したとき、通常のボーナスに加えてさらに+1ダメージ。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "wood_009",
@@ -1757,6 +1946,14 @@
         [
           -1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "attack_type": "魔道",
@@ -1766,7 +1963,9 @@
       "effect": "場にいる間、自分のクリーチャーが撃破されて相手が得るVPは-1される(最低1)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "wood_010",
@@ -1801,7 +2000,9 @@
       "effect": "このクリーチャーが攻撃した敵は、次の相手ターン中、再行動できない(攻撃も向き変更も移動も不可)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "wood_011",
@@ -1819,6 +2020,14 @@
         [
           -1,
           0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
         ]
       ],
       "attack_type": "魔道",
@@ -1828,7 +2037,9 @@
       "effect": "このクリーチャーがいる限り、すべてのクリーチャーの体力は+1される。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "wood_012",
@@ -1836,8 +2047,8 @@
       "faction": "aggro",
       "cost": 4,
       "vp": 2,
-      "hp": 4,
-      "atk": 2,
+      "hp": 3,
+      "atk": 1,
       "reactivation_cost": 3,
       "attribute": "木",
       "attack_cells": [
@@ -1876,13 +2087,20 @@
           -1
         ]
       ],
-      "weakness_cells": [],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "全方位4方向同時に攻撃する(各方向の隣接1体に攻撃力分のダメージ)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 4,
+      "attack_target_count": 4
     },
     {
       "id": "wood_013",
@@ -1921,7 +2139,9 @@
       "effect": "フィールドのクリーチャーのステータスが変動したターン、このクリーチャーの再行動コストは0になる。前2体貫通攻撃。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "neutral_001",
@@ -1931,7 +2151,7 @@
       "vp": 2,
       "hp": 4,
       "atk": 3,
-      "reactivation_cost": 3,
+      "reactivation_cost": 2,
       "attribute": "無",
       "attack_cells": [
         [
@@ -1956,7 +2176,9 @@
       "effect": "場にいる間、自分のクリーチャーは、相手が発動した向き変更・移動の効果を受けない。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "neutral_003",
@@ -1966,7 +2188,7 @@
       "vp": 3,
       "hp": 3,
       "atk": 1,
-      "reactivation_cost": 3,
+      "reactivation_cost": 2,
       "attribute": "無",
       "attack_cells": [
         [
@@ -1988,13 +2210,20 @@
           0
         ]
       ],
-      "weakness_cells": [],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
       "attack_type": "物理",
       "keywords": [],
       "effect": "前方2マスのクリーチャーの召喚コストと再行動コストを+2する。前方2マスを同時攻撃する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "neutral_004",
@@ -2031,7 +2260,9 @@
       "effect": "監視：相手のクリーチャーの召喚時効果が発動するたび、自分はマナを1得る(1ターンに1回まで)。警鐘：相手がウルトを発動したとき、自分はカードを3枚引き、マナを3得る。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "none"
+      "attack_mode": "none",
+      "attack_range_count": 0,
+      "attack_target_count": 0
     },
     {
       "id": "neutral_008",
@@ -2039,13 +2270,26 @@
       "faction": "defense",
       "cost": 4,
       "vp": 2,
-      "hp": 4,
-      "atk": 3,
-      "reactivation_cost": 4,
+      "hp": 3,
+      "atk": 2,
+      "reactivation_cost": 3,
       "attribute": "無",
       "attack_cells": "all",
       "counter_cells": null,
-      "weakness_cells": [],
+      "weakness_cells": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
       "attack_type": "魔道",
       "keywords": [
         "魔道攻撃"
@@ -2053,7 +2297,9 @@
       "effect": "このクリーチャーは敵の効果で移動・退却させられない。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "choice"
+      "attack_mode": "choice",
+      "attack_range_count": 8,
+      "attack_target_count": 1
     },
     {
       "id": "neutral_010",
@@ -2107,7 +2353,9 @@
       "effect": "場にいる間、相手はターンに2枚目以降のスペルを唱えられない。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 4,
+      "attack_target_count": 4
     },
     {
       "id": "neutral_011",
@@ -2117,7 +2365,7 @@
       "vp": 3,
       "hp": 2,
       "atk": 4,
-      "reactivation_cost": 3,
+      "reactivation_cost": 4,
       "attribute": "無",
       "attack_cells": [
         [
@@ -2154,7 +2402,9 @@
       "effect": "攻撃して敵を撃破したとき、追加でVP1を得る。前後2マス同時攻撃。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "neutral_012",
@@ -2164,7 +2414,7 @@
       "vp": 2,
       "hp": 4,
       "atk": 2,
-      "reactivation_cost": 3,
+      "reactivation_cost": 1,
       "attribute": "無",
       "attack_cells": [
         [
@@ -2196,7 +2446,9 @@
       "effect": "召喚時、相手のクリーチャー1体を選び、そのクリーチャーの召喚時効果を発動できる。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "water_020",
@@ -2231,7 +2483,9 @@
       "effect": "召喚時、自デッキトップ1枚を見る。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "neutral_013",
@@ -2274,7 +2528,9 @@
       "effect": "このクリーチャーは魔道攻撃を受けない。相手が自分のターンに召喚を行うたび、自分はカードを1枚引く（1ターンに1回まで）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "earth_013",
@@ -2309,7 +2565,9 @@
       "effect": "",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "earth_014",
@@ -2317,7 +2575,7 @@
       "faction": "spell",
       "cost": 1,
       "vp": 1,
-      "hp": 2,
+      "hp": 1,
       "atk": 1,
       "reactivation_cost": 1,
       "attribute": "土",
@@ -2344,7 +2602,9 @@
       "effect": "召喚時、自分の墓地のスペル1枚をデッキに戻す(シャッフル)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "wood_015",
@@ -2379,7 +2639,9 @@
       "effect": "このクリーチャーが撃破されたとき、自分の場のクリーチャー1体の攻撃力を次のターンのみ+2する（強制）。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "wood_016",
@@ -2414,7 +2676,9 @@
       "effect": "自分のターン開始時、このクリーチャーは隣接する空きマスに移動する(強制。移動先はプレイヤーが選ぶ。向きは変更しない。空きマスがなければ移動しない)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "earth_015",
@@ -2449,7 +2713,9 @@
       "effect": "相手がこのクリーチャーに隣接するマスにクリーチャーを召喚したとき、そのクリーチャーに1ダメージ。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "neutral_014",
@@ -2458,8 +2724,8 @@
       "cost": 2,
       "vp": 1,
       "hp": 3,
-      "atk": 2,
-      "reactivation_cost": 2,
+      "atk": 1,
+      "reactivation_cost": 1,
       "attribute": "無",
       "attack_cells": [
         [
@@ -2471,27 +2737,22 @@
         [
           1,
           0
-        ],
+        ]
+      ],
+      "weakness_cells": [
         [
           -1,
           0
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          0,
-          -1
         ]
       ],
-      "weakness_cells": [],
       "attack_type": "物理",
       "keywords": [],
       "effect": "",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "wood_017",
@@ -2523,10 +2784,12 @@
       ],
       "attack_type": "物理",
       "keywords": [],
-      "effect": "召喚時、隣接する敵クリーチャー全ての向きをこのクリーチャーの方向に強制変更する。",
+      "effect": "",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "wood_018",
@@ -2536,7 +2799,7 @@
       "vp": 3,
       "hp": 5,
       "atk": 4,
-      "reactivation_cost": 4,
+      "reactivation_cost": 3,
       "attribute": "木",
       "attack_cells": [
         [
@@ -2548,27 +2811,22 @@
         [
           1,
           0
-        ],
+        ]
+      ],
+      "weakness_cells": [
         [
           -1,
           0
-        ],
-        [
-          0,
-          1
-        ],
-        [
-          0,
-          -1
         ]
       ],
-      "weakness_cells": [],
       "attack_type": "物理",
       "keywords": [],
       "effect": "場にいる間、自分のクリーチャー全ての体力+1（永続）。自分のターン開始時、カードを1枚引く。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "water_021",
@@ -2603,7 +2861,9 @@
       "effect": "召喚時、自分の場の他のクリーチャー1体のATKをこのクリーチャーにコピー(永続)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "neutral_016",
@@ -2642,7 +2902,9 @@
       "effect": "召喚時、自分の墓地のクリーチャー1体を選び、そのATKをこのクリーチャーに加算する（永続）。前方2マスを貫通攻撃する。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 2,
+      "attack_target_count": 2
     },
     {
       "id": "water_022",
@@ -2677,7 +2939,9 @@
       "effect": "自分がスペルを唱えるたび、カードを1枚引く。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     },
     {
       "id": "fire_018",
@@ -2687,7 +2951,7 @@
       "vp": 2,
       "hp": 4,
       "atk": 2,
-      "reactivation_cost": 3,
+      "reactivation_cost": 1,
       "attribute": "火",
       "attack_cells": [
         [
@@ -2712,7 +2976,9 @@
       "effect": "場にいる間、自分のクリーチャーが受ける反撃ダメージを-1する(最低1)。",
       "ult": null,
       "has_overlay": false,
-      "attack_mode": "simultaneous"
+      "attack_mode": "simultaneous",
+      "attack_range_count": 1,
+      "attack_target_count": 1
     }
   ],
   "items": [
@@ -2925,14 +3191,6 @@
       "effect": "このターン中、自分のクリーチャーが受けるダメージを-1する(最低1)。"
     },
     {
-      "id": "spell_earth_011",
-      "name": "再臨の儀",
-      "attribute": "土",
-      "cost": 3,
-      "faction": "cip",
-      "effect": "自分の墓地のクリーチャー1体を選び、そのクリーチャーの召喚時効果を発動する(クリーチャーは墓地に残る)。"
-    },
-    {
       "id": "spell_fire_008",
       "name": "突撃命令",
       "attribute": "火",
@@ -3003,7 +3261,7 @@
       "faction": "spell",
       "source_card_id": "fire_ace_001",
       "name": "全知の詠唱",
-      "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
+      "condition": "相手の場にクリーチャーが3体以上いる(1ゲーム1回)",
       "effect": "自分の墓地のスペル1枚を選び、このターン無料で2回使用する。"
     },
     {
@@ -3011,7 +3269,7 @@
       "faction": "aggro",
       "source_card_id": "fire_ace_002",
       "name": "殲滅令",
-      "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
+      "condition": "相手の場にクリーチャーが3体以上いる(1ゲーム1回)",
       "effect": "このターン、自分のクリーチャー全てに『連撃』を付与する。このターン、自分のクリーチャーが敵を撃破して得るVPは+1される。"
     },
     {
@@ -3019,7 +3277,7 @@
       "faction": "cip",
       "source_card_id": "water_ace_001",
       "name": "無限再演",
-      "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
+      "condition": "相手の場にクリーチャーが3体以上いる(1ゲーム1回)",
       "effect": "このターン、自分の場の全クリーチャーの召喚時効果をもう1回ずつ発動する。"
     },
     {
@@ -3027,7 +3285,7 @@
       "faction": "meta",
       "source_card_id": "earth_ace_001",
       "name": "大粛清",
-      "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
+      "condition": "相手の場にクリーチャーが3体以上いる(1ゲーム1回)",
       "effect": "敵クリーチャーまたは敵プレイヤーに合計6ダメージを割り振る。"
     },
     {
@@ -3035,7 +3293,7 @@
       "faction": "defense",
       "source_card_id": "earth_ace_002",
       "name": "代行召喚",
-      "condition": "フィールドにクリーチャーが合計6体以上いる(1ゲーム1回)",
+      "condition": "相手の場にクリーチャーが3体以上いる(1ゲーム1回)",
       "effect": "手札からマナコスト5以下のクリーチャー1体を、空きマスにコスト無料で召喚する。このウルトを使用したターンは、自分のターン終了時の陣取り勝利判定を行わない。"
     }
   ]

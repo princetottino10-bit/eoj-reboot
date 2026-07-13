@@ -42,7 +42,7 @@
 |--------|-----------|------|
 | 攻撃範囲（attack_cells） | ✅ | `combat.ts / board.ts: getAttackCells` |
 | 物理・魔法攻撃タイプ | ✅ | `AttackOptions.attackType` |
-| B位置（弱点方向）ダメージ+1 | ✅ | `combat.ts: isBlindSpot` |
+| B位置（弱点方向）ダメージ+2 | ✅ | `combat.ts: isBlindSpot` |
 | 防護（ダメージ-1） | ✅ | キーワード＋マーカー両対応 |
 | 回避（物理攻撃を無効） | ✅ | キーワード＋マーカー両対応 |
 | 貫通（防護・回避を無視） | ✅ | キーワード＋マーカー両対応 |

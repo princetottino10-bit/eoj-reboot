@@ -304,6 +304,7 @@ function renderCardFace(entry: ReviewCard): string {
       <div class="review-card-sub">${escapeHtml(FACTION_NAMES[card.faction] ?? card.faction)} / ${escapeHtml(card.id)}</div>
       <div class="review-stat-row">
         <span>HP ${card.hp}</span><span>ATK ${card.atk}</span><span>VP ${card.vp}</span><span>再 ${card.reactivation_cost}</span>
+        <span>範囲 ${card.attack_range_count}</span><span>対象 ${card.attack_target_count}</span>
       </div>
       <div class="review-tags">${card.keywords.map((kw) => `<span>${escapeHtml(kw)}</span>`).join("") || "<em>キーワードなし</em>"}</div>
       <div class="review-attack-mode">${escapeHtml(attackModeLabel(card))}</div>
@@ -348,6 +349,8 @@ function renderInspector(entry: ReviewCard): string {
       <dt>ID</dt><dd>${escapeHtml(c.id)}</dd>
       <dt>派閥</dt><dd>${escapeHtml(FACTION_NAMES[c.faction] ?? c.faction)}</dd>
       <dt>攻撃</dt><dd>${escapeHtml(renderCoordList(c.attack_cells))}</dd>
+      <dt>範囲数</dt><dd>${c.attack_range_count}</dd>
+      <dt>対象数</dt><dd>${c.attack_target_count}</dd>
       <dt>反撃</dt><dd>${escapeHtml(renderCoordList(c.counter_cells))}</dd>
       <dt>弱点</dt><dd>${escapeHtml(renderCoordList(c.weakness_cells))}</dd>
       <dt>攻撃方式</dt><dd>${escapeHtml(attackModeLabel(c))}</dd>

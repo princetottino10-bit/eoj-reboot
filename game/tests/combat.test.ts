@@ -56,12 +56,12 @@ describe("calcDamage", () => {
     ).toBe(3);
   });
 
-  it("B位置ボーナス: ATK+1", () => {
+  it("B位置ボーナス: ATK+2", () => {
     const attacker = makeChar({ owner: 0, atk: 2 });
     const defender = makeChar({ owner: 1 });
     expect(
       calcDamage(attacker, defender, { isBlind: true, teamDR: false }),
-    ).toBe(3);
+    ).toBe(4);
   });
 
   it("防護キーワード: ダメージ-1", () => {
@@ -127,15 +127,15 @@ describe("calcDamage", () => {
     ).toBe(2);
   });
 
-  it("B位置+防護: ATK+1 から防護-1", () => {
+  it("B位置+防護: ATK+2 から防護-1", () => {
     const attacker = makeChar({ owner: 0, atk: 3 });
     const defender = makeChar({ owner: 1, keywords: ["防護"] });
     expect(
       calcDamage(attacker, defender, { isBlind: true, teamDR: false }),
-    ).toBe(3); // 3+1-1=3
+    ).toBe(4); // 3+2-1=4
   });
 
-  it("魔法攻撃: B位置でもATK+1しない", () => {
+  it("魔法攻撃: B位置でもATK+2しない", () => {
     const attacker = makeChar({ owner: 0, atk: 2 });
     const defender = makeChar({ owner: 1 });
     expect(
@@ -147,7 +147,7 @@ describe("calcDamage", () => {
     ).toBe(2);
   });
 
-  it("物理攻撃(明示): B位置でATK+1", () => {
+  it("物理攻撃(明示): B位置でATK+2", () => {
     const attacker = makeChar({ owner: 0, atk: 2 });
     const defender = makeChar({ owner: 1 });
     expect(
@@ -156,7 +156,7 @@ describe("calcDamage", () => {
         teamDR: false,
         attackType: "physical",
       }),
-    ).toBe(3);
+    ).toBe(4);
   });
 });
 
@@ -253,7 +253,7 @@ describe("resolveAttack", () => {
     expect(board[4]?.hp).toBe(3); // P1も反撃を受ける: 5 - 2 = 3
   });
 
-  it("B位置から攻撃: ダメージ+1、反撃なし", () => {
+  it("B位置から攻撃: ダメージ+2、反撃なし", () => {
     // P1を index 7 (P2の真後ろ = P2のDOWN向き時の後方=上) に移動
     // P2 は DOWN向き, weakness = [[-1,0]] = ローカル後方 = ボード上 = index 1
     // P1 が DOWN向きのP2の後方(index 1の上=上側)から攻撃するため、P1をindex 4に置いてP2をindex 7に移動
@@ -272,9 +272,9 @@ describe("resolveAttack", () => {
       weaknessCells: weakCells,
     });
     expect(result.isBlind).toBe(true);
-    expect(result.defenderDamage).toBe(3); // 2 + 1 (B位置ボーナス)
+    expect(result.defenderDamage).toBe(4); // 2 + 2 (B位置ボーナス)
     expect(result.counterDamage).toBe(0); // B位置なので反撃なし
-    expect(board[4]?.hp).toBe(1); // 4 - 3 = 1
+    expect(board[4]).toBeNull(); // 4 - 4 = 0
     expect(board[1]?.hp).toBe(5); // 反撃なし
   });
 
@@ -376,7 +376,7 @@ describe("resolveAttack", () => {
     });
     expect(board[4]).toBeNull();
     expect(result.counterFirst).toBe(true);
-    expect(result.counterVpAwarded).toBe(2); // cost=3-4 → 2VP
+    expect(result.counterVpAwarded).toBe(1); // cost=1-4 -> 1 life damage
   });
 
   it("反撃ダメージに teamDR が適用される", () => {
@@ -404,7 +404,7 @@ describe("resolveAttack", () => {
     expect(board[4]?.hp).toBe(5); // 反撃なし
   });
 
-  it("魔法攻撃: B位置でもダメージ+1しない", () => {
+  it("魔法攻撃: B位置でもダメージ+2しない", () => {
     // P1(idx=1,UP) が P2(idx=4,DOWN) を真後ろから魔法攻撃
     // P2(DOWN向き) の weakness[[-1,0]] → ローカル後方 = board idx=1 → B位置
     board[4] = null;
