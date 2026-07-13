@@ -4,6 +4,19 @@
 
 - **`card-gen/`** — 印刷用カードPDFを生成するツール（Python + fpdf2）
 - **`game/`** — ブラウザで遊べるゲーム実装（TypeScript + Vite）
+- **`scripts/`** — バランス調整用のシミュレーション（`explore-stat-curves.cjs`）
+- **`docs/`** — バランス設計ドキュメント・シミュ結果・レポート（索引は [docs/README.md](docs/README.md)）
+
+## バランス設計ドキュメント
+
+ゲーム数値のバランス調整はシミュレーション主導で進めている。経緯・KPI・確定した数値・各検証レポートはすべて `docs/` にある。まずは以下から:
+
+- [docs/README.md](docs/README.md) — docsフォルダ全体の索引
+- [docs/balance-overview.md](docs/balance-overview.md) — 確定した数値・カーブ・KPIのチーム向けサマリー
+- [docs/balance-roadmap.md](docs/balance-roadmap.md) — フェーズ計画と裁定の記録
+- [docs/test-package-0718.md](docs/test-package-0718.md) — プレイテスト用のルール・数値パッケージ
+
+生データと凍結スナップショット（再現コマンド・SHA記録つき）は `docs/baselines/` にある。
 
 ## 必要環境
 
@@ -69,9 +82,14 @@ eoj-reboot/
 │   ├── src/engine/         # ゲームロジック（TypeScript）
 │   ├── src/ui/             # ブラウザ UI
 │   └── tests/              # vitest テスト
+├── scripts/
+│   └── explore-stat-curves.cjs  # バランス調整用シミュレーション
 ├── docs/
-│   ├── EOJR_Rulebook.md    # 公式ルールブック（全文）
-│   └── cards.md            # カードリスト（just md で生成）
+│   ├── README.md           # docs索引（バランス設計ドキュメントの入口）
+│   ├── balance-*.md        # バランス設計（overview / roadmap ほか）
+│   ├── baselines/          # シミュ結果・凍結スナップショット（SHA記録つき）
+│   ├── cards.md            # カードリスト（just md で生成）
+│   └── EOJR_Rulebook.md    # 旧ルールブック（正本は RULE_SPEC.md）
 └── justfile                # タスクランナー定義
 ```
 
