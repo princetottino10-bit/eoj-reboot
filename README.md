@@ -72,36 +72,49 @@ just deploy
 ```
 eoj-reboot/
 ├── data/
-│   ├── cards.json          # カードデータ（キャラクター・アイテム）
-│   ├── cards.schema.json   # cards.json の JSON スキーマ
-│   └── rulebook.md         # ゲームエンジン向けルール抜粋
+│   ├── cards.json               # カードデータ（キャラクター・アイテム）
+│   ├── cards.schema.json        # cards.json の JSON スキーマ
+│   ├── card-change-history.json # カード変更履歴
+│   ├── card-review-notes.json   # カードレビューメモ
+│   └── rulebook.md              # ゲームエンジン向けルール抜粋
 ├── card-gen/
-│   ├── generate_cards.py   # 印刷用 PDF 生成スクリプト
-│   └── generate_card_md.py # カードリスト Markdown 生成スクリプト
+│   ├── generate_cards.py        # 印刷用 PDF 生成スクリプト
+│   ├── generate_card_md.py      # カードリスト Markdown 生成スクリプト
+│   └── pyproject.toml           # Python 依存定義（uv）
 ├── game/
-│   ├── src/engine/         # ゲームロジック（TypeScript）
-│   ├── src/ui/             # ブラウザ UI
-│   └── tests/              # vitest テスト
-├── scripts/
-│   └── explore-stat-curves.cjs  # バランス調整用シミュレーション
+│   ├── src/engine/              # ゲームロジック（TypeScript）
+│   ├── src/ui/                  # ブラウザ UI
+│   ├── src/data/               # ゲーム用データ読み込み
+│   ├── src/firebase/           # Firebase 連携
+│   └── tests/                   # vitest テスト
+├── scripts/                     # ビルド・変換・シミュレーション各種スクリプト
+│   ├── explore-stat-curves.cjs  # バランス調整用シミュレーション（主）
+│   ├── generate-print-kit.ts    # 印刷キット生成
+│   └── （他: カード/エンジン更新・レポート生成など多数）
 ├── docs/
-│   ├── README.md           # docs索引（バランス設計ドキュメントの入口）
-│   ├── balance-*.md        # バランス設計（overview / roadmap ほか）
-│   ├── baselines/          # シミュ結果・凍結スナップショット（SHA記録つき）
-│   ├── cards.md            # カードリスト（just md で生成）
-│   └── EOJR_Rulebook.md    # 旧ルールブック（正本は RULE_SPEC.md）
-└── justfile                # タスクランナー定義
+│   ├── README.md                # docs索引（バランス設計ドキュメントの入口）
+│   ├── balance-*.md             # バランス設計（overview / roadmap ほか）
+│   ├── baselines/               # シミュ結果・凍結スナップショット（SHA記録つき）
+│   ├── cards.md                 # カードリスト（just md で生成）
+│   └── EOJR_Rulebook.md         # 旧ルールブック（正本は RULE_SPEC.md）
+├── run-sim.ts                   # シミュレーション実行エントリ
+├── firebase.json / firestore.rules  # Firebase 設定
+└── justfile                     # タスクランナー定義
 ```
+
+> 注: ルート直下には `sim-results-*.json` やシミュ実行ログ（`*.log`）など、シミュレーションの生成物も置かれる。
 
 ## カードデータの編集
 
 `data/cards.json` を編集してカードを追加・変更できます。スキーマ定義は `data/cards.schema.json` を参照してください。
 
-**キャラクターID形式:** `{faction}_v2_{連番2桁}` （例: `aggro_v2_01`）
+**キャラクターID形式:** `{属性英名}_{連番3桁}` （例: `fire_001`）
 
-**派閥:** `aggro` / `tank` / `control` / `synergy` / `snipe` / `trick`
+**派閥:** `cip` / `aggro` / `spell` / `inheritance` / `mobility` / `defense` / `meta`
 
-**属性:** `拳` / `念` / `光` / `闇` / `虚`
+**属性:** `火` / `水` / `土` / `木` / `無`
+
+> 注: テーマ移行（→ 3x3 Duel／式神テーマ、属性 地水火風空）を進行中。上記は現行 `data/cards.json` の値。正本ルールは RULE_SPEC.md 側で新テーマに移行済みだが、カードデータ・ゲーム実装への反映は今後のフェーズで行う。
 
 **攻撃範囲 (`attack_cells`):**
 - `[[row, col], ...]` — 相対座標（row正=前方、col正=右）
