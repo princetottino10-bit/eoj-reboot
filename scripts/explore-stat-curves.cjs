@@ -36,6 +36,10 @@ const SHAPES_0718_D1_OUT_PATH = path.join(ROOT, "docs", "baselines", "shapes-071
 const SHAPES_0718_D1_MD_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718-d1.md");
 const SHAPES_0718_M_OUT_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718-m-results.json");
 const SHAPES_0718_M_MD_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718-m.md");
+const SHAPES_0718_T_OUT_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718-t-results.json");
+const SHAPES_0718_T_MD_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718-t.md");
+const SHAPES_0718_PRINT_OUT_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718-print-confirmation-results.json");
+const SHAPES_0718_PRINT_MD_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718-print-confirmation.md");
 
 const FOCUS_FACTIONS = ["cip", "aggro", "spell", "defense"];
 const BOARD_ATTRS = ["火", "火", "水", "水", "土", "土", "木", "木", "無"];
@@ -83,6 +87,16 @@ const PURE_SHAPES_M_0718 = [
   { shape: "senpu", name: "旋風", count: 1, cost: 6, attackCells: [[1, 0], [-1, 0], [0, 1], [0, -1]], weaknessCells: [[-1, 0]] },
   { shape: "ryu", name: "竜", count: 1, cost: 7, attackCells: [[1, 0], [2, 0], [0, 1], [0, -1]], weaknessCells: [[-1, 0]] },
 ];
+const PURE_SHAPES_T1_0718 = PURE_SHAPES_M_0718.map((shape) => ({
+  ...shape,
+  count: shape.shape === "kenshi" ? 2 : shape.shape === "juken" ? 4 : shape.count,
+}));
+const PURE_SHAPES_PRINT_0718 = PURE_SHAPES_M_0718.map((shape) => ({
+  ...shape,
+  attackCells: shape.shape === "senpu"
+    ? [[1, -1], [1, 0], [1, 1], [0, -1], [0, 1]]
+    : shape.attackCells,
+}));
 const REACT_NEED_TYPES = ["unneeded", "attackRequired", "rotationRequired", "eitherRequired"];
 
 function emptyShapeStats(shapeDefinitions = PURE_SHAPES_0718) {
@@ -174,6 +188,8 @@ function parseArgs(argv) {
     shapes0718: false,
     shapes0718D1: false,
     shapes0718M: false,
+    shapes0718T: false,
+    shapes0718Print: false,
     phase2aPrimarySamples: 1000,
     phase2aSecondarySamples: 2000,
     phase2aRobustnessSamples: 1000,
@@ -269,6 +285,16 @@ function parseArgs(argv) {
     }
     else if (arg === "--shapes-0718-m") {
       args.shapes0718M = true;
+      args.oracle = true;
+      args.checkSearchDepth = 6;
+    }
+    else if (arg === "--shapes-0718-t") {
+      args.shapes0718T = true;
+      args.oracle = true;
+      args.checkSearchDepth = 6;
+    }
+    else if (arg === "--shapes-0718-print") {
+      args.shapes0718Print = true;
       args.oracle = true;
       args.checkSearchDepth = 6;
     }
@@ -638,7 +664,7 @@ function pureAttributeBag(random, size) {
 }
 
 function generatePureCard(variant, cost, attribute, idSuffix) {
-  const hp = HP_CURVES[variant.hp][cost];
+  const hp = variant.hpOverrides?.[cost] ?? HP_CURVES[variant.hp][cost];
   const atk = ATK_CURVES[variant.atk][cost];
   const reactCurve = variant.reactCostCurve ?? REACT_CURVES[variant.react];
   const reactivation = reactCurve[cost];
@@ -6683,6 +6709,206 @@ function runShapes0718M(args) {
   console.log(`Wrote ${path.relative(ROOT, SHAPES_0718_M_MD_PATH)}`);
 }
 
+function shapes0718TMarkdown(output, { resultJsonSha256 }) {
+  const metrics = shapes0718MetricRows(output.runs.T1.summary, output.baseline.summary);
+  const lines = [
+    "# 7/18 形状構成 もう1段トリム Tバッチ",
+    "",
+    `Date: ${output.generatedAt}`,
+    "",
+    "## 全KPI 4列比較",
+    "",
+    "| 指標 | 素体R1 | M1a | T1 | T2 |",
+    "|---|---:|---:|---:|---:|",
+  ];
+  for (const row of metrics) {
+    lines.push(`| ${row.label} | ${shapes0718MMetricFormat(row.key, output.baseline.summary[row.key] ?? 0)} | ${shapes0718MMetricFormat(row.key, output.m1a.summary[row.key] ?? 0)} | ${shapes0718MMetricFormat(row.key, output.runs.T1.summary[row.key] ?? 0)} | ${shapes0718MMetricFormat(row.key, output.runs.T2.summary[row.key] ?? 0)} |`);
+  }
+  lines.push(
+    "",
+    "先手勝率は各2000試合の参考値であり、判定には使わない。",
+    "",
+    "## T1/T2形状別内訳",
+    "",
+    "| 形状 | 指標 | T1 | T2 |",
+    "|---|---|---:|---:|",
+  );
+  for (const shape of PURE_SHAPES_M_0718) {
+    for (const [key, label] of [["kills", "撃破数"], ["deaths", "被撃破数"], ["attackOnlyReacts", "③攻撃再命令"], ["rotateAttackReacts", "②回転攻撃"]]) {
+      lines.push(`| ${shape.name} (${shape.shape}) | ${label} | ${output.runs.T1.summary.shapeStats[shape.shape]?.[key] ?? 0} | ${output.runs.T2.summary.shapeStats[shape.shape]?.[key] ?? 0} |`);
+    }
+  }
+  lines.push(
+    "",
+    "## 構成と実装ノート",
+    "",
+    "- T1はMデッキから剣士4→2、重剣2→4。T2はMデッキの枚数を維持し、C2/C3のみHPを+1した。",
+    "- T1/T2とも反撃範囲=攻撃範囲を固定。撃破済み反撃不可、死角反撃不可、物理のみの裁定を継続した。",
+    "- ステータス・霊力・再命令コスト・攻撃範囲・AI・チェック探索・オラクル以外のルールは変更していない。",
+    "",
+    "## 再現情報",
+    "",
+    "```powershell",
+    output.reproducibility.command,
+    "```",
+    "",
+    "| Artifact | Value |",
+    "|---|---|",
+    `| Repo HEAD | \`${output.reproducibility.repoHead}\` |`,
+    `| Script SHA256 | \`${output.reproducibility.scriptSha256}\` |`,
+    `| Result JSON SHA256 | \`${resultJsonSha256}\` |`,
+    `| Games per run | ${output.reproducibility.gamesPerRun} |`,
+    `| Seed | ${output.reproducibility.seed} |`,
+    `| Oracle / depth | yes / ${output.reproducibility.checkSearchDepth} |`,
+    "",
+    `JSON: \`${SHAPES_0718_T_OUT_PATH}\``,
+  );
+  return `${lines.join("\n")}\n`;
+}
+
+function runShapes0718T(args) {
+  fs.mkdirSync(path.dirname(SHAPES_0718_T_OUT_PATH), { recursive: true });
+  const base = makeBaselineV31CenterVariant();
+  const t1 = { ...base, name: "shapes_0718_T1_counter_attack", phase: "shapes-0718-t", shapeDeck0718: true, shapeDefinitions: PURE_SHAPES_T1_0718, counterFront1: false };
+  const t2 = { ...base, name: "shapes_0718_T2_low_cost_hp_plus1", phase: "shapes-0718-t", shapeDeck0718: true, shapeDefinitions: PURE_SHAPES_M_0718, counterFront1: false, hpOverrides: { 2: 3, 3: 4 } };
+  const runs = {
+    T1: runShapes0718MVariant(t1, args, "shapes 0718 T1"),
+    T2: runShapes0718MVariant(t2, args, "shapes 0718 T2"),
+  };
+  const m = JSON.parse(fs.readFileSync(SHAPES_0718_M_OUT_PATH, "utf8"));
+  const phase2d = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "baselines", "phase2d-rotate-attack-results.json"), "utf8"));
+  const baselineRun = phase2d.runs.find((run) => run.variant.runId === "R1");
+  if (!baselineRun) throw new Error("Could not find R1 baseline in phase2d results");
+  const command = "node scripts\\explore-stat-curves.cjs --shapes-0718-t --seed 20260702";
+  const output = {
+    generatedAt: new Date().toISOString(),
+    status: "complete",
+    assumptions: { task: path.join(ROOT, "docs", "codex-task-shapes-0718-t.md"), configuration: "T1/T2 R1/v3.1 with counter range equal to attack range", oracle: true, checkSearchDepth: 6 },
+    reproducibility: { command, repoHead: gitHead(), scriptPath: __filename, scriptSha256: sha256File(__filename), gamesPerRun: 2000, seed: args.seed, oracle: true, checkSearchDepth: 6 },
+    baseline: { source: path.join(ROOT, "docs", "baselines", "phase2d-rotate-attack-results.json"), variant: baselineRun.variant, summary: baselineRun.summary },
+    m1a: { source: SHAPES_0718_M_OUT_PATH, run: m.runs.M1a, summary: m.runs.M1a.summary },
+    runs,
+  };
+  fs.writeFileSync(SHAPES_0718_T_OUT_PATH, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+  const resultJsonSha256 = sha256File(SHAPES_0718_T_OUT_PATH);
+  fs.writeFileSync(SHAPES_0718_T_MD_PATH, shapes0718TMarkdown(output, { resultJsonSha256 }), "utf8");
+  console.log(`Wrote ${path.relative(ROOT, SHAPES_0718_T_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, SHAPES_0718_T_MD_PATH)}`);
+}
+
+function shapes0718PrintMarkdown(output, { resultJsonSha256 }) {
+  const metrics = [
+    ["平均ラウンド", "avgRounds", "number"],
+    ["中央値R", "medianRounds", "number1"],
+    ["P90 R", "p90Rounds", "number1"],
+    ["占拠勝ち率", "territoryWinRate", "percent"],
+    ["生命勝ち率", "lifeWinRate", "percent"],
+    ["タイムアウト率", "timeoutRate", "percent"],
+    ["先手勝率", "p0WinRate", "percent"],
+    ["4チェック返し率", "check4ReturnRate", "percent"],
+    ["オラクル返答可能率", "check4OracleReturnableRate", "percent"],
+    ["撃破数/試合", "killsPerGame", "number"],
+    ["弱点撃破率", "weakKillRate", "percent"],
+    ["攻撃系再命令/試合", "attackReactivationsPerGame", "number"],
+    ["回転攻撃/試合", "rotateAttacksPerGame", "number"],
+    ["回転のみ/試合", "rotationsPerGame", "number"],
+    ["召喚手詰まり率", "summonStallRate", "percent"],
+    ["霊力利用率", "manaUtilization", "percent"],
+  ];
+  const format = (value, type) => type === "percent" ? formatPct(value ?? 0) : (value ?? 0).toFixed(type === "number1" ? 1 : 2);
+  const delta = (value, base, type) => type === "percent" ? fmtDeltaPct((value ?? 0) - (base ?? 0)) : fmtDelta((value ?? 0) - (base ?? 0), type === "number1" ? 1 : 2);
+  const lines = [
+    "# 7/18 印刷仕様 確認ラン",
+    "",
+    `生成日時: ${output.generatedAt}`,
+    "",
+    "印刷するカード仕様をそのまま2000試合計測した。判定や追加調整は行わず、旧T2との差分を記録する。",
+    "",
+    "## 構成",
+    "",
+    "- R1/v3.1: 再命令 heavy 2/3/3/3/3/4、回転攻撃あり",
+    "- 16枚: 鬼火4 / 小鬼4 / 槍霊1 / 薙刀霊1 / 鬼2 / 両面1 / 仁王1 / 九尾1 / 龍1",
+    "- HP: C2=3 / C3=4 / C4=5 / C5=6 / C6=7 / C7=8",
+    "- 九尾: 斜め前2 + 前1 + 左右の5マス",
+    "- 攻撃範囲=反撃範囲、全員 physical / choice / 対象1体",
+    "- 属性は各デッキで地・水・火・風を4枚ずつ均等シャッフル",
+    "",
+    "## KPI",
+    "",
+    "| 指標 | 印刷仕様 | 旧T2 | 差分 |",
+    "|---|---:|---:|---:|",
+  ];
+  for (const [label, key, type] of metrics) {
+    const value = output.run.summary[key];
+    const base = output.t2Reference.summary[key];
+    lines.push(`| ${label} | ${format(value, type)} | ${format(base, type)} | ${delta(value, base, type)} |`);
+  }
+  const shapeNames = {ashigaru:"鬼火", kenshi:"小鬼", kyuhei:"槍霊", fuhei:"薙刀霊", juken:"鬼", souto:"両面", taiken:"仁王", senpu:"九尾", ryu:"龍"};
+  lines.push("", "## 形状別", "", "| カード | 撃破/試合 | 被撃破/試合 | 攻撃のみ再命令/試合 | 回転攻撃/試合 |", "|---|---:|---:|---:|---:|");
+  for (const shape of PURE_SHAPES_PRINT_0718) {
+    const stat = output.run.summary.shapeStats[shape.shape];
+    lines.push(`| ${shapeNames[shape.shape]} | ${stat.killsPerGame.toFixed(2)} | ${stat.deathsPerGame.toFixed(2)} | ${stat.attackOnlyReactsPerGame.toFixed(2)} | ${stat.rotateAttackReactsPerGame.toFixed(2)} |`);
+  }
+  lines.push(
+    "",
+    "## 再現情報",
+    "",
+    `- Command: \`${output.reproducibility.command}\``,
+    `- Games: ${output.reproducibility.gamesPerRun}`,
+    `- Seed: ${output.reproducibility.seed}`,
+    `- Oracle / depth: yes / ${output.reproducibility.checkSearchDepth}`,
+    `- Repo HEAD: \`${output.reproducibility.repoHead}\``,
+    `- Script SHA256: \`${output.reproducibility.scriptSha256}\``,
+    `- Result SHA256: \`${resultJsonSha256}\``,
+    "",
+    `JSON: \`${SHAPES_0718_PRINT_OUT_PATH}\``,
+  );
+  return `${lines.join("\n")}\n`;
+}
+
+function runShapes0718Print(args) {
+  fs.mkdirSync(path.dirname(SHAPES_0718_PRINT_OUT_PATH), { recursive: true });
+  const variant = {
+    ...makeBaselineV31CenterVariant(),
+    name: "shapes_0718_print_c4hp5_kyubi5",
+    phase: "shapes-0718-print-confirmation",
+    shapeDeck0718: true,
+    shapeDefinitions: PURE_SHAPES_PRINT_0718,
+    counterFront1: false,
+    hpOverrides: { 2: 3, 3: 4, 4: 5 },
+  };
+  const run = runShapes0718MVariant(variant, args, "shapes 0718 print confirmation");
+  const previous = JSON.parse(fs.readFileSync(SHAPES_0718_T_OUT_PATH, "utf8"));
+  const command = "node scripts\\explore-stat-curves.cjs --shapes-0718-print --seed 20260702";
+  const output = {
+    generatedAt: new Date().toISOString(),
+    status: "complete",
+    assumptions: {
+      configuration: "7/18 printed kit: T2 deck, C4 HP5, five-cell diagonal-front Kyubi, counter range equals attack range",
+      attributeAssignment: "each 16-card deck gets an exactly even shuffled bag of earth/water/fire/wind",
+      oracle: true,
+      checkSearchDepth: 6,
+    },
+    reproducibility: {
+      command,
+      repoHead: gitHead(),
+      scriptPath: __filename,
+      scriptSha256: sha256File(__filename),
+      gamesPerRun: 2000,
+      seed: args.seed,
+      oracle: true,
+      checkSearchDepth: 6,
+    },
+    t2Reference: { source: SHAPES_0718_T_OUT_PATH, summary: previous.runs.T2.summary },
+    run,
+  };
+  fs.writeFileSync(SHAPES_0718_PRINT_OUT_PATH, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+  const resultJsonSha256 = sha256File(SHAPES_0718_PRINT_OUT_PATH);
+  fs.writeFileSync(SHAPES_0718_PRINT_MD_PATH, shapes0718PrintMarkdown(output, { resultJsonSha256 }), "utf8");
+  console.log(`Wrote ${path.relative(ROOT, SHAPES_0718_PRINT_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, SHAPES_0718_PRINT_MD_PATH)}`);
+}
+
 function main() {
   const args = parseArgs(process.argv);
   if (args.phase2aMainSearch) {
@@ -6731,6 +6957,14 @@ function main() {
   }
   if (args.shapes0718M) {
     runShapes0718M(args);
+    return;
+  }
+  if (args.shapes0718T) {
+    runShapes0718T(args);
+    return;
+  }
+  if (args.shapes0718Print) {
+    runShapes0718Print(args);
     return;
   }
   if (args.reactValueForked) {
