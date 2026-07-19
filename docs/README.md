@@ -6,9 +6,9 @@
 
 ## 現在地(2026-07-19 時点)
 
-- **⚠️ 配置ルール改元(paper紀元)を実行中**: 召喚の配置は「敵味方問わず隣接」が正式と裁定(2026-07-19)。従来のシミュ実装(自軍隣接のみ=strict紀元)は誤実装だったため、柱ベースラインをpaper紀元で再凍結中(`codex-task-era-paper.md`)。**baselines/ の既存数値はstrict紀元の測定であり、現行判断には再凍結後のpaper紀元の値を使うこと**
-- 現行ゲームの正基準(暫定) = 印刷仕様+紙ルール: 平均12.2R・撃破9.9体・生命勝ち8.0%・先手50.7%(v4-ablation.md B1。7/18で人間が遊んだゲームの姿)
-- 7/18後の再設計(v4方向: 撃破時霊力2・死角+1・陰陽属性+太極ほか)はプローブ・切り分け完了。チームの新目標(4軸)議論とpaper紀元での再測を経てv4.1選定へ
+- **配置ルール改元(paper紀元)完了**: 召喚の配置は「敵味方問わず隣接」が正式と裁定(2026-07-19)。従来のシミュ実装(自軍隣接のみ=strict紀元)は旧測定として仕分け済み。改元記録は [baselines/era-paper-migration.md](baselines/era-paper-migration.md)
+- 現行ゲームの正基準 = [baselines/print-spec-paper.md](baselines/print-spec-paper.md): 平均12.23R・撃破9.89体・生命勝ち8.0%・先手50.7%(7/18で人間が遊んだゲームの姿)
+- 7/18後の再設計(v4方向: 撃破時霊力2・死角+1・陰陽属性+太極ほか)はpaper紀元で [baselines/v4-probe-paper.md](baselines/v4-probe-paper.md) を再測済み。チームの新目標(4軸)議論を経てv4.1選定へ
 - ルール裁定・数値の確定履歴は [balance-roadmap.md](balance-roadmap.md) の検討事項トラッカー、判定の作法は [handoff-analysis-kpi.md](handoff-analysis-kpi.md) を参照。
 
 ## 現行(まずここを読む)
@@ -69,7 +69,10 @@
 
 | 文書 | 状態 |
 |---|---|
-| [baselines/pure-vanilla-baseline-v3.1.md](baselines/pure-vanilla-baseline-v3.1.md) | **現行の数値基盤**(R1採用構成) |
+| [baselines/print-spec-paper.md](baselines/print-spec-paper.md) | **現行ゲームの正基準**(7/18印刷仕様+紙ルール) |
+| [baselines/pure-vanilla-v31-paper.md](baselines/pure-vanilla-v31-paper.md) | v3.1素体基盤のpaper紀元版 |
+| [baselines/v4-probe-paper.md](baselines/v4-probe-paper.md) | v4候補のpaper紀元版 |
+| [baselines/pure-vanilla-baseline-v3.1.md](baselines/pure-vanilla-baseline-v3.1.md) | strict紀元のv3.1素体基準(paper版は上記を使用) |
 | [baselines/pure-vanilla-baseline-v3.md](baselines/pure-vanilla-baseline-v3.md) | v3(R1採用前の基準。対照群) |
 | [baselines/r1-firstplayer-32k.md](baselines/r1-firstplayer-32k.md) | 先手勝率3.2万試合 |
 | [baselines/react-value-forked-v2.md](baselines/react-value-forked-v2.md) | 再命令の損得(対称fork) |

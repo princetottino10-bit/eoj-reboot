@@ -44,6 +44,13 @@ const V4_PROBE_OUT_PATH = path.join(ROOT, "docs", "baselines", "v4-probe-results
 const V4_PROBE_MD_PATH = path.join(ROOT, "docs", "baselines", "v4-probe.md");
 const V4_ABLATION_OUT_PATH = path.join(ROOT, "docs", "baselines", "v4-ablation-results.json");
 const V4_ABLATION_MD_PATH = path.join(ROOT, "docs", "baselines", "v4-ablation.md");
+const PRINT_SPEC_PAPER_OUT_PATH = path.join(ROOT, "docs", "baselines", "print-spec-paper-results.json");
+const PRINT_SPEC_PAPER_MD_PATH = path.join(ROOT, "docs", "baselines", "print-spec-paper.md");
+const PURE_V31_PAPER_OUT_PATH = path.join(ROOT, "docs", "baselines", "pure-vanilla-v31-paper-results.json");
+const PURE_V31_PAPER_MD_PATH = path.join(ROOT, "docs", "baselines", "pure-vanilla-v31-paper.md");
+const V4_PROBE_PAPER_OUT_PATH = path.join(ROOT, "docs", "baselines", "v4-probe-paper-results.json");
+const V4_PROBE_PAPER_MD_PATH = path.join(ROOT, "docs", "baselines", "v4-probe-paper.md");
+const ERA_PAPER_MIGRATION_MD_PATH = path.join(ROOT, "docs", "baselines", "era-paper-migration.md");
 
 const FOCUS_FACTIONS = ["cip", "aggro", "spell", "defense"];
 const BOARD_ATTRS = ["火", "火", "水", "水", "土", "土", "木", "木", "無"];
@@ -60,6 +67,7 @@ const HAND_SIZE = 5;
 const DEFAULT_DECK_CREATURES = 12;
 const DRAFT_DECK_CREATURES = 16;
 const MAX_HALF_TURNS = 80;
+let DEFAULT_ANY_ADJACENT_SUMMON = true;
 const PURE_FACTION = "pure";
 const PURE_ATTRIBUTES = ["earth", "water", "fire", "wind"];
 const PURE_BOARD_ATTRS = ["water", "fire", "wind", "earth", "neutral", "water", "fire", "wind", "earth"];
@@ -200,6 +208,9 @@ function parseArgs(argv) {
     v4ProbeSamples: 2000,
     v4Ablation: false,
     v4AblationSamples: 2000,
+    eraPaper: false,
+    eraPaperSamples: 2000,
+    strictSummon: false,
     phase2aPrimarySamples: 1000,
     phase2aSecondarySamples: 2000,
     phase2aRobustnessSamples: 1000,
@@ -320,6 +331,16 @@ function parseArgs(argv) {
       args.checkSearchDepth = 6;
     }
     else if (arg === "--v4-ablation-samples") args.v4AblationSamples = Number(argv[++i] ?? args.v4AblationSamples);
+    else if (arg === "--era-paper") {
+      args.eraPaper = true;
+      args.oracle = true;
+      args.checkSearchDepth = 6;
+    }
+    else if (arg === "--era-paper-samples") args.eraPaperSamples = Number(argv[++i] ?? args.eraPaperSamples);
+    else if (arg === "--strict-summon") {
+      args.strictSummon = true;
+      DEFAULT_ANY_ADJACENT_SUMMON = false;
+    }
     else if (arg === "--phase2a-primary-samples") args.phase2aPrimarySamples = Number(argv[++i] ?? args.phase2aPrimarySamples);
     else if (arg === "--phase2a-secondary-samples") args.phase2aSecondarySamples = Number(argv[++i] ?? args.phase2aSecondarySamples);
     else if (arg === "--phase2a-robustness-samples") args.phase2aRobustnessSamples = Number(argv[++i] ?? args.phase2aRobustnessSamples);
@@ -2114,7 +2135,7 @@ function makeInitialState(p0Faction, p1Faction, cardsByFaction, variant, seed) {
     v4Probe: variant.v4Probe ?? false,
     taijiSummonDiscount: variant.taijiSummonDiscount ?? false,
     weakBonus: variant.weakBonus ?? WEAK_BONUS,
-    anyAdjacentSummon: variant.anyAdjacentSummon ?? false,
+    anyAdjacentSummon: variant.anyAdjacentSummon ?? DEFAULT_ANY_ADJACENT_SUMMON,
     fatigue: variant.fatigue ?? false,
     destroyManaGain: variant.destroyManaGain ?? DESTROY_MANA_GAIN,
     metrics: {
@@ -7409,7 +7430,7 @@ function v4AblationMarkdown(output, { resultJsonSha256 }) {
     "",
     "- A1〜A4はv4プローブ構成から記載の1プロパティだけを変更し、同じシード系列を使用した。",
     "- B1は7/18印刷仕様の数値・形状・属性・経済を維持し、`anyAdjacentSummon=true`だけを追加した。自軍式神が0体なら従来どおり任意空きマス、自軍式神が1体以上なら敵味方を問わず占有マスの上下左右に召喚可能。",
-    "- 既存モードの`anyAdjacentSummon`既定値はfalseで、過去ベースラインの配置挙動は変更していない。AI重み、勝利条件、チェック探索、オラクルは変更なし。",
+    "- 2026-07-19のpaper改元後、`anyAdjacentSummon`既定値はtrue。旧strict配置を再現する場合は`--strict-summon`を明示する。AI重み、勝利条件、チェック探索、オラクルは変更なし。",
     "- B1の『実質差』目安は先手2.2pt、平均R 0.3、撃破0.5、占拠/生命/返し率2pt。正式KPI帯ではなく、本バッチ内の効果量記述用。",
     "",
     "## 6. 再現情報",
@@ -7493,6 +7514,408 @@ function runV4Ablation(args) {
   console.log(`Wrote ${path.relative(ROOT, V4_ABLATION_MD_PATH)}`);
 }
 
+function makePaperPrintVariant() {
+  return {
+    ...makeBaselineV31CenterVariant(),
+    name: "print_spec_paper",
+    runId: "P-1",
+    phase: "era-paper-print-spec",
+    shapeDeck0718: true,
+    shapeDefinitions: PURE_SHAPES_PRINT_0718,
+    counterFront1: false,
+    hpOverrides: { 2: 3, 3: 4, 4: 5 },
+  };
+}
+
+function makeV4PaperVariant() {
+  return {
+    ...makeBaselineV31CenterVariant(),
+    name: "v4_probe_paper",
+    runId: "P-3",
+    phase: "era-paper-v4-probe",
+    v4Probe: true,
+    shapeDeck0718: true,
+    shapeDefinitions: PURE_SHAPES_PRINT_0718,
+    counterFront1: false,
+    hpOverrides: { 2: 2, 3: 3, 4: 5 },
+    pureAttributes: V4_ATTRIBUTES,
+    boardAttrs: V4_BOARD_ATTRS,
+    taijiSummonDiscount: true,
+    weakBonus: 1,
+    destroyManaGain: 2,
+  };
+}
+
+function paperEraRun(label, variant, samples, seedBase) {
+  return runVariantBatch(label, [variant], samples, seedBase)[0];
+}
+
+function paperMetricRows() {
+  return v4AblationMetricRows().filter(([label]) => !["太極占有率", "太極軽減/試合", "陰陽+2適用/試合", "陰陽-2適用/試合"].includes(label));
+}
+
+function paperEraFormat(value, type) {
+  return v4AblationFormat(value, type);
+}
+
+function paperEraDelta(value, base, type) {
+  return v4AblationDelta(value, base, type);
+}
+
+function paperEraSummaryTable(current, reference, referenceLabel = "strict") {
+  const lines = [
+    `| 指標 | paper | ${referenceLabel} | 差分 |`,
+    "|---|---:|---:|---:|",
+  ];
+  for (const [label, key, type] of paperMetricRows()) {
+    const value = nestedSummaryValue(current, key);
+    const base = nestedSummaryValue(reference, key);
+    lines.push(`| ${label} | ${paperEraFormat(value, type)} | ${paperEraFormat(base, type)} | ${paperEraDelta(value, base, type)} |`);
+  }
+  return lines;
+}
+
+function paperRegressionDiffs(actual, expected) {
+  const diffs = [];
+  for (const [, key] of paperMetricRows()) {
+    const value = nestedSummaryValue(actual, key);
+    const base = nestedSummaryValue(expected, key);
+    if (typeof value === "number" && typeof base === "number" && Math.abs(value - base) > 1e-12) {
+      diffs.push({ key, expected: base, actual: value, delta: value - base });
+    }
+  }
+  return diffs;
+}
+
+function paperReproTable(output, resultJsonSha256, jsonPath) {
+  return [
+    "## 再現情報",
+    "",
+    "```powershell",
+    output.reproducibility.command,
+    "```",
+    "",
+    "| Artifact | Value |",
+    "|---|---|",
+    `| Repo HEAD | \`${output.reproducibility.repoHead}\` |`,
+    `| Script SHA256 | \`${output.reproducibility.scriptSha256}\` |`,
+    `| Result JSON SHA256 | \`${resultJsonSha256}\` |`,
+    `| Games | ${output.reproducibility.gamesPerRun} |`,
+    `| Seed | ${output.reproducibility.seed} |`,
+    `| Oracle / depth | yes / ${output.reproducibility.checkSearchDepth} |`,
+    "",
+    `JSON: \`${jsonPath}\``,
+  ];
+}
+
+function printSpecPaperMarkdown(output, { resultJsonSha256 }) {
+  const paper = output.run.summary;
+  const strict = output.strictReference.summary;
+  const b1 = output.b1Regression.expectedSummary;
+  const diffs = output.b1Regression.diffs;
+  const lines = [
+    "# print-spec-paper",
+    "",
+    "Status: **paper紀元・凍結資料**",
+    `Date: ${output.generatedAt}`,
+    "",
+    "## 0. 結論",
+    "",
+    "紙ルール正式化後の現行ゲーム正基準。7/18印刷仕様に配置ルール「敵味方問わず隣接」を適用した2000試合ランで、旧v4-ablation B1と同一seed回帰確認を行った。",
+    "",
+    `- P-1: 平均 ${paper.avgRounds.toFixed(2)}R / 先手 ${formatPct(paper.p0WinRate)} / 撃破 ${paper.killsPerGame.toFixed(2)}/試合 / 生命勝ち ${formatPct(paper.lifeWinRate)} / 4チェック返し ${formatPct(paper.check4ReturnRate)}`,
+    `- B1回帰確認: ${diffs.length === 0 ? "一致" : `不一致 ${diffs.length}項目`}`,
+    `- strict印刷仕様との差: 平均 ${fmtDelta(paper.avgRounds - strict.avgRounds, 2)}R、撃破 ${fmtDelta(paper.killsPerGame - strict.killsPerGame, 2)}/試合、弱点撃破率 ${fmtDeltaPct(paper.weakKillRate - strict.weakKillRate)}`,
+    "",
+    "## 1. strict印刷仕様との差分",
+    "",
+    ...paperEraSummaryTable(paper, strict, "strict印刷仕様"),
+    "",
+    "## 2. B1回帰確認",
+    "",
+    "| 指標 | P-1 | 旧B1 | 差分 |",
+    "|---|---:|---:|---:|",
+  ];
+  for (const [label, key, type] of paperMetricRows()) {
+    const value = nestedSummaryValue(paper, key);
+    const base = nestedSummaryValue(b1, key);
+    lines.push(`| ${label} | ${paperEraFormat(value, type)} | ${paperEraFormat(base, type)} | ${paperEraDelta(value, base, type)} |`);
+  }
+  lines.push(
+    "",
+    "## 3. 実装ノート",
+    "",
+    "- `anyAdjacentSummon`の既定値をpaperルールへ切り替えた状態で実行した。旧strict挙動は`--strict-summon`で再現可能。",
+    "- 印刷キット、カード形状、AI重み、勝利条件、霊力、再命令、オラクルは変更していない。",
+    "- 自軍式神0体なら任意空きマス、自軍式神1体以上なら敵味方問わず占有マスに上下左右隣接する空きマスへ召喚可能。",
+    "",
+    ...paperReproTable(output, resultJsonSha256, PRINT_SPEC_PAPER_OUT_PATH),
+  );
+  return `${lines.join("\n")}\n`;
+}
+
+function pureV31PaperMarkdown(output, { resultJsonSha256 }) {
+  const paper = output.run.summary;
+  const strict = output.strictReference.summary;
+  const lines = [
+    "# pure-vanilla-v31-paper",
+    "",
+    "Status: **paper紀元・凍結資料**",
+    `Date: ${output.generatedAt}`,
+    "",
+    "## 0. 結論",
+    "",
+    "v3.1素体基盤を紙ルールで再凍結した。配置以外の数値・AI・ルールはv3.1から変更していない。",
+    "",
+    `- P-2: 平均 ${paper.avgRounds.toFixed(2)}R / 先手 ${formatPct(paper.p0WinRate)} / 撃破 ${paper.killsPerGame.toFixed(2)}/試合 / 占拠 ${formatPct(paper.territoryWinRate)} / 4チェック返し ${formatPct(paper.check4ReturnRate)}`,
+    `- 旧v3.1 strictとの差: 平均 ${fmtDelta(paper.avgRounds - strict.avgRounds, 2)}R、先手 ${fmtDeltaPct(paper.p0WinRate - strict.p0WinRate)}、撃破 ${fmtDelta(paper.killsPerGame - strict.killsPerGame, 2)}/試合`,
+    `- 先手勝率は2000試合では約±2.2ptの参考値。32k strict値50.1%との精密比較ではなく、paper紀元の初期確認として読む。`,
+    "",
+    "## 1. strict v3.1との差分",
+    "",
+    ...paperEraSummaryTable(paper, strict, "strict v3.1"),
+    "",
+    "## 2. 実装ノート",
+    "",
+    "- v3.1(R1): HP 2/3/4/6/7/8、ATK 1/2/2/3/3/4、再命令heavy 2/3/3/3/3/4、回転攻撃あり、lowmid分布、先手3/後手4、dm1。",
+    "- 変更したのは召喚配置の既定値のみ。素体、属性、盤面、勝利条件、AI、チェック探索、オラクルは旧v3.1と同一。",
+    "",
+    ...paperReproTable(output, resultJsonSha256, PURE_V31_PAPER_OUT_PATH),
+  ];
+  return `${lines.join("\n")}\n`;
+}
+
+function v4ProbePaperMarkdown(output, { resultJsonSha256 }) {
+  const paper = output.run.summary;
+  const strict = output.strictReference.summary;
+  const lines = [
+    "# v4-probe-paper",
+    "",
+    "Status: **paper紀元・提案材料（採否判定なし）**",
+    `Date: ${output.generatedAt}`,
+    "",
+    "## 0. 結論",
+    "",
+    "v4プローブ構成を紙ルール上で再測定した。v4の多ノブ同時変更はそのままなので、ここでは採否ではなくstrict v4からの構造差を読む。",
+    "",
+    `- P-3: 平均 ${paper.avgRounds.toFixed(2)}R / 先手 ${formatPct(paper.p0WinRate)} / 撃破 ${paper.killsPerGame.toFixed(2)}/試合 / 生命勝ち ${formatPct(paper.lifeWinRate)} / 4チェック返し ${formatPct(paper.check4ReturnRate)}`,
+    `- strict v4との差: 平均 ${fmtDelta(paper.avgRounds - strict.avgRounds, 2)}R、先手 ${fmtDeltaPct(paper.p0WinRate - strict.p0WinRate)}、撃破 ${fmtDelta(paper.killsPerGame - strict.killsPerGame, 2)}/試合、生命勝ち ${fmtDeltaPct(paper.lifeWinRate - strict.lifeWinRate)}`,
+    "",
+    "## 1. strict v4との差分",
+    "",
+    ...paperEraSummaryTable(paper, strict, "strict v4"),
+    "",
+    "## 2. v4固有指標",
+    "",
+    "| 指標 | paper | strict v4 | 差分 |",
+    "|---|---:|---:|---:|",
+  ];
+  for (const [label, key, type] of v4AblationMetricRows().filter(([label]) => ["太極占有率", "太極軽減/試合", "陰陽+2適用/試合", "陰陽-2適用/試合"].includes(label))) {
+    const value = nestedSummaryValue(paper, key);
+    const base = nestedSummaryValue(strict, key);
+    lines.push(`| ${label} | ${paperEraFormat(value, type)} | ${paperEraFormat(base, type)} | ${paperEraDelta(value, base, type)} |`);
+  }
+  lines.push(
+    "",
+    "## 3. 実装ノート",
+    "",
+    "- v4構成: 印刷仕様形状、C2=2/C3=3/C4=5、陰陽2属性、太極召喚軽減、弱点+1、dm2。",
+    "- 変更したのは召喚配置の既定値のみ。勝利条件、AI、チェック探索、オラクルはstrict版v4と同一。",
+    "- 多ノブ同時環境なので、単独寄与はv4-ablationのような切り分けランでのみ読む。",
+    "",
+    ...paperReproTable(output, resultJsonSha256, V4_PROBE_PAPER_OUT_PATH),
+  );
+  return `${lines.join("\n")}\n`;
+}
+
+function eraPaperMigrationMarkdown(output) {
+  const p1 = output.runs.P1.run.summary;
+  const p2 = output.runs.P2.run.summary;
+  const p3 = output.runs.P3.run.summary;
+  const regression = output.runs.P1.b1Regression;
+  const lines = [
+    "# era-paper-migration",
+    "",
+    "Status: **完了**",
+    `Date: ${output.generatedAt}`,
+    "",
+    "## 0. 改元記録",
+    "",
+    "2026-07-19のユーザー裁定により、召喚配置は紙ルール（敵味方問わず隣接）が正式になった。従来の自軍隣接のみの測定はstrict紀元として仕分け、以後の現行判断にはpaper紀元の測定を使う。",
+    "",
+    `- anyAdjacentSummon既定値: true（paper）。旧strictは \`--strict-summon\` で再現可能。`,
+    `- 回帰確認: P-1と旧B1は ${regression.diffs.length === 0 ? "一致" : `不一致 ${regression.diffs.length}項目`}。`,
+    "- KPI帯は未改訂。チームの4軸議論が終わるまで、旧帯との乖離は記述のみ。",
+    "",
+    "## 1. paper紀元の柱",
+    "",
+    "| 柱 | 構成 | 平均R | 先手 | 撃破/試合 | 占拠 | 生命 | 4チェック返し | ファイル |",
+    "|---|---|---:|---:|---:|---:|---:|---:|---|",
+    `| P-1 | 印刷仕様+紙 | ${p1.avgRounds.toFixed(2)} | ${formatPct(p1.p0WinRate)} | ${p1.killsPerGame.toFixed(2)} | ${formatPct(p1.territoryWinRate)} | ${formatPct(p1.lifeWinRate)} | ${formatPct(p1.check4ReturnRate)} | \`${path.relative(ROOT, PRINT_SPEC_PAPER_MD_PATH)}\` |`,
+    `| P-2 | v3.1素体+紙 | ${p2.avgRounds.toFixed(2)} | ${formatPct(p2.p0WinRate)} | ${p2.killsPerGame.toFixed(2)} | ${formatPct(p2.territoryWinRate)} | ${formatPct(p2.lifeWinRate)} | ${formatPct(p2.check4ReturnRate)} | \`${path.relative(ROOT, PURE_V31_PAPER_MD_PATH)}\` |`,
+    `| P-3 | v4構成+紙 | ${p3.avgRounds.toFixed(2)} | ${formatPct(p3.p0WinRate)} | ${p3.killsPerGame.toFixed(2)} | ${formatPct(p3.territoryWinRate)} | ${formatPct(p3.lifeWinRate)} | ${formatPct(p3.check4ReturnRate)} | \`${path.relative(ROOT, V4_PROBE_PAPER_MD_PATH)}\` |`,
+    "",
+    "## 2. 初見",
+    "",
+    `P-1が現行ゲームの正基準。旧strict印刷仕様から見ると、紙ルールは平均ラウンドを ${fmtDelta(p1.avgRounds - output.runs.P1.strictReference.summary.avgRounds, 2)}R、撃破を ${fmtDelta(p1.killsPerGame - output.runs.P1.strictReference.summary.killsPerGame, 2)}/試合動かした。先手勝率は ${fmtDeltaPct(p1.p0WinRate - output.runs.P1.strictReference.summary.p0WinRate)} で、2000試合の誤差幅内に収まる。`,
+    "",
+    `P-2は数値基盤の紙ルール版。旧v3.1 strict比で先手勝率は ${fmtDeltaPct(p2.p0WinRate - output.runs.P2.strictReference.summary.p0WinRate)}。2000試合では確定判定できないが、少なくとも大崩れはしていないかをここで監視する。`,
+    "",
+    `P-3はv4方向のpaper版。strict v4比で平均 ${fmtDelta(p3.avgRounds - output.runs.P3.strictReference.summary.avgRounds, 2)}R、撃破 ${fmtDelta(p3.killsPerGame - output.runs.P3.strictReference.summary.killsPerGame, 2)}/試合。v4の採否判断はせず、paper紀元上の切り分け材料として扱う。`,
+    "",
+    "## 3. strict紀元バナー対象",
+    "",
+    ...output.strictBannerFiles.map((file) => `- \`${path.relative(ROOT, file)}\``),
+    "",
+    "## 4. 再現情報",
+    "",
+    "```powershell",
+    output.reproducibility.command,
+    "```",
+    "",
+    "| Artifact | Value |",
+    "|---|---|",
+    `| Repo HEAD | \`${output.reproducibility.repoHead}\` |`,
+    `| Script SHA256 | \`${output.reproducibility.scriptSha256}\` |`,
+    `| Games per run | ${output.reproducibility.gamesPerRun} |`,
+    `| Seed | ${output.reproducibility.seed} |`,
+    `| Oracle / depth | yes / ${output.reproducibility.checkSearchDepth} |`,
+  ];
+  return `${lines.join("\n")}\n`;
+}
+
+function runEraPaper(args) {
+  fs.mkdirSync(path.dirname(PRINT_SPEC_PAPER_OUT_PATH), { recursive: true });
+  const command = "node scripts\\explore-stat-curves.cjs --era-paper --seed 20260702";
+  const commonRepro = {
+    command,
+    repoHead: gitHead(),
+    scriptPath: __filename,
+    scriptSha256: sha256File(__filename),
+    gamesPerRun: args.eraPaperSamples,
+    seed: args.seed,
+    seedStride: 9176,
+    oracle: true,
+    checkSearchDepth: 6,
+  };
+
+  const printStrict = JSON.parse(fs.readFileSync(SHAPES_0718_PRINT_OUT_PATH, "utf8"));
+  const v31Strict = JSON.parse(fs.readFileSync(BASELINE_V31_OUT_PATH, "utf8"));
+  const v4Strict = JSON.parse(fs.readFileSync(V4_PROBE_OUT_PATH, "utf8"));
+  const v4Ablation = JSON.parse(fs.readFileSync(V4_ABLATION_OUT_PATH, "utf8"));
+
+  const p1Run = paperEraRun("paper era P-1 print", makePaperPrintVariant(), args.eraPaperSamples, args.seed);
+  const p1B1Summary = v4Ablation.group2.run.summary;
+  const p1Output = {
+    generatedAt: new Date().toISOString(),
+    status: "complete",
+    era: "paper",
+    runId: "P-1",
+    assumptions: {
+      task: path.join(ROOT, "docs", "codex-task-era-paper.md"),
+      configuration: "7/18 print specification with paper placement rule.",
+      changed: "Summon placement default is any occupied creature adjacency.",
+      unchanged: "Printed card kit, AI, victory rules, mana, reactivation, oracle.",
+    },
+    reproducibility: commonRepro,
+    strictReference: { source: SHAPES_0718_PRINT_OUT_PATH, summary: printStrict.run.summary },
+    b1Regression: {
+      source: V4_ABLATION_OUT_PATH,
+      expectedSummary: p1B1Summary,
+      diffs: paperRegressionDiffs(p1Run.summary, p1B1Summary),
+    },
+    run: p1Run,
+  };
+  fs.writeFileSync(PRINT_SPEC_PAPER_OUT_PATH, `${JSON.stringify(p1Output, null, 2)}\n`, "utf8");
+  const p1Hash = sha256File(PRINT_SPEC_PAPER_OUT_PATH);
+  fs.writeFileSync(PRINT_SPEC_PAPER_MD_PATH, printSpecPaperMarkdown(p1Output, { resultJsonSha256: p1Hash }), "utf8");
+
+  const p2Run = paperEraRun("paper era P-2 v31", makeBaselineV31CenterVariant(), args.eraPaperSamples, args.seed);
+  const p2Output = {
+    generatedAt: new Date().toISOString(),
+    status: "complete",
+    era: "paper",
+    runId: "P-2",
+    assumptions: {
+      task: path.join(ROOT, "docs", "codex-task-era-paper.md"),
+      configuration: "v3.1 pure-body center with paper placement rule.",
+      changed: "Summon placement default is any occupied creature adjacency.",
+      unchanged: "v3.1 stats, deck distribution, AI, victory rules, mana, reactivation, oracle.",
+    },
+    reproducibility: commonRepro,
+    strictReference: { source: BASELINE_V31_OUT_PATH, summary: v31Strict.center.result.summary },
+    run: p2Run,
+  };
+  fs.writeFileSync(PURE_V31_PAPER_OUT_PATH, `${JSON.stringify(p2Output, null, 2)}\n`, "utf8");
+  const p2Hash = sha256File(PURE_V31_PAPER_OUT_PATH);
+  fs.writeFileSync(PURE_V31_PAPER_MD_PATH, pureV31PaperMarkdown(p2Output, { resultJsonSha256: p2Hash }), "utf8");
+
+  const p3Run = paperEraRun("paper era P-3 v4", makeV4PaperVariant(), args.eraPaperSamples, args.seed);
+  const p3Output = {
+    generatedAt: new Date().toISOString(),
+    status: "complete",
+    era: "paper",
+    runId: "P-3",
+    assumptions: {
+      task: path.join(ROOT, "docs", "codex-task-era-paper.md"),
+      configuration: "v4 probe package with paper placement rule.",
+      changed: "Summon placement default is any occupied creature adjacency.",
+      unchanged: "v4 stats, Yin/Yang board, Taiji discount, AI, victory rules, reactivation, oracle.",
+    },
+    reproducibility: commonRepro,
+    strictReference: { source: V4_PROBE_OUT_PATH, summary: v4Strict.run.summary },
+    run: p3Run,
+  };
+  fs.writeFileSync(V4_PROBE_PAPER_OUT_PATH, `${JSON.stringify(p3Output, null, 2)}\n`, "utf8");
+  const p3Hash = sha256File(V4_PROBE_PAPER_OUT_PATH);
+  fs.writeFileSync(V4_PROBE_PAPER_MD_PATH, v4ProbePaperMarkdown(p3Output, { resultJsonSha256: p3Hash }), "utf8");
+
+  const strictBannerFiles = addStrictEraBanners();
+  const migrationOutput = {
+    generatedAt: new Date().toISOString(),
+    reproducibility: commonRepro,
+    runs: {
+      P1: p1Output,
+      P2: p2Output,
+      P3: p3Output,
+    },
+    strictBannerFiles,
+  };
+  fs.writeFileSync(ERA_PAPER_MIGRATION_MD_PATH, eraPaperMigrationMarkdown(migrationOutput), "utf8");
+
+  console.log(`Wrote ${path.relative(ROOT, PRINT_SPEC_PAPER_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, PRINT_SPEC_PAPER_MD_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, PURE_V31_PAPER_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, PURE_V31_PAPER_MD_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, V4_PROBE_PAPER_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, V4_PROBE_PAPER_MD_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, ERA_PAPER_MIGRATION_MD_PATH)}`);
+}
+
+function addStrictEraBanners() {
+  const baselineDir = path.join(ROOT, "docs", "baselines");
+  const paperFiles = new Set([
+    path.basename(PRINT_SPEC_PAPER_MD_PATH),
+    path.basename(PURE_V31_PAPER_MD_PATH),
+    path.basename(V4_PROBE_PAPER_MD_PATH),
+    path.basename(ERA_PAPER_MIGRATION_MD_PATH),
+  ]);
+  const strictBanner = "> **[strict紀元]** 旧配置ルール(自軍隣接のみ)での測定。2026-07-19の紙ルール改元以前の基準であり、現行の判断にはpaper紀元の測定を使うこと。";
+  const mixedBanner = "> **[strict紀元 / B1のみpaper]** 主体は旧配置ルール(自軍隣接のみ)での測定。B1だけ紙ルール差分測定を含む。現行判断にはpaper紀元の再凍結資料を使うこと。";
+  const updated = [];
+  for (const entry of fs.readdirSync(baselineDir, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith(".md")) continue;
+    if (paperFiles.has(entry.name)) continue;
+    const filePath = path.join(baselineDir, entry.name);
+    const text = fs.readFileSync(filePath, "utf8");
+    if (text.startsWith("> **[strict紀元]**") || text.startsWith("> **[strict紀元 / B1のみpaper]**")) continue;
+    const banner = entry.name === "v4-ablation.md" ? mixedBanner : strictBanner;
+    fs.writeFileSync(filePath, `${banner}\n\n${text}`, "utf8");
+    updated.push(filePath);
+  }
+  return updated;
+}
+
 function main() {
   const args = parseArgs(process.argv);
   if (args.phase2aMainSearch) {
@@ -7557,6 +7980,10 @@ function main() {
   }
   if (args.v4Ablation) {
     runV4Ablation(args);
+    return;
+  }
+  if (args.eraPaper) {
+    runEraPaper(args);
     return;
   }
   if (args.reactValueForked) {
