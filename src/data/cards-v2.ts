@@ -741,7 +741,7 @@ const snipe_v2: CharacterCard[] = [
 ];
 
 // ========================================
-// F: トリック — B位置を作って盤面を崩す
+// F: トリック — 弱点を作って盤面を崩す
 // ========================================
 
 const trick_v2: CharacterCard[] = [
@@ -791,9 +791,9 @@ const trick_v2: CharacterCard[] = [
     hp: 2, atk: 1, manaCost: 2, activateCost: 1,
     attackRange: 'front1', attackType: 'physical', keywords: ['dodge'],
     effects: [
-      // 相手のB位置から攻撃時ATK+1
+      // 相手の弱点から攻撃時ATK+1
       { trigger: 'on_attack', target: 'self', effect: 'buff_atk', value: 1,
-        description: '相手のB位置から攻撃する時、ATK+1。' },
+        description: '相手の弱点から攻撃する時、ATK+1。' },
     ],
   },
   {
@@ -812,9 +812,9 @@ const trick_v2: CharacterCard[] = [
     hp: 3, atk: 4, manaCost: 3, activateCost: 2,
     attackRange: 'front_left', attackType: 'physical', keywords: [],
     effects: [
-      // 相手のB位置から攻撃時、追加1ダメージ
+      // 相手の弱点から攻撃時、追加1ダメージ
       { trigger: 'on_attack', target: 'target_enemy', effect: 'damage', value: 1,
-        description: '相手のB位置から攻撃した時、追加で1ダメージを与える。' },
+        description: '相手の弱点から攻撃した時、追加で1ダメージを与える。' },
     ],
   },
   {
@@ -860,10 +860,10 @@ const trick_v2: CharacterCard[] = [
     hp: 2, atk: 1, manaCost: 1, activateCost: 1,
     attackRange: 'magic', attackType: 'magic', keywords: [],
     effects: [
-      // B位置から攻撃時1ドロー
+      // 弱点から攻撃時1ドロー
       { trigger: 'on_attack', target: 'self', effect: 'draw', value: 1,
         condition: { type: 'blind_spot' },
-        description: 'B位置から攻撃した時、1ドロー。' },
+        description: '弱点から攻撃した時、1ドロー。' },
     ],
   },
   {
@@ -877,10 +877,10 @@ const trick_v2: CharacterCard[] = [
         description: '召喚時、敵1体を回転。' },
       { trigger: 'on_summon', target: 'adjacent_enemy', effect: 'push', value: 2,
         description: '召喚時、隣接する敵1体を1マス押し出す。' },
-        // 相手キャラのB位置にいる味方が3体以上なら1ドロー
+        // 相手キャラの弱点にいる味方が3体以上なら1ドロー
         { trigger: 'on_summon', target: 'self', effect: 'draw', value: 1,
           condition: { type: 'ace_condition_gte', value: 3 },
-          description: '相手キャラのB位置にいる味方が3体以上いるなら、カードを1枚引く。' },
+          description: '相手キャラの弱点にいる味方が3体以上いるなら、カードを1枚引く。' },
     ],
   },
 ];

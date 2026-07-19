@@ -458,7 +458,7 @@ const tank10: CharacterCard = {
 // 属性配分: 拳×2, 念×2, 蝕×2, 闇×2, 虚×2
 // ========================================
 
-/** 全方向死角の洗脳術者。倒せば洗脳解除 */
+/** 全方向弱点の洗脳術者。倒せば洗脳解除 */
 const control01: CharacterCard = {
   id: 'control_01',
   name: '惑心のシズク',
@@ -480,7 +480,7 @@ const control01: CharacterCard = {
   ],
 };
 
-/** 全方向死角の洗脳術者。地形反転+闇マスで洗脳。倒せば解除 */
+/** 全方向弱点の洗脳術者。地形反転+闇マスで洗脳。倒せば解除 */
 const control02: CharacterCard = {
   id: 'control_02',
   name: '地裂のドルン',
@@ -869,7 +869,7 @@ const synergy10: CharacterCard = {
 // 属性配分: 拳×2, 念×2, 蝕×2, 闇×2, 虚×2
 // ========================================
 
-/** HP1の脆い狙撃手。死角から攻撃時ATK+1 */
+/** HP1の脆い狙撃手。弱点から攻撃時ATK+1 */
 const snipe01: CharacterCard = {
   id: 'snipe_01',
   name: '鋭眼のマルコ',
@@ -883,11 +883,11 @@ const snipe01: CharacterCard = {
   effects: [
     { trigger: 'on_attack', target: 'self', effect: 'buff_atk', value: 1,
       condition: { type: 'blind_spot' },
-      description: '死角から攻撃時、ATK+1' },
+      description: '弱点から攻撃時、ATK+1' },
   ],
 };
 
-/** 召喚時、敵1体を90°回転させる。死角を作る条件づくり役 */
+/** 召喚時、敵1体を90°回転させる。弱点を作る条件づくり役 */
 const snipe02: CharacterCard = {
   id: 'snipe_02',
   name: '旋弾のガウス',
@@ -904,7 +904,7 @@ const snipe02: CharacterCard = {
   ],
 };
 
-/** 射程2。死角から攻撃時に【貫通】を得る。ATK-1デバフ付き */
+/** 射程2。弱点から攻撃時に【貫通】を得る。ATK-1デバフ付き */
 const snipe03: CharacterCard = {
   id: 'snipe_03',
   name: '念弾のリーゼ',
@@ -918,7 +918,7 @@ const snipe03: CharacterCard = {
   effects: [
     { trigger: 'on_attack', target: 'self', effect: 'grant_piercing', value: 1,
       condition: { type: 'blind_spot' },
-      description: '死角から攻撃時、【貫通】を得る' },
+      description: '弱点から攻撃時、【貫通】を得る' },
     { trigger: 'on_attack', target: 'target_enemy', effect: 'debuff_atk', value: 1,
       description: '攻撃時、対象ATK-1' },
   ],
@@ -1018,7 +1018,7 @@ const snipe08: CharacterCard = {
   ],
 };
 
-/** 【隠密】全方向ブラインドの狙撃エース。死角ATK+2、自属性マスで貫通 */
+/** 【隠密】全方向弱点の狙撃エース。弱点ATK+2、自属性マスで貫通 */
 const snipe09: CharacterCard = {
   id: 'snipe_09',
   name: '終焉のイグニス',
@@ -1033,7 +1033,7 @@ const snipe09: CharacterCard = {
   effects: [
     { trigger: 'on_attack', target: 'self', effect: 'buff_atk', value: 2,
       condition: { type: 'blind_spot' },
-      description: '死角から攻撃時、ATK+2' },
+      description: '弱点から攻撃時、ATK+2' },
     { trigger: 'on_attack', target: 'self', effect: 'grant_piercing', value: 1,
       condition: { type: 'same_element_cell' },
       description: '自属性マスにいるなら【貫通】を得る' },
@@ -1066,7 +1066,7 @@ const snipe10: CharacterCard = {
 // 属性配分: 拳×2, 念×2, 蝕×2, 闇×2, 虚×2
 // ========================================
 
-/** 召喚時に敵を90°回転。死角を作るトリックの接続札 */
+/** 召喚時に敵を90°回転。弱点を作るトリックの接続札 */
 const trick01: CharacterCard = {
   id: 'trick_01',
   name: '旋風のツバキ',
@@ -1087,7 +1087,7 @@ const trick01: CharacterCard = {
   ],
 };
 
-/** 攻撃時に敵を180°回転。死角以外からの物理を回避する */
+/** 攻撃時に敵を180°回転。弱点以外からの物理を回避する */
 const trick02: CharacterCard = {
   id: 'trick_02',
   name: '拳舞のシュラ',
@@ -1105,13 +1105,13 @@ const trick02: CharacterCard = {
   effects: [
     { trigger: 'on_damaged', target: 'self', effect: 'grant_dodge', value: 0,
       condition: { type: 'attacked_from_non_blind' },
-      description: '死角以外から物理攻撃された時、【回避】（物理攻撃を受けない。魔法・貫通は通る）' },
+      description: '弱点以外から物理攻撃された時、【回避】（物理攻撃を受けない。魔法・貫通は通る）' },
     { trigger: 'on_attack', target: 'target_enemy', effect: 'rotate', value: 2,
       description: '攻撃時、対象を180°回転' },
   ],
 };
 
-/** 位置入替+180°回転で死角を作る。C4の中継ぎトリッカー */
+/** 位置入替+180°回転で弱点を作る。C4の中継ぎトリッカー */
 const trick03: CharacterCard = {
   id: 'trick_03',
   name: '転位のカゲロウ',
@@ -1130,11 +1130,11 @@ const trick03: CharacterCard = {
       description: 'その敵を180°回転' },
     { trigger: 'on_attack', target: 'self', effect: 'buff_atk', value: 2,
       condition: { type: 'blind_spot' },
-      description: '死角から攻撃時、ATK+2' },
+      description: '弱点から攻撃時、ATK+2' },
   ],
 };
 
-/** Perfect Dodge持ち。攻撃時に敵を回転させ死角を作る */
+/** Perfect Dodge持ち。攻撃時に敵を回転させ弱点を作る */
 const trick04: CharacterCard = {
   id: 'trick_04',
   name: '幻影のシノブ',
@@ -1394,7 +1394,7 @@ const item08: ItemCard = {
   ],
 };
 
-/** コスト2。敵1体を1T封印+90°回転。能力封じつつ死角も作る呪縛の札 */
+/** コスト2。敵1体を1T封印+90°回転。能力封じつつ弱点も作る呪縛の札 */
 const item09: ItemCard = {
   id: 'item_09',
   name: '封印の札',
@@ -1453,7 +1453,7 @@ const item13: ItemCard = {
   ],
 };
 
-/** コスト2。敵1体の向きを180°反転+1T向き固定。死角を強制的に作る */
+/** コスト2。敵1体の向きを180°反転+1T向き固定。弱点を強制的に作る */
 const item14: ItemCard = {
   id: 'item_14',
   name: '拘束鎖',
@@ -1685,7 +1685,7 @@ const synergy12: CharacterCard = {
   ],
 };
 
-/** 死角ATK+2。撃破時に向き変更可能。暗殺者の連続キル */
+/** 弱点ATK+2。撃破時に向き変更可能。暗殺者の連続キル */
 const snipe11: CharacterCard = {
   id: 'snipe_11',
   name: '暗撃のシャドウ',
@@ -1699,7 +1699,7 @@ const snipe11: CharacterCard = {
   effects: [
     { trigger: 'on_attack', target: 'self', effect: 'buff_atk', value: 2,
       condition: { type: 'blind_spot' },
-      description: '死角から攻撃時、ATK+2' },
+      description: '弱点から攻撃時、ATK+2' },
   ],
 };
 

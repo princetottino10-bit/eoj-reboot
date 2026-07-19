@@ -155,7 +155,7 @@ export function countSnipeAceCondition(state: GameState, pid: PlayerId): number 
   return count;
 }
 
-/** トリック: 相手キャラのB位置（ブラインドスポット）にいる味方の数 */
+/** トリック: 相手キャラの弱点にいる味方の数 */
 export function countTrickAceCondition(state: GameState, pid: PlayerId): number {
   const enemyId: PlayerId = pid === 0 ? 1 : 0;
   const myUnits: { pos: Position }[] = [];

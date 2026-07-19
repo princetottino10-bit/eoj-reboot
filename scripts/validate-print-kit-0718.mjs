@@ -25,6 +25,7 @@ const articles = html.match(/<article class="card"[\s\S]*?<\/article>/g) ?? [];
 if (articles.length !== 32) fail(`Expected 32 cards, found ${articles.length}`);
 if (html.includes('onibi-P') || html.includes('class="id"')) fail('Management ID remains in output');
 if (html.includes('薙霧')) fail('Old typo 薙霧 remains in output');
+if (html.includes('死角')) fail('Deprecated term 死角 remains in output');
 
 const parsed = articles.map((article, index) => {
   const name = article.match(/<div class="name">([^<]+)<\/div>/)?.[1];
@@ -62,7 +63,7 @@ for (let player = 0; player < 2; player += 1) {
 }
 
 const rows = expected.map((card) => `| ${card.name} | ${card.copies} | ${card.cost} | ${card.hp} | ${card.atk} | ${card.react} | ${card.life} | ${displayCells(card.attack)} | ${displayCells(card.weak)} | PASS |`).join('\n');
-const report = `# 7/18 Print Kit Audit\n\nGenerated: ${new Date().toISOString()}\n\nResult: **PASS**\n\n- 32 cards (16 mirrored per player)\n- P1/P2 attributes: 地4 / 水4 / 火4 / 風4\n- No management IDs\n- 薙刀霊 spelling verified\n- All attacks are physical, choice 1, and counter range equals attack range in the rendered kit\n\n| Card | Copies/player | Cost | HP | ATK | React | Life | Attack cells | Weak cells | Result |\n|---|---:|---:|---:|---:|---:|---:|---|---|---|\n${rows}\n`;
+const report = `# 7/18 Print Kit Audit\n\nGenerated: ${new Date().toISOString()}\n\nResult: **PASS**\n\n- 32 cards (16 mirrored per player)\n- P1/P2 attributes: 地4 / 水4 / 火4 / 風4\n- No management IDs\n- 薙刀霊 spelling verified\n- Player-facing terminology uses 弱点 consistently\n- All attacks are physical, choice 1, and counter range equals attack range in the rendered kit\n\n| Card | Copies/player | Cost | HP | ATK | React | Life | Attack cells | Weak cells | Result |\n|---|---:|---:|---:|---:|---:|---:|---|---|---|\n${rows}\n`;
 fs.writeFileSync(reportPath, report, 'utf8');
 console.log(`PASS: ${path.relative(root, htmlPath)} matches the 7/18 card list (${articles.length} cards)`);
 console.log(`Wrote ${path.relative(root, reportPath)}`);

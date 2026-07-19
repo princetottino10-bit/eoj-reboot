@@ -40,6 +40,10 @@ const SHAPES_0718_T_OUT_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718
 const SHAPES_0718_T_MD_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718-t.md");
 const SHAPES_0718_PRINT_OUT_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718-print-confirmation-results.json");
 const SHAPES_0718_PRINT_MD_PATH = path.join(ROOT, "docs", "baselines", "shapes-0718-print-confirmation.md");
+const V4_PROBE_OUT_PATH = path.join(ROOT, "docs", "baselines", "v4-probe-results.json");
+const V4_PROBE_MD_PATH = path.join(ROOT, "docs", "baselines", "v4-probe.md");
+const V4_ABLATION_OUT_PATH = path.join(ROOT, "docs", "baselines", "v4-ablation-results.json");
+const V4_ABLATION_MD_PATH = path.join(ROOT, "docs", "baselines", "v4-ablation.md");
 
 const FOCUS_FACTIONS = ["cip", "aggro", "spell", "defense"];
 const BOARD_ATTRS = ["火", "火", "水", "水", "土", "土", "木", "木", "無"];
@@ -59,7 +63,9 @@ const MAX_HALF_TURNS = 80;
 const PURE_FACTION = "pure";
 const PURE_ATTRIBUTES = ["earth", "water", "fire", "wind"];
 const PURE_BOARD_ATTRS = ["water", "fire", "wind", "earth", "neutral", "water", "fire", "wind", "earth"];
-const EXTRA_ATTR_OPPOSITES = { fire: "water", water: "fire", earth: "wind", wind: "earth" };
+const V4_ATTRIBUTES = ["yin", "yang"];
+const V4_BOARD_ATTRS = ["neutral", "yin", "neutral", "yin", "taiji", "yang", "neutral", "yang", "neutral"];
+const EXTRA_ATTR_OPPOSITES = { fire: "water", water: "fire", earth: "wind", wind: "earth", yin: "yang", yang: "yin" };
 const ITEM_TYPES = ["removal", "economy", "buff", "draw"];
 const PURE_ITEMS = {
   removal: { id: "item_removal", name: "Pure Item - Removal", cost: 2 },
@@ -190,6 +196,10 @@ function parseArgs(argv) {
     shapes0718M: false,
     shapes0718T: false,
     shapes0718Print: false,
+    v4Probe: false,
+    v4ProbeSamples: 2000,
+    v4Ablation: false,
+    v4AblationSamples: 2000,
     phase2aPrimarySamples: 1000,
     phase2aSecondarySamples: 2000,
     phase2aRobustnessSamples: 1000,
@@ -298,6 +308,18 @@ function parseArgs(argv) {
       args.oracle = true;
       args.checkSearchDepth = 6;
     }
+    else if (arg === "--v4-probe") {
+      args.v4Probe = true;
+      args.oracle = true;
+      args.checkSearchDepth = 6;
+    }
+    else if (arg === "--v4-probe-samples") args.v4ProbeSamples = Number(argv[++i] ?? args.v4ProbeSamples);
+    else if (arg === "--v4-ablation") {
+      args.v4Ablation = true;
+      args.oracle = true;
+      args.checkSearchDepth = 6;
+    }
+    else if (arg === "--v4-ablation-samples") args.v4AblationSamples = Number(argv[++i] ?? args.v4AblationSamples);
     else if (arg === "--phase2a-primary-samples") args.phase2aPrimarySamples = Number(argv[++i] ?? args.phase2aPrimarySamples);
     else if (arg === "--phase2a-secondary-samples") args.phase2aSecondarySamples = Number(argv[++i] ?? args.phase2aSecondarySamples);
     else if (arg === "--phase2a-robustness-samples") args.phase2aRobustnessSamples = Number(argv[++i] ?? args.phase2aRobustnessSamples);
@@ -454,12 +476,12 @@ function adjacentCells(i) {
     .map(([rr, cc]) => idx(rr, cc));
 }
 
-function validSummonCells(board, owner) {
+function validSummonCells(board, owner, anyAdjacent = false) {
   const hasAlly = board.some((c) => c && c.owner === owner);
   if (!hasAlly) return [...Array(9).keys()].filter((i) => board[i] == null);
   const out = new Set();
   for (let i = 0; i < 9; i++) {
-    if (board[i]?.owner !== owner) continue;
+    if (!board[i] || (!anyAdjacent && board[i].owner !== owner)) continue;
     for (const adj of adjacentCells(i)) {
       if (board[adj] == null) out.add(adj);
     }
@@ -608,7 +630,7 @@ function buildDeck(faction, cardsByFaction, random, deckSize) {
 }
 
 function buildPureDeck(variant, random, owner) {
-  const attrs = pureAttributeBag(random, DRAFT_DECK_CREATURES);
+  const attrs = pureAttributeBag(random, DRAFT_DECK_CREATURES, variant.pureAttributes ?? PURE_ATTRIBUTES);
   if (variant.shapeDeck0718) {
     const shapeDefinitions = variant.shapeDefinitions ?? PURE_SHAPES_0718;
     const deck = [];
@@ -655,10 +677,10 @@ function buildPureDeck(variant, random, owner) {
   return shuffle(deck, random);
 }
 
-function pureAttributeBag(random, size) {
+function pureAttributeBag(random, size, attributes = PURE_ATTRIBUTES) {
   const bag = [];
   for (let i = 0; bag.length < size; i++) {
-    bag.push(PURE_ATTRIBUTES[i % PURE_ATTRIBUTES.length]);
+    bag.push(attributes[i % attributes.length]);
   }
   return shuffle(bag, random);
 }
@@ -785,6 +807,14 @@ function spendMana(state, amount) {
   state.metrics.manaSpent += amount;
 }
 
+function hasTaijiControl(state, owner = state.active) {
+  return state.taijiSummonDiscount && state.board[4]?.owner === owner;
+}
+
+function summonCostFor(state, card, owner = state.active) {
+  return hasTaijiControl(state, owner) ? Math.max(1, card.cost - 1) : card.cost;
+}
+
 function destroyCreatureAt(state, boardIdx) {
   const creature = state.board[boardIdx];
   if (!creature) return null;
@@ -833,8 +863,8 @@ function findItemHandIndex(player, type) {
 function hasAffordableSummonWithMana(state, mana) {
   const active = state.active;
   if (controlCount(state.board, active) >= 5) return false;
-  if (validSummonCells(state.board, active).length === 0) return false;
-  return state.players[active].hand.some((card) => isCreatureCard(card) && card.cost <= mana);
+  if (validSummonCells(state.board, active, state.anyAdjacentSummon).length === 0) return false;
+  return state.players[active].hand.some((card) => isCreatureCard(card) && summonCostFor(state, card, active) <= mana);
 }
 
 function hasAffordableReactivationWithMana(state, mana) {
@@ -1031,12 +1061,12 @@ function selectAttackTarget(board, attackerIdx, attacker, targets, state, source
   return best;
 }
 
-function damagePreview(board, attackerIdx, targetIdx) {
+function damagePreview(board, attackerIdx, targetIdx, weakBonus = WEAK_BONUS) {
   const attacker = board[attackerIdx];
   const defender = board[targetIdx];
   const blind = isBlindSpot(attackerIdx, targetIdx, defender.dir, defender.card.weakness_cells);
   const physical = attacker.card.attack_type !== "魔道";
-  const damage = Math.max(0, attacker.atk + (physical && blind ? WEAK_BONUS : 0));
+  const damage = Math.max(0, attacker.atk + (physical && blind ? weakBonus : 0));
   const kills = defender.hp <= damage;
   const canCounter =
     physical &&
@@ -1054,7 +1084,7 @@ function scoreAttackTarget(board, attackerIdx, targetIdx, state, source) {
   const owner = attacker.owner;
   const opp = 1 - owner;
   const oppControl = controlCount(board, opp);
-  const preview = damagePreview(board, attackerIdx, targetIdx);
+  const preview = damagePreview(board, attackerIdx, targetIdx, state.weakBonus);
   let score = 0;
 
   score += preview.damage * 4;
@@ -1080,7 +1110,7 @@ function resolveSingleAttack(state, attackerIdx, targetIdx, source) {
 
   const owner = attacker.owner;
   const opp = 1 - owner;
-  const preview = damagePreview(board, attackerIdx, targetIdx);
+  const preview = damagePreview(board, attackerIdx, targetIdx, state.weakBonus);
   state.metrics.attacks += 1;
   if (source === "summon") state.metrics.summonAttacks += 1;
   else state.metrics.manualAttacks += 1;
@@ -1292,12 +1322,12 @@ function generateOracleReactivationActions(state, options = {}) {
 function generateOracleSummonActions(state) {
   const active = state.active;
   const player = state.players[active];
-  const cells = validSummonCells(state.board, active);
+  const cells = validSummonCells(state.board, active, state.anyAdjacentSummon);
   const actions = [];
   for (let h = 0; h < player.hand.length; h++) {
     const card = player.hand[h];
     if (!isCreatureCard(card)) continue;
-    if (!card || card.cost > player.mana) continue;
+    if (!card || summonCostFor(state, card, active) > player.mana) continue;
     for (const cellIdx of cells) {
       const hpDelta = attrBonus(card.attribute, state.boardAttrs[cellIdx]);
       if (card.hp + hpDelta <= 0) continue;
@@ -1653,7 +1683,7 @@ function scoreRotation(state, charIdx, dir) {
   let score = targets.length * 8;
   if (controlCount(state.board, opp) >= 3) score += targets.length * 5;
   for (const i of targets) {
-    const preview = damagePreview(state.board, charIdx, i);
+    const preview = damagePreview(state.board, charIdx, i, state.weakBonus);
     if (preview.kills) score += controlCount(state.board, opp) >= 4 ? 35 : 15;
     if (preview.blind) score += 5;
   }
@@ -1770,12 +1800,12 @@ function scoreSummon(state, handIndex, cellIdx, dir) {
 function chooseSummon(state) {
   const active = state.active;
   const player = state.players[active];
-  const cells = validSummonCells(state.board, active);
+  const cells = validSummonCells(state.board, active, state.anyAdjacentSummon);
   let best = null;
   for (let h = 0; h < player.hand.length; h++) {
     const card = player.hand[h];
     if (!isCreatureCard(card)) continue;
-    if (!card || card.cost > player.mana) continue;
+    if (!card || summonCostFor(state, card, active) > player.mana) continue;
     for (const c of cells) {
       for (const dir of DIRS) {
         const score = scoreSummon(state, h, c, dir);
@@ -1814,15 +1844,28 @@ function executeSummon(state, action) {
     player.hand.splice(action.handIndex, 0, card);
     return false;
   }
-  spendMana(state, card.cost);
+  const paidCost = summonCostFor(state, card, active);
+  spendMana(state, paidCost);
+  if (paidCost < card.cost) {
+    state.metrics.taijiDiscountUses += 1;
+    state.metrics.taijiManaSaved += card.cost - paidCost;
+    if (active === 0) state.metrics.taijiDiscountUsesP0 += 1;
+    else state.metrics.taijiDiscountUsesP1 += 1;
+  }
   if (hpDelta > 0) state.metrics.attrMatchSummons += 1;
   else if (hpDelta < 0) state.metrics.attrBadSummons += 1;
+  if (state.v4Probe && hpDelta > 0) state.metrics.yinYangPositiveApplications += 1;
+  else if (state.v4Probe && hpDelta < 0) state.metrics.yinYangNegativeApplications += 1;
   state.metrics.summons += 1;
+  const controlBefore = controlCount(state.board, active);
   recordFirstSummon(state, active);
   const inst = makeInstance(card, active, action.dir, hpDelta, state.halfTurns);
   state.board[action.cellIdx] = inst;
   recordBoard3(state, active);
   executeAttackAction(state, action.cellIdx, "summon");
+  if (state.v4Probe && controlBefore === 4 && !state.board[action.cellIdx]) {
+    state.metrics.fifthSummonCounterDeaths += 1;
+  }
   return true;
 }
 
@@ -1837,7 +1880,7 @@ function recordSummonStall(state) {
     state.metrics.summonStalledNoCards += 1;
     return;
   }
-  if (!creatureHand.some((card) => card.cost <= player.mana)) {
+  if (!creatureHand.some((card) => summonCostFor(state, card, active) <= player.mana)) {
     state.metrics.summonStalledTurns += 1;
     state.metrics.summonStalledMana += 1;
   }
@@ -2021,12 +2064,21 @@ function simulateTurn(state, options = {}) {
 
   state.metrics.boardSamples += 1;
   state.metrics.boardTotal += occupiedCount(state.board);
+  if (state.v4Probe && state.board[4]) {
+    state.metrics.taijiOccupiedSamples += 1;
+    if (state.board[4].owner === 0) state.metrics.taijiOccupiedP0Samples += 1;
+    else state.metrics.taijiOccupiedP1Samples += 1;
+  }
   if (state.winner == null) finishTurn(state);
 }
 
 function makeInitialState(p0Faction, p1Faction, cardsByFaction, variant, seed) {
   const random = rng(seed);
-  const boardAttrs = variant.pureVanilla ? [...PURE_BOARD_ATTRS] : shuffle(BOARD_ATTRS, random);
+  const boardAttrs = variant.boardAttrs
+    ? [...variant.boardAttrs]
+    : variant.pureVanilla
+      ? [...PURE_BOARD_ATTRS]
+      : shuffle(BOARD_ATTRS, random);
   const deck0 = variant.pureVanilla
     ? buildPureDeck(variant, random, 0)
     : buildDeck(p0Faction, cardsByFaction, random, variant.deckCreatures);
@@ -2059,6 +2111,10 @@ function makeInitialState(p0Faction, p1Faction, cardsByFaction, variant, seed) {
     checkSearchDepth: variant.checkSearchDepth ?? 0,
     reactNeedOracle: variant.reactNeedOracle ?? false,
     rotateAttackRule: variant.rotateAttackRule ?? false,
+    v4Probe: variant.v4Probe ?? false,
+    taijiSummonDiscount: variant.taijiSummonDiscount ?? false,
+    weakBonus: variant.weakBonus ?? WEAK_BONUS,
+    anyAdjacentSummon: variant.anyAdjacentSummon ?? false,
     fatigue: variant.fatigue ?? false,
     destroyManaGain: variant.destroyManaGain ?? DESTROY_MANA_GAIN,
     metrics: {
@@ -2073,6 +2129,16 @@ function makeInitialState(p0Faction, p1Faction, cardsByFaction, variant, seed) {
       summons: 0,
       attrMatchSummons: 0,
       attrBadSummons: 0,
+      yinYangPositiveApplications: 0,
+      yinYangNegativeApplications: 0,
+      taijiOccupiedSamples: 0,
+      taijiOccupiedP0Samples: 0,
+      taijiOccupiedP1Samples: 0,
+      taijiDiscountUses: 0,
+      taijiDiscountUsesP0: 0,
+      taijiDiscountUsesP1: 0,
+      taijiManaSaved: 0,
+      fifthSummonCounterDeaths: 0,
       reactivations: 0,
       attackReactivationActions: 0,
       rotations: 0,
@@ -5817,6 +5883,7 @@ function summarize(results) {
   const rotationShare = sumMetrics.reactivations > 0 ? sumMetrics.rotations / sumMetrics.reactivations : 0;
   const attrMatchRate = sumMetrics.summons > 0 ? sumMetrics.attrMatchSummons / sumMetrics.summons : 0;
   const attrBadRate = sumMetrics.summons > 0 ? sumMetrics.attrBadSummons / sumMetrics.summons : 0;
+  const taijiOccupancyRate = sumMetrics.boardSamples > 0 ? sumMetrics.taijiOccupiedSamples / sumMetrics.boardSamples : 0;
   const summonStallRate =
     sumMetrics.summonDecisionTurns > 0 ? sumMetrics.summonStalledTurns / sumMetrics.summonDecisionTurns : 0;
   const summonStallNoCardsRate =
@@ -5988,6 +6055,23 @@ function summarize(results) {
     summonStallManaRate,
     attrMatchSummonRate: attrMatchRate,
     attrBadSummonRate: attrBadRate,
+    fifthSummonCounterDeathsPerGame: avg("fifthSummonCounterDeaths"),
+    fifthSummonCounterDeaths: sumMetrics.fifthSummonCounterDeaths ?? 0,
+    taijiOccupancyRate,
+    taijiP0OccupancyRate:
+      sumMetrics.boardSamples > 0 ? sumMetrics.taijiOccupiedP0Samples / sumMetrics.boardSamples : 0,
+    taijiP1OccupancyRate:
+      sumMetrics.boardSamples > 0 ? sumMetrics.taijiOccupiedP1Samples / sumMetrics.boardSamples : 0,
+    taijiDiscountUsesPerGame: avg("taijiDiscountUses"),
+    taijiDiscountUsesP0PerGame: avg("taijiDiscountUsesP0"),
+    taijiDiscountUsesP1PerGame: avg("taijiDiscountUsesP1"),
+    taijiManaSavedPerGame: avg("taijiManaSaved"),
+    yinYangPositiveApplicationsPerGame: avg("yinYangPositiveApplications"),
+    yinYangNegativeApplicationsPerGame: avg("yinYangNegativeApplications"),
+    yinYangPositiveApplicationRate:
+      sumMetrics.summons > 0 ? sumMetrics.yinYangPositiveApplications / sumMetrics.summons : 0,
+    yinYangNegativeApplicationRate:
+      sumMetrics.summons > 0 ? sumMetrics.yinYangNegativeApplications / sumMetrics.summons : 0,
     killBandsPerGame: {
       low: sumMetrics.killBands.low / n,
       mid: sumMetrics.killBands.mid / n,
@@ -6909,6 +6993,506 @@ function runShapes0718Print(args) {
   console.log(`Wrote ${path.relative(ROOT, SHAPES_0718_PRINT_MD_PATH)}`);
 }
 
+function v4ProbeMarkdown(output, { resultJsonSha256 }) {
+  const baseline = output.baseline.summary;
+  const probe = output.run.summary;
+  const metrics = [
+    ["平均ラウンド", "avgRounds", "number2"],
+    ["中央値R", "medianRounds", "number1"],
+    ["P90 R", "p90Rounds", "number1"],
+    ["占拠勝ち率", "territoryWinRate", "percent"],
+    ["生命勝ち率", "lifeWinRate", "percent"],
+    ["タイムアウト率", "timeoutRate", "percent"],
+    ["先手勝率", "p0WinRate", "percent"],
+    ["平均盤面数", "avgBoard", "number2"],
+    ["4チェック発生/試合", "check4PerGame", "number2"],
+    ["4チェック返し率", "check4ReturnRate", "percent"],
+    ["オラクル返答可能率", "check4OracleReturnableRate", "percent"],
+    ["撃破数/試合", "killsPerGame", "number2"],
+    ["弱点攻撃率", "weakAttackRate", "percent"],
+    ["弱点撃破率", "weakKillRate", "percent"],
+    ["手動攻撃/試合", "manualAttacksPerGame", "number2"],
+    ["召喚時攻撃/試合", "summonAttacksPerGame", "number2"],
+    ["攻撃系再命令/試合", "attackReactivationsPerGame", "number2"],
+    ["回転攻撃/試合", "rotateAttacksPerGame", "number2"],
+    ["回転のみ/試合", "rotationsPerGame", "number2"],
+    ["召喚手詰まり率", "summonStallRate", "percent"],
+    ["霊力利用率", "manaUtilization", "percent"],
+    ["霊力溢れ/試合", "manaOverflowPerGame", "number2"],
+    ["撃破時獲得霊力/試合", "destroyManaGainedPerGame", "number2"],
+    ["属性一致召喚率", "attrMatchSummonRate", "percent"],
+    ["逆属性召喚率", "attrBadSummonRate", "percent"],
+  ];
+  const format = (value, type) => {
+    if (value == null) return "-";
+    if (type === "percent") return formatPct(value);
+    return value.toFixed(type === "number1" ? 1 : 2);
+  };
+  const diff = (value, base, type) => {
+    if (value == null || base == null) return "-";
+    return type === "percent" ? fmtDeltaPct(value - base) : fmtDelta(value - base, type === "number1" ? 1 : 2);
+  };
+  const avgRoundDelta = probe.avgRounds - baseline.avgRounds;
+  const killDelta = probe.killsPerGame - baseline.killsPerGame;
+  const weakKillDelta = probe.weakKillRate - baseline.weakKillRate;
+  const firstDelta = probe.p0WinRate - baseline.p0WinRate;
+  const kpiChecks = [
+    ["平均ラウンド", probe.avgRounds >= 7 && probe.avgRounds <= 10, `${probe.avgRounds.toFixed(2)}R（基準7〜10R）`],
+    ["P90ラウンド", probe.p90Rounds <= 14, `${probe.p90Rounds.toFixed(1)}R（基準14R以下）`],
+    ["占拠勝ち率", probe.territoryWinRate >= 0.95, `${formatPct(probe.territoryWinRate)}（基準95%以上）`],
+    ["引き分け率", probe.timeoutRate === 0, `${formatPct(probe.timeoutRate)}（基準0%）`],
+    ["先手勝率", probe.p0WinRate >= 0.5 && probe.p0WinRate <= 0.53, `${formatPct(probe.p0WinRate)}（基準50〜53%、参考）`],
+    ["4チェック返し率", probe.check4ReturnRate >= 0.45 && probe.check4ReturnRate <= 0.55, `${formatPct(probe.check4ReturnRate)}（基準45〜55%）`],
+    ["撃破数/試合", probe.killsPerGame >= 3.5 && probe.killsPerGame <= 6, `${probe.killsPerGame.toFixed(2)}（基準3.5〜6）`],
+    ["攻撃系再命令/試合", probe.attackReactivationsPerGame >= 2.5 && probe.attackReactivationsPerGame <= 4.5, `${probe.attackReactivationsPerGame.toFixed(2)}（基準2.5〜4.5）`],
+    ["弱点撃破率", probe.weakKillRate >= 0.45, `${formatPct(probe.weakKillRate)}（基準45%以上）`],
+    ["召喚手詰まり率", probe.summonStallRate <= 0.2, `${formatPct(probe.summonStallRate)}（基準20%以下）`],
+    ["霊力利用率", probe.manaUtilization >= 0.87, `${formatPct(probe.manaUtilization)}（基準87%以上）`],
+  ];
+  const failedKpis = kpiChecks.filter(([, passed]) => !passed);
+  const conclusion = failedKpis.length > 0
+    ? `既存の確定KPI帯を${failedKpis.length}項目で外れており、v4一括採用の判断には進めない。方向転換プローブとしては差が十分に観測されたため、優先順位付きの切り分けへ進む材料になった。`
+    : "既存の確定KPI帯には収まった。ただし多ノブ同時プローブのため、採用ではなく方向性確認まで。";
+  const lines = [
+    "# v4候補 再設計プローブ",
+    "",
+    "Status: **提案（未確定）**",
+    `Date: ${output.generatedAt}`,
+    "",
+    "## 0. 結論",
+    "",
+    conclusion,
+    "",
+    failedKpis.length > 0
+      ? `- 帯外: ${failedKpis.map(([label, , detail]) => `${label} ${detail}`).join(" / ")}`
+      : "- 帯外: なし",
+    `- 平均ラウンド: ${probe.avgRounds.toFixed(2)}R（対照比 ${fmtDelta(avgRoundDelta, 2)}R）`,
+    `- 決着: 占拠 ${formatPct(probe.territoryWinRate)} / 生命 ${formatPct(probe.lifeWinRate)} / タイムアウト ${formatPct(probe.timeoutRate)}`,
+    `- 先手勝率: ${formatPct(probe.p0WinRate)}（対照比 ${fmtDeltaPct(firstDelta)}、2000試合の95%CIは約±2.2pt）`,
+    `- 撃破数: ${probe.killsPerGame.toFixed(2)}/試合（対照比 ${fmtDelta(killDelta, 2)}）`,
+    `- 弱点撃破率: ${formatPct(probe.weakKillRate)}（対照比 ${fmtDeltaPct(weakKillDelta)}）`,
+    "",
+    "## 1. 印刷仕様との比較",
+    "",
+    "| 指標 | 7/18印刷仕様 | v4プローブ | 差分 |",
+    "|---|---:|---:|---:|",
+  ];
+  for (const [label, key, type] of metrics) {
+    lines.push(`| ${label} | ${format(baseline[key], type)} | ${format(probe[key], type)} | ${diff(probe[key], baseline[key], type)} |`);
+  }
+  lines.push(
+    "",
+    "## 2. v4新規指標",
+    "",
+    "| 指標 | 実測 |",
+    "|---|---:|",
+    `| 太極占有率（全体） | ${formatPct(probe.taijiOccupancyRate)} |`,
+    `| 太極占有率（先手所有） | ${formatPct(probe.taijiP0OccupancyRate)} |`,
+    `| 太極占有率（後手所有） | ${formatPct(probe.taijiP1OccupancyRate)} |`,
+    `| 太極軽減/試合（先手） | ${probe.taijiDiscountUsesP0PerGame.toFixed(2)} |`,
+    `| 太極軽減/試合（後手） | ${probe.taijiDiscountUsesP1PerGame.toFixed(2)} |`,
+    `| 太極軽減霊力/試合 | ${probe.taijiManaSavedPerGame.toFixed(2)} |`,
+    `| 陰陽+2適用/試合 | ${probe.yinYangPositiveApplicationsPerGame.toFixed(2)} |`,
+    `| 陰陽-2適用/試合 | ${probe.yinYangNegativeApplicationsPerGame.toFixed(2)} |`,
+    `| 5体目が召喚反撃で崩れた回数 | ${probe.fifthSummonCounterDeaths}（${probe.fifthSummonCounterDeathsPerGame.toFixed(3)}/試合） |`,
+    "",
+    "太極占有率の先手/後手値は、全ターン終了時サンプルを共通分母とし、中央を各側が所有していた割合。両者の合計が全体占有率になる。",
+    "",
+    "## 3. 考察",
+    "",
+    `既存の確定KPI帯との比較では ${kpiChecks.length - failedKpis.length}/${kpiChecks.length} 項目が帯内だった。先手勝率は2000試合では約±2.2ptの幅があるため参考判定とし、それ以外の帯外項目を切り分け対象とする。`,
+    "",
+    `全体として、ゲーム速度は対照から ${avgRoundDelta >= 0 ? "遅く" : "速く"}なり、撃破量は ${killDelta >= 0 ? "増加" : "減少"}した。弱点撃破率も ${weakKillDelta >= 0 ? "上昇" : "低下"}している。ただし、これは撃破時霊力・弱点補正・低コストHP・陰陽盤面・太極を同時に変更した合成結果であり、個別ノブの寄与は主張しない。`,
+    "",
+    `先手勝率差は ${Math.abs(firstDelta) <= 0.022 ? "2000試合の誤差幅内で、先後差が動いたとは判定できない" : "±2.2ptを超えているが、この試合数だけで確定判定はせず、必要なら8000試合以上で追試する"}。`,
+    "",
+    `太極は全ターンの ${formatPct(probe.taijiOccupancyRate)} で占有され、軽減は先手 ${probe.taijiDiscountUsesP0PerGame.toFixed(2)}回/試合、後手 ${probe.taijiDiscountUsesP1PerGame.toFixed(2)}回/試合発動した。太極が実際に経済へ接続しているか、先後で利用機会が偏っていないかをこの2値で読む。`,
+    "",
+    "## 4. 切り分け候補（優先順）",
+    "",
+    "1. **陰陽盤面+太極パッケージ**: 盤面評価と召喚経済を同時に変える最大の構造ノブ。太極あり/なしのD1比較を最優先にする。",
+    "2. **C2/C3 HP低下+弱点+1パッケージ**: 撃破ラインを直接変える組。HPだけ戻すランと弱点だけ+2へ戻すランで分離する。",
+    "3. **撃破時霊力2**: 撃破後の再展開・再命令量を変える。最後にdm1へ戻して、速度と霊力利用率への寄与を見る。",
+    "",
+    "この順序は寄与の推定ではなく、変更範囲の大きさと次ランでの識別性に基づく。",
+    "",
+    "## 5. 実装ノート",
+    "",
+    "- 7/18印刷仕様の9種16枚、攻撃/反撃形状、heavy再命令+回転攻撃、先手3/後手4を維持。",
+    "- v4だけHPをC2=2/C3=3/C4=5、撃破時霊力2、弱点物理ボーナス+1へ差し替えた。",
+    "- 各デッキは陰8/陽8の袋をコストと独立にシード下でシャッフル。盤面は `空陰空/陰太極陽/空陽空` 固定。",
+    "- 太極は中央を所有する側の召喚支払いだけ-1（下限1）。再命令には適用しない。軽減後コストを召喚可能判定・オラクル・実支払いへ共通適用した。",
+    "- 陰陽+2/-2の発動数は、移動のない素体環境なので召喚時に修正が適用された回数として計測した。",
+    "- 勝利条件、pending check、depth-6返答探索、AIスコア重みは変更していない。",
+    "- 配置ロジックも比較可能性を優先して既存実装を変更していない。現行シミュ実装は自軍式神に上下左右隣接する空きマスを返すため、指示書の『敵味方問わず』というルール文言とは差がある。実ゲーム正本へ合わせる場合は、別タスクで対照群から再計測が必要。",
+    "- 5体目崩壊は、召喚前4体かつ召喚した式神自身が召喚攻撃への反撃で撃破されたケースのみを数えた。",
+    "",
+    "## 6. 再現情報",
+    "",
+    "```powershell",
+    output.reproducibility.command,
+    "```",
+    "",
+    "| Artifact | Value |",
+    "|---|---|",
+    `| Repo HEAD | \`${output.reproducibility.repoHead}\` |`,
+    `| Script SHA256 | \`${output.reproducibility.scriptSha256}\` |`,
+    `| Result JSON SHA256 | \`${resultJsonSha256}\` |`,
+    `| Games | ${output.reproducibility.games} |`,
+    `| Seed | ${output.reproducibility.seed} |`,
+    `| Oracle / depth | yes / ${output.reproducibility.checkSearchDepth} |`,
+    "",
+    `JSON: \`${V4_PROBE_OUT_PATH}\``,
+  );
+  return `${lines.join("\n")}\n`;
+}
+
+function runV4Probe(args) {
+  fs.mkdirSync(path.dirname(V4_PROBE_OUT_PATH), { recursive: true });
+  const variant = {
+    ...makeBaselineV31CenterVariant(),
+    name: "v4_probe_yinyang_taiji_dm2_weak1_lowhp",
+    runId: "v4-probe",
+    phase: "v4-probe",
+    v4Probe: true,
+    shapeDeck0718: true,
+    shapeDefinitions: PURE_SHAPES_PRINT_0718,
+    counterFront1: false,
+    hpOverrides: { 2: 2, 3: 3, 4: 5 },
+    pureAttributes: V4_ATTRIBUTES,
+    boardAttrs: V4_BOARD_ATTRS,
+    taijiSummonDiscount: true,
+    weakBonus: 1,
+    destroyManaGain: 2,
+  };
+  const cardsByFaction = { [PURE_FACTION]: [] };
+  const gameResults = [];
+  for (let i = 0; i < args.v4ProbeSamples; i++) {
+    const seed = (args.seed + i * 9176) >>> 0;
+    gameResults.push(simulateGame(PURE_FACTION, PURE_FACTION, cardsByFaction, variant, seed));
+    if ((i + 1) % 100 === 0 || i + 1 === args.v4ProbeSamples) {
+      console.error(`v4 probe: simulated ${i + 1}/${args.v4ProbeSamples}`);
+    }
+  }
+  const baselineOutput = JSON.parse(fs.readFileSync(SHAPES_0718_PRINT_OUT_PATH, "utf8"));
+  const command = "node scripts\\explore-stat-curves.cjs --v4-probe --seed 20260702";
+  const output = {
+    generatedAt: new Date().toISOString(),
+    status: "complete",
+    decisionStatus: "proposal-unconfirmed",
+    assumptions: {
+      task: path.join(ROOT, "docs", "codex-task-v4-probe.md"),
+      analysisMethod: path.join(ROOT, "docs", "handoff-analysis-kpi.md"),
+      configuration: variant,
+      unchanged: "Victory timing, placement implementation, AI score weights, check state, and depth-6 return search are unchanged from the 7/18 print baseline.",
+    },
+    reproducibility: {
+      command,
+      repoHead: gitHead(),
+      scriptPath: __filename,
+      scriptSha256: sha256File(__filename),
+      games: args.v4ProbeSamples,
+      seed: args.seed,
+      oracle: true,
+      checkSearchDepth: 6,
+    },
+    baseline: {
+      source: SHAPES_0718_PRINT_OUT_PATH,
+      summary: baselineOutput.run.summary,
+    },
+    run: { variant, summary: summarize(gameResults) },
+  };
+  fs.writeFileSync(V4_PROBE_OUT_PATH, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+  const resultJsonSha256 = sha256File(V4_PROBE_OUT_PATH);
+  fs.writeFileSync(V4_PROBE_MD_PATH, v4ProbeMarkdown(output, { resultJsonSha256 }), "utf8");
+  console.log(`Wrote ${path.relative(ROOT, V4_PROBE_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, V4_PROBE_MD_PATH)}`);
+}
+
+function makeV4AblationVariant(runId, overrides = {}) {
+  return {
+    ...makeBaselineV31CenterVariant(),
+    name: `v4_ablation_${runId}`,
+    runId,
+    phase: "v4-ablation",
+    v4Probe: true,
+    shapeDeck0718: true,
+    shapeDefinitions: PURE_SHAPES_PRINT_0718,
+    counterFront1: false,
+    hpOverrides: { 2: 2, 3: 3, 4: 5 },
+    pureAttributes: V4_ATTRIBUTES,
+    boardAttrs: V4_BOARD_ATTRS,
+    taijiSummonDiscount: true,
+    weakBonus: 1,
+    destroyManaGain: 2,
+    ...overrides,
+  };
+}
+
+function makePrintB1Variant() {
+  return {
+    ...makeBaselineV31CenterVariant(),
+    name: "v4_ablation_B1_print_any_adjacent",
+    runId: "B1",
+    phase: "v4-ablation-placement",
+    shapeDeck0718: true,
+    shapeDefinitions: PURE_SHAPES_PRINT_0718,
+    counterFront1: false,
+    hpOverrides: { 2: 3, 3: 4, 4: 5 },
+    anyAdjacentSummon: true,
+  };
+}
+
+function runV4AblationVariant(variant, args, label) {
+  const cardsByFaction = { [PURE_FACTION]: [] };
+  const gameResults = [];
+  for (let i = 0; i < args.v4AblationSamples; i++) {
+    const seed = (args.seed + i * 9176) >>> 0;
+    gameResults.push(simulateGame(PURE_FACTION, PURE_FACTION, cardsByFaction, variant, seed));
+    if ((i + 1) % 100 === 0 || i + 1 === args.v4AblationSamples) {
+      console.error(`${label}: simulated ${i + 1}/${args.v4AblationSamples}`);
+    }
+  }
+  return { variant, summary: summarize(gameResults) };
+}
+
+function v4AblationMetricRows() {
+  return [
+    ["平均ラウンド", "avgRounds", "number2"],
+    ["中央値R", "medianRounds", "number1"],
+    ["P90 R", "p90Rounds", "number1"],
+    ["占拠勝ち率", "territoryWinRate", "percent"],
+    ["生命勝ち率", "lifeWinRate", "percent"],
+    ["タイムアウト率", "timeoutRate", "percent"],
+    ["先手勝率", "p0WinRate", "percent"],
+    ["平均盤面数", "avgBoard", "number2"],
+    ["4チェック発生/試合", "check4PerGame", "number2"],
+    ["4チェック返し率", "check4ReturnRate", "percent"],
+    ["オラクル返答可能率", "check4OracleReturnableRate", "percent"],
+    ["オラクル実現率", "check4OracleRealizationRate", "percent"],
+    ["撃破数/試合", "killsPerGame", "number2"],
+    ["弱点攻撃率", "weakAttackRate", "percent"],
+    ["弱点撃破率", "weakKillRate", "percent"],
+    ["手動攻撃/試合", "manualAttacksPerGame", "number2"],
+    ["召喚時攻撃/試合", "summonAttacksPerGame", "number2"],
+    ["攻撃系再命令/試合", "attackReactivationsPerGame", "number2"],
+    ["回転攻撃/試合", "rotateAttacksPerGame", "number2"],
+    ["回転のみ/試合", "rotationsPerGame", "number2"],
+    ["再命令可能未使用率", "reactivationUnusedRate", "percent"],
+    ["召喚手詰まり率", "summonStallRate", "percent"],
+    ["霊力利用率", "manaUtilization", "percent"],
+    ["盤面3体到達中央値", "board3.medianRound", "number1"],
+    ["デッキ切れ試合率", "deckEmptyGameRate", "percent"],
+    ["リシャッフル試合率", "deckReshuffleGameRate", "percent"],
+    ["霊力溢れ/試合", "manaOverflowPerGame", "number2"],
+    ["撃破時獲得霊力/試合", "destroyManaGainedPerGame", "number2"],
+    ["属性一致召喚率", "attrMatchSummonRate", "percent"],
+    ["逆属性召喚率", "attrBadSummonRate", "percent"],
+    ["太極占有率", "taijiOccupancyRate", "percent"],
+    ["太極軽減/試合", "taijiDiscountUsesPerGame", "number2"],
+    ["陰陽+2適用/試合", "yinYangPositiveApplicationsPerGame", "number2"],
+    ["陰陽-2適用/試合", "yinYangNegativeApplicationsPerGame", "number2"],
+    ["5体目召喚反撃崩れ/試合", "fifthSummonCounterDeathsPerGame", "number3"],
+  ];
+}
+
+function nestedSummaryValue(summary, key) {
+  return key.split(".").reduce((value, part) => value?.[part], summary);
+}
+
+function v4AblationFormat(value, type) {
+  if (value == null) return "-";
+  if (type === "percent") return formatPct(value);
+  const digits = type === "number1" ? 1 : type === "number3" ? 3 : 2;
+  return value.toFixed(digits);
+}
+
+function v4AblationDelta(value, base, type) {
+  if (value == null || base == null) return "-";
+  if (type === "percent") return fmtDeltaPct(value - base);
+  const digits = type === "number1" ? 1 : type === "number3" ? 3 : 2;
+  return fmtDelta(value - base, digits);
+}
+
+function v4AblationMarkdown(output, { resultJsonSha256 }) {
+  const v4 = output.group1.reference.summary;
+  const print = output.group2.reference.summary;
+  const { A1, A2, A3, A4 } = output.group1.runs;
+  const b1 = output.group2.run;
+  const metrics = v4AblationMetricRows();
+  const g1 = { A1: A1.summary, A2: A2.summary, A3: A3.summary, A4: A4.summary };
+  const a2FirstDelta = g1.A2.p0WinRate - v4.p0WinRate;
+  const a3KillDelta = g1.A3.killsPerGame - v4.killsPerGame;
+  const killDeltas = Object.fromEntries(Object.entries(g1).map(([id, s]) => [id, s.killsPerGame - v4.killsPerGame]));
+  const a3LargestKillReduction = a3KillDelta === Math.min(...Object.values(killDeltas));
+  const a2Prediction = a2FirstDelta >= -0.07 && a2FirstDelta <= -0.05;
+  const b1FirstDelta = b1.summary.p0WinRate - print.p0WinRate;
+  const b1Material =
+    Math.abs(b1.summary.avgRounds - print.avgRounds) >= 0.3 ||
+    Math.abs(b1.summary.killsPerGame - print.killsPerGame) >= 0.5 ||
+    Math.abs(b1.summary.territoryWinRate - print.territoryWinRate) >= 0.02 ||
+    Math.abs(b1.summary.lifeWinRate - print.lifeWinRate) >= 0.02 ||
+    Math.abs(b1.summary.check4ReturnRate - print.check4ReturnRate) >= 0.02;
+  const lines = [
+    "# v4切り分けバッチ",
+    "",
+    "Status: **寄与測定（採否判定なし）**",
+    `Date: ${output.generatedAt}`,
+    "",
+    "## 0. 要旨",
+    "",
+    "新KPI目標帯がチーム議論中のため、合否は判定しない。A1〜A4はv4から各1ノブだけを戻した同一seed比較、B1は7/18印刷仕様から配置判定だけを紙ルールへ切り替えた比較として、寄与量を記録する。",
+    "",
+    `- A2（撃破時霊力1）の先手勝率差: ${fmtDeltaPct(a2FirstDelta)}。事前予測の-5〜-7ptに ${a2Prediction ? "点推定では一致" : "一致しなかった"}。`,
+    `- A3（C2/C3 HP復元）の撃破数差: ${fmtDelta(a3KillDelta, 2)}/試合。4復元中で ${a3LargestKillReduction ? "最大の減少となり、HP主因予測と整合" : "最大の減少ではなく、HP主因予測とは不整合"}。`,
+    `- B1の先手勝率差: ${fmtDeltaPct(b1FirstDelta)}（2000試合の単独推定±2.2ptと比べて ${Math.abs(b1FirstDelta) <= 0.022 ? "誤差圏" : "誤差圏外"}）。全体差は ${b1Material ? "複数の主要指標で実質的" : "事前定義した実質差の目安未満"}。`,
+    "",
+    "## 1. グループ1: v4からの1ノブ復元",
+    "",
+    "各Δ列は当該ラン−v4。負値/正値は優劣ではなく、v4から動いた方向を表す。",
+    "",
+    "| 指標 | v4 | A1 | ΔA1 | A2 | ΔA2 | A3 | ΔA3 | A4 | ΔA4 |",
+    "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+  ];
+  for (const [label, key, type] of metrics) {
+    const base = nestedSummaryValue(v4, key);
+    const cells = [label, v4AblationFormat(base, type)];
+    for (const id of ["A1", "A2", "A3", "A4"]) {
+      const value = nestedSummaryValue(g1[id], key);
+      cells.push(v4AblationFormat(value, type), v4AblationDelta(value, base, type));
+    }
+    lines.push(`| ${cells.join(" | ")} |`);
+  }
+  lines.push(
+    "",
+    "## 2. 主要ノブの寄与量",
+    "",
+    "| 復元 | 先手勝率Δ | 平均RΔ | 撃破Δ | 生命勝ちΔ | 攻撃系再命令Δ | 弱点撃破率Δ |",
+    "|---|---:|---:|---:|---:|---:|---:|",
+  );
+  for (const id of ["A1", "A2", "A3", "A4"]) {
+    const s = g1[id];
+    lines.push(`| ${id} | ${fmtDeltaPct(s.p0WinRate - v4.p0WinRate)} | ${fmtDelta(s.avgRounds - v4.avgRounds, 2)} | ${fmtDelta(s.killsPerGame - v4.killsPerGame, 2)} | ${fmtDeltaPct(s.lifeWinRate - v4.lifeWinRate)} | ${fmtDelta(s.attackReactivationsPerGame - v4.attackReactivationsPerGame, 2)} | ${fmtDeltaPct(s.weakKillRate - v4.weakKillRate)} |`);
+  }
+  lines.push(
+    "",
+    "### 事前予測との突き合わせ",
+    "",
+    `1. **先手57.3%の主因=撃破時霊力2（予測5〜7pt）**: A2は先手勝率を ${fmtDeltaPct(a2FirstDelta)} 動かした。${a2Prediction ? "点推定は予測帯に入った。" : "点推定は予測帯に入らなかった。"} ただし各2000試合の先手勝率には約±2.2ptの幅があり、厳密な主因確定には高精度追試が必要。`,
+    `2. **撃破2.5倍の主因=HP−1**: A3は撃破を ${fmtDelta(a3KillDelta, 2)}/試合動かし、A1〜A4中で ${a3LargestKillReduction ? "最大の撃破減少だった" : "最大の撃破減少ではなかった"}。${a3LargestKillReduction ? "事前予測と整合する。" : "事前予測は支持されない。"}`,
+    "",
+    "A1〜A4はv4を基準にした局所差であり、ノブ間の相互作用は含まない。次段で組み合わせを選ぶ際は、目標に対して必要な方向と寄与量を足し算の初期近似として使い、候補構成を必ず再実測する。",
+    "",
+    "## 3. グループ2: 配置ルール実装差",
+    "",
+    "| 指標 | 7/18印刷仕様（自軍隣接） | B1（敵味方隣接） | Δ |",
+    "|---|---:|---:|---:|",
+  );
+  for (const [label, key, type] of metrics) {
+    const base = nestedSummaryValue(print, key);
+    const value = nestedSummaryValue(b1.summary, key);
+    lines.push(`| ${label} | ${v4AblationFormat(base, type)} | ${v4AblationFormat(value, type)} | ${v4AblationDelta(value, base, type)} |`);
+  }
+  lines.push(
+    "",
+    `先手勝率差は ${fmtDeltaPct(b1FirstDelta)} で、2000試合の単独推定幅±2.2ptに対して ${Math.abs(b1FirstDelta) <= 0.022 ? "誤差圏内" : "誤差圏外"}。その他は平均R 0.3、撃破0.5、主要率2ptを事前の実質差目安とし、今回は ${b1Material ? "少なくとも1項目が目安を超えたため実装差は無視できない" : "すべて目安未満で、実装差は小さい"} と整理する。これは採否ではなく、過去シミュ値を紙ルールへ読み替える際の影響量評価である。`,
+    "",
+    "## 4. 新目標決定後の組み合わせ方",
+    "",
+    "- 先後差を戻す必要が大きい場合は、A2の先手勝率寄与を第一候補として使う。",
+    "- 撃破量・生命決着・試合長を同時に抑えたい場合は、A3のHP復元による3指標の同時移動を見る。",
+    "- 弱点の比重だけを戻したい場合はA4を使い、総撃破や速度への副作用を併記する。",
+    "- 太極の盤面テーマを残しつつ先後差だけ抑えたい場合はA1の寄与を参照する。",
+    "- これらは単独寄与なので、選んだ組み合わせ1本をv4.1候補として再実測する。",
+    "",
+    "## 5. 実装ノート",
+    "",
+    "- A1〜A4はv4プローブ構成から記載の1プロパティだけを変更し、同じシード系列を使用した。",
+    "- B1は7/18印刷仕様の数値・形状・属性・経済を維持し、`anyAdjacentSummon=true`だけを追加した。自軍式神が0体なら従来どおり任意空きマス、自軍式神が1体以上なら敵味方を問わず占有マスの上下左右に召喚可能。",
+    "- 既存モードの`anyAdjacentSummon`既定値はfalseで、過去ベースラインの配置挙動は変更していない。AI重み、勝利条件、チェック探索、オラクルは変更なし。",
+    "- B1の『実質差』目安は先手2.2pt、平均R 0.3、撃破0.5、占拠/生命/返し率2pt。正式KPI帯ではなく、本バッチ内の効果量記述用。",
+    "",
+    "## 6. 再現情報",
+    "",
+    "```powershell",
+    output.reproducibility.command,
+    "```",
+    "",
+    "| Artifact | Value |",
+    "|---|---|",
+    `| Repo HEAD | \`${output.reproducibility.repoHead}\` |`,
+    `| Script SHA256 | \`${output.reproducibility.scriptSha256}\` |`,
+    `| Result JSON SHA256 | \`${resultJsonSha256}\` |`,
+    `| Games per run | ${output.reproducibility.gamesPerRun} |`,
+    `| Seed | ${output.reproducibility.seed} |`,
+    `| Oracle / depth | yes / ${output.reproducibility.checkSearchDepth} |`,
+    "",
+    `JSON: \`${V4_ABLATION_OUT_PATH}\``,
+  );
+  return `${lines.join("\n")}\n`;
+}
+
+function runV4Ablation(args) {
+  fs.mkdirSync(path.dirname(V4_ABLATION_OUT_PATH), { recursive: true });
+  const variants = {
+    A1: makeV4AblationVariant("A1_taiji_discount_off", { taijiSummonDiscount: false }),
+    A2: makeV4AblationVariant("A2_destroy_mana_1", { destroyManaGain: 1 }),
+    A3: makeV4AblationVariant("A3_print_low_cost_hp", { hpOverrides: { 2: 3, 3: 4, 4: 5 } }),
+    A4: makeV4AblationVariant("A4_weak_bonus_2", { weakBonus: 2 }),
+  };
+  const runs = Object.fromEntries(
+    Object.entries(variants).map(([id, variant]) => [id, runV4AblationVariant(variant, args, `v4 ablation ${id}`)]),
+  );
+  const b1 = runV4AblationVariant(makePrintB1Variant(), args, "v4 ablation B1");
+  const v4Output = JSON.parse(fs.readFileSync(V4_PROBE_OUT_PATH, "utf8"));
+  const printOutput = JSON.parse(fs.readFileSync(SHAPES_0718_PRINT_OUT_PATH, "utf8"));
+  const command = "node scripts\\explore-stat-curves.cjs --v4-ablation --seed 20260702";
+  const output = {
+    generatedAt: new Date().toISOString(),
+    status: "complete",
+    decisionStatus: "measurement-only",
+    assumptions: {
+      analysisMethod: path.join(ROOT, "docs", "handoff-analysis-kpi.md"),
+      teamReport: path.join(ROOT, "docs", "v4-probe-report.md"),
+      preregisteredPredictions: {
+        firstPlayerPrimaryCause: "A2 should reduce first-player win rate by 5-7 percentage points.",
+        killPrimaryCause: "A3 should produce the largest kill reduction among A1-A4.",
+      },
+      singleKnobRestorations: {
+        A1: "Taiji summon discount off only.",
+        A2: "DESTROY_MANA_GAIN 2 to 1 only.",
+        A3: "C2/C3 HP 2/3 to 3/4 only.",
+        A4: "Weakness bonus +1 to +2 only.",
+        B1: "Print baseline summon adjacency own-only to any occupied creature only.",
+      },
+    },
+    reproducibility: {
+      command,
+      repoHead: gitHead(),
+      scriptPath: __filename,
+      scriptSha256: sha256File(__filename),
+      gamesPerRun: args.v4AblationSamples,
+      seed: args.seed,
+      seedStride: 9176,
+      oracle: true,
+      checkSearchDepth: 6,
+    },
+    group1: {
+      reference: { source: V4_PROBE_OUT_PATH, summary: v4Output.run.summary },
+      runs,
+    },
+    group2: {
+      reference: { source: SHAPES_0718_PRINT_OUT_PATH, summary: printOutput.run.summary },
+      run: b1,
+    },
+  };
+  fs.writeFileSync(V4_ABLATION_OUT_PATH, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+  const resultJsonSha256 = sha256File(V4_ABLATION_OUT_PATH);
+  fs.writeFileSync(V4_ABLATION_MD_PATH, v4AblationMarkdown(output, { resultJsonSha256 }), "utf8");
+  console.log(`Wrote ${path.relative(ROOT, V4_ABLATION_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, V4_ABLATION_MD_PATH)}`);
+}
+
 function main() {
   const args = parseArgs(process.argv);
   if (args.phase2aMainSearch) {
@@ -6965,6 +7549,14 @@ function main() {
   }
   if (args.shapes0718Print) {
     runShapes0718Print(args);
+    return;
+  }
+  if (args.v4Probe) {
+    runV4Probe(args);
+    return;
+  }
+  if (args.v4Ablation) {
+    runV4Ablation(args);
     return;
   }
   if (args.reactValueForked) {

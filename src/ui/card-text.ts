@@ -90,7 +90,7 @@ export function describeCondition(condition: EffectCondition): string {
     case 'enemy_count_gte':
       return `敵${condition.value}体以上の時`;
     case 'blind_spot':
-      return '死角から攻撃時';
+      return '弱点から攻撃時';
     case 'same_element_cell':
       return '自属性マスにいる時';
     case 'target_hp_lte':

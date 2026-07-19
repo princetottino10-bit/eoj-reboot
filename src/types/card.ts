@@ -189,9 +189,9 @@ export type EffectCondition =
   | { type: 'hp_pct_lte'; value: number }           // 自分HPがN%以下
   | { type: 'hp_pct_gte'; value: number }           // 自分HPがN%以上
   | { type: 'enemy_count_gte'; value: number }      // 敵がN体以上
-  | { type: 'blind_spot' }                          // 死角から攻撃時
+  | { type: 'blind_spot' }                          // 弱点から攻撃時
   | { type: 'attacked_from_front' }                 // 正面から攻撃された時
-  | { type: 'attacked_from_non_blind' }             // 死角以外から攻撃された時
+  | { type: 'attacked_from_non_blind' }             // 弱点以外から攻撃された時
   | { type: 'same_element_cell' }                   // 自属性マスにいる時
   | { type: 'on_element'; value: string }            // 指定属性マスにいる時
   | { type: 'target_element'; value: string }        // 対象が指定属性の時

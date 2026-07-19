@@ -1,6 +1,6 @@
 # 7/18 Print Kit Audit
 
-Generated: 2026-07-17T10:11:26.167Z
+Generated: 2026-07-17T11:40:18.319Z
 
 Result: **PASS**
 
@@ -8,6 +8,7 @@ Result: **PASS**
 - P1/P2 attributes: 地4 / 水4 / 火4 / 風4
 - No management IDs
 - 薙刀霊 spelling verified
+- Player-facing terminology uses 弱点 consistently
 - All attacks are physical, choice 1, and counter range equals attack range in the rendered kit
 
 | Card | Copies/player | Cost | HP | ATK | React | Life | Attack cells | Weak cells | Result |
