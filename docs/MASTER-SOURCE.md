@@ -22,8 +22,9 @@ gh repo clone fenril058/3x3_duel   # 全体を見るならクローン
 | `design/game/GAME_FORMATS.md` | デッキ構築方法(Standard = 一門16枚をそのまま使用) |
 | `design/game/GAME_VISION.md` / `BOARD_SPEC.md` / `CARD_DESIGN_GUIDE.md` | 設計思想・盤面・カード設計指針 |
 | `data/constants.json` | **ゲーム定数の正本** |
-| `data/cards.json` | **カードデータの正本**(32枚。効果ID付き) |
-| `data/effects.json` | 効果定義 |
+| `data/test-cards.json` | **現行アプリのカードプール(効果なし式神192枚・12パック)。バランス調整の対象はこちら** |
+| `data/cards.json` | 効果付き32枚(妖怪名・一門別)。**ボツ案**。参照しないこと |
+| `data/effects.json` | 効果定義(上記ボツ案に紐づく) |
 | `design/software/DATA_SPEC.md` / `DIGITAL_MOCK_DESIGN.md` | データ仕様・エンジン設計 |
 
 その他: `engine/`(TS実装)、`clients/`(browser/console/**ai**)、`analysis/`、`print/`
@@ -60,13 +61,28 @@ gh repo clone fenril058/3x3_duel   # 全体を見るならクローン
 
 RULINGS の主な確定/提案: 召喚時効果は召喚攻撃より**先**に解決 / 反撃は攻撃を受けた式神が生存している場合のみ / 再反撃なし / 反撃も「攻撃」なので撃破誘発する / HP上限はいかなる場合も `MAX_HP` 超過不可
 
-## 4. カードデータの正本(`data/cards.json`)
+## 4. カードデータの正本(`data/test-cards.json`)
 
-- 32枚。`cardType`: `shikigami` / `reigu`(霊具も既に存在)
-- 一門(`faction`)別。妖怪テーマの実カード名(化け草履・唐傘小僧・提灯お化け・朧車・九十九の王 など)
-- フィールド: `id` / `code` / `name` / `cardType` / `faction` / `summonCost` / `commandCost` / `attribute`(yin/yang/void) / `attackType` / `atk` / `hp` / `lifeValue` / `targetCount` / `attackRange` / **`counterRange`** / `blindSpots` / `role` / `effects[]` / `notes`
-- **効果(`effects`)が既に付いている**(EF-001 等。定義は `data/effects.json`)
-- Standard フォーマット = 一門16枚をそのまま使用。カードの入れ替えなし(`GAME_FORMATS.md`)
+> **注意**: `data/cards.json`(効果付き32枚・妖怪名)は**ボツ案**。現行アプリが使うのは `test-cards.json`。
+
+- **192枚 = 16枚 × 12パック**。全て `cardType: shikigami`、`effects: []`(効果なし)、`faction: test`
+- 1パック16枚のコスト分布は **C2×4 / C3×4 / C4×4 / C5×2 / C6×1 / C7×1**(本プロジェクトの lowmid 分布と同一)
+- フィールド: `id` / `code` / `name` / `cardType` / `faction` / `summonCost` / `commandCost`(=再命令コスト) / `attribute`(yin/yang/void) / `attackType` / `atk` / `hp` / `lifeValue` / `targetCount` / `attackRange` / **`counterRange`** / `blindSpots` / `role` / `effects[]` / `notes`
+- Standard フォーマット = 一門16枚をそのまま使用、入れ替えなし(`GAME_FORMATS.md`)
+
+### 現行プールと本プロジェクトの検証構成の対応
+
+| パック | ステータス | 本プロジェクトでの対応 |
+|---|---|---|
+| **vanilla-1** 標準(陽) | C2:HP3 / C3:HP4 / C4:HP5、再命令 2/3/3/3/3/4、C6攻撃4マス | **7/18印刷仕様**(陽を高コスト帯に配分) |
+| **vanilla-2** 標準(陰) | 同上(陰を高コスト帯に配分) | 同上の陰版 |
+| **vanilla-3** 低体力(陰) | **C2:HP2 / C3:HP2** / C4:HP5、再命令 2/3/3/3/3/4、**C6攻撃5マス** | **v4.1のR0**(2026-07-23のC3:HP2指定) |
+| **vanilla-4** 低体力・中量再命令 | vanilla-3 + **再命令 2/2/2/3/3/3** | **未検証**。再命令コストを中量帯へ下げた新案 |
+| light/medium/heavy/extra_heavy × 陽/陰(8パック) | 再命令コスト水準の掃引用(selectable=false) | 再命令コスト掃引(2c)に対応 |
+
+**注意点**:
+- 属性は**パックごとに配分が設計されている**(「陽を高コスト帯に」等)。本プロジェクトのシミュは陰陽8:8のランダム割当で、正本と異なる。太極・属性マスとの相互作用に差が出る可能性がある
+- C6(九尾相当)の攻撃範囲はvanilla-1/2が4マス、vanilla-3/4が5マス
 
 ## 5. 本プロジェクト(バランス調整)との差分 — 重要
 
@@ -78,8 +94,9 @@ RULINGS の主な確定/提案: 召喚時効果は召喚攻撃より**先**に�
 | **START_MANA_SECOND** | 4 | v4.1のH1で5を提案・検証中 | 提案段階。正本未反映 |
 | **属性・盤面** | 陰陽+太極(正本で採用済み) | v4の提案として検証中 | 正本が先行。**既に正式** |
 | **反撃範囲** | 独立概念(`counterRange` フィールドあり) | 「攻撃範囲=反撃範囲」と裁定 | 現行カードは同値だが、**構造は独立**。裁定は「現行カードの値がたまたま同じ」と理解すべき |
-| **カードプール** | 実カード32枚(一門・効果・妖怪名) | 素体9種(鬼火/小鬼/槍霊/薙刀霊/鬼/両面/仁王/九尾/龍)・効果なし | **別物**。本プロジェクトの9種は形状検証用の素体であり、正本のカードではない |
-| **ステータスカーブ** | HP 1/1/2/2/2/4/4/5/5/6/7/8、ATK 1/1/2/2/2/2/2/3/3/4/5/6、生命価 1〜3(実カード) | C2〜C7の6段カーブ | 正本は実カード個別値。カーブは設計指針(`CARD_DESIGN_GUIDE.md`)側 |
+| **カードプール** | `test-cards.json` の効果なし192枚(12パック) | 素体9種の16枚デッキ | **ほぼ対応**。vanilla-1/2=7/18仕様、vanilla-3=v4.1のR0。※`cards.json`の効果付き32枚はボツ案 |
+| **属性割当** | パックごとに設計(「陽を高コスト帯に」等) | 陰陽8:8のランダム割当 | **差分あり**。太極・属性マスとの相互作用に影響しうる。要検討 |
+| **未検証のパック** | **vanilla-4**(低体力+再命令 2/2/2/3/3/3) | — | 正本にあるが本プロジェクトで未計測。**v4環境での再命令中量帯の再評価候補** |
 | **デッキ** | 16枚(一門固定) | 16枚 | 一致 |
 
 ## 6. 運用ルール(以後)
