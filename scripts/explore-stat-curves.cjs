@@ -55,13 +55,17 @@ const V41_TUNING_OUT_PATH = path.join(ROOT, "docs", "baselines", "v41-tuning-res
 const V41_TUNING_MD_PATH = path.join(ROOT, "docs", "baselines", "v41-tuning.md");
 const C3_332_OUT_PATH = path.join(ROOT, "docs", "baselines", "c3-3-2-probe-results.json");
 const C3_332_MD_PATH = path.join(ROOT, "docs", "baselines", "c3-3-2-probe.md");
+const VER1_DATA_PATH = path.join(ROOT, "data", "ver1-vanilla4.json");
+const VER1_OUT_PATH = path.join(ROOT, "docs", "baselines", "ver1-baseline-results.json");
+const VER1_MD_PATH = path.join(ROOT, "docs", "baselines", "ver1-baseline.md");
+const ERA_SPEC_COMPLIANCE_MD_PATH = path.join(ROOT, "docs", "baselines", "era-spec-compliance.md");
 
 const FOCUS_FACTIONS = ["cip", "aggro", "spell", "defense"];
 const BOARD_ATTRS = ["火", "火", "水", "水", "土", "土", "木", "木", "無"];
 const ATTR_OPPOSITES = { 火: "水", 水: "火", 土: "木", 木: "土" };
 const DIRS = [0, 1, 2, 3];
 const LIFE_TOTAL = 15;
-const MANA_CAP = 15;
+const LEGACY_MANA_CAP = 15;
 const START_MANA_FIRST = 3;
 const START_MANA_SECOND = 4;
 const DESTROY_MANA_GAIN = 1;
@@ -70,8 +74,10 @@ const WEAK_BONUS = 2;
 const HAND_SIZE = 5;
 const DEFAULT_DECK_CREATURES = 12;
 const DRAFT_DECK_CREATURES = 16;
-const MAX_HALF_TURNS = 80;
+const LEGACY_MAX_TURNS = 80;
+const DEFAULT_MAX_TURNS = 200;
 let DEFAULT_ANY_ADJACENT_SUMMON = true;
+let DEFAULT_LEGACY_ENGINE = false;
 const PURE_FACTION = "pure";
 const PURE_ATTRIBUTES = ["earth", "water", "fire", "wind"];
 const PURE_BOARD_ATTRS = ["water", "fire", "wind", "earth", "neutral", "water", "fire", "wind", "earth"];
@@ -217,8 +223,12 @@ function parseArgs(argv) {
     v41Tuning: false,
     v41TuningRender: false,
     c3Hp3Probe: false,
+    ver1Baseline: false,
+    ver1Render: false,
+    ver1Samples: 2000,
     v41TuningSamples: 2000,
     strictSummon: false,
+    legacyEngine: false,
     phase2aPrimarySamples: 1000,
     phase2aSecondarySamples: 2000,
     phase2aRobustnessSamples: 1000,
@@ -355,6 +365,17 @@ function parseArgs(argv) {
       args.c3Hp3Probe = true;
       args.oracle = true;
       args.checkSearchDepth = 6;
+    }
+    else if (arg === "--ver1-baseline") {
+      args.ver1Baseline = true;
+      args.oracle = true;
+      args.checkSearchDepth = 6;
+    }
+    else if (arg === "--ver1-render") args.ver1Render = true;
+    else if (arg === "--ver1-samples") args.ver1Samples = Number(argv[++i] ?? args.ver1Samples);
+    else if (arg === "--legacy-engine") {
+      args.legacyEngine = true;
+      DEFAULT_LEGACY_ENGINE = true;
     }
     else if (arg === "--v41-tuning-samples") args.v41TuningSamples = Number(argv[++i] ?? args.v41TuningSamples);
     else if (arg === "--strict-summon") {
@@ -623,8 +644,9 @@ function lifeDamageForCard(card, rule) {
   return card.life_value ?? lifeDamageForCost(card.cost, rule);
 }
 
-function makeInstance(card, owner, dir, hpBonus, halfTurn) {
-  const maxHp = Math.min(MAX_HP, Math.max(1, card.hp + hpBonus));
+function makeInstance(card, owner, dir, hpBonus, halfTurn, allowNonPositiveHp = false) {
+  const adjustedHp = card.hp + hpBonus;
+  const maxHp = Math.min(MAX_HP, allowNonPositiveHp ? adjustedHp : Math.max(1, adjustedHp));
   return {
     card,
     owner,
@@ -669,6 +691,10 @@ function buildDeck(faction, cardsByFaction, random, deckSize) {
   }
 
   return shuffle(deck, random);
+}
+
+function buildFixedDeck(cards, random) {
+  return shuffle(cards.map((card) => ({ ...card })), random);
 }
 
 function buildPureDeck(variant, random, owner) {
@@ -828,20 +854,36 @@ function recordDeckReshuffle(state) {
   }
 }
 
-function addMana(player, amount, metrics) {
+function addMana(state, owner, amount) {
+  const player = state.players[owner];
+  const metrics = state.metrics;
   const before = player.mana;
   const next = before + amount;
   metrics.manaIncome += amount;
-  if (next >= MANA_CAP) metrics.capHits += 1;
-  if (next > MANA_CAP) metrics.manaOverflow += next - MANA_CAP;
-  player.mana = Math.min(MANA_CAP, next);
+  if (state.manaCap == null) {
+    player.mana = next;
+    return;
+  }
+  if (next >= state.manaCap) metrics.capHits += 1;
+  if (next > state.manaCap) metrics.manaOverflow += next - state.manaCap;
+  player.mana = Math.min(state.manaCap, next);
 }
 
 function grantDestroyMana(state, owner) {
   const amount = state.destroyManaGain ?? DESTROY_MANA_GAIN;
   if (amount <= 0) return;
-  addMana(state.players[owner], amount, state.metrics);
+  addMana(state, owner, amount);
   state.metrics.destroyManaGained += amount;
+}
+
+function resolveLifeWinner(state) {
+  if (state.legacyEngine || state.winner != null) return;
+  const p0Reached = state.players[0].lifeDamage >= state.lifeTotal;
+  const p1Reached = state.players[1].lifeDamage >= state.lifeTotal;
+  if (p0Reached && p1Reached) state.winner = -1;
+  else if (p0Reached) state.winner = 0;
+  else if (p1Reached) state.winner = 1;
+  if (state.winner != null) state.reason = "life";
 }
 
 function spendMana(state, amount) {
@@ -853,8 +895,10 @@ function hasTaijiControl(state, owner = state.active) {
   return state.taijiSummonDiscount && state.board[4]?.owner === owner;
 }
 
-function summonCostFor(state, card, owner = state.active) {
-  return hasTaijiControl(state, owner) ? Math.max(1, card.cost - 1) : card.cost;
+function summonCostFor(state, card, owner = state.active, cellIdx = null) {
+  if (!state.taijiSummonDiscount) return card.cost;
+  if (state.legacyEngine) return hasTaijiControl(state, owner) ? Math.max(1, card.cost - 1) : card.cost;
+  return cellIdx === 4 ? Math.max(0, card.cost - 1) : card.cost;
 }
 
 function destroyCreatureAt(state, boardIdx) {
@@ -905,8 +949,11 @@ function findItemHandIndex(player, type) {
 function hasAffordableSummonWithMana(state, mana) {
   const active = state.active;
   if (controlCount(state.board, active) >= 5) return false;
-  if (validSummonCells(state.board, active, state.anyAdjacentSummon).length === 0) return false;
-  return state.players[active].hand.some((card) => isCreatureCard(card) && summonCostFor(state, card, active) <= mana);
+  const cells = validSummonCells(state.board, active, state.anyAdjacentSummon);
+  if (cells.length === 0) return false;
+  return state.players[active].hand.some(
+    (card) => isCreatureCard(card) && cells.some((cellIdx) => summonCostFor(state, card, active, cellIdx) <= mana),
+  );
 }
 
 function hasAffordableReactivationWithMana(state, mana) {
@@ -914,8 +961,8 @@ function hasAffordableReactivationWithMana(state, mana) {
   for (let i = 0; i < 9; i++) {
     const char = state.board[i];
     if (!char || char.owner !== active) continue;
-    if (!char.hasActed && attackTargetsFor(state.board, i, char).length > 0 && attackCost(char.card) <= mana) return true;
-    if (!char.hasRotated && rotationCost(char.card) <= mana) return true;
+    if (canUseRecommand(state, char, "attack") && attackTargetsFor(state.board, i, char).length > 0 && attackCost(char.card) <= mana) return true;
+    if (canUseRecommand(state, char, "rotate") && rotationCost(char.card) <= mana) return true;
   }
   return false;
 }
@@ -958,6 +1005,7 @@ function executeItemAction(state, action, source = "item-ai") {
         const life = lifeDamageForCard(destroyed.card, state.lifeRule);
         state.players[active].lifeDamage += life;
         grantDestroyMana(state, destroyed.owner);
+        resolveLifeWinner(state);
         recordKill(state, destroyed.card.cost, false, null, destroyed.card);
         state.metrics.itemRemovalKills += 1;
       }
@@ -966,7 +1014,7 @@ function executeItemAction(state, action, source = "item-ai") {
   }
 
   if (action.itemType === "economy") {
-    addMana(player, 2, state.metrics);
+    addMana(state, active, 2);
     return true;
   }
 
@@ -1024,9 +1072,9 @@ function chooseRemovalItemAction(state) {
 function chooseEconomyItemAction(state) {
   const player = state.players[state.active];
   const handIndex = findItemHandIndex(player, "economy");
-  if (handIndex < 0 || player.mana < 1 || player.mana >= MANA_CAP) return null;
+  if (handIndex < 0 || player.mana < 1 || (state.manaCap != null && player.mana >= state.manaCap)) return null;
   const beforeMana = player.mana;
-  const afterMana = Math.min(MANA_CAP, beforeMana + 1);
+  const afterMana = state.manaCap == null ? beforeMana + 1 : Math.min(state.manaCap, beforeMana + 1);
   const enablesSummon = !hasAffordableSummonWithMana(state, beforeMana) && hasAffordableSummonWithMana(state, afterMana);
   const enablesReactivation =
     !hasAffordableReactivationWithMana(state, beforeMana) && hasAffordableReactivationWithMana(state, afterMana);
@@ -1164,6 +1212,7 @@ function resolveSingleAttack(state, attackerIdx, targetIdx, source) {
     const life = lifeDamageForCard(defender.card, state.lifeRule);
     state.players[owner].lifeDamage += life;
     grantDestroyMana(state, opp);
+    resolveLifeWinner(state);
     recordKill(state, defender.card.cost, preview.blind, attacker.card, defender.card);
     return;
   }
@@ -1176,6 +1225,7 @@ function resolveSingleAttack(state, attackerIdx, targetIdx, source) {
       const life = lifeDamageForCard(attacker.card, state.lifeRule);
       state.players[opp].lifeDamage += life;
       grantDestroyMana(state, owner);
+      resolveLifeWinner(state);
       recordKill(state, attacker.card.cost, false, defender.card, attacker.card);
     }
   }
@@ -1296,6 +1346,17 @@ function quarterTurnDirs(dir) {
   return [(dir + 1) % 4, (dir + 3) % 4];
 }
 
+function canUseRecommand(state, char, type) {
+  if (state.sharedRecommandSlot) return !char.hasActed && !char.hasRotated;
+  if (type === "attack") return !char.hasActed;
+  if (type === "rotate") return !char.hasRotated;
+  return !char.hasActed && !char.hasRotated;
+}
+
+function rotationChoices(state, dir) {
+  return state.quarterTurnOnly ? quarterTurnDirs(dir) : DIRS.filter((candidate) => candidate !== dir);
+}
+
 function generateOracleRotateAttackActions(state, charIdx, char) {
   const actions = [];
   const originalDir = char.dir;
@@ -1344,18 +1405,16 @@ function generateOracleReactivationActions(state, options = {}) {
     const char = state.board[i];
     if (!char || char.owner !== active) continue;
     const reattackCost = attackCost(char.card);
-    if (allowAttack && !char.hasActed && player.mana >= reattackCost) {
+    if (allowAttack && canUseRecommand(state, char, "attack") && player.mana >= reattackCost) {
       actions.push(...generateOracleAttackActions(state, i, char));
     }
-    if (allowRotateAttack && !char.hasActed && !char.hasRotated && player.mana >= reattackCost) {
+    if (allowRotateAttack && canUseRecommand(state, char, "rotateAttack") && player.mana >= reattackCost) {
       actions.push(...generateOracleRotateAttackActions(state, i, char));
     }
-    if (allowRotate && !char.hasRotated) {
+    if (allowRotate && canUseRecommand(state, char, "rotate")) {
       const rotateCost = rotationCost(char.card);
       if (player.mana < rotateCost) continue;
-      for (const dir of DIRS) {
-        if (dir !== char.dir) actions.push({ type: "rotate", idx: i, dir, cost: rotateCost });
-      }
+      for (const dir of rotationChoices(state, char.dir)) actions.push({ type: "rotate", idx: i, dir, cost: rotateCost });
     }
   }
   return actions;
@@ -1369,10 +1428,10 @@ function generateOracleSummonActions(state) {
   for (let h = 0; h < player.hand.length; h++) {
     const card = player.hand[h];
     if (!isCreatureCard(card)) continue;
-    if (!card || summonCostFor(state, card, active) > player.mana) continue;
     for (const cellIdx of cells) {
+      if (!card || summonCostFor(state, card, active, cellIdx) > player.mana) continue;
       const hpDelta = attrBonus(card.attribute, state.boardAttrs[cellIdx]);
-      if (card.hp + hpDelta <= 0) continue;
+      if (!state.allowLethalAttributeSummon && card.hp + hpDelta <= 0) continue;
       for (const dir of DIRS) actions.push({ handIndex: h, cellIdx, dir });
     }
   }
@@ -1416,6 +1475,7 @@ function applyOracleReactivation(state, action) {
     if (char) {
       char.dir = action.dir;
       char.hasRotated = true;
+      if (state.sharedRecommandSlot) char.hasActed = true;
     }
     return;
   }
@@ -1526,6 +1586,7 @@ function executePlannedReactivation(state, action) {
     if (char) {
       char.dir = action.dir;
       char.hasRotated = true;
+      if (state.sharedRecommandSlot) char.hasActed = true;
     }
     return;
   }
@@ -1693,7 +1754,7 @@ function chooseBestAttackFamilyAction(state, options = {}) {
     const char = state.board[i];
     if (!char || char.owner !== active) continue;
     const reattackCost = attackCost(char.card);
-    if (player.mana < reattackCost || char.hasActed) continue;
+    if (player.mana < reattackCost || !canUseRecommand(state, char, "attack")) continue;
 
     if (allowAttack) {
       const score = scoreAttackAction(state, i);
@@ -1702,7 +1763,7 @@ function chooseBestAttackFamilyAction(state, options = {}) {
       }
     }
 
-    if (allowRotateAttack && !char.hasRotated) {
+    if (allowRotateAttack && canUseRecommand(state, char, "rotateAttack")) {
       for (const dir of quarterTurnDirs(char.dir)) {
         const score = scoreRotateAttackAction(state, i, dir);
         if (Number.isFinite(score) && (!best || score > best.score)) {
@@ -1749,13 +1810,13 @@ function chooseReactivation(state, options = {}) {
     const char = state.board[i];
     if (!char || char.owner !== active) continue;
     const reattackCost = attackCost(char.card);
-    if (allowAttack && !char.hasActed && player.mana >= reattackCost) {
+    if (allowAttack && canUseRecommand(state, char, "attack") && player.mana >= reattackCost) {
       const score = scoreAttackAction(state, i);
       if (score > 10 && (!best || score > best.score)) {
         best = { type: "attack", idx: i, cost: reattackCost, score };
       }
     }
-    if (allowRotateAttack && state.rotateAttackRule && !char.hasActed && !char.hasRotated && player.mana >= reattackCost) {
+    if (allowRotateAttack && state.rotateAttackRule && canUseRecommand(state, char, "rotateAttack") && player.mana >= reattackCost) {
       for (const dir of quarterTurnDirs(char.dir)) {
         const score = scoreRotateAttackAction(state, i, dir);
         if (score > 10 && (!best || score > best.score)) {
@@ -1764,8 +1825,8 @@ function chooseReactivation(state, options = {}) {
       }
     }
     const rotateCost = rotationCost(char.card);
-    if (allowRotate && !char.hasRotated && player.mana >= rotateCost) {
-      for (const dir of DIRS) {
+    if (allowRotate && canUseRecommand(state, char, "rotate") && player.mana >= rotateCost) {
+      for (const dir of rotationChoices(state, char.dir)) {
         const score = scoreRotation(state, i, dir);
         if (score > 14 && (!best || score > best.score)) {
           best = { type: "rotate", idx: i, dir, cost: rotateCost, score };
@@ -1803,6 +1864,7 @@ function executeReactivation(state, action) {
     if (char) {
       char.dir = action.dir;
       char.hasRotated = true;
+      if (state.sharedRecommandSlot) char.hasActed = true;
     }
   }
 }
@@ -1812,7 +1874,10 @@ function scoreSummon(state, handIndex, cellIdx, dir) {
   const opp = 1 - active;
   const card = state.players[active].hand[handIndex];
   const hpDelta = attrBonus(card.attribute, state.boardAttrs[cellIdx]);
-  if (card.hp + hpDelta <= 0) return -Infinity;
+  if (!state.allowLethalAttributeSummon && card.hp + hpDelta <= 0) return -Infinity;
+  if (card.hp + hpDelta <= 0) {
+    return -200 - lifeDamageForCard(card, state.lifeRule) * 20 + (cellIdx === 4 ? 2 : 0);
+  }
 
   let score = 0;
   const currentControl = controlCount(state.board, active);
@@ -1828,7 +1893,7 @@ function scoreSummon(state, handIndex, cellIdx, dir) {
   score += adjacentCells(cellIdx).filter((i) => state.board[i]?.owner === active).length * 5;
   score += card.hp * 2 + card.atk * 3 - card.cost * 2;
 
-  const instance = makeInstance(card, active, dir, hpDelta, state.halfTurns);
+  const instance = makeInstance(card, active, dir, hpDelta, state.halfTurns, state.allowLethalAttributeSummon);
   state.board[cellIdx] = instance;
   const targets = attackTargetsFor(state.board, cellIdx, instance);
   if (targets.length > 0) {
@@ -1847,8 +1912,8 @@ function chooseSummon(state) {
   for (let h = 0; h < player.hand.length; h++) {
     const card = player.hand[h];
     if (!isCreatureCard(card)) continue;
-    if (!card || summonCostFor(state, card, active) > player.mana) continue;
     for (const c of cells) {
+      if (!card || summonCostFor(state, card, active, c) > player.mana) continue;
       for (const dir of DIRS) {
         const score = scoreSummon(state, h, c, dir);
         if (!Number.isFinite(score)) continue;
@@ -1882,11 +1947,11 @@ function executeSummon(state, action) {
     return false;
   }
   const hpDelta = attrBonus(card.attribute, state.boardAttrs[action.cellIdx]);
-  if (card.hp + hpDelta <= 0) {
+  if (!state.allowLethalAttributeSummon && card.hp + hpDelta <= 0) {
     player.hand.splice(action.handIndex, 0, card);
     return false;
   }
-  const paidCost = summonCostFor(state, card, active);
+  const paidCost = summonCostFor(state, card, active, action.cellIdx);
   spendMana(state, paidCost);
   if (paidCost < card.cost) {
     state.metrics.taijiDiscountUses += 1;
@@ -1901,8 +1966,17 @@ function executeSummon(state, action) {
   state.metrics.summons += 1;
   const controlBefore = controlCount(state.board, active);
   recordFirstSummon(state, active);
-  const inst = makeInstance(card, active, action.dir, hpDelta, state.halfTurns);
+  const inst = makeInstance(card, active, action.dir, hpDelta, state.halfTurns, state.allowLethalAttributeSummon);
   state.board[action.cellIdx] = inst;
+  if (inst.hp <= 0) {
+    state.metrics.lethalAttributeSummons += 1;
+    destroyCreatureAt(state, action.cellIdx);
+    state.players[1 - active].lifeDamage += lifeDamageForCard(card, state.lifeRule);
+    grantDestroyMana(state, active);
+    resolveLifeWinner(state);
+    recordKill(state, card.cost, false, null, card);
+    return true;
+  }
   recordBoard3(state, active);
   executeAttackAction(state, action.cellIdx, "summon");
   if (state.v4Probe && controlBefore === 4 && !state.board[action.cellIdx]) {
@@ -1922,7 +1996,8 @@ function recordSummonStall(state) {
     state.metrics.summonStalledNoCards += 1;
     return;
   }
-  if (!creatureHand.some((card) => summonCostFor(state, card, active) <= player.mana)) {
+  const cells = validSummonCells(state.board, active, state.anyAdjacentSummon);
+  if (!creatureHand.some((card) => cells.some((cellIdx) => summonCostFor(state, card, active, cellIdx) <= player.mana))) {
     state.metrics.summonStalledTurns += 1;
     state.metrics.summonStalledMana += 1;
   }
@@ -1933,7 +2008,7 @@ function hasAttackReactivationOpportunity(state) {
   const player = state.players[active];
   for (let i = 0; i < 9; i++) {
     const char = state.board[i];
-    if (!char || char.owner !== active || char.hasActed) continue;
+    if (!char || char.owner !== active || !canUseRecommand(state, char, "attack")) continue;
     if (player.mana < attackCost(char.card)) continue;
     if (attackTargetsFor(state.board, i, char).length > 0) return true;
   }
@@ -1983,7 +2058,7 @@ function finishTurn(state) {
     state.pendingCheckHasHighCost[active] = hasHighCostControlled(state.board, active);
   }
 
-  addMana(state.players[active], state.manaGain, state.metrics);
+  addMana(state, active, state.manaGain);
   const fatigueApplied = drawToFive(state.players[active], state, active);
   if (fatigueApplied && state.players[1 - active].lifeDamage >= state.lifeTotal) {
     state.winner = 1 - active;
@@ -2121,12 +2196,16 @@ function makeInitialState(p0Faction, p1Faction, cardsByFaction, variant, seed) {
     : variant.pureVanilla
       ? [...PURE_BOARD_ATTRS]
       : shuffle(BOARD_ATTRS, random);
-  const deck0 = variant.pureVanilla
-    ? buildPureDeck(variant, random, 0)
-    : buildDeck(p0Faction, cardsByFaction, random, variant.deckCreatures);
-  const deck1 = variant.pureVanilla
-    ? buildPureDeck(variant, random, 1)
-    : buildDeck(p1Faction, cardsByFaction, random, variant.deckCreatures);
+  const deck0 = variant.fixedDeckCards
+    ? buildFixedDeck(variant.fixedDeckCards, random)
+    : variant.pureVanilla
+      ? buildPureDeck(variant, random, 0)
+      : buildDeck(p0Faction, cardsByFaction, random, variant.deckCreatures);
+  const deck1 = variant.fixedDeckCards
+    ? buildFixedDeck(variant.fixedDeckCards, random)
+    : variant.pureVanilla
+      ? buildPureDeck(variant, random, 1)
+      : buildDeck(p1Faction, cardsByFaction, random, variant.deckCreatures);
   const itemInitialByType = itemCountsForBothPlayers(variant.itemCounts ?? null);
   const itemInitial = itemCountsTotal(itemInitialByType);
   const p0StartMana = variant.p0StartingMana ?? 0;
@@ -2153,7 +2232,15 @@ function makeInitialState(p0Faction, p1Faction, cardsByFaction, variant, seed) {
     oracle: variant.oracle ?? false,
     checkSearchDepth: variant.checkSearchDepth ?? 0,
     reactNeedOracle: variant.reactNeedOracle ?? false,
-    rotateAttackRule: variant.rotateAttackRule ?? false,
+    rotateAttackRule: variant.rotateAttackRule ?? !(variant.legacyEngine ?? DEFAULT_LEGACY_ENGINE),
+    legacyEngine: variant.legacyEngine ?? DEFAULT_LEGACY_ENGINE,
+    sharedRecommandSlot: !(variant.legacyEngine ?? DEFAULT_LEGACY_ENGINE),
+    quarterTurnOnly: !(variant.legacyEngine ?? DEFAULT_LEGACY_ENGINE),
+    allowLethalAttributeSummon: !(variant.legacyEngine ?? DEFAULT_LEGACY_ENGINE),
+    manaCap: variant.manaCap !== undefined
+      ? variant.manaCap
+      : ((variant.legacyEngine ?? DEFAULT_LEGACY_ENGINE) ? LEGACY_MANA_CAP : null),
+    maxHalfTurns: variant.maxHalfTurns ?? ((variant.legacyEngine ?? DEFAULT_LEGACY_ENGINE) ? LEGACY_MAX_TURNS : DEFAULT_MAX_TURNS),
     v4Probe: variant.v4Probe ?? false,
     taijiSummonDiscount: variant.taijiSummonDiscount ?? false,
     weakBonus: variant.weakBonus ?? WEAK_BONUS,
@@ -2182,6 +2269,7 @@ function makeInitialState(p0Faction, p1Faction, cardsByFaction, variant, seed) {
       taijiDiscountUsesP1: 0,
       taijiManaSaved: 0,
       fifthSummonCounterDeaths: 0,
+      lethalAttributeSummons: 0,
       reactivations: 0,
       attackReactivationActions: 0,
       rotations: 0,
@@ -2317,13 +2405,17 @@ function recordOutcomeUsageMetrics(state) {
 
 function simulateGame(p0Faction, p1Faction, cardsByFaction, variant, seed) {
   const state = makeInitialState(p0Faction, p1Faction, cardsByFaction, variant, seed);
-  while (state.winner == null && state.halfTurns < MAX_HALF_TURNS) {
+  while (state.winner == null && state.halfTurns < state.maxHalfTurns) {
     simulateTurn(state);
   }
   if (state.winner == null) {
-    const d0 = state.players[0].lifeDamage;
-    const d1 = state.players[1].lifeDamage;
-    state.winner = d0 > d1 ? 0 : d1 > d0 ? 1 : -1;
+    if (state.legacyEngine) {
+      const d0 = state.players[0].lifeDamage;
+      const d1 = state.players[1].lifeDamage;
+      state.winner = d0 > d1 ? 0 : d1 > d0 ? 1 : -1;
+    } else {
+      state.winner = -1;
+    }
     state.reason = "timeout";
   }
   recordItemDeadAtEnd(state);
@@ -2339,13 +2431,17 @@ function simulateGame(p0Faction, p1Faction, cardsByFaction, variant, seed) {
 }
 
 function finishSimulatedState(state) {
-  while (state.winner == null && state.halfTurns < MAX_HALF_TURNS) {
+  while (state.winner == null && state.halfTurns < state.maxHalfTurns) {
     simulateTurn(state);
   }
   if (state.winner == null) {
-    const d0 = state.players[0].lifeDamage;
-    const d1 = state.players[1].lifeDamage;
-    state.winner = d0 > d1 ? 0 : d1 > d0 ? 1 : -1;
+    if (state.legacyEngine) {
+      const d0 = state.players[0].lifeDamage;
+      const d1 = state.players[1].lifeDamage;
+      state.winner = d0 > d1 ? 0 : d1 > d0 ? 1 : -1;
+    } else {
+      state.winner = -1;
+    }
     state.reason = "timeout";
   }
   recordItemDeadAtEnd(state);
@@ -2469,7 +2565,7 @@ function simulateReactValueForkBaseGame(gameIndex, seed, variant) {
   const state = makeInitialState(PURE_FACTION, PURE_FACTION, cardsByFaction, variant, seed);
   const candidates = [];
   let localCandidateIndex = 0;
-  while (state.winner == null && state.halfTurns < MAX_HALF_TURNS) {
+  while (state.winner == null && state.halfTurns < state.maxHalfTurns) {
     beginTurn(state);
     const candidate = makeReactValueCandidate(state, gameIndex, localCandidateIndex);
     if (candidate) {
@@ -2631,7 +2727,7 @@ function simulateReactValueV2BaseGame(gameIndex, seed, variant) {
   const state = makeInitialState(PURE_FACTION, PURE_FACTION, cardsByFaction, variant, seed);
   const candidates = [];
   let localCandidateIndex = 0;
-  while (state.winner == null && state.halfTurns < MAX_HALF_TURNS) {
+  while (state.winner == null && state.halfTurns < state.maxHalfTurns) {
     simulateTurn(state, {
       onReactivationChosen: (choiceState, action, meta) => {
         const candidate = makeReactValueV2Candidate(
@@ -3090,7 +3186,7 @@ function runPhase2a(args) {
       baseline: path.join(ROOT, "docs", "baselines", "pure-vanilla-calibration-v2.md"),
       lifeTotal: LIFE_TOTAL,
       manaGain: 3,
-      manaCap: MANA_CAP,
+      manaCap: DEFAULT_LEGACY_ENGINE ? LEGACY_MANA_CAP : null,
       startManaFirst: START_MANA_FIRST,
       startManaSecondPrimary: START_MANA_SECOND,
       destroyManaGainPrimary: DESTROY_MANA_GAIN,
@@ -3317,7 +3413,7 @@ function runReactCostSweep(args) {
       seedPolicy: "All four cost levels use the same seed sequence (seed + gameIndex * 9176) to isolate reactivation-cost effects.",
       lifeTotal: LIFE_TOTAL,
       manaGain: 3,
-      manaCap: MANA_CAP,
+      manaCap: DEFAULT_LEGACY_ENGINE ? LEGACY_MANA_CAP : null,
       maxHp: MAX_HP,
       weakPhysicalBonus: WEAK_BONUS,
       oracle: true,
@@ -3545,7 +3641,7 @@ function runPhase2dRotateAttack(args) {
       seedPolicy: "All runs use the same seed sequence (seed + gameIndex * 9176) for paired comparison.",
       lifeTotal: LIFE_TOTAL,
       manaGain: 3,
-      manaCap: MANA_CAP,
+      manaCap: DEFAULT_LEGACY_ENGINE ? LEGACY_MANA_CAP : null,
       maxHp: MAX_HP,
       weakPhysicalBonus: WEAK_BONUS,
       oracle: true,
@@ -3677,7 +3773,7 @@ function runStandardManaHandicap(args) {
       seedPolicy: "All runs use the same seed sequence (seed + gameIndex * 9176) for paired comparison.",
       lifeTotal: LIFE_TOTAL,
       manaGain: 3,
-      manaCap: MANA_CAP,
+      manaCap: DEFAULT_LEGACY_ENGINE ? LEGACY_MANA_CAP : null,
       maxHp: MAX_HP,
       weakPhysicalBonus: WEAK_BONUS,
       oracle: true,
@@ -3799,7 +3895,7 @@ function runPhase2bItemLayer(args) {
       itemRuns: Object.fromEntries(makePhase2bVariants().map((variant) => [variant.name, variant.itemCounts])),
       lifeTotal: LIFE_TOTAL,
       manaGain: 3,
-      manaCap: MANA_CAP,
+      manaCap: DEFAULT_LEGACY_ENGINE ? LEGACY_MANA_CAP : null,
       maxHp: MAX_HP,
       weakPhysicalBonus: WEAK_BONUS,
       oracle: true,
@@ -3880,7 +3976,7 @@ function runBaselineV31Freeze(args) {
       seedPolicy: "Center and robustness runs use the v3 freeze seed sequence (seed + gameIndex * 9176).",
       lifeTotal: LIFE_TOTAL,
       manaGain: 3,
-      manaCap: MANA_CAP,
+      manaCap: DEFAULT_LEGACY_ENGINE ? LEGACY_MANA_CAP : null,
       maxHp: MAX_HP,
       weakPhysicalBonus: WEAK_BONUS,
       oracle: true,
@@ -3970,7 +4066,7 @@ function runPhase2bItemLayerV31(args, baselineV31Output) {
       seedPolicy: "B1'/B2'/B3' use the same seed sequence as the v3.1 body baseline for paired comparison.",
       lifeTotal: LIFE_TOTAL,
       manaGain: 3,
-      manaCap: MANA_CAP,
+      manaCap: DEFAULT_LEGACY_ENGINE ? LEGACY_MANA_CAP : null,
       maxHp: MAX_HP,
       weakPhysicalBonus: WEAK_BONUS,
       oracle: true,
@@ -4258,7 +4354,7 @@ function runPhase2aFreezeA(args) {
       },
       lifeTotal: LIFE_TOTAL,
       manaGain: 3,
-      manaCap: MANA_CAP,
+      manaCap: DEFAULT_LEGACY_ENGINE ? LEGACY_MANA_CAP : null,
       maxHp: MAX_HP,
       weakPhysicalBonus: WEAK_BONUS,
       boardAttributes: PURE_BOARD_ATTRS,
@@ -6111,6 +6207,7 @@ function summarize(results) {
     taijiManaSavedPerGame: avg("taijiManaSaved"),
     yinYangPositiveApplicationsPerGame: avg("yinYangPositiveApplications"),
     yinYangNegativeApplicationsPerGame: avg("yinYangNegativeApplications"),
+    lethalAttributeSummonsPerGame: avg("lethalAttributeSummons"),
     yinYangPositiveApplicationRate:
       sumMetrics.summons > 0 ? sumMetrics.yinYangPositiveApplications / sumMetrics.summons : 0,
     yinYangNegativeApplicationRate:
@@ -8437,6 +8534,327 @@ function runC3Hp3Probe(args) {
   console.log(`Wrote ${path.relative(ROOT, C3_332_MD_PATH)}`);
 }
 
+function loadVer1Cards() {
+  const fixture = JSON.parse(fs.readFileSync(VER1_DATA_PATH, "utf8"));
+  const cards = fixture.cards.map((card) => ({
+    ...card,
+    faction: PURE_FACTION,
+    rotation_cost: card.reactivation_cost,
+    attack_type: "physical",
+    attack_mode: "choice",
+    attack_target_count: 1,
+    attack_range_count: card.attack_cells.length,
+    shape: card.id,
+  }));
+  if (cards.length !== 16) throw new Error(`Ver1 fixture must contain 16 cards, got ${cards.length}`);
+  const attrs = cards.reduce((acc, card) => ({ ...acc, [card.attribute]: (acc[card.attribute] ?? 0) + 1 }), {});
+  if (attrs.yin !== 8 || attrs.yang !== 8) throw new Error(`Ver1 attributes must be yin 8 / yang 8: ${JSON.stringify(attrs)}`);
+  const costs = cards.reduce((acc, card) => ({ ...acc, [card.cost]: (acc[card.cost] ?? 0) + 1 }), {});
+  const expectedCosts = { 2: 4, 3: 4, 4: 4, 5: 2, 6: 1, 7: 1 };
+  if (JSON.stringify(costs) !== JSON.stringify(expectedCosts)) {
+    throw new Error(`Ver1 cost distribution mismatch: ${JSON.stringify(costs)}`);
+  }
+  return { source: fixture.source, cards };
+}
+
+function assertSpecComplianceDefaults() {
+  const syntheticCard = { cost: 1, hp: 2, reactivation_cost: 2 };
+  const state = {
+    active: 0,
+    board: Array(9).fill(null),
+    taijiSummonDiscount: true,
+    legacyEngine: false,
+    sharedRecommandSlot: true,
+    quarterTurnOnly: true,
+  };
+  state.board[4] = { owner: 0 };
+  if (summonCostFor(state, syntheticCard, 0, 0) !== 1) throw new Error("Taiji discount leaked to a non-Taiji destination");
+  if (summonCostFor(state, syntheticCard, 0, 4) !== 0) throw new Error("Taiji destination discount did not use lower bound 0");
+  const fresh = { hasActed: false, hasRotated: false };
+  const rotated = { hasActed: false, hasRotated: true };
+  if (!canUseRecommand(state, fresh, "attack") || canUseRecommand(state, rotated, "attack")) {
+    throw new Error("Shared re-command slot invariant failed");
+  }
+  if (JSON.stringify(rotationChoices(state, 0)) !== JSON.stringify([1, 3])) {
+    throw new Error("Rotation choices must be the two quarter-turn facings");
+  }
+  if (makeInstance(syntheticCard, 0, 0, -2, 0, true).hp !== 0) {
+    throw new Error("Non-positive attribute summon must retain HP 0 for immediate destruction");
+  }
+  const legacy = {
+    ...state,
+    legacyEngine: true,
+    sharedRecommandSlot: false,
+    quarterTurnOnly: false,
+  };
+  if (summonCostFor(legacy, { ...syntheticCard, cost: 3 }, 0, 0) !== 2) {
+    throw new Error("Legacy Taiji-control discount is not reproducible");
+  }
+  if (!canUseRecommand(legacy, rotated, "attack") || rotationChoices(legacy, 0).length !== 3) {
+    throw new Error("Legacy re-command slots or all-facing rotation are not reproducible");
+  }
+}
+
+function makeVer1Variant(cards) {
+  return {
+    name: "ver1_vanilla4_spec_compliant",
+    phase: "ver1-baseline",
+    pureVanilla: true,
+    fixedDeckCards: cards,
+    boardAttrs: V4_BOARD_ATTRS,
+    manaGain: 3,
+    p0StartingMana: START_MANA_FIRST,
+    p1StartingMana: START_MANA_SECOND,
+    lifeTotal: LIFE_TOTAL,
+    lifeRule: "134",
+    destroyManaGain: 2,
+    weakBonus: 2,
+    v4Probe: true,
+    taijiSummonDiscount: true,
+    rotateAttackRule: true,
+    anyAdjacentSummon: true,
+    fatigue: false,
+    oracle: true,
+    checkSearchDepth: 6,
+    legacyEngine: false,
+  };
+}
+
+function specComplianceMetricRows() {
+  return [
+    ["平均ラウンド", "avgRounds", "number2"],
+    ["中央値", "medianRounds", "number1"],
+    ["P90", "p90Rounds", "number1"],
+    ["占拠勝ち", "territoryWinRate", "percent"],
+    ["生命勝ち", "lifeWinRate", "percent"],
+    ["200ターン上限", "timeoutRate", "percent"],
+    ["先手勝率", "p0WinRate", "percent"],
+    ["4チェック/試合", "check4PerGame", "number2"],
+    ["4チェック返し率", "check4ReturnRate", "percent"],
+    ["オラクル返答可能率", "check4OracleReturnableRate", "percent"],
+    ["撃破/試合", "killsPerGame", "number2"],
+    ["死角攻撃率", "weakAttackRate", "percent"],
+    ["死角撃破率", "weakKillRate", "percent"],
+    ["攻撃系再命令/試合", "attackReactivationsPerGame", "number2"],
+    ["回転攻撃/試合", "rotateAttacksPerGame", "number2"],
+    ["回転のみ/試合", "rotationsPerGame", "number2"],
+    ["召喚手詰まり率", "summonStallRate", "percent"],
+    ["霊力利用率", "manaUtilization", "percent"],
+    ["デッキ再構築試合率", "deckReshuffleGameRate", "percent"],
+    ["太極占有率", "taijiOccupancyRate", "percent"],
+    ["太極軽減/試合", "taijiDiscountUsesPerGame", "number2"],
+    ["陰陽有利補正/試合", "yinYangPositiveApplicationsPerGame", "number2"],
+    ["陰陽不利補正/試合", "yinYangNegativeApplicationsPerGame", "number2"],
+    ["HP0以下の属性召喚/試合", "lethalAttributeSummonsPerGame", "number2"],
+  ];
+}
+
+function formatSpecComplianceValue(value, type) {
+  if (type === "percent") return formatPct(value);
+  if (type === "number1") return Number(value).toFixed(1);
+  return Number(value).toFixed(2);
+}
+
+function ver1Markdown(output, resultJsonSha256) {
+  const s = output.run.summary;
+  const lines = [
+    "# Ver1 Baseline",
+    "",
+    "Status: **仕様準拠エンジン紀元・基準値**",
+    "",
+    `Generated: ${output.generatedAt}`,
+    "",
+    "デプロイ済みアプリの対戦構成 `Ver1_無効果`（`vanilla-4`）と、正本リポジトリのルール・カード構成を一致させた基準ラン。AIは別物なので、アプリAIの勝率や対局長を再現する測定ではない。",
+    "",
+    `- 平均 ${s.avgRounds.toFixed(2)}R / 中央値 ${s.medianRounds.toFixed(1)}R / P90 ${s.p90Rounds.toFixed(1)}R`,
+    `- 先手 ${formatPct(s.p0WinRate)} / 占拠 ${formatPct(s.territoryWinRate)} / 生命 ${formatPct(s.lifeWinRate)} / 上限 ${formatPct(s.timeoutRate)}`,
+    `- 撃破 ${s.killsPerGame.toFixed(2)}/試合 / 4チェック返し ${formatPct(s.check4ReturnRate)} / オラクル上限 ${formatPct(s.check4OracleReturnableRate)}`,
+    "",
+    "## KPI",
+    "",
+    "| 指標 | Ver1 |",
+    "|---|---:|",
+  ];
+  for (const [label, key, type] of specComplianceMetricRows()) {
+    lines.push(`| ${label} | ${formatSpecComplianceValue(nestedSummaryValue(s, key), type)} |`);
+  }
+  lines.push(
+    "",
+    "## 固定カード",
+    "",
+    "| Code | 名前 | Cost / HP / ATK | 再命令 | 生命価 | 属性 | 攻撃=反撃 | 死角 |",
+    "|---|---|---:|---:|---:|---|---|---|",
+  );
+  for (const card of output.cards) {
+    lines.push(`| ${card.code} | ${card.name} | ${card.cost} / ${card.hp} / ${card.atk} | ${card.reactivation_cost} | ${card.life_value} | ${card.attribute} | ${JSON.stringify(card.attack_cells)} | ${JSON.stringify(card.weakness_cells)} |`);
+  }
+  lines.push(
+    "",
+    "## エンジン基準",
+    "",
+    "- 太極軽減は、手札から太極へ通常召喚するその1回だけ適用し、下限0。",
+    "- 再命令は各式神1ターン合計1回。攻撃、左右90度回転後攻撃、左右90度回転のいずれか。",
+    "- 霊力上限なし。",
+    "- 属性補正でHP0以下になる召喚も合法。配置直後に撃破処理し、召喚攻撃は行わない。",
+    "- 200ターンで未決着なら上限到達として集計し、生命差による暫定勝者は作らない。",
+    "- 敵味方を問わない上下左右隣接召喚。自軍0体なら任意の空きマス。",
+    "",
+    "## AIの違い",
+    "",
+    "ルール・カード構成は正本一致。正本AIはCPU Lv5〜7の深さ2〜3・ビーム幅8の探索、本測定はヒューリスティックAIにdepth 6のチェック返答探索とオラクル計測を加えたもの。したがって、同じ構成でも絶対値は一致しない。",
+    "",
+    "## 再現性",
+    "",
+    "```powershell",
+    output.reproducibility.command,
+    "```",
+    "",
+    `| 項目 | 値 |`,
+    `|---|---|`,
+    `| Repo HEAD | \`${output.reproducibility.repoHead}\` |`,
+    `| Script SHA256 | \`${output.reproducibility.scriptSha256}\` |`,
+    `| Card fixture SHA256 | \`${output.reproducibility.cardFixtureSha256}\` |`,
+    `| Result JSON SHA256 | \`${resultJsonSha256}\` |`,
+    `| Master source commit | \`${output.source.commit}\` |`,
+    `| Games / seed | ${output.reproducibility.games} / ${output.reproducibility.seed} |`,
+    `| Oracle / depth | yes / ${output.reproducibility.checkSearchDepth} |`,
+    "",
+  );
+  return lines.join("\n");
+}
+
+function addLegacyEngineBanners() {
+  const banner = "> **[旧エンジン紀元]** 仕様準拠改元前のエンジン（旧太極軽減、再命令の攻撃/回転別枠、全方向回転、霊力上限15、致死属性召喚不可、80手番上限）での測定。再現時は `--legacy-engine` を指定する。";
+  const excluded = new Set([
+    path.basename(VER1_MD_PATH),
+    path.basename(ERA_SPEC_COMPLIANCE_MD_PATH),
+  ]);
+  const changed = [];
+  for (const entry of fs.readdirSync(path.dirname(VER1_MD_PATH), { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith(".md") || excluded.has(entry.name)) continue;
+    const filePath = path.join(path.dirname(VER1_MD_PATH), entry.name);
+    const text = fs.readFileSync(filePath, "utf8");
+    if (!text.startsWith("> **[旧エンジン紀元]**")) {
+      fs.writeFileSync(filePath, `${banner}\n\n${text}`, "utf8");
+    }
+    changed.push(path.relative(ROOT, filePath));
+  }
+  return changed;
+}
+
+function eraSpecComplianceMarkdown(output) {
+  return [
+    "# 仕様準拠エンジン改元",
+    "",
+    "Status: **改元記録**",
+    "",
+    `Generated: ${output.generatedAt}`,
+    "",
+    "正本リポジトリとの照合で見つかったエンジン差を設定候補ではなく実装乖離として解消し、以後のデフォルト挙動を切り替えた。配置ルールだけでなく、太極・再命令・霊力・属性召喚・長期戦処理を同じ基準へ揃える。",
+    "",
+    "## デフォルト変更",
+    "",
+    "| 項目 | 旧エンジン | 新デフォルト |",
+    "|---|---|---|",
+    "| 太極軽減 | 太極占有中は全召喚−1、下限1 | 太極への手札通常召喚だけ−1、下限0 |",
+    "| 再命令枠 | 攻撃と回転が別枠 | 1体1ターン合計1回 |",
+    "| 回転 | 90/180/270度 | 左右90度 |",
+    "| 霊力上限 | 15 | なし |",
+    "| HP0以下の属性召喚 | 不可 | 合法、直後に撃破 |",
+    "| 未決着上限 | 80手番、生命差で暫定勝者 | 200手番、上限到達扱い |",
+    "",
+    "旧挙動は `--legacy-engine` で再現できる。配置だけ旧挙動に戻す `--strict-summon` も引き続き独立して使用できる。",
+    "",
+    "## 再凍結",
+    "",
+    `- \`${path.relative(ROOT, VER1_MD_PATH)}\``,
+    `- \`${path.relative(ROOT, VER1_OUT_PATH)}\``,
+    "",
+    "過去baselineは再実行せず、旧エンジン紀元バナーを追加した。",
+    "",
+    `バナー追加: ${output.legacyBannerFiles.length}ファイル`,
+    "",
+    ...output.legacyBannerFiles.map((file) => `- \`${file}\``),
+    "",
+    "## 保留",
+    "",
+    "v4.1のATKレバー調整は保留。Ver1基準取得を先行した。",
+    "",
+  ].join("\n");
+}
+
+function runVer1Baseline(args) {
+  fs.mkdirSync(path.dirname(VER1_OUT_PATH), { recursive: true });
+  assertSpecComplianceDefaults();
+  const fixture = loadVer1Cards();
+  const variant = makeVer1Variant(fixture.cards);
+  const run = runUnrankedVariantBatch("ver1 baseline", [variant], args.ver1Samples, args.seed)[0];
+  const command = `node scripts\\explore-stat-curves.cjs --ver1-baseline --ver1-samples ${args.ver1Samples} --seed ${args.seed}`;
+  const output = {
+    generatedAt: new Date().toISOString(),
+    era: "spec-compliance",
+    source: fixture.source,
+    assumptions: {
+      configuration: "Ver1_無効果 / vanilla-4",
+      rulesAndCardsMatchMaster: true,
+      aiMatchesMaster: false,
+      aiDifference: "Master CPU Lv5-Lv7 uses depth 2-3 beam-width-8 search; this simulator uses heuristic AI with depth-6 check response search and oracle measurement.",
+      maxTurns: DEFAULT_MAX_TURNS,
+      manaCap: null,
+      sharedRecommandSlot: true,
+      quarterTurnOnly: true,
+      lethalAttributeSummon: true,
+      taijiDiscount: "destination Taiji only, hand normal summon, -1, floor 0",
+    },
+    cards: fixture.cards.map(({ faction, rotation_cost, attack_type, attack_mode, attack_target_count, attack_range_count, shape, ...card }) => card),
+    run,
+    reproducibility: {
+      command,
+      repoHead: gitHead(),
+      scriptPath: __filename,
+      scriptSha256: sha256File(__filename),
+      cardFixturePath: VER1_DATA_PATH,
+      cardFixtureSha256: sha256File(VER1_DATA_PATH),
+      games: args.ver1Samples,
+      seed: args.seed,
+      oracle: true,
+      checkSearchDepth: 6,
+    },
+  };
+  fs.writeFileSync(VER1_OUT_PATH, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+  const resultJsonSha256 = sha256File(VER1_OUT_PATH);
+  fs.writeFileSync(VER1_MD_PATH, `${ver1Markdown(output, resultJsonSha256)}\n`, "utf8");
+  const legacyBannerFiles = addLegacyEngineBanners();
+  const migration = {
+    generatedAt: output.generatedAt,
+    legacyBannerFiles,
+  };
+  fs.writeFileSync(ERA_SPEC_COMPLIANCE_MD_PATH, `${eraSpecComplianceMarkdown(migration)}\n`, "utf8");
+  console.log(`Wrote ${path.relative(ROOT, VER1_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, VER1_MD_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, ERA_SPEC_COMPLIANCE_MD_PATH)}`);
+  console.log(`Marked ${legacyBannerFiles.length} old baseline documents`);
+}
+
+function renderVer1Documents() {
+  const output = JSON.parse(fs.readFileSync(VER1_OUT_PATH, "utf8"));
+  output.reproducibility.repoHead = gitHead();
+  output.reproducibility.scriptSha256 = sha256File(__filename);
+  output.reproducibility.cardFixtureSha256 = sha256File(VER1_DATA_PATH);
+  fs.writeFileSync(VER1_OUT_PATH, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+  const resultJsonSha256 = sha256File(VER1_OUT_PATH);
+  fs.writeFileSync(VER1_MD_PATH, `${ver1Markdown(output, resultJsonSha256)}\n`, "utf8");
+  const legacyBannerFiles = addLegacyEngineBanners();
+  fs.writeFileSync(
+    ERA_SPEC_COMPLIANCE_MD_PATH,
+    `${eraSpecComplianceMarkdown({ generatedAt: output.generatedAt, legacyBannerFiles })}\n`,
+    "utf8",
+  );
+  console.log(`Rendered ${path.relative(ROOT, VER1_MD_PATH)}`);
+  console.log(`Rendered ${path.relative(ROOT, ERA_SPEC_COMPLIANCE_MD_PATH)}`);
+  console.log(`Recorded ${legacyBannerFiles.length} old baseline documents`);
+}
+
 function main() {
   const args = parseArgs(process.argv);
   if (args.phase2aMainSearch) {
@@ -8522,6 +8940,14 @@ function main() {
     runC3Hp3Probe(args);
     return;
   }
+  if (args.ver1Baseline) {
+    runVer1Baseline(args);
+    return;
+  }
+  if (args.ver1Render) {
+    renderVer1Documents();
+    return;
+  }
   if (args.reactValueForked) {
     runReactValueForked(args);
     return;
@@ -8537,7 +8963,7 @@ function main() {
       focusFactions: FOCUS_FACTIONS,
       lifeTotal: LIFE_TOTAL,
       manaGain: 3,
-      manaCap: MANA_CAP,
+      manaCap: DEFAULT_LEGACY_ENGINE ? LEGACY_MANA_CAP : null,
       startManaFirst: args.pureVanillaGrid ? START_MANA_FIRST : 0,
       startManaSecond: args.pureVanillaGrid ? START_MANA_SECOND : args.p1Mana,
       maxHp: MAX_HP,

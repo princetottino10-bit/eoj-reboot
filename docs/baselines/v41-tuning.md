@@ -1,3 +1,5 @@
+> **[旧エンジン紀元]** 仕様準拠改元前のエンジン（旧太極軽減、再命令の攻撃/回転別枠、全方向回転、霊力上限15、致死属性召喚不可、80手番上限）での測定。再現時は `--legacy-engine` を指定する。
+
 # v4.1 Tuning Sweep
 
 > This report is superseded. It was generated before the v4.1 HP correction to C2=3 and C3=4. Do not use its measurements as the current baseline.

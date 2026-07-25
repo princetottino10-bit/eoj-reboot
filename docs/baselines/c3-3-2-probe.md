@@ -1,3 +1,5 @@
+> **[旧エンジン紀元]** 仕様準拠改元前のエンジン（旧太極軽減、再命令の攻撃/回転別枠、全方向回転、霊力上限15、致死属性召喚不可、80手番上限）での測定。再現時は `--legacy-engine` を指定する。
+
 # C3 3/3/2 Probe
 
 This is a single-run probe. The tested card is cost 3 / HP 3 / ATK 2; other v4.1 candidate settings are unchanged.
