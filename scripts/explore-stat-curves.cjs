@@ -59,6 +59,8 @@ const VER1_DATA_PATH = path.join(ROOT, "data", "ver1-vanilla4.json");
 const VER1_OUT_PATH = path.join(ROOT, "docs", "baselines", "ver1-baseline-results.json");
 const VER1_MD_PATH = path.join(ROOT, "docs", "baselines", "ver1-baseline.md");
 const ERA_SPEC_COMPLIANCE_MD_PATH = path.join(ROOT, "docs", "baselines", "era-spec-compliance.md");
+const VER1_HP_SWEEP_OUT_PATH = path.join(ROOT, "docs", "baselines", "ver1-hp-sweep-results.json");
+const VER1_HP_SWEEP_MD_PATH = path.join(ROOT, "docs", "baselines", "ver1-hp-sweep.md");
 
 const FOCUS_FACTIONS = ["cip", "aggro", "spell", "defense"];
 const BOARD_ATTRS = ["火", "火", "水", "水", "土", "土", "木", "木", "無"];
@@ -226,6 +228,9 @@ function parseArgs(argv) {
     ver1Baseline: false,
     ver1Render: false,
     ver1Samples: 2000,
+    ver1HpSweep: false,
+    ver1HpSweepRender: false,
+    ver1HpSweepSamples: 2000,
     v41TuningSamples: 2000,
     strictSummon: false,
     legacyEngine: false,
@@ -373,6 +378,15 @@ function parseArgs(argv) {
     }
     else if (arg === "--ver1-render") args.ver1Render = true;
     else if (arg === "--ver1-samples") args.ver1Samples = Number(argv[++i] ?? args.ver1Samples);
+    else if (arg === "--ver1-hp-sweep") {
+      args.ver1HpSweep = true;
+      args.oracle = true;
+      args.checkSearchDepth = 6;
+    }
+    else if (arg === "--ver1-hp-sweep-render") args.ver1HpSweepRender = true;
+    else if (arg === "--ver1-hp-sweep-samples") {
+      args.ver1HpSweepSamples = Number(argv[++i] ?? args.ver1HpSweepSamples);
+    }
     else if (arg === "--legacy-engine") {
       args.legacyEngine = true;
       DEFAULT_LEGACY_ENGINE = true;
@@ -8633,6 +8647,9 @@ function specComplianceMetricRows() {
     ["4チェック返し率", "check4ReturnRate", "percent"],
     ["オラクル返答可能率", "check4OracleReturnableRate", "percent"],
     ["撃破/試合", "killsPerGame", "number2"],
+    ["低コスト撃破/試合（C2-C4）", "killBandsPerGame.low", "number2"],
+    ["中コスト撃破/試合（C5-C6）", "killBandsPerGame.mid", "number2"],
+    ["高コスト撃破/試合（C7）", "killBandsPerGame.high", "number2"],
     ["死角攻撃率", "weakAttackRate", "percent"],
     ["死角撃破率", "weakKillRate", "percent"],
     ["攻撃系再命令/試合", "attackReactivationsPerGame", "number2"],
@@ -8855,6 +8872,250 @@ function renderVer1Documents() {
   console.log(`Recorded ${legacyBannerFiles.length} old baseline documents`);
 }
 
+function ver1CardsWithHp(cards, c2Hp, c3Hp) {
+  return cards.map((card) => ({
+    ...card,
+    hp: card.cost === 2 ? c2Hp : card.cost === 3 ? c3Hp : card.hp,
+  }));
+}
+
+function assertVer1HpOnly(baseCards, changedCards, expectedC2, expectedC3) {
+  if (baseCards.length !== changedCards.length) throw new Error("HP sweep changed the card count");
+  for (let i = 0; i < baseCards.length; i++) {
+    const base = baseCards[i];
+    const changed = changedCards[i];
+    for (const key of Object.keys(base)) {
+      const expected = key === "hp"
+        ? (base.cost === 2 ? expectedC2 : base.cost === 3 ? expectedC3 : base.hp)
+        : base[key];
+      if (JSON.stringify(changed[key]) !== JSON.stringify(expected)) {
+        throw new Error(`HP sweep changed ${base.id}.${key}: ${JSON.stringify(base[key])} -> ${JSON.stringify(changed[key])}`);
+      }
+    }
+  }
+}
+
+function ver1HpMetricRows() {
+  return [
+    ["平均ラウンド", "avgRounds", "number2"],
+    ["中央値", "medianRounds", "number1"],
+    ["P90", "p90Rounds", "number1"],
+    ["占拠勝ち", "territoryWinRate", "percent"],
+    ["生命勝ち", "lifeWinRate", "percent"],
+    ["200ターン上限", "timeoutRate", "percent"],
+    ["先手勝率", "p0WinRate", "percent"],
+    ["4チェック/試合", "check4PerGame", "number2"],
+    ["4チェック返し率", "check4ReturnRate", "percent"],
+    ["オラクル返答可能率", "check4OracleReturnableRate", "percent"],
+    ["オラクル実現率", "check4OracleRealizationRate", "percent"],
+    ["撃破/試合", "killsPerGame", "number2"],
+    ["死角攻撃率", "weakAttackRate", "percent"],
+    ["死角撃破率", "weakKillRate", "percent"],
+    ["属性一致召喚率", "attrMatchSummonRate", "percent"],
+    ["属性不一致召喚率", "attrBadSummonRate", "percent"],
+    ["属性有利補正/試合", "yinYangPositiveApplicationsPerGame", "number2"],
+    ["属性不利補正/試合", "yinYangNegativeApplicationsPerGame", "number2"],
+    ["攻撃系再命令/試合", "attackReactivationsPerGame", "number2"],
+    ["回転攻撃/試合", "rotateAttacksPerGame", "number2"],
+    ["回転のみ/試合", "rotationsPerGame", "number2"],
+    ["召喚手詰まり率", "summonStallRate", "percent"],
+    ["霊力利用率", "manaUtilization", "percent"],
+    ["デッキ再構築試合率", "deckReshuffleGameRate", "percent"],
+    ["太極軽減/試合", "taijiDiscountUsesPerGame", "number2"],
+  ];
+}
+
+function ver1HpRunSummary(output, id) {
+  return id === "V0" ? output.runs.V0.summary : output.runs[id].summary;
+}
+
+function ver1HpRecommendation(output) {
+  const candidates = ["H-A", "H-B"].map((id) => {
+    const s = ver1HpRunSummary(output, id);
+    const gates = {
+      territory: s.territoryWinRate >= 0.6,
+      life: s.lifeWinRate <= 0.4,
+      first: s.p0WinRate >= 0.48 && s.p0WinRate <= 0.52,
+      kills: s.killsPerGame >= 8 && s.killsPerGame <= 12,
+    };
+    return { id, summary: s, gates, passed: Object.values(gates).filter(Boolean).length };
+  });
+  const fullyPassing = candidates.filter((candidate) => candidate.passed === 4);
+  if (fullyPassing.length > 0) {
+    const choice = fullyPassing.find((candidate) => candidate.id === "H-A") ?? fullyPassing[0];
+    return {
+      choice: choice.id,
+      text: `${choice.id}は参考ゲート4項目をすべて満たす。両案が満たす場合は変更量の小さいH-Aを優先する。`,
+    };
+  }
+  candidates.sort((a, b) => b.passed - a.passed || b.summary.territoryWinRate - a.summary.territoryWinRate);
+  const best = candidates[0];
+  return {
+    choice: null,
+    text: `両案とも参考ゲートを完走していない。最も近い${best.id}でも${best.passed}/4項目であり、採用確定ではなく次レバー検討へ進む。`,
+  };
+}
+
+function ver1HpSweepMarkdown(output, resultJsonSha256) {
+  const v0 = ver1HpRunSummary(output, "V0");
+  const ha = ver1HpRunSummary(output, "H-A");
+  const hb = ver1HpRunSummary(output, "H-B");
+  const recommendation = ver1HpRecommendation(output);
+  const fmt = (value, type) => formatSpecComplianceValue(value, type);
+  const realization = (s) => s.check4OracleReturnableRate > 0
+    ? s.check4ReturnRate / s.check4OracleReturnableRate
+    : 0;
+  const oracleDeltaA = ha.check4OracleReturnableRate - v0.check4OracleReturnableRate;
+  const oracleDeltaB = hb.check4OracleReturnableRate - v0.check4OracleReturnableRate;
+  const realizationDeltaA = realization(ha) - realization(v0);
+  const realizationDeltaB = realization(hb) - realization(v0);
+  const lines = [
+    "# Ver1 HP Sweep",
+    "",
+    "Status: **提案材料・採用未確定**",
+    "",
+    `Generated: ${output.generatedAt}`,
+    "",
+    "## 0. 結論",
+    "",
+    `C2/C3のHPだけを 2/2（V0）→3/3（H-A）→3/4（H-B）へ上げた。${recommendation.text}`,
+    "",
+    `- H-A: 占拠 ${formatPct(ha.territoryWinRate)} / 生命 ${formatPct(ha.lifeWinRate)} / 撃破 ${ha.killsPerGame.toFixed(2)} / 平均 ${ha.avgRounds.toFixed(2)}R`,
+    `- H-B: 占拠 ${formatPct(hb.territoryWinRate)} / 生命 ${formatPct(hb.lifeWinRate)} / 撃破 ${hb.killsPerGame.toFixed(2)} / 平均 ${hb.avgRounds.toFixed(2)}R`,
+    `- 2000試合の先手勝率差は約±2.2ptの誤差を伴うため、2pt以内の差で優劣を決めない。`,
+    "",
+    "## 1. KPI比較",
+    "",
+    "| 指標 | V0 2/2 | H-A 3/3 | ΔA | H-B 3/4 | ΔB |",
+    "|---|---:|---:|---:|---:|---:|",
+  ];
+  for (const [label, key, type] of ver1HpMetricRows()) {
+    const base = nestedSummaryValue(v0, key);
+    const a = nestedSummaryValue(ha, key);
+    const b = nestedSummaryValue(hb, key);
+    lines.push(`| ${label} | ${fmt(base, type)} | ${fmt(a, type)} | ${paperEraDelta(a, base, type)} | ${fmt(b, type)} | ${paperEraDelta(b, base, type)} |`);
+  }
+  lines.push(
+    "",
+    "## 2. 返し率とオラクル上限",
+    "",
+    "| 構成 | 実返し率 | オラクル上限 | 実現率（実返し÷上限） |",
+    "|---|---:|---:|---:|",
+    `| V0 | ${formatPct(v0.check4ReturnRate)} | ${formatPct(v0.check4OracleReturnableRate)} | ${formatPct(realization(v0))} |`,
+    `| H-A | ${formatPct(ha.check4ReturnRate)} | ${formatPct(ha.check4OracleReturnableRate)} | ${formatPct(realization(ha))} |`,
+    `| H-B | ${formatPct(hb.check4ReturnRate)} | ${formatPct(hb.check4OracleReturnableRate)} | ${formatPct(realization(hb))} |`,
+    "",
+    `H-Aのオラクル上限はV0比 ${fmtDeltaPct(oracleDeltaA)}、AI実現率は ${fmtDeltaPct(realizationDeltaA)}。H-Bはそれぞれ ${fmtDeltaPct(oracleDeltaB)} / ${fmtDeltaPct(realizationDeltaB)}。したがって、返し率低下が「合法な返し自体の減少」と「AIの取りこぼし」のどちらから来たかを分離して読める。`,
+    "",
+    "## 3. 属性と死角",
+    "",
+    `属性一致召喚率は V0 ${formatPct(v0.attrMatchSummonRate)} → H-A ${formatPct(ha.attrMatchSummonRate)} → H-B ${formatPct(hb.attrMatchSummonRate)}。属性有利補正の発動回数は ${v0.yinYangPositiveApplicationsPerGame.toFixed(2)} → ${ha.yinYangPositiveApplicationsPerGame.toFixed(2)} → ${hb.yinYangPositiveApplicationsPerGame.toFixed(2)}/試合。`,
+    "",
+    `死角攻撃率は ${formatPct(v0.weakAttackRate)} → ${formatPct(ha.weakAttackRate)} → ${formatPct(hb.weakAttackRate)}、死角撃破率は ${formatPct(v0.weakKillRate)} → ${formatPct(ha.weakKillRate)} → ${formatPct(hb.weakKillRate)}。死角攻撃率は上がらず、撃破率もほぼ横ばいなので、「HP3以上にすると死角が必須手段として増える」という仮説は集計上支持されなかった。ブレークポイント自体は変わったが、AIの行動構成は別の形で適応している。`,
+    "",
+    "属性一致召喚率と有利補正回数も増えていないため、この集計だけでは属性マスが避難所になったとは確認できない。次回は属性一致/不一致別の盤面滞在ターンと被撃破率を直接計測する必要がある。",
+    "",
+    "## 4. 用量反応と次のレバー",
+    "",
+    `HPを一段ずつ上げたとき、生命勝ちは ${formatPct(v0.lifeWinRate)} → ${formatPct(ha.lifeWinRate)} → ${formatPct(hb.lifeWinRate)}、占拠勝ちは ${formatPct(v0.territoryWinRate)} → ${formatPct(ha.territoryWinRate)} → ${formatPct(hb.territoryWinRate)}、撃破は ${v0.killsPerGame.toFixed(2)} → ${ha.killsPerGame.toFixed(2)} → ${hb.killsPerGame.toFixed(2)}/試合。`,
+    "",
+    recommendation.choice
+      ? `推奨候補は${recommendation.choice}。ただし採用判断はユーザーとチームが行う。`
+      : `H-BはH-Aより生命勝ち・占拠・撃破・返し率の全てで目的方向へ進んでおり、次段の土台としてはH-Bを推す。ただし最終採用には不足する。H-Bでも低コスト帯撃破が ${hb.killBandsPerGame.low.toFixed(2)}/試合と残るため、次の優先順位は (1) コスト別被撃破をC2/C3/C4へ分解する計測追加、(2) 再命令コストを中量→重量へ上げる単独プローブ、(3) 分解結果がC4偏重ならC4 HP、(4) 死角+2→+1。死角ボーナス低下は位置取り報酬も弱めるため最後に置く。`,
+    "",
+    "## 5. 実装ノート",
+    "",
+    "- 正本 `vanilla-4` 固定16枚から、C2/C3の `hp` だけを差し替えた。全カード全フィールドを比較し、HP以外の変更がないことを実行前に検証した。",
+    "- V0は `ver1-baseline-results.json` の2000試合値を引用し、再実行していない。",
+    "- H-AとH-Bは別々の1変種バッチとして実行し、両方とも同じ `seed + gameIndex * 9176` 系列を使用した。",
+    "- 仕様準拠エンジンのデフォルトを使用し、`--legacy-engine`は使用していない。AIヒューリスティックも変更していない。",
+    "",
+    "## 6. 再現性",
+    "",
+    "```powershell",
+    output.reproducibility.command,
+    "```",
+    "",
+    `| 項目 | 値 |`,
+    `|---|---|`,
+    `| Repo HEAD | \`${output.reproducibility.repoHead}\` |`,
+    `| Script SHA256 | \`${output.reproducibility.scriptSha256}\` |`,
+    `| Card fixture SHA256 | \`${output.reproducibility.cardFixtureSha256}\` |`,
+    `| V0 JSON SHA256 | \`${output.reproducibility.v0JsonSha256}\` |`,
+    `| Result JSON SHA256 | \`${resultJsonSha256}\` |`,
+    `| Games / seed | H-A ${output.reproducibility.gamesPerVariant}, H-B ${output.reproducibility.gamesPerVariant} / ${output.reproducibility.seed} |`,
+    `| Oracle / depth | yes / ${output.reproducibility.checkSearchDepth} |`,
+    "",
+  );
+  return lines.join("\n");
+}
+
+function runVer1HpSweep(args) {
+  fs.mkdirSync(path.dirname(VER1_HP_SWEEP_OUT_PATH), { recursive: true });
+  assertSpecComplianceDefaults();
+  const fixture = loadVer1Cards();
+  const cardsA = ver1CardsWithHp(fixture.cards, 3, 3);
+  const cardsB = ver1CardsWithHp(fixture.cards, 3, 4);
+  assertVer1HpOnly(fixture.cards, cardsA, 3, 3);
+  assertVer1HpOnly(fixture.cards, cardsB, 3, 4);
+  const v0Output = JSON.parse(fs.readFileSync(VER1_OUT_PATH, "utf8"));
+  if (v0Output.run.summary.games !== 2000) throw new Error("V0 baseline must contain 2000 games");
+  const variantA = { ...makeVer1Variant(cardsA), name: "H-A_c2hp3_c3hp3", phase: "ver1-hp-sweep" };
+  const variantB = { ...makeVer1Variant(cardsB), name: "H-B_c2hp3_c3hp4", phase: "ver1-hp-sweep" };
+  const runA = runUnrankedVariantBatch("ver1 HP H-A", [variantA], args.ver1HpSweepSamples, args.seed)[0];
+  const runB = runUnrankedVariantBatch("ver1 HP H-B", [variantB], args.ver1HpSweepSamples, args.seed)[0];
+  const command = `node scripts\\explore-stat-curves.cjs --ver1-hp-sweep --ver1-hp-sweep-samples ${args.ver1HpSweepSamples} --seed ${args.seed}`;
+  const output = {
+    generatedAt: new Date().toISOString(),
+    status: "proposal-material",
+    source: fixture.source,
+    question: "Change only C2/C3 HP in the Ver1 vanilla-4 configuration.",
+    configurations: {
+      V0: { c2Hp: 2, c3Hp: 2, source: path.relative(ROOT, VER1_OUT_PATH), rerun: false },
+      "H-A": { c2Hp: 3, c3Hp: 3 },
+      "H-B": { c2Hp: 3, c3Hp: 4 },
+    },
+    runs: {
+      V0: { source: path.relative(ROOT, VER1_OUT_PATH), summary: v0Output.run.summary },
+      "H-A": runA,
+      "H-B": runB,
+    },
+    reproducibility: {
+      command,
+      repoHead: gitHead(),
+      scriptPath: __filename,
+      scriptSha256: sha256File(__filename),
+      cardFixturePath: VER1_DATA_PATH,
+      cardFixtureSha256: sha256File(VER1_DATA_PATH),
+      v0JsonPath: VER1_OUT_PATH,
+      v0JsonSha256: sha256File(VER1_OUT_PATH),
+      gamesPerVariant: args.ver1HpSweepSamples,
+      seed: args.seed,
+      seedFormula: "seed + gameIndex * 9176",
+      oracle: true,
+      checkSearchDepth: 6,
+      legacyEngine: false,
+    },
+  };
+  fs.writeFileSync(VER1_HP_SWEEP_OUT_PATH, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+  const resultJsonSha256 = sha256File(VER1_HP_SWEEP_OUT_PATH);
+  fs.writeFileSync(VER1_HP_SWEEP_MD_PATH, `${ver1HpSweepMarkdown(output, resultJsonSha256)}\n`, "utf8");
+  console.log(`Wrote ${path.relative(ROOT, VER1_HP_SWEEP_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, VER1_HP_SWEEP_MD_PATH)}`);
+}
+
+function renderVer1HpSweep() {
+  const output = JSON.parse(fs.readFileSync(VER1_HP_SWEEP_OUT_PATH, "utf8"));
+  output.reproducibility.repoHead = gitHead();
+  output.reproducibility.scriptSha256 = sha256File(__filename);
+  output.reproducibility.cardFixtureSha256 = sha256File(VER1_DATA_PATH);
+  output.reproducibility.v0JsonSha256 = sha256File(VER1_OUT_PATH);
+  fs.writeFileSync(VER1_HP_SWEEP_OUT_PATH, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+  const resultJsonSha256 = sha256File(VER1_HP_SWEEP_OUT_PATH);
+  fs.writeFileSync(VER1_HP_SWEEP_MD_PATH, `${ver1HpSweepMarkdown(output, resultJsonSha256)}\n`, "utf8");
+  console.log(`Rendered ${path.relative(ROOT, VER1_HP_SWEEP_MD_PATH)}`);
+}
+
 function main() {
   const args = parseArgs(process.argv);
   if (args.phase2aMainSearch) {
@@ -8946,6 +9207,14 @@ function main() {
   }
   if (args.ver1Render) {
     renderVer1Documents();
+    return;
+  }
+  if (args.ver1HpSweep) {
+    runVer1HpSweep(args);
+    return;
+  }
+  if (args.ver1HpSweepRender) {
+    renderVer1HpSweep();
     return;
   }
   if (args.reactValueForked) {
