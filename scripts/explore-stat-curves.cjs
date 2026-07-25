@@ -51,6 +51,10 @@ const PURE_V31_PAPER_MD_PATH = path.join(ROOT, "docs", "baselines", "pure-vanill
 const V4_PROBE_PAPER_OUT_PATH = path.join(ROOT, "docs", "baselines", "v4-probe-paper-results.json");
 const V4_PROBE_PAPER_MD_PATH = path.join(ROOT, "docs", "baselines", "v4-probe-paper.md");
 const ERA_PAPER_MIGRATION_MD_PATH = path.join(ROOT, "docs", "baselines", "era-paper-migration.md");
+const V41_TUNING_OUT_PATH = path.join(ROOT, "docs", "baselines", "v41-tuning-results.json");
+const V41_TUNING_MD_PATH = path.join(ROOT, "docs", "baselines", "v41-tuning.md");
+const C3_332_OUT_PATH = path.join(ROOT, "docs", "baselines", "c3-3-2-probe-results.json");
+const C3_332_MD_PATH = path.join(ROOT, "docs", "baselines", "c3-3-2-probe.md");
 
 const FOCUS_FACTIONS = ["cip", "aggro", "spell", "defense"];
 const BOARD_ATTRS = ["火", "火", "水", "水", "土", "土", "木", "木", "無"];
@@ -210,6 +214,10 @@ function parseArgs(argv) {
     v4AblationSamples: 2000,
     eraPaper: false,
     eraPaperSamples: 2000,
+    v41Tuning: false,
+    v41TuningRender: false,
+    c3Hp3Probe: false,
+    v41TuningSamples: 2000,
     strictSummon: false,
     phase2aPrimarySamples: 1000,
     phase2aSecondarySamples: 2000,
@@ -337,6 +345,18 @@ function parseArgs(argv) {
       args.checkSearchDepth = 6;
     }
     else if (arg === "--era-paper-samples") args.eraPaperSamples = Number(argv[++i] ?? args.eraPaperSamples);
+    else if (arg === "--v41-tuning") {
+      args.v41Tuning = true;
+      args.oracle = true;
+      args.checkSearchDepth = 6;
+    }
+    else if (arg === "--v41-tuning-render") args.v41TuningRender = true;
+    else if (arg === "--c3-hp3-probe") {
+      args.c3Hp3Probe = true;
+      args.oracle = true;
+      args.checkSearchDepth = 6;
+    }
+    else if (arg === "--v41-tuning-samples") args.v41TuningSamples = Number(argv[++i] ?? args.v41TuningSamples);
     else if (arg === "--strict-summon") {
       args.strictSummon = true;
       DEFAULT_ANY_ADJACENT_SUMMON = false;
@@ -592,6 +612,7 @@ function rotationCost(card) {
 }
 
 function lifeDamageForCost(cost, rule) {
+  if (rule === "112223") return cost <= 4 ? 1 : cost <= 6 ? 2 : 3;
   let base;
   if (rule === "134") base = cost <= 4 ? 1 : cost <= 6 ? 3 : 4;
   else base = cost <= 4 ? 1 : cost <= 6 ? 2 : 3;
@@ -721,7 +742,7 @@ function generatePureCard(variant, cost, attribute, idSuffix) {
     cost,
     hp,
     atk,
-    life_value: lifeDamageForCost(cost, "134"),
+    life_value: lifeDamageForCost(cost, variant.lifeRule ?? "134"),
     reactivation_cost: reactivation,
     rotation_cost: reactivation,
     attribute,
@@ -1427,7 +1448,7 @@ function checkReturnedOrWon(state, checkOwner, responder) {
   return (
     controlCount(state.board, checkOwner) < 4 ||
     controlCount(state.board, responder) >= 5 ||
-    state.players[responder].lifeDamage >= LIFE_TOTAL
+    state.players[responder].lifeDamage >= state.lifeTotal
   );
 }
 
@@ -1632,7 +1653,7 @@ function recordCheckResponseReactivationUsage(state, attackOnlyReacts, rotations
 }
 
 function hasWinner(state) {
-  return state.players[0].lifeDamage >= LIFE_TOTAL || state.players[1].lifeDamage >= LIFE_TOTAL;
+  return state.players[0].lifeDamage >= state.lifeTotal || state.players[1].lifeDamage >= state.lifeTotal;
 }
 
 function scoreAttackAction(state, attackerIdx) {
@@ -1964,7 +1985,7 @@ function finishTurn(state) {
 
   addMana(state.players[active], state.manaGain, state.metrics);
   const fatigueApplied = drawToFive(state.players[active], state, active);
-  if (fatigueApplied && state.players[1 - active].lifeDamage >= LIFE_TOTAL) {
+  if (fatigueApplied && state.players[1 - active].lifeDamage >= state.lifeTotal) {
     state.winner = 1 - active;
     state.reason = "life";
     state.metrics.fatigueWins += 1;
@@ -2067,10 +2088,10 @@ function simulateTurn(state, options = {}) {
     if (summon) executeSummon(state, summon);
   }
 
-  if (state.players[0].lifeDamage >= LIFE_TOTAL) {
+  if (state.players[0].lifeDamage >= state.lifeTotal) {
     state.winner = 0;
     state.reason = "life";
-  } else if (state.players[1].lifeDamage >= LIFE_TOTAL) {
+  } else if (state.players[1].lifeDamage >= state.lifeTotal) {
     state.winner = 1;
     state.reason = "life";
   }
@@ -2128,6 +2149,7 @@ function makeInitialState(p0Faction, p1Faction, cardsByFaction, variant, seed) {
     deckEmptied: [false, false],
     manaGain: variant.manaGain,
     lifeRule: variant.lifeRule,
+    lifeTotal: variant.lifeTotal ?? LIFE_TOTAL,
     oracle: variant.oracle ?? false,
     checkSearchDepth: variant.checkSearchDepth ?? 0,
     reactNeedOracle: variant.reactNeedOracle ?? false,
@@ -2524,10 +2546,10 @@ function executeReactValueV2SelectedAction(state, action, source) {
 }
 
 function finishReactValueV2CurrentTurn(state) {
-  if (state.players[0].lifeDamage >= LIFE_TOTAL) {
+  if (state.players[0].lifeDamage >= state.lifeTotal) {
     state.winner = 0;
     state.reason = "life";
-  } else if (state.players[1].lifeDamage >= LIFE_TOTAL) {
+  } else if (state.players[1].lifeDamage >= state.lifeTotal) {
     state.winner = 1;
     state.reason = "life";
   }
@@ -7916,6 +7938,505 @@ function addStrictEraBanners() {
   return updated;
 }
 
+function makeV41Variant(runId, overrides = {}) {
+  return {
+    ...makeV4PaperVariant(),
+    name: `v41_tuning_${runId}`,
+    runId,
+    phase: "v41-tuning",
+    hpOverrides: { 2: 3, 3: 4, 4: 5 },
+    lifeTotal: LIFE_TOTAL,
+    lifeRule: "134",
+    ...overrides,
+  };
+}
+
+function v41Run(label, variant, args) {
+  const cardsByFaction = { [PURE_FACTION]: [] };
+  const gameResults = [];
+  for (let i = 0; i < args.v41TuningSamples; i++) {
+    const seed = (args.seed + i * 9176) >>> 0;
+    gameResults.push(simulateGame(PURE_FACTION, PURE_FACTION, cardsByFaction, variant, seed));
+    if ((i + 1) % 100 === 0 || i + 1 === args.v41TuningSamples) {
+      console.error(`${label}: simulated ${i + 1}/${args.v41TuningSamples}`);
+    }
+  }
+  const summary = summarize(gameResults);
+  return { variant, score: scoreSummary(summary), summary };
+}
+
+function v41GoalScore(summary) {
+  let score = 0;
+  score += Math.abs(summary.p0WinRate - 0.5) * 800;
+  if (summary.lifeWinRate < 0.1) score += (0.1 - summary.lifeWinRate) * 500;
+  if (summary.lifeWinRate > 0.2) score += (summary.lifeWinRate - 0.2) * 500;
+  if (summary.territoryWinRate < 0.75) score += (0.75 - summary.territoryWinRate) * 400;
+  if (summary.avgRounds < 10.5) score += (10.5 - summary.avgRounds) * 20;
+  if (summary.avgRounds > 12.5) score += (summary.avgRounds - 12.5) * 20;
+  if (summary.check4ReturnRate > 0.7) score += (summary.check4ReturnRate - 0.7) * 200;
+  return score;
+}
+
+function chooseV41Combination(r0, h1, lifeRuns) {
+  const hChoice = Math.abs(h1.summary.p0WinRate - 0.5) <= Math.abs(r0.summary.p0WinRate - 0.5)
+    ? { id: "H1", p1StartingMana: 5, reason: "H1 is closer to the 50% first-player target than R0." }
+    : { id: "R0", p1StartingMana: 4, reason: "R0 is closer to the 50% first-player target than H1; no handicap change for C1." };
+  const allLifeHigh = lifeRuns.every((run) => run.summary.lifeWinRate > 0.2);
+  if (allLifeHigh) {
+    return {
+      held: true,
+      reason: "All L runs stayed above 20% life wins, so C1 is held and second-stage levers are proposed instead.",
+      hChoice,
+      lChoice: null,
+    };
+  }
+  const ranked = [...lifeRuns].sort((a, b) => v41GoalScore(a.summary) - v41GoalScore(b.summary));
+  const lChoice = ranked[0];
+  return {
+    held: false,
+    reason: `${hChoice.id} is the selected first/second lever; ${lChoice.id} is the selected life-economy lever by temporary target distance.`,
+    hChoice,
+    lChoice: {
+      id: lChoice.id,
+      lifeTotal: lChoice.variant.lifeTotal ?? LIFE_TOTAL,
+      lifeRule: lChoice.variant.lifeRule ?? "134",
+      reason: `Lowest temporary-goal score among L1-L3 (${v41GoalScore(lChoice.summary).toFixed(2)}).`,
+    },
+  };
+}
+
+function v41MetricRows() {
+  return [
+    ["平均R", "avgRounds", "number2"],
+    ["中央値R", "medianRounds", "number1"],
+    ["P90 R", "p90Rounds", "number1"],
+    ["占拠勝ち率", "territoryWinRate", "percent"],
+    ["生命勝ち率", "lifeWinRate", "percent"],
+    ["タイムアウト率", "timeoutRate", "percent"],
+    ["先手勝率", "p0WinRate", "percent"],
+    ["4チェック発生/試合", "check4PerGame", "number2"],
+    ["4チェック返し率", "check4ReturnRate", "percent"],
+    ["オラクル返答可能率", "check4OracleReturnableRate", "percent"],
+    ["撃破数/試合", "killsPerGame", "number2"],
+    ["弱点攻撃率", "weakAttackRate", "percent"],
+    ["弱点撃破率", "weakKillRate", "percent"],
+    ["攻撃系再命令/試合", "attackReactivationsPerGame", "number2"],
+    ["回転攻撃/試合", "rotateAttacksPerGame", "number2"],
+    ["回転のみ/試合", "rotationsPerGame", "number2"],
+    ["召喚手詰まり率", "summonStallRate", "percent"],
+    ["霊力利用率", "manaUtilization", "percent"],
+    ["デッキ切れ試合率", "deckEmptyGameRate", "percent"],
+    ["リシャッフル試合率", "deckReshuffleGameRate", "percent"],
+    ["撃破時獲得霊力/試合", "destroyManaGainedPerGame", "number2"],
+    ["太極占有率", "taijiOccupancyRate", "percent"],
+    ["太極占有率 先手", "taijiP0OccupancyRate", "percent"],
+    ["太極占有率 後手", "taijiP1OccupancyRate", "percent"],
+    ["太極軽減/試合", "taijiDiscountUsesPerGame", "number2"],
+    ["太極軽減 先手/試合", "taijiDiscountUsesP0PerGame", "number2"],
+    ["太極軽減 後手/試合", "taijiDiscountUsesP1PerGame", "number2"],
+    ["陰陽+2適用/試合", "yinYangPositiveApplicationsPerGame", "number2"],
+    ["陰陽-2適用/試合", "yinYangNegativeApplicationsPerGame", "number2"],
+  ];
+}
+
+function v41Markdown(output, { resultJsonSha256 }) {
+  const reference = output.reference.summary;
+  const r0 = output.runs.R0.summary;
+  const runIds = output.runOrder;
+  const lines = [
+    "# v4.1チューニング掃引",
+    "",
+    "Status: **提案材料（採否判定なし）**",
+    `Date: ${output.generatedAt}`,
+    "",
+    "## 0. 要旨",
+    "",
+    "v4の設計意図（dm2、弱点+1、C2/C3 HP、陰陽+太極、敵味方を問わない隣接配置）は固定し、v4外のノブ（後手初期霊力、初期生命、生命価）だけで健全化できるかを測る。C2/C3 HPは今回の基準案である3/4に戻した。",
+    "",
+    `- R0: 平均 ${r0.avgRounds.toFixed(2)}R / 先手 ${formatPct(r0.p0WinRate)} / 生命勝ち ${formatPct(r0.lifeWinRate)} / 占拠 ${formatPct(r0.territoryWinRate)} / 返し ${formatPct(r0.check4ReturnRate)} / 撃破 ${r0.killsPerGame.toFixed(2)}`,
+    `- v4-probe-paper(C3:HP3)との差: 平均 ${fmtDelta(r0.avgRounds - reference.avgRounds, 2)}R、先手 ${fmtDeltaPct(r0.p0WinRate - reference.p0WinRate)}、生命勝ち ${fmtDeltaPct(r0.lifeWinRate - reference.lifeWinRate)}、撃破 ${fmtDelta(r0.killsPerGame - reference.killsPerGame, 2)}`,
+    output.selection.held
+      ? `- C1は保留: ${output.selection.reason}`
+      : `- C1選定: ${output.selection.hChoice.id} × ${output.selection.lChoice.id}。${output.selection.reason}`,
+    output.runs.C1
+      ? `- C1: 平均 ${output.runs.C1.summary.avgRounds.toFixed(2)}R / 先手 ${formatPct(output.runs.C1.summary.p0WinRate)} / 生命勝ち ${formatPct(output.runs.C1.summary.lifeWinRate)} / 占拠 ${formatPct(output.runs.C1.summary.territoryWinRate)} / 返し ${formatPct(output.runs.C1.summary.check4ReturnRate)}`
+      : "- C1: 未実行（L系が生命勝ち20%超過のまま）",
+    "",
+    "## 1. 全KPI比較",
+    "",
+    "各ΔはR0基準。v4-probe-paperはC3:HP3版の参考列。",
+    "",
+    `| 指標 | v4-paper参考 | R0 | ${runIds.filter((id) => id !== "R0").map((id) => `${id} | Δ${id}`).join(" | ")} |`,
+    `|---|---:|---:${runIds.filter((id) => id !== "R0").map(() => "|---:|---:").join("")} |`,
+  ];
+  for (const [label, key, type] of v41MetricRows()) {
+    const cells = [label, paperEraFormat(nestedSummaryValue(reference, key), type), paperEraFormat(nestedSummaryValue(r0, key), type)];
+    for (const id of runIds.filter((runId) => runId !== "R0")) {
+      const summary = output.runs[id]?.summary;
+      const value = summary ? nestedSummaryValue(summary, key) : null;
+      const base = nestedSummaryValue(r0, key);
+      cells.push(paperEraFormat(value, type), paperEraDelta(value, base, type));
+    }
+    lines.push(`| ${cells.join(" | ")} |`);
+  }
+
+  const lRuns = ["L1", "L2", "L3"].map((id) => output.runs[id]);
+  lines.push(
+    "",
+    "## 2. 用量反応",
+    "",
+    "| ラン | 生命総量 | 生命価 | 平均R | 生命勝ち | 占拠 | 先手 |",
+    "|---|---:|---|---:|---:|---:|---:|",
+    `| R0 | ${output.runs.R0.variant.lifeTotal ?? LIFE_TOTAL} | ${output.runs.R0.variant.lifeRule ?? "134"} | ${r0.avgRounds.toFixed(2)} | ${formatPct(r0.lifeWinRate)} | ${formatPct(r0.territoryWinRate)} | ${formatPct(r0.p0WinRate)} |`,
+  );
+  for (const run of lRuns) {
+    const s = run.summary;
+    lines.push(`| ${run.id} | ${run.variant.lifeTotal ?? LIFE_TOTAL} | ${run.variant.lifeRule ?? "134"} | ${s.avgRounds.toFixed(2)} | ${formatPct(s.lifeWinRate)} | ${formatPct(s.territoryWinRate)} | ${formatPct(s.p0WinRate)} |`);
+  }
+  lines.push(
+    "",
+    `生命15→18の生命勝ち差は ${fmtDeltaPct(output.runs.L1.summary.lifeWinRate - r0.lifeWinRate)}、生命15→20は ${fmtDeltaPct(output.runs.L2.summary.lifeWinRate - r0.lifeWinRate)}。生命価1/1/1/2/2/3は ${fmtDeltaPct(output.runs.L3.summary.lifeWinRate - r0.lifeWinRate)}。`,
+    "",
+    "## 3. 暫定目標への到達度",
+    "",
+    "| ラン | 先手50±2 | 生命10-20 | 占拠>=75 | 平均10.5-12.5 | 返し<=70 |",
+    "|---|---:|---:|---:|---:|---:|",
+  );
+  for (const id of runIds) {
+    const s = output.runs[id].summary;
+    const mark = (ok) => ok ? "OK" : "外";
+    lines.push(`| ${id} | ${mark(s.p0WinRate >= 0.48 && s.p0WinRate <= 0.52)} | ${mark(s.lifeWinRate >= 0.1 && s.lifeWinRate <= 0.2)} | ${mark(s.territoryWinRate >= 0.75)} | ${mark(s.avgRounds >= 10.5 && s.avgRounds <= 12.5)} | ${mark(s.check4ReturnRate <= 0.7)} |`);
+  }
+  lines.push(
+    "",
+    "## 4. 考察",
+    "",
+    output.selection.held
+      ? "L系がすべて生命勝ち20%を超えたため、初期生命・生命価だけではv4骨格の生命圧を十分に落とせない可能性が高い。次段はATKカーブ、返し率、または生命価のさらなる圧縮を候補にする。"
+      : `C1は${output.selection.hChoice.id}と${output.selection.lChoice.id}を組み合わせた相互作用確認ラン。2000試合の先手勝率は約±2.2ptの参考値なので、採用に近づく場合は8000試合以上で追試する。`,
+    "",
+    "v4.1候補として推せるかは、上の暫定目標表の外れ方で読む。特に先手と生命勝ちが同時に帯へ近づいているか、生命を下げた代償として占拠が落ちすぎていないかを重視する。",
+    "",
+    "## 5. 実装ノート",
+    "",
+    "- 全ランpaper紀元。`anyAdjacentSummon`既定値trueを使用。",
+    "- v4骨格はC2=2/C3=2/C4=5、dm2、弱点+1、陰陽2属性、太極召喚-1、現行勝利条件で固定。",
+    "- R0/H1/L1/L2/L3は1ノブのみ変更。C1だけH系最良とL系最良の組み合わせとして実測。",
+    "- AIヒューリスティック、チェック探索、オラクル、形状、再命令は変更していない。",
+    "",
+    "## 6. 再現情報",
+    "",
+    "```powershell",
+    output.reproducibility.command,
+    "```",
+    "",
+    "| Artifact | Value |",
+    "|---|---|",
+    `| Repo HEAD | \`${output.reproducibility.repoHead}\` |`,
+    `| Script SHA256 | \`${output.reproducibility.scriptSha256}\` |`,
+    `| Result JSON SHA256 | \`${resultJsonSha256}\` |`,
+    `| Games per run | ${output.reproducibility.gamesPerRun} |`,
+    `| Seed | ${output.reproducibility.seed} |`,
+    `| Oracle / depth | yes / ${output.reproducibility.checkSearchDepth} |`,
+    "",
+    `JSON: \`${V41_TUNING_OUT_PATH}\``,
+  );
+  return `${lines.join("\n")}\n`;
+}
+
+/*
+function v41MarkdownClean(output, { resultJsonSha256 }) {
+  const reference = output.reference.summary;
+  const runIds = output.runOrder;
+  const metricRows = [
+    ["Average rounds", "avgRounds", "number2"],
+    ["Median rounds", "medianRounds", "number1"],
+    ["P90 rounds", "p90Rounds", "number1"],
+    ["Territory win rate", "territoryWinRate", "percent"],
+    ["Life win rate", "lifeWinRate", "percent"],
+    ["Timeout rate", "timeoutRate", "percent"],
+    ["First-player win rate", "p0WinRate", "percent"],
+    ["4-checks per game", "check4PerGame", "number2"],
+    ["4-check return rate", "check4ReturnRate", "percent"],
+    ["Oracle returnable rate", "check4OracleReturnableRate", "percent"],
+    ["Kills per game", "killsPerGame", "number2"],
+    ["Weak-point attack rate", "weakAttackRate", "percent"],
+    ["Weak-point kill rate", "weakKillRate", "percent"],
+    ["Attack reactivations per game", "attackReactivationsPerGame", "number2"],
+    ["Rotate-attacks per game", "rotateAttacksPerGame", "number2"],
+    ["Rotations per game", "rotationsPerGame", "number2"],
+    ["Summon stall rate", "summonStallRate", "percent"],
+    ["Mana utilization", "manaUtilization", "percent"],
+    ["Deck-empty game rate", "deckEmptyGameRate", "percent"],
+    ["Deck-reshuffle game rate", "deckReshuffleGameRate", "percent"],
+    ["Destroy mana gained per game", "destroyManaGainedPerGame", "number2"],
+    ["Taiji occupancy", "taijiOccupancyRate", "percent"],
+    ["Taiji occupancy P0", "taijiP0OccupancyRate", "percent"],
+    ["Taiji occupancy P1", "taijiP1OccupancyRate", "percent"],
+    ["Taiji discounts per game", "taijiDiscountUsesPerGame", "number2"],
+    ["Taiji discounts P0 per game", "taijiDiscountUsesP0PerGame", "number2"],
+    ["Taiji discounts P1 per game", "taijiDiscountUsesP1PerGame", "number2"],
+    ["Yin/Yang +2 applications per game", "yinYangPositiveApplicationsPerGame", "number2"],
+    ["Yin/Yang -2 applications per game", "yinYangNegativeApplicationsPerGame", "number2"],
+  ];
+  const fmt = (value, type) => paperEraFormat(value, type);
+  const delta = (value, base, type) => paperEraDelta(value, base, type);
+  const lines = [
+    "# v4.1 Tuning Sweep",
+    "",
+    "Status: proposal material only; no adoption decision was made.",
+    `Generated: ${output.generatedAt}`,
+    "",
+    "## Executive Summary",
+    "",
+    "R0 is the v4 skeleton control with C2 HP3 and C3 HP4. H1 changes only second-player starting mana to 5. L1-L3 change only the life economy.",
+    `- R0: ${fmt(output.runs.R0.summary.avgRounds, "number2")}R average / ${fmt(output.runs.R0.summary.p0WinRate, "percent")} first-player wins / ${fmt(output.runs.R0.summary.lifeWinRate, "percent")} life wins / ${fmt(output.runs.R0.summary.territoryWinRate, "percent")} territory wins.`,
+    `- Compared with the paper-era v4 reference (C3 HP3), R0 changes by ${fmtDelta(output.runs.R0.summary.avgRounds - reference.avgRounds, 2)}R average, ${fmtDeltaPct(output.runs.R0.summary.p0WinRate - reference.p0WinRate)}, ${fmtDeltaPct(output.runs.R0.summary.lifeWinRate - reference.lifeWinRate)} life wins, and ${fmtDelta(output.runs.R0.summary.killsPerGame - reference.killsPerGame, 2)} kills/game.`,
+    `- C1: ${output.selection.held ? "held; all L runs remained above 20% life wins." : `${output.selection.hChoice.id} + ${output.selection.lChoice.id} was selected for the combination run.`}`,
+    "",
+    "## KPI Comparison",
+    "",
+    `| Metric | v4-paper ref | ${runIds.map((id) => id).join(" | ")} |`,
+    `|---|---:|${runIds.map(() => "---:").join("|")}|`,
+  ];
+  for (const [label, key, type] of metricRows) {
+    const cells = [label, fmt(nestedSummaryValue(reference, key), type)];
+    for (const id of runIds) {
+      const value = nestedSummaryValue(output.runs[id].summary, key);
+      cells.push(fmt(value, type));
+    }
+    lines.push(`| ${cells.join(" | ")} |`);
+  }
+  const deltaIds = runIds.filter((id) => id !== "R0");
+  const deltaHeader = deltaIds.map((id) => `${id} value | delta`).join(" | ");
+  lines.push("", "## Delta from R0", "", `| Metric | ${deltaHeader} |`, `|---|${deltaIds.map(() => "---:|---:").join("|")}|`);
+  for (const [label, key, type] of metricRows) {
+    const base = nestedSummaryValue(output.runs.R0.summary, key);
+    const cells = [label];
+    for (const id of runIds.filter((runId) => runId !== "R0")) {
+      const value = nestedSummaryValue(output.runs[id].summary, key);
+      cells.push(fmt(value, type), delta(value, base, type));
+    }
+    lines.push(`| ${cells.join(" | ")} |`);
+  }
+  lines.push("", "## Dose Response", "", "| Run | Life total | Life-value rule | Avg R | Life win | Territory win | P0 win |", "|---|---:|---|---:|---:|---:|---:|");
+  for (const id of ["R0", "L1", "L2", "L3"]) {
+    const run = output.runs[id];
+    const s = run.summary;
+    lines.push(`| ${id} | ${run.variant.lifeTotal ?? LIFE_TOTAL} | ${run.variant.lifeRule ?? "134"} | ${s.avgRounds.toFixed(2)} | ${formatPct(s.lifeWinRate)} | ${formatPct(s.territoryWinRate)} | ${formatPct(s.p0WinRate)} |`);
+  }
+  lines.push("", "## Temporary Targets (reference only)", "", "| Run | P0 50±2 | Life 10-20% | Territory ≥75% | Avg R 10.5-12.5 | Check return ≤70% |", "|---|---:|---:|---:|---:|---:|");
+  for (const id of runIds) {
+    const s = output.runs[id].summary;
+    const mark = (ok) => ok ? "OK" : "OUT";
+    lines.push(`| ${id} | ${mark(s.p0WinRate >= 0.48 && s.p0WinRate <= 0.52)} | ${mark(s.lifeWinRate >= 0.1 && s.lifeWinRate <= 0.2)} | ${mark(s.territoryWinRate >= 0.75)} | ${mark(s.avgRounds >= 10.5 && s.avgRounds <= 12.5)} | ${mark(s.check4ReturnRate <= 0.7)} |`);
+  }
+  lines.push("", "## Analysis", "", "The life-total and life-value levers both reduced life-win rate, but none reached the temporary 10-20% band. L2 had the strongest life-win reduction, while also producing the longest games and the highest territory-win rate among the L runs. H1 brought first-player win rate closest to 50% among the tested mana settings, but did not correct the life-win or game-length issues by itself.", "", "Because all L runs stayed above 20% life wins, the requested C1 combination was intentionally held. The next useful lever should target the damage/kill economy directly; combining H1 with an L run before measuring that remaining pressure would obscure the individual contributions.", "", "## Implementation Notes", "", "- The v4 skeleton was isolated in a dedicated `--v41-tuning` mode.", "- Only second-player starting mana, life total, and life-value curve were varied.", "- Paper-era placement and the existing AI/oracle behavior were retained.", "- No score was used to rank the reported runs; the temporary-target score was used only for the C1 selection path, which was not executed because all L runs exceeded 20% life wins.", "", "## Reproducibility", "", "```powershell", output.reproducibility.command, "```", "", `Repo HEAD: \`${output.reproducibility.repoHead}\``, `Script SHA256: \`${output.reproducibility.scriptSha256}\``, `Result JSON SHA256: \`${resultJsonSha256}\``, `Games per run: ${output.reproducibility.gamesPerRun}`, `Seed: ${output.reproducibility.seed}`, `Oracle / depth: yes / ${output.reproducibility.checkSearchDepth}`, ""];
+  return `${lines.join("\n")}\n`;
+}
+
+*/
+/*
+function v41MarkdownClean(output, { resultJsonSha256 }) {
+  const ids = output.runOrder;
+  const ref = output.reference.summary;
+  const rows = [
+    ["Average rounds", "avgRounds", "number2"],
+    ["Median rounds", "medianRounds", "number1"],
+    ["P90 rounds", "p90Rounds", "number1"],
+    ["Territory win rate", "territoryWinRate", "percent"],
+    ["Life win rate", "lifeWinRate", "percent"],
+    ["Timeout rate", "timeoutRate", "percent"],
+    ["First-player win rate", "p0WinRate", "percent"],
+    ["4-check return rate", "check4ReturnRate", "percent"],
+    ["Kills per game", "killsPerGame", "number2"],
+    ["Weak-point kill rate", "weakKillRate", "percent"],
+    ["Attack reactivations per game", "attackReactivationsPerGame", "number2"],
+    ["Rotate-attacks per game", "rotateAttacksPerGame", "number2"],
+    ["Rotations per game", "rotationsPerGame", "number2"],
+    ["Mana utilization", "manaUtilization", "percent"],
+    ["Taiji occupancy", "taijiOccupancyRate", "percent"],
+    ["Taiji discounts per game", "taijiDiscountUsesPerGame", "number2"],
+  ];
+  const format = (value, type) => paperEraFormat(value, type);
+  const lines = [
+    "# v4.1 Tuning Sweep",
+    "",
+    "Status: proposal material only; no adoption decision was made.",
+    `Generated: ${output.generatedAt}`,
+    "",
+    "## Summary",
+    "",
+    "R0 is the v4 skeleton control with C2 HP3 and C3 HP4. H1 changes only second-player starting mana to 5. L1-L3 change only the life economy.",
+    `R0: ${format(output.runs.R0.summary.avgRounds, "number2")}R average, ${format(output.runs.R0.summary.p0WinRate, "percent")} first-player wins, ${format(output.runs.R0.summary.lifeWinRate, "percent")} life wins, ${format(output.runs.R0.summary.territoryWinRate, "percent")} territory wins.`,
+    `Compared with v4-paper (C3 HP3): avg ${fmtDelta(output.runs.R0.summary.avgRounds - ref.avgRounds, 2)}R, first-player ${fmtDeltaPct(output.runs.R0.summary.p0WinRate - ref.p0WinRate)}, life ${fmtDeltaPct(output.runs.R0.summary.lifeWinRate - ref.lifeWinRate)}, kills ${fmtDelta(output.runs.R0.summary.killsPerGame - ref.killsPerGame, 2)} per game.`,
+    `C1: ${output.selection.held ? "held because all L runs exceeded 20% life wins." : "combined run was executed."}`,
+    "",
+    "## KPI Comparison",
+    "",
+    `| Metric | v4-paper ref | ${ids.join(" | ")} |`,
+    `|---|---:|${ids.map(() => "---:").join("|")}|`,
+  ];
+  for (const [label, key, type] of rows) {
+    lines.push(`| ${label} | ${format(nestedSummaryValue(ref, key), type)} | ${ids.map((id) => format(nestedSummaryValue(output.runs[id].summary, key), type)).join(" | ")} |`);
+  }
+  lines.push("", "## Dose Response", "", "| Run | Life total | Life rule | Avg R | Life win | Territory win | P0 win |", "|---|---:|---|---:|---:|---:|---:|");
+  for (const id of ["R0", "L1", "L2", "L3"]) {
+    const run = output.runs[id];
+    const s = run.summary;
+    lines.push(`| ${id} | ${run.variant.lifeTotal ?? LIFE_TOTAL} | ${run.variant.lifeRule ?? "134"} | ${s.avgRounds.toFixed(2)} | ${formatPct(s.lifeWinRate)} | ${formatPct(s.territoryWinRate)} | ${formatPct(s.p0WinRate)} |`);
+  }
+  lines.push("", "## Temporary Targets (reference only)", "", "| Run | P0 48-52% | Life 10-20% | Territory >=75% | Avg R 10.5-12.5 | Check return <=70% |", "|---|---:|---:|---:|---:|---:|");
+  for (const id of ids) {
+    const s = output.runs[id].summary;
+    const ok = (value) => value ? "OK" : "OUT";
+    lines.push(`| ${id} | ${ok(s.p0WinRate >= 0.48 && s.p0WinRate <= 0.52)} | ${ok(s.lifeWinRate >= 0.1 && s.lifeWinRate <= 0.2)} | ${ok(s.territoryWinRate >= 0.75)} | ${ok(s.avgRounds >= 10.5 && s.avgRounds <= 12.5)} | ${ok(s.check4ReturnRate <= 0.7)} |`);
+  }
+  lines.push("", "## Analysis", "", "All L runs reduced life-win rate relative to R0, but all remained above the temporary 10-20% band. L2 produced the strongest reduction, while also producing the longest games and the highest territory-win rate among L1-L3. H1 brought first-player win rate closest to 50% among the tested mana settings, but did not solve the life-win or game-length issues by itself.", "", "C1 was held as instructed. A next-stage lever should target damage and kill economy directly; combining H1 with an L run before measuring that lever would make individual contributions harder to read.", "", "## Implementation Notes", "", "- Dedicated `--v41-tuning` mode; existing modes remain unchanged.", "- Only second-player starting mana, life total, and life-value curve were varied.", "- Paper-era placement and existing AI/oracle behavior were retained.", "- The temporary score was not used to rank reported runs; it is retained only for the unexecuted C1 selection path.", "", "## Reproducibility", "", "```powershell", output.reproducibility.command, "```", "", `Repo HEAD: ${output.reproducibility.repoHead}`, `Script SHA256: ${output.reproducibility.scriptSha256}`, `Result JSON SHA256: ${resultJsonSha256}`, `Games per run: ${output.reproducibility.gamesPerRun}`, `Seed: ${output.reproducibility.seed}`, `Oracle / depth: yes / ${output.reproducibility.checkSearchDepth}`, ""];
+  return `${lines.join("\n")}\n`;
+}
+
+*/
+function v41MarkdownClean(output, { resultJsonSha256 }) {
+  const ids = output.runOrder;
+  const rows = ["avgRounds", "medianRounds", "p90Rounds", "p0WinRate", "lifeWinRate", "territoryWinRate", "timeoutRate", "check4PerGame", "check4ReturnRate", "check4OracleReturnableRate", "killsPerGame", "weakAttackRate", "weakKillRate", "attackReactivationsPerGame", "rotateAttacksPerGame", "rotationsPerGame", "summonStallRate", "manaUtilization", "deckEmptyGameRate", "deckReshuffleGameRate", "destroyManaGainedPerGame", "taijiOccupancyRate", "taijiP0OccupancyRate", "taijiP1OccupancyRate", "taijiDiscountUsesPerGame", "taijiDiscountUsesP0PerGame", "taijiDiscountUsesP1PerGame", "yinYangPositiveApplicationsPerGame", "yinYangNegativeApplicationsPerGame"];
+  const labels = { avgRounds: "Average rounds", medianRounds: "Median rounds", p90Rounds: "P90 rounds", p0WinRate: "First-player win rate", lifeWinRate: "Life win rate", territoryWinRate: "Territory win rate", timeoutRate: "Timeout rate", check4PerGame: "4-checks per game", check4ReturnRate: "4-check return rate", check4OracleReturnableRate: "Oracle returnable rate", killsPerGame: "Kills per game", weakAttackRate: "Weak-point attack rate", weakKillRate: "Weak-point kill rate", attackReactivationsPerGame: "Attack reactivations per game", rotateAttacksPerGame: "Rotate-attacks per game", rotationsPerGame: "Rotations per game", summonStallRate: "Summon stall rate", manaUtilization: "Mana utilization", deckEmptyGameRate: "Deck-empty game rate", deckReshuffleGameRate: "Deck reshuffle game rate", destroyManaGainedPerGame: "Destroy mana gained per game", taijiOccupancyRate: "Taiji occupancy", taijiP0OccupancyRate: "Taiji occupancy P0", taijiP1OccupancyRate: "Taiji occupancy P1", taijiDiscountUsesPerGame: "Taiji discounts per game", taijiDiscountUsesP0PerGame: "Taiji discounts P0 per game", taijiDiscountUsesP1PerGame: "Taiji discounts P1 per game", yinYangPositiveApplicationsPerGame: "Yin/Yang +2 applications per game", yinYangNegativeApplicationsPerGame: "Yin/Yang -2 applications per game" };
+  const types = { avgRounds: "number2", medianRounds: "number1", p90Rounds: "number1", p0WinRate: "percent", lifeWinRate: "percent", territoryWinRate: "percent", timeoutRate: "percent", check4PerGame: "number2", check4ReturnRate: "percent", check4OracleReturnableRate: "percent", killsPerGame: "number2", weakAttackRate: "percent", weakKillRate: "percent", attackReactivationsPerGame: "number2", rotateAttacksPerGame: "number2", rotationsPerGame: "number2", summonStallRate: "percent", manaUtilization: "percent", deckEmptyGameRate: "percent", deckReshuffleGameRate: "percent", destroyManaGainedPerGame: "number2", taijiOccupancyRate: "percent", taijiP0OccupancyRate: "percent", taijiP1OccupancyRate: "percent", taijiDiscountUsesPerGame: "number2", taijiDiscountUsesP0PerGame: "number2", taijiDiscountUsesP1PerGame: "number2", yinYangPositiveApplicationsPerGame: "number2", yinYangNegativeApplicationsPerGame: "number2" };
+  const lines = ["# v4.1 Tuning Sweep", "", "Status: proposal material only; no adoption decision was made.", `Generated: ${output.generatedAt}`, "", "## KPI Comparison", "", `| Metric | v4-paper ref | ${ids.join(" | ")} |`, `|---|---:|${ids.map(() => "---:").join("|")}|`];
+  for (const key of rows) lines.push(`| ${labels[key]} | ${paperEraFormat(nestedSummaryValue(output.reference.summary, key), types[key])} | ${ids.map((id) => paperEraFormat(nestedSummaryValue(output.runs[id].summary, key), types[key])).join(" | ")} |`);
+  lines.push("", "## Dose Response", "", "| Run | Life total | Life rule | Avg R | Life win | Territory win | P0 win |", "|---|---:|---|---:|---:|---:|---:|");
+  for (const id of ["R0", "L1", "L2", "L3"]) { const run = output.runs[id]; const s = run.summary; lines.push(`| ${id} | ${run.variant.lifeTotal ?? LIFE_TOTAL} | ${run.variant.lifeRule ?? "134"} | ${s.avgRounds.toFixed(2)} | ${formatPct(s.lifeWinRate)} | ${formatPct(s.territoryWinRate)} | ${formatPct(s.p0WinRate)} |`); }
+  lines.push("", "## Analysis", "", "All L runs remained above 20% life wins, so C1 was held as instructed. L2 reduced life wins the most but also produced the longest games. H1 brought first-player win rate closest to 50% among the tested mana settings.", "", "## Implementation Notes", "", "Dedicated --v41-tuning mode; only starting mana, life total, and life-value curve were varied. Existing paper placement and AI/oracle behavior were retained.", "", "## Reproducibility", "", "```powershell", output.reproducibility.command, "```", "", `Repo HEAD: ${output.reproducibility.repoHead}`, `Script SHA256: ${output.reproducibility.scriptSha256}`, `Result JSON SHA256: ${resultJsonSha256}`, `Games per run: ${output.reproducibility.gamesPerRun}`, `Seed: ${output.reproducibility.seed}`, `Oracle / depth: yes / ${output.reproducibility.checkSearchDepth}`, "");
+  return `${lines.join("\n")}\n`;
+}
+
+function runV41Tuning(args) {
+  fs.mkdirSync(path.dirname(V41_TUNING_OUT_PATH), { recursive: true });
+  const variants = {
+    R0: makeV41Variant("R0_base_c2hp3_c3hp4"),
+    H1: makeV41Variant("H1_second_mana_5", { p1StartingMana: 5 }),
+    L1: makeV41Variant("L1_life_18", { lifeTotal: 18 }),
+    L2: makeV41Variant("L2_life_20", { lifeTotal: 20 }),
+    L3: makeV41Variant("L3_life_values_111223", { lifeRule: "112223" }),
+  };
+  const runs = {};
+  for (const [id, variant] of Object.entries(variants)) {
+    runs[id] = { id, ...v41Run(`v41 tuning ${id}`, variant, args) };
+  }
+  const selection = chooseV41Combination(runs.R0, runs.H1, [runs.L1, runs.L2, runs.L3]);
+  if (!selection.held) {
+    const c1Variant = makeV41Variant("C1_combined", {
+      p1StartingMana: selection.hChoice.p1StartingMana,
+      lifeTotal: selection.lChoice.lifeTotal,
+      lifeRule: selection.lChoice.lifeRule,
+      combinationSource: {
+        h: selection.hChoice.id,
+        l: selection.lChoice.id,
+      },
+    });
+    runs.C1 = { id: "C1", ...v41Run("v41 tuning C1", c1Variant, args) };
+  }
+
+  const reference = JSON.parse(fs.readFileSync(V4_PROBE_PAPER_OUT_PATH, "utf8"));
+  const command = "node scripts\\explore-stat-curves.cjs --v41-tuning --seed 20260702";
+  const output = {
+    generatedAt: new Date().toISOString(),
+    status: "complete",
+    decisionStatus: "proposal-material",
+    assumptions: {
+      task: path.join(ROOT, "docs", "codex-task-v41-tuning.md"),
+      reference: V4_PROBE_PAPER_OUT_PATH,
+      fixedV4Skeleton:
+        "DM2, weak +1, C2 HP3, C3 HP4, C4 HP5, Yin/Yang board, Taiji summon -1, any-adjacent placement, current victory condition.",
+      tuningLevers: "second-player initial mana, life total, life-value curve only",
+      aiChanged: false,
+    },
+    reproducibility: {
+      command,
+      repoHead: gitHead(),
+      scriptPath: __filename,
+      scriptSha256: sha256File(__filename),
+      gamesPerRun: args.v41TuningSamples,
+      seed: args.seed,
+      seedStride: 9176,
+      oracle: true,
+      checkSearchDepth: 6,
+    },
+    reference: {
+      source: V4_PROBE_PAPER_OUT_PATH,
+      note: "C3 HP3 reference; R0 is the C3 HP2 control for this sweep.",
+      summary: reference.run.summary,
+    },
+    selection,
+    runOrder: ["R0", "H1", "L1", "L2", "L3", ...(runs.C1 ? ["C1"] : [])],
+    runs,
+  };
+  fs.writeFileSync(V41_TUNING_OUT_PATH, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+  const resultJsonSha256 = sha256File(V41_TUNING_OUT_PATH);
+  fs.writeFileSync(V41_TUNING_MD_PATH, v41MarkdownClean(output, { resultJsonSha256 }), "utf8");
+  console.log(`Wrote ${path.relative(ROOT, V41_TUNING_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, V41_TUNING_MD_PATH)}`);
+}
+
+function runC3Hp3Probe(args) {
+  const variant = makeV41Variant("c3_3_2", {
+    hpOverrides: { 2: 3, 3: 3, 4: 5 },
+    probeStat: "cost 3 / HP 3 / ATK 2",
+  });
+  const run = v41Run("C3 3/3/2 probe", variant, args);
+  const output = {
+    generatedAt: new Date().toISOString(),
+    status: "complete",
+    configuration: "v4.1 current baseline candidate with the cost 3 / HP 3 / ATK 2 card tested; other settings unchanged.",
+    run: {
+      variant: run.variant,
+      summary: run.summary,
+    },
+    reproducibility: {
+      command: "node scripts\\explore-stat-curves.cjs --c3-hp3-probe --seed 20260702",
+      repoHead: gitHead(),
+      scriptSha256: sha256File(__filename),
+      games: args.v41TuningSamples,
+      seed: args.seed,
+      oracle: true,
+      checkSearchDepth: 6,
+    },
+  };
+  fs.writeFileSync(C3_332_OUT_PATH, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+  const lines = [
+    "# C3 3/3/2 Probe",
+    "",
+    "This is a single-run probe. The tested card is cost 3 / HP 3 / ATK 2; other v4.1 candidate settings are unchanged.",
+    "",
+    "| Metric | Result |",
+    "|---|---:|",
+    `| Average rounds | ${run.summary.avgRounds.toFixed(2)} |`,
+    `| Median rounds | ${run.summary.medianRounds.toFixed(1)} |`,
+    `| P90 rounds | ${run.summary.p90Rounds.toFixed(1)} |`,
+    `| First-player win rate | ${formatPct(run.summary.p0WinRate)} |`,
+    `| Territory win rate | ${formatPct(run.summary.territoryWinRate)} |`,
+    `| Life win rate | ${formatPct(run.summary.lifeWinRate)} |`,
+    `| 4-check return rate | ${formatPct(run.summary.check4ReturnRate)} |`,
+    `| Kills per game | ${run.summary.killsPerGame.toFixed(2)} |`,
+    `| Timeout rate | ${formatPct(run.summary.timeoutRate)} |`,
+    "",
+    "## Reproducibility",
+    "",
+    "```powershell",
+    output.reproducibility.command,
+    "```",
+    `Repo HEAD: ${output.reproducibility.repoHead}`,
+    `Script SHA256: ${output.reproducibility.scriptSha256}`,
+    `Games: ${output.reproducibility.games}`,
+    `Seed: ${output.reproducibility.seed}`,
+    "Oracle / depth: yes / 6",
+    "",
+  ];
+  fs.writeFileSync(C3_332_MD_PATH, `${lines.join("\n")}\n`, "utf8");
+  console.log(`Wrote ${path.relative(ROOT, C3_332_OUT_PATH)}`);
+  console.log(`Wrote ${path.relative(ROOT, C3_332_MD_PATH)}`);
+}
+
 function main() {
   const args = parseArgs(process.argv);
   if (args.phase2aMainSearch) {
@@ -7984,6 +8505,21 @@ function main() {
   }
   if (args.eraPaper) {
     runEraPaper(args);
+    return;
+  }
+  if (args.v41Tuning) {
+    runV41Tuning(args);
+    return;
+  }
+  if (args.v41TuningRender) {
+    const output = JSON.parse(fs.readFileSync(V41_TUNING_OUT_PATH, "utf8"));
+    const resultJsonSha256 = sha256File(V41_TUNING_OUT_PATH);
+    fs.writeFileSync(V41_TUNING_MD_PATH, v41MarkdownClean(output, { resultJsonSha256 }), "utf8");
+    console.log(`Wrote ${path.relative(ROOT, V41_TUNING_MD_PATH)}`);
+    return;
+  }
+  if (args.c3Hp3Probe) {
+    runC3Hp3Probe(args);
     return;
   }
   if (args.reactValueForked) {
