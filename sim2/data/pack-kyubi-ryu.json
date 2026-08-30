@@ -1,0 +1,562 @@
+{
+  "packId": "kyubi-ryu",
+  "note": "Kyubi + Ryu, 22 cards. Card effect text is NOT implemented in v1. reigu are unplayable dead cards. Relative coords: front = +y.",
+  "cards": [
+    {
+      "id": "kr01",
+      "name": "Kitsunebi-A",
+      "kind": "shikigami",
+      "summonCost": 2,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 2,
+      "lifeValue": 1,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "狐火"
+    },
+    {
+      "id": "kr02",
+      "name": "Kitsunebi-B",
+      "kind": "shikigami",
+      "summonCost": 2,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 2,
+      "lifeValue": 1,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "狐火"
+    },
+    {
+      "id": "kr03",
+      "name": "Ryuto-A",
+      "kind": "shikigami",
+      "summonCost": 2,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 2,
+      "lifeValue": 1,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "龍灯"
+    },
+    {
+      "id": "kr04",
+      "name": "Ryuto-B",
+      "kind": "shikigami",
+      "summonCost": 2,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 2,
+      "lifeValue": 1,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "龍灯"
+    },
+    {
+      "id": "kr05",
+      "name": "Tabi-Gitsune",
+      "kind": "shikigami",
+      "summonCost": 3,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 4,
+      "lifeValue": 2,
+      "attribute": "none",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "旅狐"
+    },
+    {
+      "id": "kr06",
+      "name": "Kage-Gitsune",
+      "kind": "shikigami",
+      "summonCost": 3,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 3,
+      "lifeValue": 2,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "影狐"
+    },
+    {
+      "id": "kr07",
+      "name": "Unkaku",
+      "kind": "shikigami",
+      "summonCost": 3,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 3,
+      "lifeValue": 2,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "雲角"
+    },
+    {
+      "id": "kr08",
+      "name": "Suirin",
+      "kind": "shikigami",
+      "summonCost": 3,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 3,
+      "lifeValue": 2,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "翠鱗"
+    },
+    {
+      "id": "kr09",
+      "name": "Tenko",
+      "kind": "shikigami",
+      "summonCost": 4,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 5,
+      "lifeValue": 2,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 2
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "nameJa": "天狐"
+    },
+    {
+      "id": "kr10",
+      "name": "Ara-Gitsune",
+      "kind": "shikigami",
+      "summonCost": 4,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 5,
+      "lifeValue": 2,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "荒狐"
+    },
+    {
+      "id": "kr11",
+      "name": "Kokuryu",
+      "kind": "shikigami",
+      "summonCost": 4,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 5,
+      "lifeValue": 2,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "黒龍"
+    },
+    {
+      "id": "kr12",
+      "name": "Genro",
+      "kind": "shikigami",
+      "summonCost": 4,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 4,
+      "lifeValue": 2,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "幻楼"
+    },
+    {
+      "id": "kr13",
+      "name": "Soto-Ryu",
+      "kind": "shikigami",
+      "summonCost": 5,
+      "attackCost": 3,
+      "atk": 3,
+      "hp": 6,
+      "lifeValue": 3,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": true,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "nameJa": "双頭龍"
+    },
+    {
+      "id": "kr14",
+      "name": "Kosen",
+      "kind": "shikigami",
+      "summonCost": 5,
+      "attackCost": 3,
+      "atk": 3,
+      "hp": 6,
+      "lifeValue": 3,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "狐仙"
+    },
+    {
+      "id": "kr15",
+      "name": "Kyubi",
+      "kind": "shikigami",
+      "summonCost": 6,
+      "attackCost": 3,
+      "atk": 3,
+      "hp": 7,
+      "lifeValue": 3,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": true,
+      "attackRange": [
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": -1,
+          "y": -1
+        },
+        {
+          "x": 1,
+          "y": -1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "九尾"
+    },
+    {
+      "id": "kr16",
+      "name": "Ryu",
+      "kind": "shikigami",
+      "summonCost": 7,
+      "attackCost": 4,
+      "atk": 4,
+      "hp": 8,
+      "lifeValue": 4,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": true,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 2
+        },
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "龍"
+    },
+    {
+      "id": "kr17",
+      "name": "Kyubi-no-Ogi",
+      "kind": "reigu",
+      "summonCost": 2,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "九尾の扇"
+    },
+    {
+      "id": "kr18",
+      "name": "Tamamo",
+      "kind": "reigu",
+      "summonCost": 2,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "玉藻"
+    },
+    {
+      "id": "kr19",
+      "name": "Hoju",
+      "kind": "reigu",
+      "summonCost": 2,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "宝珠"
+    },
+    {
+      "id": "kr20",
+      "name": "Sessho-Seki",
+      "kind": "reigu",
+      "summonCost": 2,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "殺生石"
+    },
+    {
+      "id": "kr21",
+      "name": "Gekirin",
+      "kind": "reigu",
+      "summonCost": 0,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "逆鱗"
+    },
+    {
+      "id": "kr22",
+      "name": "Raiko",
+      "kind": "reigu",
+      "summonCost": 2,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "雷鼓"
+    }
+  ]
+}
