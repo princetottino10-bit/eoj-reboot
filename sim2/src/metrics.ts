@@ -46,9 +46,64 @@ export type GameRecord = {
   effectTriggers: Record<string, number>;
   /** Attack-variant usage (tm09 konshin, tm06 heal). */
   variantUses: Record<string, number>;
+
+  // ------------------------------------------------------ EXP-0913 Sec.3
+  /** Board HP total for [p0, p1] at the end of each completed round. */
+  boardHpByRound: Pair[];
+  /** Summons of a shikigami whose printed summonCost is >= 5. */
+  highCostSummons: Pair;
+  /** Round of the first such summon, or null when none happened. */
+  highCostFirstRound: number | null;
+  /** Unspent mana at each turn end, and the number of turn ends counted. */
+  leftoverManaTotal: number;
+  leftoverManaTurns: number;
+  /** Units removed from the board, by the destroyer's side is not tracked;
+   *  this is the total across both players. */
+  kills: number;
+  /** moveOnKill relocations that actually happened. */
+  moveOnKillCount: number;
+  /** Grave reshuffles, per player. */
+  reshuffles: Pair;
+
+  // ----------------------------------------------------- EXP-0913B Sec.4
+  /** Inherit-summons per player, and "oldCost->newCost" frequencies. */
+  inherits: Pair;
+  inheritCombos: Record<string, number>;
+  /** High-cost (printed >= 5) summons that came in through an inherit. */
+  highCostInherits: Pair;
+  /** Mana a player received as the killer (refundMode killer_half). */
+  killerMana: Pair;
+  /** Damaging attacks (heal-attacks excluded), split single / area. */
+  attacksSingle: number;
+  attacksAoe: number;
+  /** Of those, attacks that drew at least one counter. */
+  counteredSingle: number;
+  counteredAoe: number;
+  /** Individual counter-attacks, split by the attack's type. */
+  countersSingle: number;
+  countersAoe: number;
+  /** Side that first destroyed an ENEMY unit. null = no such kill. */
+  firstKiller: PlayerId | null;
+  /** Sign changes of (occupied p0 - occupied p1) across turn ends, ties skipped. */
+  leadFlips: number;
+  /** Control state entered / lost without winning / converted into a win. */
+  controlGained: Pair;
+  controlLost: Pair;
+  controlWon: Pair;
+  /** Every control event in order: [round, player, change]. */
+  controlTimeline: [number, PlayerId, "gain" | "lost" | "win"][];
+  /** Hand sizes for [p0, p1] at the end of each completed round. */
+  handByRound: Pair[];
+  /** Cards each player sent back in the mulligan. */
+  mulliganReturned: Pair;
+  /** Moves made by a card effect (sk13), as opposed to the moveOnKill rule. */
+  effectMoves: number;
 };
 
 const pair = (): Pair => [0, 0];
+
+/** EXP-0913 Sec.3: "high cost" means a printed summon cost of 5 or more. */
+export const HIGH_COST = 5;
 
 const bump = (p: Pair, i: PlayerId, n = 1): void => {
   p[i] += n;
@@ -92,21 +147,52 @@ export const buildRecord = (seed: number, events: GameEvent[]): GameRecord => {
     reiguUses: {},
     effectTriggers: {},
     variantUses: {},
+    boardHpByRound: [],
+    highCostSummons: pair(),
+    highCostFirstRound: null,
+    leftoverManaTotal: 0,
+    leftoverManaTurns: 0,
+    kills: 0,
+    moveOnKillCount: 0,
+    reshuffles: pair(),
+    inherits: pair(),
+    inheritCombos: {},
+    highCostInherits: pair(),
+    killerMana: pair(),
+    attacksSingle: 0,
+    attacksAoe: 0,
+    counteredSingle: 0,
+    counteredAoe: 0,
+    countersSingle: 0,
+    countersAoe: 0,
+    firstKiller: null,
+    leadFlips: 0,
+    controlGained: pair(),
+    controlLost: pair(),
+    controlWon: pair(),
+    controlTimeline: [],
+    handByRound: [],
+    mulliganReturned: pair(),
+    effectMoves: 0,
   };
   const tally = (rec2: Record<string, number>, key: string): void => {
     rec2[key] = (rec2[key] ?? 0) + 1;
   };
 
+  let curRound = 1;
   const reachState: [boolean, boolean] = [false, false];
   const lastOcc: Pair = [0, 0];
   const pendingOcc: Pair = [0, 0];
   const pendingChips: Pair = [0, 0];
+  const pendingBoardHp: Pair = [0, 0];
   const seenTurnEnd: [boolean, boolean] = [false, false];
   let prevGap: number | null = null;
+  let lastLeadSign = 0;
 
   for (const e of events) {
     switch (e.t) {
       case "turnStart": {
+        curRound = e.round;
         bump(rec.turns, e.player);
         if (reachState[e.player]) {
           bump(rec.reachBroken, e.player);
@@ -118,6 +204,35 @@ export const buildRecord = (seed: number, events: GameEvent[]): GameRecord => {
         bump(rec.summons, e.player);
         bump(rec.manaSummon, e.player, e.cost);
         if (e.taiji) bump(rec.taijiSummons, e.player);
+        if (e.baseCost >= HIGH_COST) {
+          bump(rec.highCostSummons, e.player);
+          if (rec.highCostFirstRound === null) rec.highCostFirstRound = curRound;
+          if (e.inheritedFrom !== undefined) bump(rec.highCostInherits, e.player);
+        }
+        if (e.inheritedFrom !== undefined) {
+          bump(rec.inherits, e.player);
+          tally(rec.inheritCombos, `${e.inheritedFrom.baseCost}->${e.baseCost}`);
+        }
+        break;
+      }
+      case "move": {
+        if (e.source === undefined || e.source === "rule") rec.moveOnKillCount += 1;
+        else rec.effectMoves += 1;
+        break;
+      }
+      case "mulligan": {
+        bump(rec.mulliganReturned, e.player, e.returned);
+        break;
+      }
+      case "control": {
+        rec.controlTimeline.push([curRound, e.player, e.change]);
+        if (e.change === "gain") bump(rec.controlGained, e.player);
+        else if (e.change === "lost") bump(rec.controlLost, e.player);
+        else bump(rec.controlWon, e.player);
+        break;
+      }
+      case "reshuffle": {
+        bump(rec.reshuffles, e.player);
         break;
       }
       case "rotate": {
@@ -149,15 +264,37 @@ export const buildRecord = (seed: number, events: GameEvent[]): GameRecord => {
             else bump(rec.aoeEnemyHits, e.player);
           }
         }
+        if (e.variant !== "heal") {
+          if (e.aoe) {
+            rec.attacksAoe += 1;
+            rec.countersAoe += e.counterCount;
+            if (e.counterCount > 0) rec.counteredAoe += 1;
+          } else {
+            rec.attacksSingle += 1;
+            rec.countersSingle += e.counterCount;
+            if (e.counterCount > 0) rec.counteredSingle += 1;
+          }
+        }
         break;
       }
       case "destroy": {
         bump(rec.unitsLost, e.owner);
+        rec.kills += 1;
+        const killer = e.killer ?? null;
+        if (killer !== null && killer !== e.owner && rec.firstKiller === null) {
+          rec.firstKiller = killer;
+        }
+        if (e.killerRefund === true && e.manaTo !== undefined && e.manaTo !== null) {
+          bump(rec.killerMana, e.manaTo, e.manaGain);
+        }
         break;
       }
       case "turnEnd": {
         pendingOcc[e.player] = e.occupied;
         pendingChips[e.player] = e.chips;
+        pendingBoardHp[e.player] = e.boardHp;
+        rec.leftoverManaTotal += e.manaLeft;
+        rec.leftoverManaTurns += 1;
         seenTurnEnd[e.player] = true;
         if (e.occupied > rec.maxOccupied[e.player]) rec.maxOccupied[e.player] = e.occupied;
         for (let i = 0; i < e.chipGained; i++) rec.chipGainRounds[e.player].push(e.round);
@@ -166,10 +303,21 @@ export const buildRecord = (seed: number, events: GameEvent[]): GameRecord => {
         lastOcc[e.player] = e.occupied;
         if (e.reach && !reachState[e.player]) bump(rec.reachDeclared, e.player);
         reachState[e.player] = e.reach;
+        if (e.occBoth !== undefined) {
+          const sign = Math.sign(e.occBoth[0] - e.occBoth[1]);
+          if (sign !== 0) {
+            if (lastLeadSign !== 0 && sign !== lastLeadSign) rec.leadFlips += 1;
+            lastLeadSign = sign;
+          }
+        }
+        if (e.player === 1 && seenTurnEnd[0] && e.handBoth !== undefined) {
+          rec.handByRound.push([e.handBoth[0], e.handBoth[1]]);
+        }
 
         if (e.player === 1 && seenTurnEnd[0]) {
           rec.occupiedByRound.push([pendingOcc[0], pendingOcc[1]]);
           rec.chipsByRound.push([pendingChips[0], pendingChips[1]]);
+          rec.boardHpByRound.push([pendingBoardHp[0], pendingBoardHp[1]]);
           const gap = pendingOcc[0] - pendingOcc[1];
           if (Math.abs(gap) > rec.maxGap) rec.maxGap = Math.abs(gap);
           if (prevGap !== null && Math.abs(prevGap) >= 2) {
@@ -228,19 +376,21 @@ export const summarise = (label: string, records: GameRecord[]) => {
   const byType = (t: WinType): number => records.filter((r) => r.winType === t).length;
   const totalTurns = sum(records.map((r) => r.turns[0] + r.turns[1]));
   const totalSummons = sum(records.map((r) => r.summons[0] + r.summons[1]));
+  // an inherit-summon replaces a unit on its cell: it is not board growth
+  const totalInherits = sum(records.map((r) => (r.inherits ? r.inherits[0] + r.inherits[1] : 0)));
   const totalLost = sum(records.map((r) => r.unitsLost[0] + r.unitsLost[1]));
   const totalAttacks = sum(records.map((r) => r.attacks[0] + r.attacks[1]));
 
   // chip diff x win type: the pre-registered prediction
   const chipDiffByWinType: Record<string, { games: number; meanChipDiff: number }> = {};
-  for (const t of ["control", "life", "turn_limit"] as WinType[]) {
+  for (const t of ["control", "life", "turn_limit", "deck_out"] as WinType[]) {
     const g = records.filter((r) => r.winType === t);
     chipDiffByWinType[t] = { games: g.length, meanChipDiff: mean(g.map((r) => r.finalChipDiff)) };
   }
   const winTypeByChipDiff: Record<string, Record<string, number>> = {};
   for (const r of records) {
     const bucket = r.finalChipDiff >= 3 ? "3+" : String(r.finalChipDiff);
-    const b = winTypeByChipDiff[bucket] ?? { control: 0, life: 0, turn_limit: 0 };
+    const b = winTypeByChipDiff[bucket] ?? { control: 0, life: 0, turn_limit: 0, deck_out: 0 };
     b[r.winType] += 1;
     winTypeByChipDiff[bucket] = b;
   }
@@ -256,19 +406,24 @@ export const summarise = (label: string, records: GameRecord[]) => {
       control: byType("control"),
       life: byType("life"),
       turn_limit: byType("turn_limit"),
+      deck_out: byType("deck_out"),
     },
     winTypeShare: {
       control: n === 0 ? 0 : byType("control") / n,
       life: n === 0 ? 0 : byType("life") / n,
       turn_limit: n === 0 ? 0 : byType("turn_limit") / n,
+      deck_out: n === 0 ? 0 : byType("deck_out") / n,
     },
+    /** deck_out games that ended level. */
+    drawGames: records.filter((r) => r.winner === null).length,
     meanRounds: mean(records.map((r) => r.rounds)),
     roundsHistogram: histogram(records.map((r) => r.rounds)),
     firstPlayerWinRate: decisive.length === 0
       ? null
       : decisive.filter((r) => r.winner === 0).length / decisive.length,
     decisiveGames: decisive.length,
-    netBoardGrowthPerTurn: totalTurns === 0 ? 0 : (totalSummons - totalLost) / totalTurns,
+    netBoardGrowthPerTurn:
+      totalTurns === 0 ? 0 : (totalSummons - totalInherits - totalLost) / totalTurns,
     meanSummonsPerTurn: totalTurns === 0 ? 0 : totalSummons / totalTurns,
     meanLossesPerTurn: totalTurns === 0 ? 0 : totalLost / totalTurns,
     meanUnitsLostPerGame: mean(records.map((r) => r.unitsLost[0] + r.unitsLost[1])),
@@ -324,6 +479,132 @@ export const summarise = (label: string, records: GameRecord[]) => {
       n === 0
         ? 0
         : sum(records.map((r) => Object.values(r.reiguUses).reduce((a, b) => a + b, 0))) / n,
+    // ------------------------------------------------- EXP-0913 Sec.3
+    /** Mean board HP total (both players summed) at the end of round k. */
+    boardHpByRound: (() => {
+      const maxLen = records.reduce((n, r) => Math.max(n, r.boardHpByRound.length), 0);
+      const out: { round: number; games: number; p0: number; p1: number; total: number }[] = [];
+      for (let k = 0; k < maxLen; k++) {
+        const rows = records.map((r) => r.boardHpByRound[k]).filter((v) => v !== undefined);
+        out.push({
+          round: k + 1,
+          games: rows.length,
+          p0: mean(rows.map((v) => v[0])),
+          p1: mean(rows.map((v) => v[1])),
+          total: mean(rows.map((v) => v[0] + v[1])),
+        });
+      }
+      return out;
+    })(),
+    highCostSummonRate: mean(records.map((r) => r.highCostSummons[0] + r.highCostSummons[1])),
+    highCostFirstRound: (() => {
+      const hit = records.filter((r) => r.highCostFirstRound !== null);
+      return {
+        mean: mean(hit.map((r) => r.highCostFirstRound as number)),
+        gamesWith: hit.length,
+        gamesWithout: n - hit.length,
+      };
+    })(),
+    meanLeftoverMana: (() => {
+      const turns = sum(records.map((r) => r.leftoverManaTurns));
+      return turns === 0 ? 0 : sum(records.map((r) => r.leftoverManaTotal)) / turns;
+    })(),
+    killsPerGame: mean(records.map((r) => r.kills)),
+    attacksPerGame: mean(records.map((r) => r.attacks[0] + r.attacks[1])),
+    moveOnKillCount: sum(records.map((r) => r.moveOnKillCount)),
+    moveOnKillPerGame: mean(records.map((r) => r.moveOnKillCount)),
+    reshuffleCount: mean(records.map((r) => r.reshuffles[0] + r.reshuffles[1])),
+    // ------------------------------------------------ EXP-0913B Sec.4
+    inheritPerGame: mean(records.map((r) => r.inherits[0] + r.inherits[1])),
+    inheritCombos: mergeCounts(records.map((r) => r.inheritCombos)),
+    highCostBreakdownPerGame: {
+      direct: mean(
+        records.map(
+          (r) =>
+            r.highCostSummons[0] + r.highCostSummons[1] - r.highCostInherits[0] - r.highCostInherits[1],
+        ),
+      ),
+      inherit: mean(records.map((r) => r.highCostInherits[0] + r.highCostInherits[1])),
+    },
+    killerManaPerGame: {
+      p0: mean(records.map((r) => r.killerMana[0])),
+      p1: mean(records.map((r) => r.killerMana[1])),
+      total: mean(records.map((r) => r.killerMana[0] + r.killerMana[1])),
+    },
+    counterRate: (() => {
+      const as = sum(records.map((r) => r.attacksSingle));
+      const aa = sum(records.map((r) => r.attacksAoe));
+      const cs = sum(records.map((r) => r.counteredSingle));
+      const ca = sum(records.map((r) => r.counteredAoe));
+      return {
+        single: {
+          attacks: as,
+          countered: cs,
+          rate: as === 0 ? 0 : cs / as,
+          counters: sum(records.map((r) => r.countersSingle)),
+        },
+        aoe: {
+          attacks: aa,
+          countered: ca,
+          rate: aa === 0 ? 0 : ca / aa,
+          counters: sum(records.map((r) => r.countersAoe)),
+        },
+        all: { attacks: as + aa, countered: cs + ca, rate: as + aa === 0 ? 0 : (cs + ca) / (as + aa) },
+      };
+    })(),
+    firstKillWinRate: (() => {
+      const withKill = records.filter((r) => r.firstKiller !== null);
+      const decided = withKill.filter((r) => r.winner !== null);
+      const won = decided.filter((r) => r.winner === r.firstKiller).length;
+      return {
+        rate: decided.length === 0 ? null : won / decided.length,
+        games: decided.length,
+        firstKillerWon: won,
+        gamesWithoutKill: n - withKill.length,
+        drawsWithKill: withKill.length - decided.length,
+      };
+    })(),
+    leadFlipsPerGame: mean(records.map((r) => r.leadFlips)),
+    controlStates: {
+      gained: sum(records.map((r) => r.controlGained[0] + r.controlGained[1])),
+      lost: sum(records.map((r) => r.controlLost[0] + r.controlLost[1])),
+      won: sum(records.map((r) => r.controlWon[0] + r.controlWon[1])),
+      gainedPerGame: mean(records.map((r) => r.controlGained[0] + r.controlGained[1])),
+      lostPerGame: mean(records.map((r) => r.controlLost[0] + r.controlLost[1])),
+      /** Event totals by the round they happened in (all games summed). */
+      byRound: (() => {
+        const rows = new Map<number, { round: number; gain: number; lost: number; win: number }>();
+        for (const r of records) {
+          for (const [round, , change] of r.controlTimeline) {
+            const row = rows.get(round) ?? { round, gain: 0, lost: 0, win: 0 };
+            row[change] += 1;
+            rows.set(round, row);
+          }
+        }
+        return [...rows.values()].sort((a, b) => a.round - b.round);
+      })(),
+    },
+    handSizeByRound: (() => {
+      const maxLen = records.reduce((m, r) => Math.max(m, r.handByRound.length), 0);
+      const out: { round: number; games: number; p0: number; p1: number; mean: number }[] = [];
+      for (let k = 0; k < maxLen; k++) {
+        const rows = records.map((r) => r.handByRound[k]).filter((v) => v !== undefined);
+        out.push({
+          round: k + 1,
+          games: rows.length,
+          p0: mean(rows.map((v) => v[0])),
+          p1: mean(rows.map((v) => v[1])),
+          mean: mean(rows.map((v) => (v[0] + v[1]) / 2)),
+        });
+      }
+      return out;
+    })(),
+    mulliganReturned: {
+      p0: mean(records.map((r) => r.mulliganReturned[0])),
+      p1: mean(records.map((r) => r.mulliganReturned[1])),
+      perPlayer: mean(records.map((r) => (r.mulliganReturned[0] + r.mulliganReturned[1]) / 2)),
+    },
+    effectMovesPerGame: mean(records.map((r) => r.effectMoves)),
     gap: {
       meanMaxGap: mean(records.map((r) => r.maxGap)),
       narrowedTotal: sum(records.map((r) => r.gapNarrowed)),

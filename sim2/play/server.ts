@@ -2,7 +2,7 @@
 // node:module's stripTypeScriptTypes so the browser can import the engine
 // modules directly, with no build step and no duplicated rules code.
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { stripTypeScriptTypes } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname, extname, join, normalize, sep } from "node:path";
@@ -18,16 +18,47 @@ const TYPES: Record<string, string> = {
   ".ts": "text/javascript; charset=utf-8",
 };
 
+/**
+ * Card art cut from the print kit (see CardDef.art). Served as bytes, only
+ * from under ART_PREFIX, with these image types.
+ */
+const IMAGE_TYPES: Record<string, string> = {
+  ".webp": "image/webp",
+  ".jpg": "image/jpeg",
+};
+const ART_PREFIX = "play/art/";
+
 /** Only these prefixes are reachable, and only with a known extension. */
 const ALLOWED_PREFIXES = ["play", "src", "data"];
 
-const resolveSafe = (urlPath: string): string | null => {
-  const clean = decodeURIComponent(urlPath.split("?")[0]);
+/** Relative path (forward slashes) -> may it be served? */
+export type ServeFilter = (rel: string) => boolean;
+
+const defaultFilter: ServeFilter = (rel) => ALLOWED_PREFIXES.includes(rel.split("/")[0]);
+
+const NUL = String.fromCharCode(0);
+
+/**
+ * Maps a URL path to an absolute file under sim2/, or null. Rejects anything
+ * that normalises outside the root, has an unknown extension, or is refused
+ * by `allow`.
+ */
+export const resolveSafe = (urlPath: string, allow: ServeFilter = defaultFilter): string | null =>
+  resolveTyped(urlPath, allow, TYPES);
+
+const resolveTyped = (urlPath: string, allow: ServeFilter, types: Record<string, string>): string | null => {
+  let clean: string;
+  try {
+    clean = decodeURIComponent(urlPath.split("?")[0]);
+  } catch {
+    return null;
+  }
+  if (clean.includes(NUL)) return null;
   const rel = normalize(clean.replace(/^\/+/, "")).replace(/^(\.\.[/\\])+/, "");
   if (rel.length === 0 || rel.startsWith("..")) return null;
-  const head = rel.split(/[/\\]/)[0];
-  if (!ALLOWED_PREFIXES.includes(head)) return null;
-  if (TYPES[extname(rel)] === undefined) return null;
+  const relSlash = rel.split(sep).join("/");
+  if (!allow(relSlash)) return null;
+  if (types[extname(rel)] === undefined) return null;
   const abs = join(ROOT, rel);
   if (!abs.startsWith(ROOT + sep)) return null;
   return abs;
@@ -43,32 +74,83 @@ const parsePort = (argv: string[]): number => {
   return n;
 };
 
-export const serve = async (
+export type Served = { code: number; body: string; type: string };
+
+const NOT_FOUND: Served = { code: 404, body: "not found", type: "text/plain; charset=utf-8" };
+
+/** Stripped modules by absolute path, reused while the file's mtime is unchanged. */
+const stripped = new Map<string, { mtimeMs: number; body: string }>();
+
+/** Reads one static file, stripping types from .ts. */
+export const serveFile = async (
   urlPath: string,
-): Promise<{ code: number; body: string; type: string }> => {
-  const target = urlPath === "/" || urlPath === "" ? "/play/index.html" : urlPath;
-  const abs = resolveSafe(target);
-  if (abs === null) return { code: 404, body: "not found", type: "text/plain; charset=utf-8" };
+  allow: ServeFilter = defaultFilter,
+): Promise<Served> => {
+  const abs = resolveSafe(urlPath, allow);
+  if (abs === null) return NOT_FOUND;
+  const ext = extname(abs);
+  let mtimeMs = -1;
+  try {
+    mtimeMs = (await stat(abs)).mtimeMs;
+  } catch {
+    return NOT_FOUND;
+  }
+  const hit = ext === ".ts" ? stripped.get(abs) : undefined;
+  if (hit !== undefined && hit.mtimeMs === mtimeMs) return { code: 200, body: hit.body, type: TYPES[".ts"] };
   let raw: string;
   try {
     raw = await readFile(abs, "utf8");
   } catch {
-    return { code: 404, body: "not found", type: "text/plain; charset=utf-8" };
+    return NOT_FOUND;
   }
-  const ext = extname(abs);
   if (ext === ".ts") {
+    const body = stripTypeScriptTypes(raw, { mode: "strip" });
+    stripped.set(abs, { mtimeMs, body });
     // strip only - the import specifiers keep their .ts suffix and this
     // server resolves them, so the browser loads the very same modules the
     // simulator and the tests use.
-    return { code: 200, body: stripTypeScriptTypes(raw, { mode: "strip" }), type: TYPES[".ts"] };
+    return { code: 200, body, type: TYPES[".ts"] };
   }
   return { code: 200, body: raw, type: TYPES[ext] };
+};
+
+/** Page routes of the local server: the AI table at / and /ai, the settings page at /rules. */
+export const playTarget = (urlPath: string): string => {
+  const path = urlPath.split("?")[0].split("#")[0];
+  if (path === "/" || path === "" || path === "/ai" || path === "/ai/") return "/play/index.html";
+  if (path === "/rules" || path === "/rules/") return "/play/rules.html";
+  return path;
+};
+
+export const serve = async (urlPath: string): Promise<Served> => serveFile(playTarget(urlPath));
+
+/** A binary answer (card art). Same shape as Served, bytes instead of text. */
+export type ServedBytes = { code: number; body: Buffer; type: string };
+
+/** Does this URL path ask for an image (card art) rather than a text file? */
+export const isImagePath = (urlPath: string): boolean => IMAGE_TYPES[extname(urlPath.split("?")[0])] !== undefined;
+
+/**
+ * Reads one card-art image as bytes. Only files under play/art/ with an image
+ * extension, and only if `allow` agrees too; anything else is a 404.
+ */
+export const serveImage = async (urlPath: string, allow: ServeFilter = defaultFilter): Promise<ServedBytes> => {
+  const notFound: ServedBytes = { code: 404, body: Buffer.from(NOT_FOUND.body), type: NOT_FOUND.type };
+  const abs = resolveTyped(urlPath, (rel) => rel.startsWith(ART_PREFIX) && allow(rel), IMAGE_TYPES);
+  if (abs === null) return notFound;
+  try {
+    return { code: 200, body: await readFile(abs), type: IMAGE_TYPES[extname(abs)] };
+  } catch {
+    return notFound;
+  }
 };
 
 export const createPlayServer = () =>
   createServer((req, res) => {
     const url = req.url ?? "/";
-    serve(url)
+    // local dev server: nothing is stored, so a re-cropped image shows at once too
+    const answer: Promise<Served | ServedBytes> = isImagePath(playTarget(url)) ? serveImage(playTarget(url)) : serve(url);
+    answer
       .then(({ code, body, type }) => {
         res.writeHead(code, { "Content-Type": type, "Cache-Control": "no-store" });
         res.end(body);

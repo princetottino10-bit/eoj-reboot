@@ -1,989 +1,612 @@
-// Play UI. All rules logic comes from the engine modules below - this file
-// only renders state and forwards user choices into legalActions/isLegal/
-// applyActionInPlace/startTurn/endTurn. No damage, cost or legality maths here.
-import { cardOf, canAttack, parsePack } from "../src/cards.ts";
+// Local play UI: one human seat against an AI seat, entirely in the browser.
+// The match runs on the same flow state machine as the online server
+// (src/flow.ts) and is drawn by the shared table (play/table.ts). No rules
+// logic lives here: legality comes from legalActions / commandsFor, moves go
+// through flow.submit, the AI seat uses the engine AIs and default policies.
+//
+// The rules and cards are edited on the settings page (/rules, play/rules-page.ts):
+// the start card links there (for=ai) and the match's 「ルール・カードを変える」
+// too (for=ai-game). The match is stored after every accepted input
+// (play/ai-store.ts), so leaving /ai or reloading it resumes the same match.
+import { commandsFor } from "../src/commands.ts";
+import { parsePack } from "../src/cards.ts";
 import type { CardPack } from "../src/cards.ts";
-import { allCells, cellAttr, turnFacing } from "../src/board.ts";
-import { attackCells, blindCells } from "../src/combat.ts";
-import { incomeFor, isLegal, legalActions, applyActionInPlace, summonCostAt } from "../src/rules.ts";
+import { createFlow, submit, submitDiscardWith } from "../src/flow.ts";
+import type { Flow, FlowInput } from "../src/flow.ts";
+import { legalEntries } from "../src/preview.ts";
+import { presetConfig } from "../src/presets.ts";
+import type { PlayablePack } from "../src/presets.ts";
+import { isLegal } from "../src/rules.ts";
+import { decodeSettings, encodeSettings, settingsConfig, settingsPack } from "../src/settings.ts";
+import type { GameSettings } from "../src/settings.ts";
+import { overridesBetween } from "../src/card-overrides.ts";
+import { diffPatch } from "../src/config-schema.ts";
+import { makeCtx, opponent } from "../src/state.ts";
+import { defaultDiscardPolicy, defaultMulliganPolicy } from "../src/turn.ts";
+import { defaultTansuPolicy } from "../src/effects.ts";
+import type { GameState, PlayerId } from "../src/types.ts";
+import { AI_KINDS, AI_LABELS, makeAi } from "../src/ai/index.ts";
+import { bestCounterOrder, MAX_REPLANS } from "../src/ai/counter-order.ts";
+import { counterOrderCandidates, counterOrderOutcomes } from "../src/counter-order.ts";
+import { EVAL_PROFILE_NAMES } from "../src/ai/eval.ts";
+import type { AiSeat } from "../src/ai/index.ts";
+import type { BoardView, LogItem } from "../online/protocol.ts";
 import {
-  cardOfUnit,
-  createGame,
-  makeCtx,
-  occupied,
-  opponent,
-  unitAt,
-  unitByUid,
-  unitHp,
-  unitMaxHp,
-} from "../src/state.ts";
-import type { Ctx } from "../src/state.ts";
-import { checkRoundLimit, endTurn, pendingTansuChoices, startTurn } from "../src/turn.ts";
-import type { TansuChoice } from "../src/effects.ts";
-import { defaultConfig } from "../src/types.ts";
-import type {
-  Action,
-  AttackVariant,
-  ChipMode,
-  Facing,
-  GameEvent,
-  GameState,
-  PlayerId,
-  Pos,
-} from "../src/types.ts";
-import { isHidden } from "../src/state.ts";
-import { effectTextOf, reiguTargeting, rotateCommandLocked } from "../src/effects.ts";
-import { makeGreedy } from "../src/ai/greedy.ts";
-import { makeBeam } from "../src/ai/beam.ts";
-import { profileWeights } from "../src/ai/eval.ts";
-import type { Ai } from "../src/ai/greedy.ts";
+  AI_GAME_KEY,
+  clearStoredGame,
+  DEFAULT_EVAL,
+  defaultAiSetup,
+  loadStoredGame,
+  newerRecord,
+  newGameId,
+  readAiSetup,
+  settingsToCarry,
+  sharedRecordText,
+  storageOr,
+  storedGameOf,
+  writeAiSetup,
+  writeStoredGame,
+} from "./ai-store.ts";
+import type { AiKind, AiSetup, LoadedGame, StoredAiGame, Stores } from "./ai-store.ts";
+import { createTable } from "./table.ts";
+import type { TableModel, TablePrompt } from "./table.ts";
+import { esc } from "./render.ts";
+import { rulesHref } from "./rules-url.ts";
+import { badgeHtml, diffFromPresetHtml } from "./settings-badge.ts";
 
-const PACK_NAME = "tsukumo-miyako";
-const AI_DELAY_MS = 300;
+const AI_DELAY_MS = 420;
 
-const $ = (id: string): HTMLElement => {
+const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id);
   if (el === null) throw new Error(`missing #${id}`);
-  return el;
+  return el as T;
 };
-const esc = (s: string): string =>
-  s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] ?? c);
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
-type Sel =
-  | { kind: "none" }
-  | { kind: "hand"; handIndex: number; pos: Pos | null }
-  | { kind: "unit"; uid: number; attackMode: AttackVariant | null; summonAttack: boolean }
-  /** tm17 Kuryugai spending its rotate on someone else. */
-  | { kind: "proxy"; uid: number; targetUid: number | null }
-  | { kind: "reigu"; handIndex: number; targetUid: number | null };
-
-type Phase = "config" | "play" | "discard" | "ai" | "over" | "tansu";
+type Start = Omit<StoredAiGame, "version" | "inputs">;
 
 type Game = {
-  ctx: Ctx;
-  state: GameState;
-  events: GameEvent[];
-  logged: number;
-  humanSeat: PlayerId;
-  ai: Ai;
+  id: number;
+  flow: Flow;
+  /** What the match started with: stored with the inputs, replayed on a reload. */
+  start: Start;
+  human: PlayerId;
+  ai: AiSeat;
   aiLabel: string;
-  sel: Sel;
-  phase: Phase;
-  discardSel: Set<number>;
-  banner: string;
-  /** tm07 decisions the human still owes at this turn start. */
-  tansuQueue: number[];
-  tansuAnswers: Map<number, TansuChoice>;
+  /** The starting settings with the cards in force (mid-game changes included), for the badge and the table. */
+  settings: GameSettings;
+  printed: CardPack;
+  busy: boolean;
+  error: string;
+  /** Inputs already in storage; -1 = not stored yet, "over" = the finished match was forgotten. */
+  saved: number | "over";
 };
 
 let G: Game | null = null;
-let PACK: CardPack | null = null;
+let gameCounter = 0;
+const PACKS = new Map<string, CardPack>();
+const stores: Stores = { session: storageOr(() => sessionStorage), local: storageOr(() => localStorage) };
 
-const seatName = (g: Game, p: PlayerId): string =>
-  `${p === 0 ? "先手" : "後手"}(${p === g.humanSeat ? "あなた" : "AI"})`;
-
-const FACING_ARROW = ["↑", "→", "↓", "←"];
-const FACING_LABEL = ["上", "右", "下", "左"];
-const ATTR_LABEL: Record<string, string> = { yin: "陰", yang: "陽", taiji: "太極", empty: "空", none: "無" };
-
-// ------------------------------------------------------------- log
-
-const describe = (g: Game, e: GameEvent): { text: string; cls: string } | null => {
-  const name = (id: string): string => cardOf(g.ctx.pack, id).nameJa;
-  switch (e.t) {
-    case "turnStart":
-      return {
-        text: `── R${e.round} ${seatName(g, e.player)}のターン開始 (霊力+${e.income})`,
-        cls: "hl",
-      };
-    case "summon":
-      return {
-        text: `${seatName(g, e.player)}: ${name(e.cardId)} を (${e.pos.x},${e.pos.y}) に${
-          e.taiji ? "【太極】" : ""
-        }召喚 ${FACING_ARROW[e.facing]} (霊力-${e.cost})`,
-        cls: "",
-      };
-    case "rotate":
-      return { text: `${seatName(g, e.player)}: 回転 (霊力-${e.cost})`, cls: "" };
-    case "reigu":
-      return {
-        text: `◆ 霊具 — ${seatName(g, e.player)}が ${name(e.cardId)} を使用 (霊力-${e.cost})`,
-        cls: "reigu",
-      };
-    case "effect":
-      return { text: `★ ${e.text}`, cls: "fx" };
-    case "attack": {
-      if (e.variant === "heal") {
-        const h = e.hits[0];
-        return {
-          text: `${seatName(g, e.player)}: ${name(e.cardId)}が味方 ${name(h.cardId)} を回復 +${
-            -h.dmg
-          } (霊力-${e.cost})`,
-          cls: "",
-        };
-      }
-      const hits = e.hits
-        .map(
-          (h) =>
-            `${name(h.cardId)}に${h.dmg}${h.blind ? "【死角】" : ""}${h.ally ? "(味方)" : ""}${
-              h.destroyed ? "→撃破" : ""
-            }`,
-        )
-        .join(" / ");
-      const counter = e.counterTotal > 0 ? ` ⇔ 反撃${e.counterTotal}` : "";
-      const dead = e.attackerDestroyed ? " → 攻撃側撃破" : "";
-      const kind = e.variant === "konshin" ? "渾身" : e.aoe ? "範囲" : "";
-      return {
-        text: `${seatName(g, e.player)}: ${name(e.cardId)}が${kind}攻撃 (霊力-${
-          e.cost
-        }) ${hits}${counter}${dead}`,
-        cls: "",
-      };
+const table = createTable($("table"), {
+  send: (input) => onHumanInput(input),
+  extraControls: (box, m) => {
+    if (m.prompt.kind === "over") {
+      const again = document.createElement("button");
+      again.type = "button";
+      again.className = "btn btn-gold";
+      again.textContent = "もう一戦";
+      again.addEventListener("click", () => void openSetup());
+      box.appendChild(again);
     }
-    case "destroy":
-      return {
-        text: `　撃破: ${seatName(g, e.owner)}の${name(e.cardId)} → 生命-${e.lifeLoss} / 霊力+${
-          e.manaGain
-        }`,
-        cls: "wr",
-      };
-    case "turnEnd": {
-      const bits = [`占拠${e.occupied}`];
-      if (e.chipGained > 0) bits.push(`チップ+${e.chipGained}(計${e.chips})`);
-      if (e.reach) bits.push("制圧リーチ宣言");
-      if (e.discarded > 0) bits.push(`${e.discarded}枚捨てて${e.drawn}枚補充`);
-      else if (e.drawn > 0) bits.push(`${e.drawn}枚補充`);
-      return { text: `${seatName(g, e.player)}: ターン終了 — ${bits.join(" / ")}`, cls: "" };
+    if (G !== null && G.error !== "") {
+      const e = document.createElement("span");
+      e.className = "err";
+      e.textContent = G.error;
+      box.appendChild(e);
     }
-    case "gameEnd": {
-      const how =
-        e.winType === "control" ? "制圧勝ち" : e.winType === "life" ? "生命を0にして勝ち" : "ラウンド上限";
-      const who = e.winner === null ? "引き分け" : `${seatName(g, e.winner)}の${how}`;
-      return { text: `◆ 決着 (R${e.round}): ${who}`, cls: "wr" };
-    }
-    default:
-      return null;
-  }
-};
+  },
+});
 
-const flushLog = (): void => {
-  const g = G;
-  if (g === null) return;
-  const box = $("log");
-  for (let i = g.logged; i < g.events.length; i++) {
-    const e = g.events[i];
-    const d = describe(g, e);
-    if (d !== null) {
-      const div = document.createElement("div");
-      div.className = d.cls;
-      div.textContent = d.text;
-      box.appendChild(div);
-    }
-    if (e.t === "turnEnd" && e.reach) {
-      g.banner = `${seatName(g, e.player)} が制圧リーチを宣言! 次の自ターン開始時まで5マス維持で勝利`;
-    }
-    if (e.t === "turnEnd" && e.chipGained > 0) {
-      g.banner = `${seatName(g, e.player)} がチップ+${e.chipGained}(計${e.chips}、収入${incomeFor(
-        g.ctx,
-        e.chips,
-      )})`;
-    }
-    if (e.t === "gameEnd") {
-      const d2 = describe(g, e);
-      g.banner = d2 === null ? "決着" : d2.text;
-    }
-  }
-  g.logged = g.events.length;
-  box.scrollTop = box.scrollHeight;
-};
+table.slots.header.innerHTML = `<div class="brand"><span class="brand-mark" aria-hidden="true">符</span><span class="brand-name">陰陽符陣<small>(仮)</small></span><span class="brand-sub">対 AI</span></div>`;
+table.slots.tools.innerHTML = `<div class="tools"><button type="button" class="rules-badge" id="rulesBadge" title="基準からの変更点">設定を選んで対局開始</button><a class="btn btn-quiet" id="changeRules" href="${rulesHref({ for: "ai-game" })}" hidden>ルール・カードを変える</a><button type="button" class="btn btn-quiet" id="newGame">新しい対局</button></div>`;
+$("newGame").addEventListener("click", () => void openSetup());
+$("rulesBadge").addEventListener("click", () => showDiff());
 
-// ---------------------------------------------------------- rendering
+// --------------------------------------------------------------- model
 
-/** Effect text block for a card, or a dash when the card has none. */
-const effectBlock = (g: Game, cardId: string): string => {
-  const text = effectTextOf(cardId);
-  if (text === null) return `<span class="fx none">効果 ─</span>`;
-  if (!g.ctx.cfg.effects) {
-    return `<span class="fx off">(効果off) ${esc(text)}</span>`;
-  }
-  return `<span class="fx">${esc(text)}</span>`;
-};
-
-const miniDiagram = (range: Pos[], blind: Pos[]): string => {
-  const cells: string[] = [];
-  for (let row = 0; row < 5; row++) {
-    for (let col = 0; col < 5; col++) {
-      const dx = col - 2;
-      const dy = 2 - row;
-      let cls = "";
-      if (dx === 0 && dy === 0) cls = "self";
-      else if (range.some((c) => c.x === dx && c.y === dy)) cls = "rng";
-      else if (blind.some((c) => c.x === dx && c.y === dy)) cls = "bld";
-      cells.push(`<div class="${cls}"></div>`);
-    }
-  }
-  return `<div class="mini">${cells.join("")}</div>`;
-};
-
-const panelHtml = (g: Game, p: PlayerId): string => {
-  const ps = g.state.players[p];
-  const isTurn = g.state.turnPlayer === p && !g.state.ended;
-  return `<div class="row">
-    <b>${seatName(g, p)}</b>
-    <span class="stat">生命 <b>${ps.life}</b></span>
-    <span class="stat">霊力 <b>${ps.mana}</b></span>
-    <span class="stat">チップ <b>${ps.chips}</b>(収入${incomeFor(g.ctx, ps.chips)})</span>
-    <span class="stat">占拠 <b>${occupied(g.state, p)}</b>/${g.ctx.cfg.controlWin}</span>
-    <span class="stat">手札 ${ps.hand.length}</span>
-    <span class="stat">山札 ${ps.deck.length} / 墓地 ${ps.grave.length}</span>
-    ${ps.reach ? '<span class="stat" style="color:#a83a2c"><b>制圧リーチ</b></span>' : ""}
-    ${isTurn ? '<span class="stat turnmark">手番中</span>' : ""}
-  </div>`;
-};
-
-/** Cells the human may currently click, and what clicking does. */
-const pickableCells = (g: Game): Map<string, "summon" | "target"> => {
-  const out = new Map<string, "summon" | "target">();
-  if (g.phase !== "play") return out;
-  const sel = g.sel;
-  if (sel.kind === "hand") {
-    for (const c of allCells()) {
-      const any = ([0, 1, 2, 3] as Facing[]).some((f) =>
-        isLegal(g.ctx, g.state, { kind: "summon", handIndex: sel.handIndex, pos: c, facing: f }),
-      );
-      if (any) out.set(`${c.x},${c.y}`, "summon");
-    }
-  } else if (sel.kind === "unit" && sel.attackMode !== null) {
-    for (const a of legalActions(g.ctx, g.state)) {
-      if (a.kind !== "attack" || a.uid !== sel.uid) continue;
-      if ((a.variant ?? "normal") !== sel.attackMode) continue;
-      if (a.targetUid === null) {
-        const u = unitByUid(g.state, sel.uid);
-        if (u !== undefined) for (const c of attackCells(g.ctx, u)) out.set(`${c.x},${c.y}`, "target");
-      } else {
-        const t = unitByUid(g.state, a.targetUid);
-        if (t !== undefined) out.set(`${t.pos.x},${t.pos.y}`, "target");
-      }
-    }
-  } else if (sel.kind === "proxy" && sel.targetUid === null) {
-    for (const a of legalActions(g.ctx, g.state)) {
-      if (a.kind !== "proxyRotate" || a.uid !== sel.uid) continue;
-      const t = unitByUid(g.state, a.targetUid);
-      if (t !== undefined) out.set(`${t.pos.x},${t.pos.y}`, "target");
-    }
-  } else if (sel.kind === "reigu" && sel.targetUid === null) {
-    for (const a of legalActions(g.ctx, g.state)) {
-      if (a.kind !== "reigu" || a.handIndex !== sel.handIndex) continue;
-      if (a.targetUid === null) continue;
-      const t = unitByUid(g.state, a.targetUid);
-      if (t !== undefined) out.set(`${t.pos.x},${t.pos.y}`, "target");
-    }
-  }
-  return out;
-};
-
-const renderBoard = (g: Game): void => {
-  const board = $("board");
-  board.innerHTML = "";
-  const pick = pickableCells(g);
-  const sel = g.sel;
-  const shownUnit = sel.kind === "unit" ? unitByUid(g.state, sel.uid) : undefined;
-  const rangeKeys = new Set(
-    shownUnit === undefined ? [] : attackCells(g.ctx, shownUnit).map((c) => `${c.x},${c.y}`),
-  );
-  const blindKeys = new Set(
-    shownUnit === undefined ? [] : blindCells(g.ctx, shownUnit).map((c) => `${c.x},${c.y}`),
-  );
-
-  for (let y = 2; y >= 0; y--) {
-    for (let x = 0; x < 3; x++) {
-      const pos: Pos = { x, y };
-      const key = `${x},${y}`;
-      const attr = cellAttr(pos);
-      const u = unitAt(g.state, pos);
-      const classes = ["cell", attr];
-      const mode = pick.get(key);
-      if (mode === "summon") classes.push("pick");
-      if (mode === "target") classes.push("target");
-      if (rangeKeys.has(key)) classes.push("inrange");
-      if (blindKeys.has(key)) classes.push("inblind");
-      if (shownUnit !== undefined && u !== undefined && u.uid === shownUnit.uid) {
-        classes.push("selected");
-      }
-      if (u !== undefined && g.phase === "play" && mode === undefined) classes.push("clickable");
-
-      const btn = document.createElement("button");
-      btn.className = classes.join(" ");
-      btn.type = "button";
-      let inner = `<span class="attr">${ATTR_LABEL[attr]}</span>`;
-      if (u !== undefined) {
-        const card = cardOfUnit(g.ctx, u);
-        const hp = unitHp(g.ctx, u);
-        const max = unitMaxHp(g.ctx, u);
-        const flags: string[] = [];
-        if (isHidden(u)) flags.push("マヨヒガ(隠)");
-        if (u.attackedThisTurn) flags.push("攻撃済");
-        else if (u.rotatedThisTurn) flags.push("回転済");
-        if (u.atkBuff > 0) flags.push(`ATK+${u.atkBuff}`);
-        inner += `<span class="unit o${u.owner}">
-          <span class="nm">${esc(card.nameJa)}</span>
-          <span class="arrow">${FACING_ARROW[u.facing]}</span>
-          HP ${hp}/${max}・ATK ${card.atk}
-          <br>${ATTR_LABEL[card.attribute]}${card.aoe ? "・範囲" : ""}${
-            card.attackType === "jutsu" ? "・術" : ""
-          }
-          ${flags.length > 0 ? `<br><span class="done">${flags.join("/")}</span>` : ""}
-        </span>`;
-      }
-      btn.innerHTML = inner;
-      const occupant =
-        u === undefined
-          ? "空きマス"
-          : `${seatName(g, u.owner)}の${cardOfUnit(g.ctx, u).nameJa} ${FACING_LABEL[u.facing]}向き HP${unitHp(g.ctx, u)}`;
-      btn.setAttribute(
-        "aria-label",
-        `(${x},${y}) ${ATTR_LABEL[attr]}のマス / ${occupant}${
-          mode === "summon" ? " / 召喚可能" : mode === "target" ? " / 攻撃対象" : ""
-        }`,
-      );
-      btn.addEventListener("click", () => onCellClick(pos, mode));
-      board.appendChild(btn);
-    }
-  }
-};
-
-const renderHand = (g: Game): void => {
-  const box = $("hand");
-  box.innerHTML = "";
-  const ps = g.state.players[g.humanSeat];
-  const myTurn = g.state.turnPlayer === g.humanSeat && g.phase === "play";
-
-  if (g.phase === "discard") {
-    const list = document.createElement("div");
-    list.innerHTML = `<div>捨てる札を選んでください(0枚でも可)。確定すると5枚まで補充します。</div>`;
-    ps.hand.forEach((id, i) => {
-      const card = cardOf(g.ctx.pack, id);
-      const label = document.createElement("label");
-      label.className = "discard-item";
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = g.discardSel.has(i);
-      cb.addEventListener("change", () => {
-        if (cb.checked) g.discardSel.add(i);
-        else g.discardSel.delete(i);
-      });
-      label.appendChild(cb);
-      label.appendChild(
-        document.createTextNode(
-          ` ${card.nameJa}(召${card.summonCost}/攻${card.attackCost}・HP${card.hp}/ATK${card.atk}・${
-            ATTR_LABEL[card.attribute]
-          }${card.kind === "reigu" ? "・霊具=召喚不可" : ""})`,
-        ),
-      );
-      list.appendChild(label);
-    });
-    box.appendChild(list);
-    return;
-  }
-
-  const reiguPlayable = new Set<number>();
-  if (myTurn) {
-    for (const a of legalActions(g.ctx, g.state)) {
-      if (a.kind === "reigu") reiguPlayable.add(a.handIndex);
-    }
-  }
-
-  ps.hand.forEach((id, i) => {
-    const card = cardOf(g.ctx.pack, id);
-    const isReigu = card.kind === "reigu";
-    const summonable = isReigu
-      ? reiguPlayable.has(i)
-      : myTurn &&
-        allCells().some((c) =>
-          ([0, 1, 2, 3] as Facing[]).some((f) =>
-            isLegal(g.ctx, g.state, { kind: "summon", handIndex: i, pos: c, facing: f }),
-          ),
-        );
-    const div = document.createElement("button");
-    div.type = "button";
-    div.disabled = !summonable;
-    const selected =
-      (g.sel.kind === "hand" || g.sel.kind === "reigu") && g.sel.handIndex === i;
-    div.className = `card${summonable ? "" : " dead"}${selected ? " sel" : ""}`;
-    div.innerHTML = isReigu
-      ? `<span class="nm">${esc(card.nameJa)}</span>
-        <b>霊具</b> 霊力${card.summonCost}
-        ${effectBlock(g, card.id)}`
-      : `<span class="nm">${esc(card.nameJa)}</span>
-      召${card.summonCost} / 攻${card.attackCost}<br>
-      HP${card.hp} ATK${card.atk}<br>
-      ${ATTR_LABEL[card.attribute]}${card.aoe ? "・範囲" : ""}${
-        card.attackType === "jutsu" ? "・術" : ""
-      }
-      ${miniDiagram(card.attackRange, card.blindSpots)}
-      ${effectBlock(g, card.id)}`;
-    if (summonable) div.addEventListener("click", () => onHandClick(i, isReigu));
-    box.appendChild(div);
-  });
-  if (ps.hand.length === 0) box.textContent = "(手札なし)";
-};
-
-const button = (label: string, enabled: boolean, cls: string, fn: () => void): HTMLElement => {
-  const b = document.createElement("button");
-  b.textContent = label;
-  b.disabled = !enabled;
-  if (cls.length > 0) b.className = cls;
-  if (enabled) b.addEventListener("click", fn);
-  return b;
-};
-
-const renderControls = (g: Game): void => {
-  const box = $("controls");
-  box.innerHTML = "";
-  const hint = $("hint");
-  hint.textContent = "";
-  const info = $("selinfo");
-  info.innerHTML = "";
-  // effect text for whatever is selected
-  if (g.sel.kind === "unit") {
-    const su = unitByUid(g.state, g.sel.uid);
-    if (su !== undefined) {
-      const c = cardOfUnit(g.ctx, su);
-      info.innerHTML = `<b>${esc(c.nameJa)}</b> ${effectBlock(g, c.id)}`;
-    }
-  } else if (g.sel.kind === "hand" || g.sel.kind === "reigu") {
-    const id = g.state.players[g.humanSeat].hand[g.sel.handIndex];
-    if (id !== undefined) {
-      const c = cardOf(g.ctx.pack, id);
-      info.innerHTML = `<b>${esc(c.nameJa)}</b> ${effectBlock(g, c.id)}`;
-    }
-  }
-
-  if (g.phase === "over") {
-    box.appendChild(button("もう一度", true, "primary", () => showSetup()));
-    return;
-  }
-  if (g.phase === "ai") {
-    hint.textContent = "AIの手番です…";
-    return;
-  }
-  if (g.phase === "tansu") {
-    const uid = g.tansuQueue[0];
-    const u = uid === undefined ? undefined : unitByUid(g.state, uid);
-    if (u === undefined) {
-      beginTurn();
-      return;
-    }
-    hint.textContent = `【古箪笥】ターン開始効果: HPを1減らして何を得ますか? (現在HP ${unitHp(
-      g.ctx,
-      u,
-    )})`;
-    info.innerHTML = `<b>古箪笥</b> ${effectBlock(g, "tm07")}`;
-    const answer = (choice: TansuChoice): void => {
-      g.tansuAnswers.set(u.uid, choice);
-      g.tansuQueue = g.tansuQueue.slice(1);
-      if (g.tansuQueue.length === 0) beginTurn();
-      else render();
+// a snapshot: the flow mutates its state in place, and the table compares consecutive boards
+const boardOf = (s: GameState): BoardView => ({
+  units: s.units.map((u) => ({ ...u, pos: { ...u.pos } })),
+  players: [0, 1].map((p) => {
+    const ps = s.players[p];
+    return {
+      life: ps.life,
+      mana: ps.mana,
+      chips: ps.chips,
+      reach: ps.reach,
+      handCount: ps.hand.length,
+      deckCount: ps.deck.length,
+      grave: ps.grave.slice(),
+      reshuffleCount: ps.reshuffleCount,
     };
-    box.appendChild(button("HP-1 → 霊力+1", true, "primary", () => answer("mana")));
-    box.appendChild(button("HP-1 → 1ドロー", true, "", () => answer("draw")));
-    box.appendChild(button("使わない", true, "", () => answer("skip")));
-    return;
+  }) as BoardView["players"],
+  turnPlayer: s.turnPlayer,
+  round: s.round,
+  ended: s.ended,
+  winner: s.winner,
+  winType: s.winType,
+  summonsThisTurn: s.summonsThisTurn,
+});
+
+const promptOf = (g: Game): TablePrompt => {
+  const f = g.flow;
+  const ph = f.phase;
+  if (ph.kind === "over") {
+    const who = f.state.winner === null ? "引き分け" : f.state.winner === g.human ? "あなたの勝ち" : "AIの勝ち";
+    return { kind: "over", text: `対局終了 — ${who}`, winner: f.state.winner };
   }
-  if (g.phase === "discard") {
-    hint.textContent = "手札整理: 捨てる札を選んで確定してください。";
-    box.appendChild(
-      button("確定して補充", true, "primary", () => {
-        const chosen = [...g.discardSel];
-        endTurn(g.ctx, g.state, g.events, () => chosen);
-        g.discardSel.clear();
-        flushLog();
-        void advance();
-      }),
-    );
-    box.appendChild(button("捨てずに確定", true, "", () => {
-      g.discardSel.clear();
-      endTurn(g.ctx, g.state, g.events, () => []);
-      flushLog();
-      void advance();
-    }));
-    return;
-  }
-  if (g.phase !== "play") return;
-
-  const sel = g.sel;
-  if (sel.kind === "hand") {
-    const card = cardOf(g.ctx.pack, g.state.players[g.humanSeat].hand[sel.handIndex]);
-    if (sel.pos === null) {
-      hint.textContent = `${card.nameJa} を置くマスを選んでください(緑枠)。`;
-    } else {
-      hint.textContent = `(${sel.pos.x},${sel.pos.y}) 費用${summonCostAt(
-        g.ctx,
-        card,
-        sel.pos,
-      )} — 向きを選んでください。`;
-      for (const f of [0, 1, 2, 3] as Facing[]) {
-        const act: Action = { kind: "summon", handIndex: sel.handIndex, pos: sel.pos, facing: f };
-        box.appendChild(
-          button(`${FACING_ARROW[f]} ${FACING_LABEL[f]}`, isLegal(g.ctx, g.state, act), "", () =>
-            doSummon(act),
-          ),
-        );
-      }
-    }
-    box.appendChild(button("選択解除", true, "", () => setSel({ kind: "none" })));
-  } else if (sel.kind === "reigu") {
-    const card = cardOf(g.ctx.pack, g.state.players[g.humanSeat].hand[sel.handIndex]);
-    const targeting = reiguTargeting(card.id);
-    if (targeting === "none") {
-      hint.textContent = `${card.nameJa}: 対象なし。使用しますか?`;
-      box.appendChild(
-        button(`${card.nameJa} を使用 (霊力${card.summonCost})`, true, "primary", () =>
-          doAction({ kind: "reigu", handIndex: sel.handIndex, targetUid: null, facing: null }),
-        ),
-      );
-    } else if (sel.targetUid === null) {
-      hint.textContent = `${card.nameJa}: 対象を選んでください(赤枠)。`;
-    } else {
-      const t = unitByUid(g.state, sel.targetUid);
-      hint.textContent = `${card.nameJa}: ${
-        t === undefined ? "" : cardOfUnit(g.ctx, t).nameJa
-      } に対する向きを選んでください。`;
-      for (const a of legalActions(g.ctx, g.state)) {
-        if (a.kind !== "reigu" || a.handIndex !== sel.handIndex) continue;
-        if (a.targetUid !== sel.targetUid || a.facing === null) continue;
-        const f = a.facing;
-        box.appendChild(
-          button(`${FACING_ARROW[f]} ${FACING_LABEL[f]}`, true, "", () => doAction(a)),
-        );
-      }
-    }
-    box.appendChild(button("選択解除", true, "", () => setSel({ kind: "none" })));
-  } else if (sel.kind === "proxy") {
-    if (sel.targetUid === null) {
-      hint.textContent = "代理回転: 回すユニットを選んでください(赤枠)。";
-    } else {
-      const t = unitByUid(g.state, sel.targetUid);
-      hint.textContent = `代理回転: ${
-        t === undefined ? "" : cardOfUnit(g.ctx, t).nameJa
-      } をどちらに回しますか。`;
-      for (const a of legalActions(g.ctx, g.state)) {
-        if (a.kind !== "proxyRotate" || a.uid !== sel.uid || a.targetUid !== sel.targetUid) continue;
-        const f = a.facing;
-        box.appendChild(
-          button(`${FACING_ARROW[f]} ${FACING_LABEL[f]}`, true, "", () => doAction(a)),
-        );
-      }
-    }
-    box.appendChild(button("選択解除", true, "", () => setSel({ kind: "none" })));
-  } else if (sel.kind === "unit") {
-    const u = unitByUid(g.state, sel.uid);
-    if (u === undefined) {
-      setSel({ kind: "none" });
-      return;
-    }
-    const card = cardOfUnit(g.ctx, u);
-    const mine = u.owner === g.humanSeat;
-    if (!mine) {
-      hint.textContent = `相手の ${card.nameJa}: 緑=攻撃範囲 / 赤=死角。`;
-      box.appendChild(button("選択解除", true, "", () => setSel({ kind: "none" })));
-      return;
-    }
-    const all = legalActions(g.ctx, g.state);
-    const attacks = all.filter(
-      (a) => a.kind === "attack" && a.uid === u.uid && (a.variant ?? "normal") === "normal",
-    );
-    const konshins = all.filter(
-      (a) => a.kind === "attack" && a.uid === u.uid && a.variant === "konshin",
-    );
-    const heals = all.filter((a) => a.kind === "attack" && a.uid === u.uid && a.variant === "heal");
-    const proxies = all.filter((a) => a.kind === "proxyRotate" && a.uid === u.uid);
-    let reason = "";
-    if (u.attackedThisTurn) reason = "(このユニットは行動終了)";
-    else if (!canAttack(card)) reason = "(攻撃手段なし)";
-    else if (g.state.players[g.humanSeat].mana < card.attackCost) reason = "(霊力不足)";
-    else if (attacks.length === 0) reason = "(範囲内に敵なし)";
-
-    if (sel.summonAttack) {
-      hint.textContent = `召喚攻撃: 対象を選ぶか、スキップしてください。${reason}`;
-    } else {
-      hint.textContent = `${card.nameJa}: 緑=攻撃範囲 / 赤=死角。${reason}`;
-    }
-
-    if (card.aoe && attacks.length > 0) {
-      box.appendChild(
-        button(`範囲攻撃 (霊力${card.attackCost})`, true, "danger", () =>
-          doAction({ kind: "attack", uid: u.uid, targetUid: null }),
-        ),
-      );
-    } else {
-      box.appendChild(
-        button(
-          `攻撃 (霊力${card.attackCost})${reason}`,
-          attacks.length > 0 && sel.attackMode !== "normal",
-          "danger",
-          () =>
-            setSel({
-              kind: "unit",
-              uid: u.uid,
-              attackMode: "normal",
-              summonAttack: sel.summonAttack,
-            }),
-        ),
-      );
-    }
-    // tm09 Kubihiki: the +1 / -1 HP variant
-    if (konshins.length > 0) {
-      const aoeKonshin = konshins.find((a) => a.kind === "attack" && a.targetUid === null);
-      box.appendChild(
-        button(
-          `渾身攻撃 (+1ダメージ / 自身-1HP)`,
-          true,
-          "danger",
-          aoeKonshin !== undefined
-            ? () => doAction({ kind: "attack", uid: u.uid, targetUid: null, variant: "konshin" })
-            : () =>
-                setSel({
-                  kind: "unit",
-                  uid: u.uid,
-                  attackMode: "konshin",
-                  summonAttack: sel.summonAttack,
-                }),
-        ),
-      );
-    }
-    // tm06 Meoto-Men: heal an ally instead of striking
-    if (heals.length > 0) {
-      box.appendChild(
-        button(`回復 (味方に+${card.atk}HP)`, true, "", () =>
-          setSel({ kind: "unit", uid: u.uid, attackMode: "heal", summonAttack: sel.summonAttack }),
-        ),
-      );
-    }
-    // tm17 Kuryugai: proxy rotation
-    if (proxies.length > 0) {
-      box.appendChild(
-        button(`代理回転 (他の1体を回す・霊力${g.ctx.cfg.rotateCost})`, true, "", () =>
-          setSel({ kind: "proxy", uid: u.uid, targetUid: null }),
-        ),
-      );
-    }
-    for (const [dir, label] of [
-      [-1, "回転 左"],
-      [1, "回転 右"],
-    ] as [1 | -1, string][]) {
-      const act: Action = { kind: "rotate", uid: u.uid, facing: turnFacing(u.facing, dir) };
-      const ok = isLegal(g.ctx, g.state, act);
-      const why = u.attackedThisTurn
-        ? "(行動終了)"
-        : u.rotatedThisTurn
-          ? "(回転済)"
-          : g.state.players[g.humanSeat].mana < g.ctx.cfg.rotateCost
-            ? "(霊力不足)"
-            : rotateCommandLocked(g.ctx, g.state, g.humanSeat)
-              ? "(玖龍街により回転不可)"
-              : "";
-      box.appendChild(button(`${label} (霊力${g.ctx.cfg.rotateCost})${why}`, ok, "", () => doAction(act)));
-    }
-    box.appendChild(
-      button(sel.summonAttack ? "召喚攻撃をスキップ" : "選択解除", true, "", () =>
-        setSel({ kind: "none" }),
-      ),
-    );
-  } else {
-    hint.textContent = "手札のカードか、盤上のユニットを選んでください。";
-  }
-
-  box.appendChild(
-    button("ターン終了", true, "primary", () => {
-      g.sel = { kind: "none" };
-      g.phase = "discard";
-      render();
-    }),
-  );
-};
-
-const render = (): void => {
-  const g = G;
-  if (g === null) return;
-  $("oppPanel").className = `panel seat${opponent(g.humanSeat)}`;
-  $("oppPanel").innerHTML = panelHtml(g, opponent(g.humanSeat));
-  $("selfPanel").className = `panel seat${g.humanSeat}`;
-  $("selfPanel").innerHTML = panelHtml(g, g.humanSeat);
-  const banner = $("banner");
-  banner.textContent = g.banner;
-  banner.className = g.banner.length > 0 ? "on" : "";
-  renderBoard(g);
-  renderHand(g);
-  renderControls(g);
-};
-
-// ------------------------------------------------------------ actions
-
-const setSel = (sel: Sel): void => {
-  if (G === null) return;
-  G.sel = sel;
-  render();
-};
-
-const onHandClick = (handIndex: number, isReigu: boolean): void => {
-  const g = G;
-  if (g === null || g.phase !== "play") return;
-  const sel = g.sel;
-  if ((sel.kind === "hand" || sel.kind === "reigu") && sel.handIndex === handIndex) {
-    setSel({ kind: "none" });
-    return;
-  }
-  setSel(
-    isReigu
-      ? { kind: "reigu", handIndex, targetUid: null }
-      : { kind: "hand", handIndex, pos: null },
-  );
-};
-
-const onCellClick = (pos: Pos, mode: "summon" | "target" | undefined): void => {
-  const g = G;
-  if (g === null || g.phase !== "play") return;
-  const sel = g.sel;
-  if (mode === "summon" && sel.kind === "hand") {
-    setSel({ kind: "hand", handIndex: sel.handIndex, pos });
-    return;
-  }
-  if (mode === "target" && sel.kind === "unit" && sel.attackMode !== null) {
-    const t = unitAt(g.state, pos);
-    const act: Action = {
-      kind: "attack",
-      uid: sel.uid,
-      targetUid: t === undefined ? null : t.uid,
-      variant: sel.attackMode,
+  if (ph.kind === "mulligan") return ph.submitted[g.human] ? { kind: "idle", text: "AIのマリガン待ち…" } : { kind: "mulligan" };
+  if (ph.kind === "counterOrder" && ph.player !== g.human) return { kind: "idle", text: "相手が反撃の順番を選んでいます…" };
+  if (ph.player !== g.human) return { kind: "idle", text: "AIが考えています…" };
+  if (ph.kind === "counterOrder") {
+    return {
+      kind: "counterOrder",
+      attackerUid: ph.action.uid,
+      uids: ph.uids.slice(),
+      outcomes: counterOrderOutcomes(f.ctx, f.state, ph.action, counterOrderCandidates(ph.uids)),
     };
-    if (isLegal(g.ctx, g.state, act)) {
-      doAction(act);
-      return;
-    }
-    const aoe: Action = { kind: "attack", uid: sel.uid, targetUid: null, variant: sel.attackMode };
-    if (isLegal(g.ctx, g.state, aoe)) doAction(aoe);
-    return;
   }
-  if (mode === "target" && sel.kind === "proxy") {
-    const t = unitAt(g.state, pos);
-    if (t !== undefined) setSel({ kind: "proxy", uid: sel.uid, targetUid: t.uid });
-    return;
-  }
-  if (mode === "target" && sel.kind === "reigu") {
-    const t = unitAt(g.state, pos);
-    if (t === undefined) return;
-    const direct: Action = {
-      kind: "reigu",
-      handIndex: sel.handIndex,
-      targetUid: t.uid,
-      facing: null,
-    };
-    if (isLegal(g.ctx, g.state, direct)) doAction(direct);
-    else setSel({ kind: "reigu", handIndex: sel.handIndex, targetUid: t.uid });
-    return;
-  }
-  const u = unitAt(g.state, pos);
-  if (u !== undefined && !isHidden(u)) {
-    setSel({ kind: "unit", uid: u.uid, attackMode: null, summonAttack: false });
-  } else setSel({ kind: "none" });
+  if (ph.kind === "tansu") return { kind: "tansu", uids: ph.uids };
+  if (ph.kind === "discard") return { kind: "discard" };
+  const legal = legalEntries(f.ctx, f.state);
+  return { kind: "main", legal, commands: commandsFor(f.ctx, f.state, legal.map((e) => e.action)) };
 };
 
-const doAction = (a: Action): void => {
+const PHASE_TEXT: Record<string, string> = {
+  mulligan: "マリガン",
+  tansu: "古箪笥の選択",
+  counterOrder: "反撃の順番",
+  main: "行動中",
+  discard: "手札整理",
+  over: "対局終了",
+};
+
+const refresh = (): void => {
   const g = G;
   if (g === null) return;
-  if (!isLegal(g.ctx, g.state, a)) return;
-  applyActionInPlace(g.ctx, g.state, a, g.events);
-  flushLog();
-  if (g.state.ended) {
-    g.phase = "over";
-    render();
-    return;
-  }
-  g.sel = { kind: "none" };
-  render();
-};
-
-const doSummon = (a: Action): void => {
-  const g = G;
-  if (g === null || a.kind !== "summon") return;
-  if (!isLegal(g.ctx, g.state, a)) return;
-  applyActionInPlace(g.ctx, g.state, a, g.events);
-  flushLog();
-  if (g.state.ended) {
-    g.phase = "over";
-    render();
-    return;
-  }
-  // offer the optional summon-attack straight away
-  const fresh = g.state.units[g.state.units.length - 1];
-  const canHit = legalActions(g.ctx, g.state).some(
-    (x) => x.kind === "attack" && x.uid === fresh.uid,
-  );
-  g.sel = canHit
-    ? { kind: "unit", uid: fresh.uid, attackMode: "normal", summonAttack: true }
-    : { kind: "none" };
-  render();
-};
-
-// -------------------------------------------------------- turn driver
-
-const runAiTurn = async (): Promise<void> => {
-  const g = G;
-  if (g === null) return;
-  const plan = g.ai.planTurn(g.ctx, g.state);
-  let taken = 0;
-  for (const a of plan) {
-    if (g.state.ended) break;
-    if (a.kind === "pass") break;
-    if (taken >= g.ctx.cfg.maxActionsPerTurn) break;
-    if (!isLegal(g.ctx, g.state, a)) break;
-    await sleep(AI_DELAY_MS);
-    applyActionInPlace(g.ctx, g.state, a, g.events);
-    taken += 1;
-    flushLog();
-    render();
-  }
-  if (g.state.ended) {
-    g.phase = "over";
-    render();
-    return;
-  }
-  await sleep(AI_DELAY_MS);
-  endTurn(g.ctx, g.state, g.events); // default discard policy for the AI seat
-  flushLog();
-  render();
-  await advance();
-};
-
-const advance = async (): Promise<void> => {
-  const g = G;
-  if (g === null) return;
-  if (g.state.ended || checkRoundLimit(g.ctx, g.state, g.events)) {
-    flushLog();
-    g.phase = "over";
-    render();
-    return;
-  }
-  // The human decides their own tm07 (Furu-Tansu) trades, so ask before the
-  // turn actually starts. The AI keeps the engine's default policy.
-  if (g.state.turnPlayer === g.humanSeat) {
-    const pending = pendingTansuChoices(g.ctx, g.state);
-    if (pending.length > 0) {
-      g.tansuQueue = pending;
-      g.tansuAnswers = new Map();
-      g.sel = { kind: "none" };
-      g.phase = "tansu";
-      render();
-      return; // resumed by beginTurn() once every choice is in
-    }
-  }
-  beginTurn();
-};
-
-/** Runs startTurn with whatever tm07 answers were collected, then hands off. */
-const beginTurn = (): void => {
-  const g = G;
-  if (g === null) return;
-  const answers = g.tansuAnswers;
-  startTurn(g.ctx, g.state, g.events, (_ctx, _s, unit) => answers.get(unit.uid) ?? "mana");
-  g.tansuQueue = [];
-  g.tansuAnswers = new Map();
-  flushLog();
-  if (g.state.ended) {
-    g.phase = "over";
-    render();
-    return;
-  }
-  g.sel = { kind: "none" };
-  if (g.state.turnPlayer === g.humanSeat) {
-    g.banner = "";
-    g.phase = "play";
-    render();
-  } else {
-    g.phase = "ai";
-    render();
-    void runAiTurn();
-  }
-};
-
-// ------------------------------------------------------------- setup
-
-const showSetup = (): void => {
-  const box = $("setup");
-  box.innerHTML = `
-    <h2>対戦設定</h2>
-    <div class="row">
-      <label>自分の席
-        <select id="cfgSeat"><option value="0">先手</option><option value="1">後手</option></select>
-      </label>
-      <label>AI
-        <select id="cfgAi"><option value="greedy">greedy</option><option value="beam">beam</option></select>
-      </label>
-      <label>AIの評価
-        <select id="cfgEval">
-          <option value="territorial">territorial</option>
-          <option value="aggressive">aggressive</option>
-          <option value="balanced">balanced</option>
-        </select>
-      </label>
-      <label>チップ
-        <select id="cfgChip">
-          <option value="catch_up">catch_up</option>
-          <option value="one_per_turn">one_per_turn</option>
-        </select>
-      </label>
-      <label>カード効果
-        <select id="cfgEffects"><option value="on">on</option><option value="off">off</option></select>
-      </label>
-      <label>シード <input id="cfgSeed" type="number" value="20260830" style="width:110px"></label>
-      <button id="cfgStart" class="primary">対戦開始</button>
-    </div>
-    <div class="muted" style="margin-top:6px">パックは ${PACK_NAME} のミラー固定。効果 off ではルールのみ(霊具は召喚不可の死に札)。</div>`;
-  $("cfgStart").addEventListener("click", () => void startGame());
-  if (G !== null) {
-    G.phase = "config";
-    render();
-  }
-};
-
-const startGame = async (): Promise<void> => {
-  if (PACK === null) {
-    const res = await fetch(`/data/pack-${PACK_NAME}.json`);
-    PACK = parsePack(await res.json());
-  }
-  const seat = Number((document.getElementById("cfgSeat") as HTMLSelectElement).value) as PlayerId;
-  const aiName = (document.getElementById("cfgAi") as HTMLSelectElement).value;
-  const evalName = (document.getElementById("cfgEval") as HTMLSelectElement).value;
-  const chipMode = (document.getElementById("cfgChip") as HTMLSelectElement).value as ChipMode;
-  const seed = Number((document.getElementById("cfgSeed") as HTMLInputElement).value) || 1;
-
-  const effects =
-    (document.getElementById("cfgEffects") as HTMLSelectElement).value === "on";
-  const ctx = makeCtx({ ...defaultConfig(), chipMode, effects }, PACK);
-  const weights = profileWeights(evalName);
-  const ai: Ai = aiName === "beam" ? makeBeam({ weights }) : makeGreedy(weights);
-
-  G = {
-    ctx,
-    state: createGame(ctx, seed),
-    events: [],
-    logged: 0,
-    humanSeat: seat,
-    ai,
-    aiLabel: `${aiName}/${evalName}`,
-    sel: { kind: "none" },
-    phase: "play",
-    discardSel: new Set<number>(),
-    tansuQueue: [],
-    tansuAnswers: new Map<number, TansuChoice>(),
-    banner: `対戦開始 — あなたは${seat === 0 ? "先手" : "後手"} / AI: ${aiName} (${evalName}) / チップ: ${chipMode} / 効果: ${
-      effects ? "on" : "off"
-    }`,
+  persist(g);
+  const f = g.flow;
+  const names: [string, string] = [0, 1].map((p) => (p === g.human ? "あなた" : g.aiLabel)) as [string, string];
+  const log: LogItem[] = f.log
+    .filter((e) => e.audience === "all" || e.audience === g.human)
+    .map((e) => ({ seq: e.seq, event: e.event }));
+  const model: TableModel = {
+    key: `local-${g.id}`,
+    ctx: f.ctx,
+    board: boardOf(f.state),
+    viewer: g.human,
+    hand: f.state.players[g.human].hand.slice(),
+    names,
+    prompt: promptOf(g),
+    log,
+    cardMods: g.settings.cards,
+    printed: (id) => g.printed.byId.get(id),
+    phaseText: PHASE_TEXT[f.phase.kind] ?? "",
   };
-  $("log").innerHTML = "";
-  await advance();
+  // nothing to change mid-game once it is over
+  $("changeRules").hidden = f.phase.kind === "over";
+  table.update(model);
 };
 
-showSetup();
+// ------------------------------------------------------------- storage
+
+/** The start card's choices (this tab); the settings are kept encoded, as in a share URL. */
+let setup: AiSetup = readAiSetup(stores) ?? defaultAiSetup();
+
+const saveSetup = (next: AiSetup): void => {
+  setup = next;
+  writeAiSetup(stores, next);
+};
+
+/**
+ * The rules and cards a match is left with (it ended, or 「新しい対局」 from it)
+ * carry over to the next start card — unless other rules were chosen on the
+ * start card since this match started: those are what the start card keeps.
+ */
+const carryOver = (g: Game): void => {
+  saveSetup({ ...setup, s: settingsToCarry(setup.s, g.start.settings, settingsInForce(g)) });
+};
+
+/** Another screen carried this match further: this tab takes that record and starts over from it. */
+const adopt = (newer: StoredAiGame): void => {
+  G = null;
+  writeStoredGame({ session: stores.session, local: null }, newer);
+  location.reload();
+};
+
+/**
+ * Stores the match after every accepted input (refresh runs after each). A
+ * finished match is forgotten, and the rules and cards it ended with carry
+ * over to the next start card.
+ */
+const persist = (g: Game): void => {
+  if (G !== g || g.saved === "over") return;
+  if (g.flow.phase.kind === "over") {
+    clearStoredGame(stores, storedGameOf(g.start, g.flow));
+    g.saved = "over";
+    carryOver(g);
+    return;
+  }
+  if (g.saved === g.flow.inputs.length) return;
+  const game = storedGameOf(g.start, g.flow);
+  // a storage event this screen missed: the browser's copy is this match, further along
+  const newer = newerRecord(sharedRecordText(stores), game);
+  if (newer !== null) return adopt(newer);
+  writeStoredGame(stores, game);
+  g.saved = g.flow.inputs.length;
+};
+
+// ---------------------------------------------------------------- inputs
+
+const onHumanInput = (input: FlowInput): void => {
+  const g = G;
+  if (g === null) return;
+  const r = submit(g.flow, g.human, input);
+  g.error = r.ok ? "" : `受け付けられませんでした: ${r.error}`;
+  refresh();
+  void pump(g);
+};
+
+/** Plays every input the AI seat owes, with a short delay per action. */
+const pump = async (g: Game): Promise<void> => {
+  if (g.busy) return;
+  g.busy = true;
+  const aiSeat = opponent(g.human);
+  try {
+    for (;;) {
+      if (G !== g) return;
+      const f = g.flow;
+      const ph = f.phase;
+      if (ph.kind === "mulligan" && !ph.submitted[aiSeat]) {
+        // a seat that answers for itself (strong) is asked; greedy / beam keep the engine defaults
+        const choose = g.ai.mulligan ?? defaultMulliganPolicy;
+        submit(f, aiSeat, { type: "mulligan", indices: choose(f.ctx, f.state, aiSeat) });
+      } else if (ph.kind === "tansu" && ph.player === aiSeat) {
+        const choose = g.ai.tansu ?? defaultTansuPolicy;
+        submit(f, aiSeat, {
+          type: "tansu",
+          answers: ph.uids.map((uid) => {
+            const unit = f.state.units.find((u) => u.uid === uid);
+            return { uid, choice: unit === undefined ? ("mana" as const) : choose(f.ctx, f.state, unit) };
+          }),
+        });
+      } else if (ph.kind === "counterOrder" && ph.player === aiSeat) {
+        // 案A: the AI seat orders its counters the way its eval likes best
+        const order = (g.ai.counterOrder ?? bestCounterOrder)(f.ctx, f.state, ph.action) ?? ph.uids;
+        submit(f, aiSeat, { type: "counterOrder", order });
+      } else if (ph.kind === "main" && ph.player === aiSeat) {
+        await runAiTurn(g, aiSeat);
+      } else if (ph.kind === "discard" && ph.player === aiSeat) {
+        await sleep(AI_DELAY_MS);
+        if (G !== g) return;
+        submitDiscardWith(f, aiSeat, g.ai.discard ?? defaultDiscardPolicy);
+      } else {
+        return;
+      }
+      refresh();
+    }
+  } finally {
+    g.busy = false;
+  }
+};
+
+/**
+ * The AI seat's main phase. The plan is taken again from the board as it is
+ * whenever its next action is no longer legal (the human ordered their counters
+ * differently from what the plan assumed: after a counterOrder input the pump
+ * calls this afresh, so the plan is always made on the current board).
+ */
+const runAiTurn = async (g: Game, seat: PlayerId): Promise<void> => {
+  const f = g.flow;
+  let plan = g.ai.planTurn(f.ctx, f.state);
+  let taken = 0;
+  let replans = 0;
+  while (f.phase.kind === "main") {
+    const a = plan[0];
+    if (a === undefined || a.kind === "pass" || taken >= f.ctx.cfg.maxActionsPerTurn) break;
+    if (!isLegal(f.ctx, f.state, a)) {
+      if (replans >= MAX_REPLANS) break;
+      replans += 1;
+      plan = g.ai.planTurn(f.ctx, f.state);
+      continue;
+    }
+    plan = plan.slice(1);
+    await sleep(AI_DELAY_MS);
+    if (G !== g) return;
+    submit(f, seat, { type: "action", action: a });
+    taken += 1;
+    refresh();
+  }
+  if (f.phase.kind !== "main") return;
+  await sleep(AI_DELAY_MS);
+  if (G !== g) return;
+  submit(f, seat, { type: "action", action: { kind: "pass" } });
+};
+
+// ------------------------------------------------------------------ setup
+
+const loadPackByName = async (name: PlayablePack): Promise<CardPack> => {
+  const hit = PACKS.get(name);
+  if (hit !== undefined) return hit;
+  const res = await fetch(`/data/pack-${name}.json`);
+  if (!res.ok) throw new Error(`パック ${name} を読み込めません (${res.status})`);
+  const pack = parsePack(await res.json());
+  PACKS.set(name, pack);
+  return pack;
+};
+
+/** Encoded settings checked against their printed pack. */
+const checkedSettings = async (encoded: string): Promise<{ ok: true; value: GameSettings; printed: CardPack } | { ok: false; error: string }> => {
+  const first = decodeSettings(encoded, null);
+  if (!first.ok) return first;
+  const printed = await loadPackByName(first.value.pack).catch(() => null);
+  if (printed === null) return { ok: false, error: `パック ${first.value.pack} を読み込めません` };
+  const checked = decodeSettings(encoded, () => printed);
+  return checked.ok ? { ok: true, value: checked.value, printed } : checked;
+};
+
+const freshSeed = (): number => 1 + Math.floor(Math.random() * 999_999_999);
+
+/** The rules and cards in force in a game, mid-game changes included. */
+const settingsInForce = (g: Game): GameSettings => ({
+  ...g.settings,
+  config: diffPatch(presetConfig(g.settings.rule), g.flow.ctx.cfg),
+  cards: overridesBetween(g.printed, g.flow.ctx.pack),
+});
+
+const option = (value: string, label: string, selected: boolean): string =>
+  `<option value="${esc(value)}"${selected ? " selected" : ""}>${esc(label)}</option>`;
+
+/** A stored match of this browser that is not the one on the table (offered as 「続きから」). */
+let waiting: LoadedGame | null = null;
+
+const canContinue = (): boolean => (G !== null && G.flow.phase.kind !== "over") || waiting !== null;
+
+const CONTINUE_BUTTON = '<button type="button" class="btn btn-quiet" data-continue>続きから</button>';
+
+/** The start card's 「続きから」 follows storage: another tab may have finished, moved on or started a match meanwhile. */
+const syncContinue = async (): Promise<void> => {
+  const dlg = $<HTMLDialogElement>("setup");
+  const btns = dlg.open ? dlg.querySelector<HTMLElement>(".start-card .setup-btns") : null;
+  if (btns === null || (G !== null && G.flow.phase.kind !== "over")) return;
+  waiting = await loadStoredGame(stores, loadPackByName);
+  const shown = btns.querySelector("button[data-continue]");
+  if (canContinue() && shown === null) btns.insertAdjacentHTML("afterbegin", CONTINUE_BUTTON);
+  if (!canContinue() && shown !== null) shown.remove();
+};
+
+let continuing = false;
+
+/** 「続きから」: the match as storage has it now, not as it was when the start card opened. */
+const continueStored = async (dlg: HTMLDialogElement): Promise<void> => {
+  if (continuing) return;
+  if (G !== null && G.flow.phase.kind !== "over") {
+    dlg.close();
+    return;
+  }
+  continuing = true;
+  try {
+    const latest = await loadStoredGame(stores, loadPackByName);
+    if (latest === null) {
+      waiting = null;
+      await openSetup("続きの対局はもうありません(別の画面で終わったか、消えました)");
+      return;
+    }
+    dlg.close();
+    resume(latest);
+  } finally {
+    continuing = false;
+  }
+};
+
+const startCardHtml = (settings: GameSettings, printed: CardPack | null, problem: string): string => {
+  const o = setup;
+  const look = { rule: settings.rule, pack: settings.pack, cfg: settingsConfig(settings), cards: settings.cards, printed };
+  return `<form method="dialog" class="setup start-card" novalidate>
+    <h2>対局の準備</h2>
+    <div class="setup-grid">
+      <label>あなたの席<select name="seat">${option("0", "先手", o.human === 0)}${option("1", "後手", o.human === 1)}</select></label>
+      <label>AI<select name="ai">${AI_KINDS.map((k) => option(k, AI_LABELS[k], o.ai === k)).join("")}</select></label>
+      <label>シード<input name="seed" type="number" value="${o.seed}" inputmode="numeric"></label>
+    </div>
+    <details class="start-more"><summary>詳細</summary>
+      <label>AIの方針<select name="eval">${EVAL_PROFILE_NAMES.map((p) => option(p, p, p === o.evalName)).join("")}</select></label>
+    </details>
+    ${
+      o.playedSeed === null
+        ? ""
+        : `<label class="start-check"><input type="checkbox" name="sameSeed"> 前回と同じシード(${o.playedSeed})で配り直す</label>`
+    }
+    <div class="start-rules">
+      <span class="start-label">ルールとカード</span>
+      <span class="rules-badge">${badgeHtml(look)}</span>
+      <a class="btn btn-quiet" data-edit-rules href="${esc(rulesHref({ for: "ai", s: encodeSettings(settings) }))}">ルールとカードを編集</a>
+    </div>
+    <details class="start-diff"><summary>基準からの変更点</summary>${diffFromPresetHtml(look)}</details>
+    ${problem === "" ? "" : `<p class="err" role="alert">${esc(problem)}</p>`}
+    <div class="setup-btns">
+      ${canContinue() ? CONTINUE_BUTTON : ""}
+      <button type="button" class="btn btn-gold" data-start>対局開始</button>
+    </div>
+  </form>`;
+};
+
+/** The start card's fields into the stored choices (kept across the settings page and reloads). */
+const readStartForm = (form: HTMLFormElement): AiSetup => {
+  const data = new FormData(form);
+  const seed = Number(data.get("seed"));
+  return {
+    ...setup,
+    human: String(data.get("seat")) === "1" ? 1 : 0,
+    ai: AI_KINDS.find((k) => k === String(data.get("ai"))) ?? "greedy",
+    evalName: EVAL_PROFILE_NAMES.find((p) => p === String(data.get("eval"))) ?? DEFAULT_EVAL,
+    seed: Number.isFinite(seed) && seed !== 0 ? Math.trunc(seed) : 1,
+  };
+};
+
+const openSetup = async (problem = ""): Promise<void> => {
+  // another game: a new deal, and the rules as carryOver decides
+  if (G !== null) {
+    if (G.saved !== "over") carryOver(G);
+    saveSetup({ ...setup, seed: freshSeed() });
+  }
+  let checked = await checkedSettings(setup.s);
+  if (!checked.ok) {
+    problem ||= `設定を読めないので基準に戻しました: ${checked.error}`;
+    saveSetup({ ...setup, s: defaultAiSetup().s });
+    checked = await checkedSettings(setup.s);
+    if (!checked.ok) {
+      $("rulesBadge").textContent = checked.error;
+      return;
+    }
+  }
+  const shown = checked.value;
+  const dlg = $<HTMLDialogElement>("setup");
+  dlg.className = "yy-dialog yy-start";
+  dlg.innerHTML = startCardHtml(shown, checked.printed, problem);
+  const form = dlg.querySelector<HTMLFormElement>("form");
+  if (form === null) return;
+  form.addEventListener("change", () => saveSetup(readStartForm(form)));
+  form.addEventListener("click", (ev) => {
+    const t = ev.target as HTMLElement;
+    if (t.closest("[data-edit-rules]") !== null) {
+      saveSetup(readStartForm(form));
+      return;
+    }
+    if (t.closest("button[data-continue]") !== null) {
+      void continueStored(dlg);
+      return;
+    }
+    if (t.closest("button[data-start]") !== null) {
+      const o = readStartForm(form);
+      const same = new FormData(form).get("sameSeed") !== null && o.playedSeed !== null;
+      const seed = same && o.playedSeed !== null ? o.playedSeed : o.seed;
+      saveSetup({ ...o, s: encodeSettings(shown), playedSeed: seed });
+      dlg.close();
+      void startGame({ id: newGameId(), settings: shown, human: o.human, ai: o.ai, evalName: o.evalName, seed });
+    }
+  });
+  if (!dlg.open) dlg.showModal();
+};
+
+const showDiff = (): void => {
+  const g = G;
+  if (g === null) return void openSetup();
+  const dlg = $<HTMLDialogElement>("setup");
+  const look = { rule: g.settings.rule, pack: g.settings.pack, cfg: g.flow.ctx.cfg, cards: g.settings.cards, printed: g.printed };
+  dlg.className = "yy-dialog";
+  dlg.innerHTML = `<form method="dialog" class="setup diff-dialog"><h2>この対局の設定</h2><p class="muted">${badgeHtml(look)}(基準からの違い)</p>${diffFromPresetHtml(look)}<div class="setup-btns"><button type="submit" class="btn btn-quiet" value="close">閉じる</button></div></form>`;
+  dlg.showModal();
+};
+
+const renderBadge = (g: Game): void => {
+  $("rulesBadge").innerHTML = badgeHtml({ rule: g.settings.rule, pack: g.settings.pack, cfg: g.flow.ctx.cfg, cards: g.settings.cards, printed: g.printed });
+  $("changeRules").hidden = g.flow.phase.kind === "over";
+};
+
+const aiOf = (start: Start): { ai: AiSeat; label: string } => ({
+  // the seed only perturbs exact ties, so the same match still replays identically
+  ai: makeAi(start.ai, start.evalName, { seed: start.seed }),
+  label: `AI ${AI_LABELS[start.ai]}`,
+});
+
+/** The table shows a match: the URL loses its ?s= (a reload resumes the match, not the start card). */
+const play = (start: Start, flow: Flow, printed: CardPack): void => {
+  const { ai, label } = aiOf(start);
+  gameCounter += 1;
+  const g: Game = {
+    id: gameCounter,
+    flow,
+    start,
+    human: start.human,
+    ai,
+    aiLabel: label,
+    settings: { ...start.settings, cards: overridesBetween(printed, flow.ctx.pack) },
+    printed,
+    busy: false,
+    error: "",
+    saved: -1,
+  };
+  G = g;
+  waiting = null;
+  if (location.search !== "") history.replaceState(null, "", location.pathname);
+  renderBadge(g);
+  refresh();
+  void pump(g);
+};
+
+const startGame = async (start: Start): Promise<void> => {
+  let printed: CardPack;
+  try {
+    printed = await loadPackByName(start.settings.pack);
+  } catch (err) {
+    $("rulesBadge").textContent = err instanceof Error ? err.message : String(err);
+    return;
+  }
+  const ctx = makeCtx(settingsConfig(start.settings), settingsPack(start.settings, printed));
+  play(start, createFlow(ctx, start.seed), printed);
+};
+
+const resume = (loaded: LoadedGame): void => {
+  // 「前回と同じシード」 is the deal of the match on the table
+  saveSetup({ ...setup, playedSeed: loaded.game.seed });
+  const { id, settings, human, ai, evalName, seed } = loaded.game;
+  play({ id, settings, human, ai, evalName, seed }, loaded.flow, loaded.printed);
+};
+
+/**
+ * A ?s= link (a share URL, or the settings page returning) opens the start card
+ * with those settings. Otherwise this tab's stored match resumes at once; a
+ * match stored by another visit is offered on the start card.
+ */
+const init = async (): Promise<void> => {
+  const shared = new URLSearchParams(location.search).get("s");
+  let problem = "";
+  if (shared !== null) {
+    const checked = await checkedSettings(shared);
+    if (checked.ok) saveSetup({ ...setup, s: encodeSettings(checked.value) });
+    else problem = `共有された設定を読めません: ${checked.error}`;
+  }
+  const loaded = await loadStoredGame(stores, loadPackByName);
+  if (loaded !== null && loaded.fromTab && shared === null) return resume(loaded);
+  waiting = loaded;
+  await openSetup(problem);
+};
+
+// The same match carried further on another screen (the settings page opened in a new tab, or this
+// match continued in another tab): take that record for this tab and start over from it, instead of
+// writing the older match over it at the next input. Another match — one started in another tab — is
+// left where it is: this tab keeps playing its own, and the start card offers the latest one.
+window.addEventListener("storage", (ev) => {
+  const g = G;
+  if (ev.key !== AI_GAME_KEY || ev.storageArea !== stores.local) return;
+  if (g === null || g.saved === "over") {
+    void syncContinue();
+    return;
+  }
+  const newer = newerRecord(ev.newValue, storedGameOf(g.start, g.flow));
+  if (newer !== null) adopt(newer);
+});
+
+// a start card left open while another tab plays: 「続きから」 is looked up again when this tab comes back
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") void syncContinue();
+});
+window.addEventListener("focus", () => void syncContinue());
+
+// Back / Forward may show this page from the back-forward cache, with a match older than the stored one
+window.addEventListener("pageshow", (ev) => {
+  if (ev.persisted) location.reload();
+});
+
+void init();

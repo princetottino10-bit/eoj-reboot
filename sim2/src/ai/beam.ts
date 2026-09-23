@@ -30,6 +30,7 @@ const opponentReplyScore = (ctx: Ctx, s: GameState, p: PlayerId, w: Weights): nu
   const o = opponent(p);
   const probe = cloneState(s);
   probe.turnPlayer = o;
+  probe.summonsThisTurn = 0;
   for (const u of probe.units) {
     if (u.owner === o) {
       u.attackedThisTurn = false;
@@ -37,7 +38,10 @@ const opponentReplyScore = (ctx: Ctx, s: GameState, p: PlayerId, w: Weights): nu
     }
   }
   const ps = probe.players[o];
-  ps.mana = Math.min(ctx.cfg.manaCap, ps.mana + incomeFor(ctx, ps.chips));
+  // With turn_end income the opponent already holds their next tick.
+  if (ctx.cfg.incomeTiming === "turn_start") {
+    ps.mana = Math.min(ctx.cfg.manaCap, ps.mana + incomeFor(ctx, ps.chips));
+  }
 
   let worst = evaluate(ctx, probe, p, w);
   const sink: GameEvent[] = [];

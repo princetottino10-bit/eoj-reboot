@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>陰陽符陣(仮) オンライン対戦</title>
+<!-- the 太極 mark of the 記号体系 (print/icon-system-v1) as the tab icon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%230b0b0e'/%3E%3Ccircle cx='32' cy='32' r='27.5' fill='none' stroke='%23d7b565' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='23' fill='%231b2340'/%3E%3Cpath d='M32 9A23 23 0 0 1 32 55A11.5 11.5 0 0 1 32 32A11.5 11.5 0 0 0 32 9Z' fill='%23f5f1e2'/%3E%3Ccircle cx='32' cy='43.5' r='4.4' fill='%231b2340'/%3E%3Ccircle cx='32' cy='20.5' r='4.4' fill='%23f5f1e2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/play/table.css">
+<link rel="stylesheet" href="/play/panel.css">
+<link rel="stylesheet" href="/play/fx.css">
+</head>
+<body>
+<main class="lobby">
+  <div class="lobby-hero">
+    <span class="brand-mark" aria-hidden="true">符</span>
+    <div><h1>陰陽符陣<small class="muted">(仮)</small></h1><p>オンライン対戦 — 人間どうし。部屋を作って招待URLを送ります。</p></div>
+  </div>
+  <section class="lobby-card" aria-labelledby="create-h">
+    <h2 id="create-h">部屋を作る</h2>
+    <div class="lobby-row">
+      <label>名前<input id="name" type="text" maxlength="16" placeholder="(省略可)"></label>
+      <label>自分の席
+        <select id="seat">
+          <option value="first">先手</option>
+          <option value="second">後手</option>
+          <option value="random">ランダム</option>
+        </select>
+      </label>
+    </div>
+    <div class="lobby-row">
+      <button id="rulesBadge" type="button" class="rules-badge" title="ルールとカードの数値を変える"></button>
+      <a id="editSettings" class="btn btn-quiet" href="/rules?for=lobby">ルールとカードを変える</a>
+    </div>
+    <p class="muted" id="ruleNote"></p>
+    <div class="lobby-row"><button id="create" type="button" class="btn btn-gold">この設定で部屋を作る</button></div>
+  </section>
+  <section id="created" class="lobby-card lobby-created" hidden aria-live="polite">
+    <h2>部屋ができました</h2>
+    <div>部屋コード <span class="lobby-code" id="code"></span></div>
+    <div class="waiting-invite">
+      <input id="invite" type="text" readonly aria-label="招待URL">
+      <button id="copy" type="button" class="btn btn-quiet">招待URLをコピー</button>
+    </div>
+    <p class="muted">この招待URLを相手に送ってください。相手が開くとそのまま席に着きます。3人目以降は観戦になります。</p>
+    <div class="lobby-row"><a id="enter" class="btn btn-gold" href="#">部屋に入る</a></div>
+  </section>
+  <section class="lobby-card" aria-labelledby="join-h">
+    <h2 id="join-h">部屋コードで参加</h2>
+    <div class="lobby-row">
+      <input id="joinCode" class="join-code" type="text" maxlength="6" placeholder="ABC234" aria-label="部屋コード">
+      <button id="join" type="button" class="btn">参加する</button>
+      <button id="watch" type="button" class="btn btn-quiet">観戦する</button>
+    </div>
+  </section>
+  <p id="error" class="err" role="alert"></p>
+  <p class="muted">ひとりで試すなら <a href="/ai">対 AI の対戦テスト卓</a>。</p>
+</main>
+<script type="module" src="/online/lobby.ts"></script>
+</body>
+</html>

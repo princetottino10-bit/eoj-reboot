@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>陰陽符陣(仮) オンライン対戦室</title>
+<!-- the 太極 mark of the 記号体系 (print/icon-system-v1) as the tab icon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%230b0b0e'/%3E%3Ccircle cx='32' cy='32' r='27.5' fill='none' stroke='%23d7b565' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='23' fill='%231b2340'/%3E%3Cpath d='M32 9A23 23 0 0 1 32 55A11.5 11.5 0 0 1 32 32A11.5 11.5 0 0 0 32 9Z' fill='%23f5f1e2'/%3E%3Ccircle cx='32' cy='43.5' r='4.4' fill='%231b2340'/%3E%3Ccircle cx='32' cy='20.5' r='4.4' fill='%23f5f1e2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/play/table.css">
+<link rel="stylesheet" href="/play/panel.css">
+<link rel="stylesheet" href="/play/fx.css">
+</head>
+<body>
+<div id="waiting" class="waiting" hidden>
+  <div class="waiting-card">
+    <span class="brand-mark" aria-hidden="true">符</span>
+    <h1>対戦相手を待っています</h1>
+    <p class="waiting-code">部屋 <b id="waitCode">------</b></p>
+    <p class="muted">この招待URLを相手に送ってください。開くとそのまま席に着きます(3人目以降は観戦)。</p>
+    <div class="waiting-invite"><input id="invite" type="text" readonly aria-label="招待URL"><button id="copy" type="button" class="btn btn-gold">コピー</button></div>
+    <p class="waiting-second" id="second" hidden>この画面は、別のタブで開いているあなたの席を映しています。<br>
+      <button type="button" class="btn btn-quiet" id="secondJoin">この端末で2人目として参加する</button></p>
+    <p class="waiting-close"><button type="button" class="btn btn-quiet" id="closeRoom" hidden>部屋を閉じる</button></p>
+    <p><a href="/">ロビーへ戻る</a></p>
+  </div>
+</div>
+<p id="error" class="page-error" role="alert" hidden></p>
+<p id="conn" class="conn" aria-live="polite">接続中…</p>
+<div id="table" hidden></div>
+<dialog id="settings" class="yy-dialog" aria-label="設定の変更点"></dialog>
+<script type="module" src="/online/client.ts"></script>
+</body>
+</html>

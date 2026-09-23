@@ -1,5 +1,5 @@
 // One acceptance test per card effect. Spec: sim2/EFFECTS-SPEC.md
-// (tm04's dead-letter rotate-0 is deliberately untested - it is not implemented.)
+// (tm04 rotate-0 was a dead letter until the 2026-09-14 ruling; it is tested below.)
 import test from "node:test";
 import assert from "node:assert/strict";
 import { loadPack, packPath } from "../src/pack-io.ts";
@@ -638,3 +638,26 @@ test("effects on: full games run, stay deterministic, and actually fire effects"
 
 const runOne = (ctx: ReturnType<typeof on>, seed: number) =>
   runGame(ctx, [makeGreedy(), makeGreedy()], seed);
+test("tm04 / sk04 爪鬼: its own rotate command costs 0 (effects on); other cards and effects off pay the rule's cost", () => {
+  const ctx = on();
+  const s = blankState(ctx, 0);
+  const oni = place(s, "tm04", 0, 0, 0, 0);
+  const other = place(s, "tm02", 0, 1, 0, 0);
+  const rot = (uid: number): Action => ({ kind: "rotate", uid, facing: 1 });
+  assert.equal(isLegal(ctx, s, rot(oni)), true, "free with no mana");
+  assert.equal(isLegal(ctx, s, rot(other)), false, "an ordinary card still needs mana");
+  const { events } = applyAction(ctx, s, rot(oni));
+  const e = events.find((x) => x.t === "rotate");
+  assert.ok(e !== undefined && e.t === "rotate");
+  assert.equal(e.cost, 0);
+  const s2 = blankState(off(), 0);
+  const oni2 = place(s2, "tm04", 0, 0, 0, 0);
+  assert.equal(isLegal(off(), s2, rot(oni2)), false, "effects off: the rules-only cost applies");
+  // the shuten-kyuryu 爪鬼 shares the effect
+  const SKP = loadPack(packPath("shuten-kyuryu"));
+  const skCtx = mkCtx({ effects: true }, SKP);
+  const s3 = blankState(skCtx, 0);
+  const sk = place(s3, "sk04", 0, 0, 0, 0);
+  assert.equal(isLegal(skCtx, s3, rot(sk)), true);
+  assert.equal(effectTextOf("sk04"), "この式神の回転命令に必要な霊力は0");
+});

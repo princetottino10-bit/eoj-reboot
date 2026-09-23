@@ -17,6 +17,8 @@ const clonePlayer = (p: PlayerState): PlayerState => ({
   grave: p.grave.slice(),
   reach: p.reach,
   firstTurnDone: p.firstTurnDone,
+  reshuffleCount: p.reshuffleCount,
+  controlPoints: p.controlPoints,
 });
 
 const cloneUnit = (u: Unit): Unit => ({
@@ -43,6 +45,7 @@ export const cloneState = (s: GameState): GameState => ({
   winner: s.winner,
   winType: s.winType,
   ended: s.ended,
+  summonsThisTurn: s.summonsThisTurn,
 });
 
 export const createGame = (ctx: Ctx, seed: number): GameState => {
@@ -63,6 +66,8 @@ export const createGame = (ctx: Ctx, seed: number): GameState => {
       grave: [],
       reach: false,
       firstTurnDone: false,
+      reshuffleCount: 0,
+      controlPoints: 0,
     });
   }
   return {
@@ -75,6 +80,7 @@ export const createGame = (ctx: Ctx, seed: number): GameState => {
     winner: null,
     winType: null,
     ended: false,
+    summonsThisTurn: 0,
   };
 };
 
@@ -94,10 +100,33 @@ export const visibleUnitAt = (s: GameState, pos: Pos): Unit | undefined =>
 export const unitByUid = (s: GameState, uid: number): Unit | undefined =>
   s.units.find((u) => u.uid === uid);
 
+/** Raw cells: one per visible unit, whatever controlCount says. The rules use controlCount. */
 export const occupied = (s: GameState, p: PlayerId): number =>
   s.units.reduce((n, u) => (u.owner === p && !isHidden(u) ? n + 1 : n), 0);
 
 export const cardOfUnit = (ctx: Ctx, u: Unit): CardDef => cardOf(ctx.pack, u.cardId);
+
+/**
+ * What one unit adds to its owner's 占拠 under controlCount: 0 while hidden,
+ * else 1, or 2 when its current HP ("hp") / printed summon cost ("cost") is at
+ * least controlCountThreshold.
+ */
+export const controlWeight = (ctx: Ctx, u: Unit): number => {
+  if (isHidden(u)) return 0;
+  const mode = ctx.cfg.controlCount;
+  if (mode === "hp") return unitHp(ctx, u) >= ctx.cfg.controlCountThreshold ? 2 : 1;
+  if (mode === "cost") return cardOfUnit(ctx, u).summonCost >= ctx.cfg.controlCountThreshold ? 2 : 1;
+  return 1;
+};
+
+/**
+ * 占拠: the count every rule reads - control (gain, loss, win, 制圧点), chips
+ * and income, the deck-out tiebreak - and the AI and the HUD show. Equals
+ * occupied() under controlCount "cells". Takes anything with units (a
+ * GameState or the browser's BoardView).
+ */
+export const controlCount = (ctx: Ctx, s: { readonly units: readonly Unit[] }, p: PlayerId): number =>
+  s.units.reduce((n, u) => (u.owner === p ? n + controlWeight(ctx, u) : n), 0);
 
 /** Effective max HP for a unit at its current position. */
 export const unitMaxHp = (ctx: Ctx, u: Unit): number => {
@@ -123,6 +152,9 @@ export const healUnit = (u: Unit, amount: number): void => {
   u.damage = Math.max(floor, u.damage - amount);
 };
 
-export const gainMana = (ps: PlayerState, amount: number, cap: number): void => {
+/** Adds mana up to `cap`. Returns what was actually gained (events report that, not the nominal amount). */
+export const gainMana = (ps: PlayerState, amount: number, cap: number): number => {
+  const before = ps.mana;
   ps.mana = Math.min(cap, ps.mana + amount);
+  return Math.max(0, ps.mana - before);
 };

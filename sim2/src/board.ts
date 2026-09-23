@@ -7,6 +7,12 @@ export const TAIJI: Pos = { x: 1, y: 1 };
 export const inBoard = (p: Pos): boolean =>
   p.x >= 0 && p.x < BOARD_W && p.y >= 0 && p.y < BOARD_H;
 
+/** A real cell: integer coordinates on the board. For validating actions. */
+export const isBoardCell = (p: Pos): boolean => Number.isInteger(p.x) && Number.isInteger(p.y) && inBoard(p);
+
+/** One of the four facings 0-3. For validating actions. */
+export const isFacing = (v: number): v is Facing => v === 0 || v === 1 || v === 2 || v === 3;
+
 export const posEq = (a: Pos, b: Pos): boolean => a.x === b.x && a.y === b.y;
 export const posKey = (p: Pos): string => `${p.x},${p.y}`;
 

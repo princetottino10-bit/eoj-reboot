@@ -1,0 +1,91 @@
+/* Effects layer (play/fx-play.ts). Only transform and opacity animate (the burn also clips). */
+
+[hidden] { display: none !important; }
+
+.fx-cell { position: fixed; container-type: size; pointer-events: none; }
+
+/* summon: a gold burst of rays behind the landing card */
+.fx-burst { position: fixed; pointer-events: none; display: grid; place-items: center; }
+.fx-burst i {
+  display: block; width: 130%; aspect-ratio: 1; border-radius: 50%;
+  background:
+    radial-gradient(closest-side, oklch(95% 0.08 90 / 0.55), oklch(82% 0.13 85 / 0.18) 55%, transparent 72%),
+    repeating-conic-gradient(from 0deg, oklch(88% 0.12 88 / 0.75) 0deg 2.2deg, transparent 2.2deg 15deg);
+  -webkit-mask: radial-gradient(closest-side, transparent 30%, #000 42%, #000 78%, transparent 100%);
+  mask: radial-gradient(closest-side, transparent 30%, #000 42%, #000 78%, transparent 100%);
+}
+
+/* attack: an ink slash across the target, the damage in vermilion mincho */
+.fx-slash { position: fixed; pointer-events: none; display: grid; place-items: center; z-index: 2; }
+.fx-slash svg { width: 120%; height: 26%; rotate: -28deg; transform-origin: 0 50%; overflow: visible; filter: drop-shadow(0 0 2px oklch(95% 0.02 85 / 0.35)); }
+.fx-slash path { fill: #08080a; stroke: oklch(40% 0.01 260 / 0.8); stroke-width: 0.4; vector-effect: non-scaling-stroke; }
+
+.fx-word { position: fixed; display: grid; place-items: center; pointer-events: none; z-index: 3; }
+.fx-word span {
+  font-family: var(--font-mincho); font-weight: 800; font-size: 34px; line-height: 1; white-space: nowrap;
+  text-shadow: 0 0 3px oklch(8% 0 0), 0 0 14px oklch(8% 0 0 / 0.9), 0 2px 0 oklch(8% 0 0);
+}
+.fx-dmg span { color: var(--sym-verm-hi); font-size: 54px; -webkit-text-stroke: 1.5px oklch(16% 0.03 30); }
+.fx-heal span { color: var(--jade); font-size: 38px; }
+.fx-gold span { color: var(--gold-hi); font-size: 28px; letter-spacing: 0.2em; transform: translateY(-38px); }
+.fx-violet span { color: var(--violet); font-size: 26px; letter-spacing: 0.2em; }
+.fx-counter span { color: oklch(84% 0.12 40); font-size: 22px; padding: 2px 10px; border: 2px solid var(--sym-verm-hi); border-radius: 4px; background: oklch(12% 0.01 260 / 0.85); }
+
+.fx-flash {
+  position: fixed; pointer-events: none; border-radius: 50%;
+  background: radial-gradient(closest-side, oklch(96% 0.08 90 / 0.95), oklch(82% 0.13 85 / 0.6) 45%, transparent 72%);
+}
+
+/* destroy: the card burns away (its ghost is clipped from the bottom up), a glowing edge, embers */
+.fx-burn { z-index: 1; }
+.fx-burn-edge { position: fixed; pointer-events: none; z-index: 2; }
+.fx-burn-edge i {
+  position: absolute; left: 18%; right: 18%; bottom: 6%; height: 7%; border-radius: 50%;
+  background: radial-gradient(closest-side, oklch(92% 0.12 80), oklch(72% 0.18 50 / 0.8) 55%, transparent);
+  filter: blur(1px); box-shadow: 0 0 12px 3px oklch(70% 0.18 45 / 0.6);
+}
+.fx-embers { position: fixed; pointer-events: none; z-index: 2; }
+.fx-embers i { position: absolute; bottom: 20%; width: 4px; height: 4px; border-radius: 50%; background: oklch(80% 0.16 60); box-shadow: 0 0 6px oklch(75% 0.18 50); }
+.fx-embers i:nth-child(1) { left: 32%; }
+.fx-embers i:nth-child(2) { left: 42%; bottom: 26%; }
+.fx-embers i:nth-child(3) { left: 51%; }
+.fx-embers i:nth-child(4) { left: 60%; bottom: 30%; }
+.fx-embers i:nth-child(5) { left: 68%; bottom: 22%; }
+/* ... and its 生命価 flame flies to the owner's life number */
+.fx-flame { position: fixed; pointer-events: none; z-index: 5; filter: drop-shadow(0 0 8px oklch(82% 0.07 220 / 0.9)); }
+.fx-flame .mk { display: block; width: 100%; height: 100%; }
+/* 採用 9/22: the destroyed card's 霊力価 (the print kit's blue flame) flies to the destroyer's 霊力 instead */
+.fx-flame.fx-mana { filter: drop-shadow(0 0 3px oklch(97% 0.03 230 / 0.95)) drop-shadow(0 0 10px oklch(70% 0.14 240 / 0.9)); }
+.fx-flame.fx-mana b { color: var(--gold-hi); }
+.fx-flame b {
+  position: absolute; left: 70%; top: -30%; font-family: var(--font-mincho); font-weight: 800; font-size: 15px; color: var(--sym-flame);
+  text-shadow: 0 0 3px oklch(8% 0 0), 0 1px 0 oklch(8% 0 0);
+}
+
+.fx-band { position: fixed; display: grid; place-items: center; pointer-events: none; z-index: 3; }
+.fx-band-in {
+  display: flex; align-items: center; gap: 14px; padding: 8px 60px;
+  background: linear-gradient(90deg, transparent, oklch(12% 0.012 40 / 0.94) 18%, oklch(12% 0.012 40 / 0.94) 82%, transparent);
+  border-top: 1px solid var(--gold-line); border-bottom: 1px solid var(--gold-line);
+  font-family: var(--font-mincho); font-weight: 800; font-size: 30px; letter-spacing: 0.25em; color: var(--text);
+}
+.fx-band-seal { display: grid; place-items: center; width: 40px; height: 40px; font-size: 22px; letter-spacing: 0; color: oklch(97% 0.01 85); }
+.fx-band-seal.o0 { background: var(--p0); border-radius: 2px; }
+.fx-band-seal.o1 { background: var(--p1); border-radius: 50%; }
+
+/* control: a gold light running once round the board rim (the rim then stays lit, table.css) */
+.fx-rim {
+  position: fixed; pointer-events: none; overflow: hidden; border-radius: 1.4%; padding: 7px;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.fx-rim i { position: absolute; inset: -40%; display: block; background: conic-gradient(from 0deg, transparent 0 62%, oklch(92% 0.1 90) 80%, var(--gold) 86%, transparent 96%); }
+
+.np-stat b.fx-up { color: var(--gold-hi); text-shadow: 0 0 12px oklch(80% 0.12 85 / 0.9); }
+.np-stat b.fx-down { color: oklch(62% 0.02 260); }
+.np-stat b.fx-hurt { color: oklch(70% 0.2 30); text-shadow: 0 0 12px oklch(60% 0.2 30 / 0.9); }
+
+/* reduced motion: no effects at all; the control state stays as a still rim, seal and lanterns (table.css) */
+@media (prefers-reduced-motion: reduce) {
+  .fx-cell, .fx-burst, .fx-slash, .fx-word, .fx-flash, .fx-burn-edge, .fx-embers, .fx-flame, .fx-band, .fx-rim { display: none !important; }
+}

@@ -79,7 +79,11 @@ export const evaluate = (
   let score = 0;
   score += w.occ * (occP - occO);
   score += w.chip * (s.players[p].chips - s.players[o].chips);
-  score += w.life * (s.players[p].life - s.players[o].life);
+  // EXP-0913: with lifeValueEnabled off there is no life win condition, so the
+  // life term is dropped rather than letting the AI chase a dead line.
+  if (ctx.cfg.lifeValueEnabled) {
+    score += w.life * (s.players[p].life - s.players[o].life);
+  }
   score += w.boardHp * (boardHpTotal(ctx, s, p) - boardHpTotal(ctx, s, o));
   if (occP >= ctx.cfg.controlWin) score += w.reach;
   if (occO >= ctx.cfg.controlWin) score -= w.reach;

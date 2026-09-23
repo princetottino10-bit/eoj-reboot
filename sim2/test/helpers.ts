@@ -20,6 +20,7 @@ const mkPlayer = (cfg: Config, mana: number): PlayerState => ({
   grave: [],
   reach: false,
   firstTurnDone: true,
+  reshuffleCount: 0,
 });
 
 /** Empty board, both players flush with mana, no cards in hand. */
@@ -33,6 +34,7 @@ export const blankState = (ctx: Ctx, mana = 20): GameState => ({
   winner: null,
   winType: null,
   ended: false,
+  summonsThisTurn: 0,
 });
 
 export const place = (
