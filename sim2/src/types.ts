@@ -179,6 +179,11 @@ export type IncomeMode = "ratchet" | "current";
  *  behind = only while the destroyer's count <= the opponent's (at the kill).
  *  upset = always, plus floor((victim cost - destroying cost) / 2) when positive. */
 export type KillRewardCondition = "always" | "behind" | "upset";
+/** What 劣勢 (behind) means for underdogIncome, underdogDiscount and
+ *  killRewardCondition "behind". cells = 占拠 (controlCount) strictly lower.
+ *  chips = chips strictly lower (the ratchet; cannot flip mid-turn). both = one
+ *  step per condition met (bonus / discount stack; "behind" kills: either). */
+export type UnderdogBy = "cells" | "chips" | "both";
 
 export type Config = {
   chipMode: ChipMode;
@@ -260,6 +265,19 @@ export type Config = {
   killRewardCondition: KillRewardCondition;
   /** 劣勢ボーナス: extra income while the receiver's count is below the opponent's. */
   underdogIncome: number;
+  /** 劣勢時の大型割引: summon / inherit cost reduction (after 太極, floor 1) for a
+   *  shikigami printed at underdogDiscountMinCost or more, while the summoner's
+   *  count is below the opponent's. */
+  underdogDiscount: number;
+  underdogDiscountMinCost: number;
+  /** 劣勢の判定. */
+  underdogBy: UnderdogBy;
+  /** 終盤の制圧ライン: once either player has reshuffled their grave, control
+   *  (gain, keep, 制圧点) needs this 占拠 instead of controlWin. 0 = off. */
+  controlWinLate: number;
+  /** コールド勝ち: an own turn end on this 占拠 or more wins at once, under
+   *  either controlWinMode. 0 = off. */
+  instantWinCells: number;
 };
 
 export const defaultConfig = (): Config => ({
@@ -313,6 +331,11 @@ export const defaultConfig = (): Config => ({
   incomeMode: "ratchet",
   killRewardCondition: "always",
   underdogIncome: 0,
+  underdogDiscount: 0,
+  underdogDiscountMinCost: 8,
+  underdogBy: "cells",
+  controlWinLate: 0,
+  instantWinCells: 0,
 });
 
 /**
@@ -371,6 +394,8 @@ export type GameEvent =
       baseCost: number;
       /** EXP-0913B inheritSummon: the card that was replaced on this cell. */
       inheritedFrom?: { uid: number; cardId: string; baseCost: number; refund: number };
+      /** 劣勢時の大型割引 taken off `cost` (absent when none). */
+      underdogDiscount?: number;
     }
   | {
       t: "attack";

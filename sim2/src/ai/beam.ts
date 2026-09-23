@@ -1,4 +1,4 @@
-import { applyActionInPlace, incomeFor, legalActions } from "../rules.ts";
+import { applyActionInPlace, incomeNow, legalActions } from "../rules.ts";
 import { cloneState, opponent } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import type { Action, GameEvent, GameState, PlayerId } from "../types.ts";
@@ -40,7 +40,7 @@ const opponentReplyScore = (ctx: Ctx, s: GameState, p: PlayerId, w: Weights): nu
   const ps = probe.players[o];
   // With turn_end income the opponent already holds their next tick.
   if (ctx.cfg.incomeTiming === "turn_start") {
-    ps.mana = Math.min(ctx.cfg.manaCap, ps.mana + incomeFor(ctx, ps.chips));
+    ps.mana = Math.min(ctx.cfg.manaCap, ps.mana + incomeNow(ctx, probe, o));
   }
 
   let worst = evaluate(ctx, probe, p, w);

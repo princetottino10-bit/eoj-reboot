@@ -128,6 +128,52 @@ export const controlWeight = (ctx: Ctx, u: Unit): number => {
 export const controlCount = (ctx: Ctx, s: { readonly units: readonly Unit[] }, p: PlayerId): number =>
   s.units.reduce((n, u) => (u.owner === p ? n + controlWeight(ctx, u) : n), 0);
 
+/** 終盤: has either player reshuffled their grave into a new deck yet? */
+export const isLatePhase = (s: { readonly players: readonly { readonly reshuffleCount: number }[] }): boolean =>
+  s.players.some((ps) => ps.reshuffleCount > 0);
+
+/**
+ * The 占拠 control needs right now: controlWin, or controlWinLate once the
+ * game is in its late phase (controlWinLate > 0 and a grave has been
+ * reshuffled). Every control rule and the AI read this, not cfg.controlWin.
+ */
+export const controlNeed = (ctx: Ctx, s: { readonly players: readonly { readonly reshuffleCount: number }[] }): number =>
+  ctx.cfg.controlWinLate > 0 && isLatePhase(s) ? ctx.cfg.controlWinLate : ctx.cfg.controlWin;
+
+/** A GameState, or the browser's BoardView: units and each player's chips. */
+export type UnderdogView = { readonly units: readonly Unit[]; readonly players: readonly { readonly chips: number }[] };
+
+/** Is p behind on 占拠 (controlCount) / on chips, strictly? Judged on the board as it is now. */
+export const behindOn = (ctx: Ctx, s: UnderdogView, p: PlayerId): { cells: boolean; chips: boolean } => {
+  const o = opponent(p);
+  return {
+    cells: controlCount(ctx, s, p) < controlCount(ctx, s, o),
+    chips: s.players[p].chips < s.players[o].chips,
+  };
+};
+
+/**
+ * 劣勢 steps for underdogIncome / underdogDiscount under underdogBy: cells or
+ * chips = 1 when behind on that, both = one per condition met (0..2).
+ */
+export const underdogSteps = (ctx: Ctx, s: UnderdogView, p: PlayerId): number => {
+  const b = behindOn(ctx, s, p);
+  const by = ctx.cfg.underdogBy;
+  if (by === "cells") return b.cells ? 1 : 0;
+  if (by === "chips") return b.chips ? 1 : 0;
+  return (b.cells ? 1 : 0) + (b.chips ? 1 : 0);
+};
+
+/** "占拠 1 対 3・チップ 2 対 4": the counts underdogBy looks at, for the log lines. */
+export const underdogNote = (ctx: Ctx, s: UnderdogView, p: PlayerId): string => {
+  const o = opponent(p);
+  const by = ctx.cfg.underdogBy;
+  const parts: string[] = [];
+  if (by !== "chips") parts.push(`占拠 ${controlCount(ctx, s, p)} 対 ${controlCount(ctx, s, o)}`);
+  if (by !== "cells") parts.push(`チップ ${s.players[p].chips} 対 ${s.players[o].chips}`);
+  return parts.join("・");
+};
+
 /** Effective max HP for a unit at its current position. */
 export const unitMaxHp = (ctx: Ctx, u: Unit): number => {
   const c = cardOfUnit(ctx, u);

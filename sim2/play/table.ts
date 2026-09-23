@@ -9,6 +9,7 @@ import type { CounterOrderOutcome } from "../src/counter-order.ts";
 import type { UnitCommands } from "../src/commands.ts";
 import type { FlowInput, TansuAnswer } from "../src/flow.ts";
 import type { LegalEntry } from "../src/preview.ts";
+import { baseSummonCost, underdogSummonDiscount } from "../src/rules.ts";
 import { isHidden } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { CardDef, Facing, PlayerId, Pos } from "../src/types.ts";
@@ -712,6 +713,13 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     };
   };
 
+  /** 劣勢時の大型割引 on a hand shikigami of the viewer, as the board stands: { costNow } or nothing. */
+  const discountedCost = (m: TableModel, card: CardDef): { costNow?: number } => {
+    if (m.viewer === null || card.kind !== "shikigami") return {};
+    const off = underdogSummonDiscount(m.ctx, m.board, m.viewer, card);
+    return off > 0 ? { costNow: Math.max(1, baseSummonCost(m.ctx, card) - off) } : {};
+  };
+
   const handCards = (m: TableModel): HandCard[] =>
     (m.hand ?? []).map((cardId, index) => {
       const card = cardOf(m.ctx.pack, cardId);
@@ -722,6 +730,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
         playable: m.prompt.kind === "main" && handPlayable(legal(), m.hand ?? [], index, card.kind === "reigu"),
         selected: (s.kind === "hand" || s.kind === "place" || s.kind === "inherit" || s.kind === "reigu") && s.handIndex === index,
         marked: marked.has(index),
+        ...discountedCost(m, card),
       };
     });
 

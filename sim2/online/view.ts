@@ -38,6 +38,7 @@ const publicPlayer = (p: PlayerState): PublicPlayer => ({
   deckCount: p.deck.length,
   grave: p.grave.slice(),
   reshuffleCount: p.reshuffleCount,
+  controlPoints: p.controlPoints,
 });
 
 export const boardView = (s: GameState): BoardView => ({
@@ -108,8 +109,8 @@ export const gameView = (m: ViewSource, viewer: PlayerId | null): GameView => {
 
 /** Public fields of each event type. Unknown types are dropped. */
 const EVENT_FIELDS: Record<string, readonly string[]> = {
-  turnStart: ["player", "round", "income"],
-  summon: ["player", "uid", "cardId", "pos", "facing", "cost", "taiji", "baseCost", "inheritedFrom"],
+  turnStart: ["player", "round", "income", "underdog"],
+  summon: ["player", "uid", "cardId", "pos", "facing", "cost", "taiji", "baseCost", "inheritedFrom", "underdogDiscount"],
   attack: [
     "player", "uid", "cardId", "aoe", "cost", "hits", "counterTotal", "counterCount", "counterUids",
     "attackerDestroyed", "variant",
@@ -122,10 +123,10 @@ const EVENT_FIELDS: Record<string, readonly string[]> = {
   control: ["player", "change", "need", "hold"],
   reshuffle: ["player", "count"],
   pass: ["player"],
-  destroy: ["owner", "uid", "cardId", "lifeLoss", "manaGain", "killer", "manaTo", "killerRefund"],
+  destroy: ["owner", "uid", "cardId", "lifeLoss", "manaGain", "killer", "manaTo", "killerRefund", "rewardDenied", "upsetBonus"],
   turnEnd: [
     "player", "round", "occupied", "chips", "chipGained", "reach", "discarded", "drawn",
-    "boardHp", "manaLeft", "occBoth", "handBoth",
+    "boardHp", "manaLeft", "occBoth", "handBoth", "points",
   ],
   gameEnd: ["winner", "winType", "round"],
   resign: ["player", "round"],

@@ -11,7 +11,7 @@ import type { BoardView } from "../online/protocol.ts";
 import { esc } from "./cards-view.ts";
 import { attackSummaryLines, cardName, cellName, inheritSummaryLines, MANA_VALUE_TAG, unitById } from "./render.ts";
 import type { Names } from "./render.ts";
-import { aimedEntry, handEntries, reiguEntry, reiguForecast } from "./select.ts";
+import { aimedEntry, handEntries, reiguEntry, reiguForecast, summonFacings } from "./select.ts";
 import type { ReiguForecast, Sel } from "./select.ts";
 
 export type PromptKind =
@@ -200,6 +200,18 @@ const clubBar = (vm: PromptVM, legal: LegalEntry[], s: Extract<Sel, { kind: "rei
   return bar("confirm", `<b>${esc(card.nameJa)}</b>を使う(${tName}から):`, lines, [btn("confirm", `使う(霊力−${card.summonCost})`, "btn-gold"), btn("revictim", "敵を選び直す", "btn-quiet"), retarget, cancel], f);
 };
 
+/** 劣勢時の大型割引 on a summon, from the legal list's summon previews: " (劣勢割引 −3)", "" when none. */
+const summonDiscountNote = (entries: LegalEntry[]): string => {
+  const off = Math.max(0, ...entries.map((e) => (e.preview?.kind === "summon" ? e.preview.underdogDiscount : 0)));
+  return off > 0 ? ` <span class="pr-disc">(劣勢割引 −${off})</span>` : "";
+};
+
+/** The cost of summoning onto one cell, when 劣勢時の大型割引 changes it: " 霊力−10(本来13・劣勢割引)". */
+const summonCostNote = (entries: LegalEntry[]): string => {
+  const pv = entries.map((e) => e.preview).find((x) => x?.kind === "summon");
+  return pv?.kind === "summon" ? ` <span class="pr-disc">霊力−${pv.cost}(本来${pv.costBefore}・劣勢割引)</span>` : "";
+};
+
 const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
   const s = vm.sel;
   const cancel = btn("cancel", "やめる", "btn-quiet", 'title="Esc"');
@@ -214,11 +226,13 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
     case "hand": {
       const card = cardOf(vm.ctx.pack, vm.hand[s.handIndex]);
       const inh = handEntries(legal, vm.hand, s.handIndex, "inherit").length > 0;
-      return bar("pick", `<b>${esc(card.nameJa)}</b>: 光っているマスに召喚${inh ? ' / <span class="violet">紫の破線</span>の駒に継承召喚' : ""}`, [], [cancel], f);
+      const disc = summonDiscountNote(handEntries(legal, vm.hand, s.handIndex, "summon"));
+      return bar("pick", `<b>${esc(card.nameJa)}</b>: 光っているマスに召喚${inh ? ' / <span class="violet">紫の破線</span>の駒に継承召喚' : ""}${disc}`, [], [cancel], f);
     }
     case "place": {
       const card = cardOf(vm.ctx.pack, vm.hand[s.handIndex]);
-      return bar("pick", `<b>${esc(card.nameJa)}</b>を${esc(cellName(s.pos))}に置く向きを、盤上の矢印で選ぶ`, [], [cancel], f);
+      const at = summonFacings(legal, vm.hand, s.handIndex, s.pos).flatMap((o) => (o.entry === undefined ? [] : [o.entry]));
+      return bar("pick", `<b>${esc(card.nameJa)}</b>を${esc(cellName(s.pos))}に置く向きを、盤上の矢印で選ぶ${summonCostNote(at)}`, [], [cancel], f);
     }
     case "inherit": {
       const e = handEntries(legal, vm.hand, s.handIndex, "inherit").find((x) => x.action.kind === "inherit" && x.action.targetUid === s.targetUid);

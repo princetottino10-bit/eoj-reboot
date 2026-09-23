@@ -214,6 +214,8 @@ export type CardFaceOpts = {
   facing?: Facing;
   /** A board piece's HP now (the 亀甲 then shows it; damaged = vermilion). */
   hp?: { now: number; max: number };
+  /** A hand card's summon cost now when a rule lowers it (劣勢時の大型割引): the printed cost is struck through. */
+  costNow?: number;
 };
 
 type Mod = { cls: string; tip: string };
@@ -238,7 +240,10 @@ const costHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => {
   const reigu = card.kind === "reigu";
   const word = reigu ? "使用コスト" : "召喚コスト";
   const m = modOf(card, ["summonCost"], opts);
-  const main = `<span class="fu-c fu-c-sum${m.cls}" title="${word} ${card.summonCost}${m.tip}">${sr(word)}${mark("mana-ring")}${num(card.summonCost)}</span>`;
+  const now = opts.costNow !== undefined && opts.costNow !== card.summonCost ? opts.costNow : null;
+  const main = now === null
+    ? `<span class="fu-c fu-c-sum${m.cls}" title="${word} ${card.summonCost}${m.tip}">${sr(word)}${mark("mana-ring")}${num(card.summonCost)}</span>`
+    : `<span class="fu-c fu-c-sum is-disc${m.cls}" title="${word} ${card.summonCost} → いまは${now}(劣勢割引)">${sr(word)}${mark("mana-ring")}<s class="num-was">${card.summonCost}</s>${num(now)}</span>`;
   if (reigu || opts.size === "sm") return `<span class="fu-cost">${main}</span>`;
   const a = modOf(card, ["attackCost"], opts);
   // the rule's rotate cost for this card (爪鬼 turns for free); rotateIsFree reads only the card of the unit

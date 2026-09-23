@@ -13,8 +13,8 @@ import { canAttack, cardOf } from "../cards.ts";
 import type { CardPack } from "../cards.ts";
 import { attackCostOf, isBlindShot } from "../combat.ts";
 import { damageBonus, effectiveAtk, rotateCommandLocked } from "../effects.ts";
-import { incomeFor, rotateCostOf } from "../rules.ts";
-import { isHidden, occupied, opponent, unitHp } from "../state.ts";
+import { incomeNow, rotateCostOf } from "../rules.ts";
+import { controlCount, controlNeed, isHidden, opponent, unitHp } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import type { Facing, GameState, PlayerId, Pos, Unit } from "../types.ts";
 
@@ -214,7 +214,7 @@ export const offensePotential = (
 const nextTurnMana = (ctx: Ctx, s: GameState, p: PlayerId): number => {
   const ps = s.players[p];
   if (ctx.cfg.incomeTiming === "turn_end") return ps.mana;
-  return Math.min(ctx.cfg.manaCap, ps.mana + incomeFor(ctx, ps.chips));
+  return Math.min(ctx.cfg.manaCap, ps.mana + incomeNow(ctx, s, p));
 };
 
 /** Board HP counting hidden units too (they come back and still block their cell). */
@@ -248,9 +248,10 @@ export const strongEvaluate = (
     return s.winner === p ? STRONG_WIN : -STRONG_WIN;
   }
   const o = opponent(p);
-  const cw = ctx.cfg.controlWin;
-  const occP = occupied(s, p);
-  const occO = occupied(s, o);
+  const cw = controlNeed(ctx, s); // controlWin, or controlWinLate in the late phase
+  // 占拠 as the rules count it (weighted under controlCount hp / cost)
+  const occP = controlCount(ctx, s, p);
+  const occO = controlCount(ctx, s, o);
   const pp = s.players[p];
   const po = s.players[o];
   let score = 0;
@@ -258,7 +259,7 @@ export const strongEvaluate = (
   score += w.hp * (hpTotalAll(ctx, s, p) - hpTotalAll(ctx, s, o));
   score += w.atk * (atkTotal(ctx, s, p) - atkTotal(ctx, s, o));
   score += w.chip * (pp.chips - po.chips);
-  score += w.income * (incomeFor(ctx, pp.chips) - incomeFor(ctx, po.chips));
+  score += w.income * (incomeNow(ctx, s, p) - incomeNow(ctx, s, o));
   if (ctx.cfg.lifeValueEnabled) score += w.life * (pp.life - po.life);
   score += w.mana * (pp.mana - po.mana);
 
@@ -266,6 +267,17 @@ export const strongEvaluate = (
   if (occO >= cw) score -= w.reach;
   if (pp.reach && occP >= cw) score += w.holdControl;
   if (po.reach && occO >= cw) score -= w.oppControl;
+  // コールド勝ち: standing on instantWinCells wins at that side's turn end
+  const cold = ctx.cfg.instantWinCells;
+  if (cold > 0 && occP >= cold) score += w.holdControl;
+  if (cold > 0 && occO >= cold) score -= w.oppControl;
+  if (ctx.cfg.controlWinMode === "points") {
+    // a 制圧点 is banked; one short on controlWin 占拠 is the control state of this mode
+    const need = ctx.cfg.controlPointsToWin;
+    score += w.reach * (pp.controlPoints - po.controlPoints);
+    if (pp.controlPoints + 1 >= need && occP >= cw) score += w.holdControl;
+    if (po.controlPoints + 1 >= need && occO >= cw) score -= w.oppControl;
+  }
 
   const manaP = nextMana === undefined ? nextTurnMana(ctx, s, p) : nextMana[p];
   const manaO = nextMana === undefined ? nextTurnMana(ctx, s, o) : nextMana[o];
@@ -292,7 +304,7 @@ export const strongEvaluate = (
 
 /** Is `p` in the control state (declared reach and still on controlWin cells)? */
 export const hasControl = (ctx: Ctx, s: GameState, p: PlayerId): boolean =>
-  s.players[p].reach && occupied(s, p) >= ctx.cfg.controlWin;
+  s.players[p].reach && controlCount(ctx, s, p) >= controlNeed(ctx, s);
 
 /** Does the range cover the cell? Exported for the candidate pruning in strong-search.ts. */
 export const cellCovers = covers;

@@ -8,9 +8,9 @@
 // playtester's cards are not peeked at, their board units are.
 import { toBoardCells } from "../board.ts";
 import { canAttack, cardOf } from "../cards.ts";
-import { applyActionInPlace, incomeFor, legalActions } from "../rules.ts";
+import { applyActionInPlace, incomeFor, incomeNow, legalActions, underdogBonus } from "../rules.ts";
 import { clearExpiredHidden, clearTurnBuffs, fxOf } from "../effects.ts";
-import { cloneState, isHidden, occupied, opponent, unitByUid, unitHp } from "../state.ts";
+import { cloneState, controlCount, controlNeed, isHidden, opponent, unitByUid, unitHp } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import type { Action, Facing, GameEvent, GameState, PlayerId, Pos, Unit } from "../types.ts";
 import { STRONG_WIN, cellCovers, hasControl, rangeCells, strongEvaluate } from "./strong-eval.ts";
@@ -188,18 +188,34 @@ export const candidates = (ctx: Ctx, s: GameState, p: PlayerId): Action[] => {
 
 // ------------------------------------------------------------ deep eval
 
-type Projection = { win: boolean; reach: boolean; chips: number; mana: number };
+type Projection = { win: boolean; reach: boolean; chips: number; mana: number; points: number };
+
+/** The chips after a turn end on `occ` (the same rule as turn.ts endTurn). */
+const chipsAfter = (ctx: Ctx, chips: number, occ: number): number => {
+  if (ctx.cfg.incomeMode === "current") return occ;
+  return ctx.cfg.chipMode === "one_per_turn" ? chips + (occ > chips ? 1 : 0) : Math.max(chips, occ);
+};
 
 /** What endTurn would do for `p` from this position, without the draw. */
 export const projectTurnEnd = (ctx: Ctx, s: GameState, p: PlayerId): Projection => {
   const ps = s.players[p];
-  const occ = occupied(s, p);
-  const cw = ctx.cfg.controlWin;
-  const chips = ctx.cfg.chipMode === "one_per_turn" ? ps.chips + (occ > ps.chips ? 1 : 0) : Math.max(ps.chips, occ);
-  const win = ctx.cfg.controlHold === "next_turn_end" && ps.reach && occ >= cw;
-  const reach = occ >= cw;
-  const mana = ctx.cfg.incomeTiming === "turn_end" ? Math.min(ctx.cfg.manaCap, ps.mana + incomeFor(ctx, chips)) : ps.mana;
-  return { win, reach, chips, mana };
+  const occ = controlCount(ctx, s, p);
+  const cw = controlNeed(ctx, s);
+  const chips = chipsAfter(ctx, ps.chips, occ);
+  const pointsMode = ctx.cfg.controlWinMode === "points";
+  const points = ps.controlPoints + (pointsMode && occ >= cw ? 1 : 0);
+  const cold = ctx.cfg.instantWinCells > 0 && occ >= ctx.cfg.instantWinCells;
+  const win =
+    cold ||
+    (pointsMode
+      ? occ >= cw && points >= ctx.cfg.controlPointsToWin
+      : ctx.cfg.controlHold === "next_turn_end" && ps.reach && occ >= cw);
+  const reach = !pointsMode && occ >= cw;
+  const mana =
+    ctx.cfg.incomeTiming === "turn_end"
+      ? Math.min(ctx.cfg.manaCap, ps.mana + incomeFor(ctx, chips) + underdogBonus(ctx, s, p))
+      : ps.mana;
+  return { win, reach, chips, mana, points };
 };
 
 /** The position handed to the opponent: turn passed, their pieces refreshed, their hand unseen. */
@@ -209,6 +225,7 @@ const opponentProbe = (ctx: Ctx, s: GameState, p: PlayerId, proj: Projection): G
   const mine = probe.players[p];
   mine.chips = proj.chips;
   mine.reach = proj.reach;
+  mine.controlPoints = proj.points;
   mine.mana = proj.mana;
   probe.turnPlayer = o;
   probe.summonsThisTurn = 0;
@@ -223,7 +240,8 @@ const opponentProbe = (ctx: Ctx, s: GameState, p: PlayerId, proj: Projection): G
   clearExpiredHidden(probe, o, []);
   const theirs = probe.players[o];
   if (ctx.cfg.incomeTiming === "turn_start") {
-    theirs.mana = Math.min(ctx.cfg.manaCap, theirs.mana + incomeFor(ctx, theirs.chips));
+    if (ctx.cfg.incomeMode === "current") theirs.chips = controlCount(ctx, probe, o);
+    theirs.mana = Math.min(ctx.cfg.manaCap, theirs.mana + incomeNow(ctx, probe, o));
   }
   theirs.hand = [];
   return probe;
@@ -233,16 +251,20 @@ const opponentProbe = (ctx: Ctx, s: GameState, p: PlayerId, proj: Projection): G
 const replyScore = (ctx: Ctx, s: GameState, p: PlayerId, w: StrongWeights): number => {
   if (s.ended) return s.winner === null ? 0 : s.winner === p ? STRONG_WIN : -STRONG_WIN;
   const o = opponent(p);
-  const cw = ctx.cfg.controlWin;
+  const cw = controlNeed(ctx, s);
   const cap = ctx.cfg.manaCap;
-  const occO = occupied(s, o);
+  const occO = controlCount(ctx, s, o);
   const theirs = s.players[o];
-  const chipsO = Math.max(theirs.chips, occO);
-  const nextO = Math.min(cap, theirs.mana + incomeFor(ctx, chipsO));
+  const chipsO = ctx.cfg.incomeMode === "current" ? occO : Math.max(theirs.chips, occO);
+  const nextO = Math.min(cap, theirs.mana + incomeFor(ctx, chipsO) + underdogBonus(ctx, s, o));
   const mine = s.players[p];
-  const nextP = ctx.cfg.incomeTiming === "turn_end" ? mine.mana : Math.min(cap, mine.mana + incomeFor(ctx, mine.chips));
+  const nextP = ctx.cfg.incomeTiming === "turn_end" ? mine.mana : Math.min(cap, mine.mana + incomeNow(ctx, s, p));
   let sc = strongEvaluate(ctx, s, p, w, p === 0 ? [nextP, nextO] : [nextO, nextP]);
   // control they would declare at this turn end, with what their unseen hand could add
+  // コールド勝ち on their turn end is a loss
+  if (ctx.cfg.instantWinCells > 0 && occO >= ctx.cfg.instantWinCells) sc -= w.oppControl;
+  // controlWinMode "points": their last 制圧点 on this turn end is a loss
+  if (ctx.cfg.controlWinMode === "points" && occO >= cw && theirs.controlPoints + 1 >= ctx.cfg.controlPointsToWin) sc -= w.oppControl;
   if (occO >= cw) sc -= w.reach * 0.5;
   else {
     const empties = ctx.cfg.boardCells - s.units.length;

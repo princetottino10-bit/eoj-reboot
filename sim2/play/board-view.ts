@@ -5,7 +5,7 @@
 // control state's seal and lanterns). Pure string builders.
 import { cellAttr } from "../src/board.ts";
 import type { CommandId } from "../src/commands.ts";
-import { cardOfUnit, unitHp, unitMaxHp } from "../src/state.ts";
+import { cardOfUnit, controlNeed, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { Facing, PlayerId, Pos } from "../src/types.ts";
 import type { BoardView } from "../online/protocol.ts";
@@ -196,8 +196,8 @@ const predictionHtml = (vm: BoardVM): string => {
 const controlHtml = (vm: BoardVM, seats: PlayerId[]): string =>
   seats
     .map((p) => {
-      const need = vm.ctx.cfg.controlWin;
-      const occ = occupiedOf(vm.board, p);
+      const need = controlNeed(vm.ctx, vm.board);
+      const occ = occupiedOf(vm.ctx, vm.board, p);
       const lamps = Array.from({ length: need }, (_, i) => `<i class="bd-lamp${i < occ ? " on" : ""}"></i>`).join("");
       const edge = p === (vm.bottom ?? 0) ? "low" : "high";
       return `<div class="bd-ctl bd-ctl-${edge} o${p}" data-seat="${p}" aria-hidden="true"><span class="bd-lamps">${lamps}</span><span class="bd-seal">制</span></div>`;

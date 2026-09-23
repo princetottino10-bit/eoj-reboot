@@ -11,7 +11,8 @@ import {
   recheckControl,
   resolveAttack,
 } from "./combat.ts";
-import { cloneState, controlCount, gainMana, isHidden, occupied, opponent, unitAt, unitByUid } from "./state.ts";
+import { cloneState, controlCount, gainMana, isHidden, occupied, underdogNote, underdogSteps, unitAt, unitByUid } from "./state.ts";
+import type { UnderdogView } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import {
   applyReigu,
@@ -60,6 +61,27 @@ export const summonCostAt = (ctx: Ctx, card: CardDef, pos: Pos): number => {
   return isTaiji(pos) ? Math.max(ctx.cfg.taijiFloor, base - ctx.cfg.taijiDiscount) : base;
 };
 
+/**
+ * 劣勢時の大型割引 for p summoning `card` now: underdogDiscount per 劣勢 step
+ * (underdogSteps: underdogBy cells / chips = 0 or 1, both = 0..2) when the
+ * card is a shikigami printed at underdogDiscountMinCost or more; else 0.
+ */
+export const underdogSummonDiscount = (ctx: Ctx, s: UnderdogView, p: PlayerId, card: CardDef): number =>
+  ctx.cfg.underdogDiscount > 0 && card.kind === "shikigami" && card.summonCost >= ctx.cfg.underdogDiscountMinCost
+    ? ctx.cfg.underdogDiscount * underdogSteps(ctx, s, p)
+    : 0;
+
+/**
+ * What p pays to summon (or inherit-summon) `card` onto `pos` right now:
+ * summonCostAt (scale, then 太極), then 劣勢時の大型割引 on top, floor 1.
+ * Every legality check, the apply, the previews and the AI go through this.
+ */
+export const summonCostFor = (ctx: Ctx, s: UnderdogView, p: PlayerId, card: CardDef, pos: Pos): number => {
+  const cost = summonCostAt(ctx, card, pos);
+  const off = underdogSummonDiscount(ctx, s, p, card);
+  return off === 0 ? cost : Math.max(1, cost - off);
+};
+
 // attackCostOf lives in combat.ts (combat must not import rules.ts); it is
 // re-exported here so the cost helpers stay findable together.
 export { attackCostOf } from "./combat.ts";
@@ -85,11 +107,11 @@ export const nextChips = (ctx: Ctx, chips: number, occ: number): number => {
 };
 
 /** Anything income can be read from: a GameState, or the browser's BoardView. */
-export type IncomeView = { readonly units: readonly Unit[]; readonly players: readonly { readonly chips: number }[] };
+export type IncomeView = UnderdogView;
 
-/** 劣勢ボーナス: underdogIncome while p's 占拠 is strictly below the opponent's, else 0. */
+/** 劣勢ボーナス: underdogIncome per 劣勢 step (underdogBy), judged as income is paid. */
 export const underdogBonus = (ctx: Ctx, s: IncomeView, p: PlayerId): number =>
-  ctx.cfg.underdogIncome > 0 && controlCount(ctx, s, p) < controlCount(ctx, s, opponent(p)) ? ctx.cfg.underdogIncome : 0;
+  ctx.cfg.underdogIncome > 0 ? ctx.cfg.underdogIncome * underdogSteps(ctx, s, p) : 0;
 
 /** The chip count the income steps are judged on: the chips (ratchet) or the 占拠 as it stands (current). */
 export const incomeChips = (ctx: Ctx, s: IncomeView, p: PlayerId): number =>
@@ -152,8 +174,17 @@ export const canInherit = (ctx: Ctx, s: GameState, card: CardDef, target: Unit):
   if (!inheritAttrOk(card, old)) return false;
   const maxHp = effMaxHp(card.hp, target.pos, card.attribute, ctx.cfg.attrBonus, ctx.cfg.maxHp);
   if (maxHp - target.damage <= 0) return false;
-  return s.players[s.turnPlayer].mana >= summonCostAt(ctx, card, target.pos);
+  return s.players[s.turnPlayer].mana >= summonCostFor(ctx, s, s.turnPlayer, card, target.pos);
 };
+
+/** The log line of a 劣勢時の大型割引 (a rule line, right after the summon it discounted). */
+const underdogDiscountEvent = (p: PlayerId, amount: number): GameEvent => ({
+  t: "effect",
+  player: p,
+  source: "rule",
+  uid: null,
+  text: `${p === 0 ? "先手" : "後手"}: 劣勢割引 −${amount}`,
+});
 
 /** Refund for the replaced unit: ceil(printed summonCost / 2). */
 export const inheritRefund = (old: CardDef): number => Math.ceil(old.summonCost / 2);
@@ -171,7 +202,8 @@ const applyInherit = (
   const old = unitByUid(s, a.targetUid);
   if (old === undefined) throw new Error(`inherit: no unit ${a.targetUid}`);
   const oldCard = cardOf(ctx.pack, old.cardId);
-  const cost = summonCostAt(ctx, card, old.pos);
+  const cost = summonCostFor(ctx, s, p, card, old.pos);
+  const discount = summonCostAt(ctx, card, old.pos) - cost;
   ps.mana -= cost;
   // the event carries what the mana cap let through
   const refund = gainMana(ps, inheritRefund(oldCard), ctx.cfg.manaCap);
@@ -206,7 +238,9 @@ const applyInherit = (
     taiji: isTaiji(unit.pos),
     baseCost: card.summonCost,
     inheritedFrom: { uid: old.uid, cardId: old.cardId, baseCost: oldCard.summonCost, refund },
+    ...(discount > 0 ? { underdogDiscount: discount } : {}),
   });
+  if (discount > 0) events.push(underdogDiscountEvent(p, discount));
   onSummon(ctx, s, unit, events); // tm11 Ungaikyo overwrites the carried damage
 };
 
@@ -237,7 +271,7 @@ export const isLegal = (ctx: Ctx, s: GameState, a: Action): boolean => {
     if (!isFacing(a.facing)) return false;
     const card = cardOf(ctx.pack, cardId);
     if (!canSummonAt(ctx, s, card, a.pos)) return false;
-    return ps.mana >= summonCostAt(ctx, card, a.pos);
+    return ps.mana >= summonCostFor(ctx, s, p, card, a.pos);
   }
   if (a.kind === "reigu") {
     if (!effectsOn(ctx)) return false;
@@ -339,7 +373,7 @@ export const legalActions = (ctx: Ctx, s: GameState): Action[] => {
       const card = cardOf(ctx.pack, cardId);
       for (const pos of empties) {
         if (!canSummonAt(ctx, s, card, pos)) continue;
-        if (ps.mana < summonCostAt(ctx, card, pos)) continue;
+        if (ps.mana < summonCostFor(ctx, s, s.turnPlayer, card, pos)) continue;
         for (const facing of [0, 1, 2, 3] as Facing[]) {
           out.push({ kind: "summon", handIndex: i, pos, facing });
         }
@@ -476,7 +510,8 @@ const applyActionCore = (
   if (a.kind === "summon") {
     const cardId = ps.hand[a.handIndex];
     const card = cardOf(ctx.pack, cardId);
-    const cost = summonCostAt(ctx, card, a.pos);
+    const cost = summonCostFor(ctx, s, p, card, a.pos);
+    const discount = summonCostAt(ctx, card, a.pos) - cost;
     ps.mana -= cost;
     ps.hand = ps.hand.filter((_, i) => i !== a.handIndex);
     const unit: Unit = {
@@ -505,7 +540,9 @@ const applyActionCore = (
       cost,
       taiji: isTaiji(a.pos),
       baseCost: card.summonCost,
+      ...(discount > 0 ? { underdogDiscount: discount } : {}),
     });
+    if (discount > 0) events.push(underdogDiscountEvent(p, discount));
     onSummon(ctx, s, unit, events); // tm11 Ungaikyo
     return;
   }

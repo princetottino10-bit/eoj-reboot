@@ -1,8 +1,8 @@
 import { cardOf } from "./cards.ts";
-import { checkControlAtStart, controlEvent } from "./combat.ts";
+import { checkControlAtStart, controlEvent, recheckControl } from "./combat.ts";
 import { shuffle } from "./rng.ts";
-import { baseSummonCost, incomeNow, incomeParts, nextChips } from "./rules.ts";
-import { boardHpTotal, controlCount, opponent } from "./state.ts";
+import { baseSummonCost, incomeNow, incomeParts, nextChips, underdogSummonDiscount } from "./rules.ts";
+import { boardHpTotal, controlCount, controlNeed, opponent, underdogNote } from "./state.ts";
 import {
   clearExpiredHidden,
   clearTurnBuffs,
@@ -61,7 +61,7 @@ export const pendingTansuChoices = (ctx: Ctx, s: GameState): number[] => {
   if (
     ctx.cfg.controlHold === "next_turn_start" &&
     s.players[p].reach &&
-    controlCount(ctx, s, p) >= ctx.cfg.controlWin
+    controlCount(ctx, s, p) >= controlNeed(ctx, s)
   ) {
     return [];
   }
@@ -123,7 +123,7 @@ const underdogEvent = (ctx: Ctx, s: GameState, p: PlayerId, amount: number): Gam
   player: p,
   source: "rule",
   uid: null,
-  text: `${seatWord(p)}: 劣勢ボーナス +${amount}(占拠 ${controlCount(ctx, s, p)} 対 ${controlCount(ctx, s, opponent(p))})`,
+  text: `${seatWord(p)}: 劣勢ボーナス +${amount}(${underdogNote(ctx, s, p)})`,
 });
 
 /** Draws one card, reshuffling the grave if the deck has run out. */
@@ -142,11 +142,23 @@ export const drawOne = (
     ps.grave = [];
     ps.reshuffleCount += 1;
     events?.push({ t: "reshuffle", player: p, count: ps.reshuffleCount });
+    if (s.players[0].reshuffleCount + s.players[1].reshuffleCount === 1) enterLatePhase(ctx, s, p, events ?? []);
   }
   const card = ps.deck.shift();
   if (card === undefined) return false;
   ps.hand.push(card);
   return true;
+};
+
+/**
+ * The first reshuffle of the game (either player's) starts the late phase:
+ * with controlWinLate set, control now needs that many, which is logged once
+ * and checked at once against both players' standing control states.
+ */
+const enterLatePhase = (ctx: Ctx, s: GameState, p: PlayerId, events: GameEvent[]): void => {
+  if (ctx.cfg.controlWinLate <= 0) return;
+  events.push({ t: "effect", player: p, source: "rule", uid: null, text: `終盤: 制圧は${ctx.cfg.controlWinLate}マスで成立` });
+  recheckControl(ctx, s, events);
 };
 
 const drawTo = (ctx: Ctx, s: GameState, p: PlayerId, events: GameEvent[]): number => {
@@ -240,7 +252,10 @@ export const defaultDiscardPolicy: DiscardChooser = (ctx, s, p) => {
     // real action, so it is judged on affordability only.
     const dead = card.kind !== "shikigami" && (!ctx.cfg.effects || !reiguImplemented(ctx, card.id));
     // reigu pay their printed cost; summonCostScale only touches shikigami
-    const cost = card.kind === "shikigami" ? baseSummonCost(ctx, card) : card.summonCost;
+    // (less 劣勢時の大型割引 as it stands now; 0 unless underdogDiscount is set)
+    const off = underdogSummonDiscount(ctx, s, p, card);
+    const base = card.kind === "shikigami" ? baseSummonCost(ctx, card) : card.summonCost;
+    const cost = off === 0 ? base : Math.max(1, base - off);
     if (dead || cost > projected) out.push(i);
   }
   return out;
@@ -260,7 +275,7 @@ const applyDiscards = (s: GameState, p: PlayerId, indices: number[]): string[] =
 };
 
 const controlWinNow = (ctx: Ctx, s: GameState, p: PlayerId, events: GameEvent[]): void => {
-  events.push(controlEvent(ctx, p, "win"));
+  events.push(controlEvent(ctx, p, "win", controlNeed(ctx, s)));
   s.ended = true;
   s.winner = p;
   s.winType = "control";
@@ -276,12 +291,13 @@ const controlWinNow = (ctx: Ctx, s: GameState, p: PlayerId, events: GameEvent[])
  */
 const endTurnControl = (ctx: Ctx, s: GameState, p: PlayerId, occ: number, events: GameEvent[]): boolean => {
   const ps = s.players[p];
-  if (ctx.cfg.controlHold === "next_turn_end" && ps.reach && occ >= ctx.cfg.controlWin) {
+  const need = controlNeed(ctx, s);
+  if (ctx.cfg.controlHold === "next_turn_end" && ps.reach && occ >= need) {
     controlWinNow(ctx, s, p, events);
     return true;
   }
-  ps.reach = occ >= ctx.cfg.controlWin;
-  if (ps.reach) events.push(controlEvent(ctx, p, "gain"));
+  ps.reach = occ >= need;
+  if (ps.reach) events.push(controlEvent(ctx, p, "gain", need));
   return false;
 };
 
@@ -293,7 +309,7 @@ const endTurnControl = (ctx: Ctx, s: GameState, p: PlayerId, occ: number, events
 const endTurnPoints = (ctx: Ctx, s: GameState, p: PlayerId, occ: number, events: GameEvent[]): boolean => {
   const ps = s.players[p];
   ps.reach = false;
-  if (occ < ctx.cfg.controlWin) return false;
+  if (occ < controlNeed(ctx, s)) return false;
   ps.controlPoints += 1;
   events.push({
     t: "effect",
@@ -327,6 +343,12 @@ export const endTurn = (
   const chipGained = nextChips(ctx, ps.chips, occ) - ps.chips;
   ps.chips += chipGained;
 
+  // コールド勝ち: before either control mode
+  if (ctx.cfg.instantWinCells > 0 && occ >= ctx.cfg.instantWinCells) {
+    events.push({ t: "effect", player: p, source: "rule", uid: null, text: `${seatWord(p)}: コールド勝ち(占拠${occ})` });
+    controlWinNow(ctx, s, p, events);
+    return;
+  }
   if (ctx.cfg.controlWinMode === "points") {
     if (endTurnPoints(ctx, s, p, occ, events)) return;
   } else if (endTurnControl(ctx, s, p, occ, events)) {

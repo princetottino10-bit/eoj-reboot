@@ -186,6 +186,9 @@ button.rules-badge { cursor: pointer; }
 .np-stat small { font-size: 11px; color: var(--text-dim); }
 .np-life b { color: oklch(88% 0.06 40); }
 .np-mana b { color: var(--gold-hi); }
+/* the late-game control line (controlWinLate) and 制圧点 (controlWinMode points) */
+.np-occ.is-late small { color: var(--sym-verm-hi); font-weight: 700; }
+.np-pts b { color: var(--gold-hi); }
 .np-chips { display: grid; grid-auto-flow: column; gap: 2px; align-self: center; }
 .chip { display: block; width: 9px; height: 9px; border-radius: 50%; border: 1px solid oklch(60% 0.03 80 / 0.6); }
 .chip.step { border-color: var(--gold-dim); }
@@ -593,6 +596,10 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .hand-card.is-dead .fu { filter: brightness(0.72) saturate(0.6); }
 /* a cost the mana cannot pay reads in vermilion */
 .hand-card.is-dead .fu-c-sum .num { color: var(--sym-verm); }
+/* 劣勢時の大型割引: the printed cost struck through, the cost now beside it */
+.fu-c-sum .num-was { font-size: max(10px, 0.95em); font-weight: 700; margin-right: 0.1em; color: var(--sym-ink); text-decoration: line-through 0.1em var(--sym-verm); opacity: 0.85; }
+.fu-c-sum.is-disc .num { color: oklch(52% 0.14 150); }
+.pr-disc { color: var(--gold-hi); white-space: nowrap; }
 .hand-card.is-playable .fu-cost { box-shadow: 0 0 0 0.07em var(--sym-ink), 0 0 0 0.2em var(--gold); }
 .hand-card.is-dead:hover .fu { filter: brightness(0.9) saturate(0.8); }
 .hand-card.is-marked { transform: translateX(var(--x)) translateY(-10px) rotate(0deg); z-index: 15; }

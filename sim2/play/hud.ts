@@ -3,8 +3,8 @@
 // Pure string builders over the public board view.
 import type { CardOverrides } from "../src/card-overrides.ts";
 import { cardOf } from "../src/cards.ts";
-import { incomeFor } from "../src/rules.ts";
-import { cardOfUnit, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
+import { incomeParts } from "../src/rules.ts";
+import { cardOfUnit, controlNeed, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { CardDef, PlayerId, Unit } from "../src/types.ts";
 import type { BoardView, LogItem } from "../online/protocol.ts";
@@ -15,8 +15,18 @@ import type { LogNote, Names } from "./render.ts";
 
 export type CardLook = { mods?: CardOverrides; printed?: (id: string) => CardDef | undefined };
 
+/** The income tooltip: what p would be paid now (incomeParts: current-count income and 劣勢ボーナス included). */
+const incomeTip = (ctx: Ctx, board: BoardView, p: PlayerId): string => {
+  const inc = incomeParts(ctx, board, p);
+  const bits = [`収入 ${inc.total}`];
+  if (inc.underdog > 0) bits.push(`うち劣勢ボーナス+${inc.underdog}`);
+  if (ctx.cfg.incomeMode === "current") bits.push("今の占拠で判定");
+  return bits.join("・");
+};
+
 /** Chip marks: lit up to the chip count, one mark per income step reached is gold. */
-const chipsHtml = (ctx: Ctx, chips: number): string => {
+const chipsHtml = (ctx: Ctx, board: BoardView, p: PlayerId): string => {
+  const chips = board.players[p].chips;
   const slots = Math.max(ctx.cfg.controlWin, chips, ...ctx.cfg.chipIncomeSteps);
   const marks: string[] = [];
   for (let i = 1; i <= slots; i++) {
@@ -24,14 +34,30 @@ const chipsHtml = (ctx: Ctx, chips: number): string => {
     const step = ctx.cfg.chipIncomeSteps.includes(i);
     marks.push(`<i class="chip${lit ? " on" : ""}${step ? " step" : ""}" data-chip="${i}"></i>`);
   }
-  return `<span class="np-chips" title="チップ ${chips}枚(収入 ${incomeFor(ctx, chips)})">${marks.join("")}</span>`;
+  return `<span class="np-chips" title="チップ ${chips}枚(${incomeTip(ctx, board, p)})">${marks.join("")}</span>`;
 };
+
+/** How heavy units count, for the 占拠 tooltip ("" under controlCount cells). */
+const occTip = (ctx: Ctx): string =>
+  ctx.cfg.controlCount === "hp"
+    ? `・HP${ctx.cfg.controlCountThreshold}以上の駒は2マス分`
+    : ctx.cfg.controlCount === "cost"
+      ? `・召喚コスト${ctx.cfg.controlCountThreshold}以上の駒は2マス分`
+      : "";
+
+/** controlWinMode "points": 「制圧点 1/2」. Nothing under "hold". */
+const pointsHtml = (ctx: Ctx, points: number | undefined): string =>
+  ctx.cfg.controlWinMode === "points"
+    ? `<span class="np-stat np-pts" data-stat="points" title="制圧点(${ctx.cfg.controlPointsToWin}点で勝利)"><i>制圧点</i><b>${points ?? 0}</b><small>/${ctx.cfg.controlPointsToWin}</small></span>`
+    : "";
 
 export const nameplateHtml = (ctx: Ctx, board: BoardView, p: PlayerId, names: Names, you: boolean): string => {
   const ps = board.players[p];
   const turn = board.turnPlayer === p && !board.ended;
   const ctl = ps.reach && !board.ended;
-  const occ = occupiedOf(board, p);
+  const occ = occupiedOf(ctx, board, p);
+  const need = controlNeed(ctx, board);
+  const late = need !== ctx.cfg.controlWin;
   const cls = ["np", `o${p}`, turn ? "is-turn" : "", ctl ? "is-ctl" : "", you ? "is-you" : ""].join(" ");
   return `<div class="${cls}" data-seat="${p}">
     <span class="np-seal" aria-label="${p === 0 ? "先手" : "後手"}">${SEAT_SEAL[p]}</span>
@@ -40,8 +66,9 @@ export const nameplateHtml = (ctx: Ctx, board: BoardView, p: PlayerId, names: Na
     }</span>
     ${ctx.cfg.lifeValueEnabled ? `<span class="np-stat np-life" data-stat="life" title="生命"><i>生命</i><b>${Math.max(0, ps.life)}</b></span>` : ""}
     <span class="np-stat np-mana" data-stat="mana" title="霊力(上限 ${ctx.cfg.manaCap})"><i>霊力</i><b>${ps.mana}</b></span>
-    <span class="np-stat np-occ" title="占拠 / 制圧に必要なマス"><i>占拠</i><b>${occ}</b><small>/${ctx.cfg.controlWin}</small></span>
-    ${chipsHtml(ctx, ps.chips)}
+    <span class="np-stat np-occ${late ? " is-late" : ""}" data-need="${need}" title="占拠 / 制圧に必要なマス${late ? "(終盤)" : ""}${occTip(ctx)}"><i>占拠</i><b>${occ}</b><small>/${need}</small></span>
+    ${pointsHtml(ctx, ps.controlPoints)}
+    ${chipsHtml(ctx, board, p)}
   </div>`;
 };
 
@@ -94,7 +121,7 @@ export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInf
     <span class="turn-round">第${board.round}ラウンド</span>
     <span class="turn-who">${who}</span>
     ${phase === "" ? "" : `<span class="turn-phase">${phase}</span>`}
-    ${holders.map((h) => `<span class="turn-ctl o${h}" title="${esc(names[h])} ${controlLabel(ctx)}(占拠${occupiedOf(board, h)})"><span class="turn-ctl-who">${esc(names[h])} </span>${controlLabel(ctx)}<span class="turn-ctl-occ">(占拠${occupiedOf(board, h)})</span></span>`).join("")}
+    ${holders.map((h) => `<span class="turn-ctl o${h}" title="${esc(names[h])} ${controlLabel(ctx)}(占拠${occupiedOf(ctx, board, h)})"><span class="turn-ctl-who">${esc(names[h])} </span>${controlLabel(ctx)}<span class="turn-ctl-occ">(占拠${occupiedOf(ctx, board, h)})</span></span>`).join("")}
   </div>`;
 };
 

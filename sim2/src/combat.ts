@@ -3,6 +3,7 @@ import {
   cardOfUnit,
   cloneState,
   controlCount,
+  controlNeed,
   gainMana,
   healUnit,
   isHidden,
@@ -128,9 +129,18 @@ export const killReward = (ctx: Ctx, card: CardDef): number => {
  */
 export type KillSource = { cost: number | null; behind?: boolean };
 
-/** killRewardCondition "behind": is the destroyer's 占拠 at most the opponent's right now? */
-export const killerBehind = (ctx: Ctx, s: GameState, killer: PlayerId): boolean =>
-  controlCount(ctx, s, killer) <= controlCount(ctx, s, opponent(killer));
+/**
+ * killRewardCondition "behind": is the destroyer at most level with the
+ * opponent right now - on 占拠 (underdogBy cells), on chips (chips), or on
+ * either of them (both)?
+ */
+export const killerBehind = (ctx: Ctx, s: GameState, killer: PlayerId): boolean => {
+  const o = opponent(killer);
+  const cells = controlCount(ctx, s, killer) <= controlCount(ctx, s, o);
+  const chips = s.players[killer].chips <= s.players[o].chips;
+  const by = ctx.cfg.underdogBy;
+  return by === "cells" ? cells : by === "chips" ? chips : cells || chips;
+};
 
 type Reward = { amount: number; denied: boolean; upset: number };
 
@@ -212,12 +222,16 @@ export const checkLifeLoss = (ctx: Ctx, s: GameState, events: GameEvent[]): void
   events.push({ t: "gameEnd", winner, winType: "life", round: s.round });
 };
 
-/** A control event with the threshold and hold mode in force when it happened (the log describes it with those later). */
-export const controlEvent = (ctx: Ctx, player: PlayerId, change: "gain" | "lost" | "win"): GameEvent => ({
+/**
+ * A control event with the threshold and hold mode in force when it happened
+ * (the log describes it with those later). need: controlNeed of the moment
+ * (controlWinLate in the late phase); defaults to controlWin.
+ */
+export const controlEvent = (ctx: Ctx, player: PlayerId, change: "gain" | "lost" | "win", need: number = ctx.cfg.controlWin): GameEvent => ({
   t: "control",
   player,
   change,
-  need: ctx.cfg.controlWin,
+  need,
   hold: ctx.cfg.controlHold,
 });
 
@@ -230,13 +244,14 @@ export const checkControlAtStart = (ctx: Ctx, s: GameState, events: GameEvent[])
   if (ctx.cfg.controlHold === "next_turn_end") return false;
   const p = s.turnPlayer;
   if (!s.players[p].reach) return false;
-  if (controlCount(ctx, s, p) < ctx.cfg.controlWin) {
+  const need = controlNeed(ctx, s);
+  if (controlCount(ctx, s, p) < need) {
     // lost: the flag goes with it (the next turn end re-declares it)
     s.players[p].reach = false;
-    events.push(controlEvent(ctx, p, "lost"));
+    events.push(controlEvent(ctx, p, "lost", need));
     return false;
   }
-  events.push(controlEvent(ctx, p, "win"));
+  events.push(controlEvent(ctx, p, "win", need));
   s.ended = true;
   s.winner = p;
   s.winType = "control";
@@ -253,11 +268,12 @@ export const checkControlAtStart = (ctx: Ctx, s: GameState, events: GameEvent[])
  */
 export const recheckControl = (ctx: Ctx, s: GameState, events: GameEvent[]): void => {
   if (ctx.cfg.controlHold !== "next_turn_end" || s.ended) return;
+  const need = controlNeed(ctx, s);
   for (const p of [0, 1] as PlayerId[]) {
     const ps = s.players[p];
-    if (ps.reach && controlCount(ctx, s, p) < ctx.cfg.controlWin) {
+    if (ps.reach && controlCount(ctx, s, p) < need) {
       ps.reach = false;
-      events.push(controlEvent(ctx, p, "lost"));
+      events.push(controlEvent(ctx, p, "lost", need));
     }
   }
 };

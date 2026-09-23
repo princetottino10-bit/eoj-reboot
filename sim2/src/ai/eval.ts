@@ -1,5 +1,5 @@
 import { attackCells, isBlindShot } from "../combat.ts";
-import { boardHpTotal, occupied, opponent } from "../state.ts";
+import { boardHpTotal, controlCount, controlNeed, opponent } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import { posEq } from "../board.ts";
 import { canAttack, cardOf } from "../cards.ts";
@@ -74,8 +74,9 @@ export const evaluate = (
     return s.winner === p ? WIN_SCORE : -WIN_SCORE;
   }
   const o = opponent(p);
-  const occP = occupied(s, p);
-  const occO = occupied(s, o);
+  // 占拠 as the rules count it (weighted under controlCount hp / cost)
+  const occP = controlCount(ctx, s, p);
+  const occO = controlCount(ctx, s, o);
   let score = 0;
   score += w.occ * (occP - occO);
   score += w.chip * (s.players[p].chips - s.players[o].chips);
@@ -85,10 +86,22 @@ export const evaluate = (
     score += w.life * (s.players[p].life - s.players[o].life);
   }
   score += w.boardHp * (boardHpTotal(ctx, s, p) - boardHpTotal(ctx, s, o));
-  if (occP >= ctx.cfg.controlWin) score += w.reach;
-  if (occO >= ctx.cfg.controlWin) score -= w.reach;
+  const cw = controlNeed(ctx, s); // controlWin, or controlWinLate in the late phase
+  if (occP >= cw) score += w.reach;
+  if (occO >= cw) score -= w.reach;
   // an opponent already on reach is one turn from winning
-  if (s.players[o].reach && occO >= ctx.cfg.controlWin) score -= w.reach * 2;
+  if (s.players[o].reach && occO >= cw) score -= w.reach * 2;
+  // コールド勝ち: standing on instantWinCells wins at that side's turn end
+  const cold = ctx.cfg.instantWinCells;
+  if (cold > 0 && occP >= cold) score += w.reach;
+  if (cold > 0 && occO >= cold) score -= w.reach * 2;
+  // controlWinMode "points": every 制圧点 is banked progress, and an opponent
+  // one point short on controlWin 占拠 is one turn end from winning
+  if (ctx.cfg.controlWinMode === "points") {
+    const need = ctx.cfg.controlPointsToWin;
+    score += w.reach * (s.players[p].controlPoints - s.players[o].controlPoints);
+    if (s.players[o].controlPoints + 1 >= need && occO >= cw) score -= w.reach * 2;
+  }
   score -= w.threat * threatAgainst(ctx, s, p);
   return score;
 };

@@ -35,6 +35,8 @@ export type PublicPlayer = {
   deckCount: number;
   grave: string[];
   reshuffleCount: number;
+  /** controlWinMode "points": 制圧点 so far (optional so older / local boards without it still type-check). */
+  controlPoints?: number;
 };
 
 export type BoardView = {

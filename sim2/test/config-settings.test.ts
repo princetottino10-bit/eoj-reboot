@@ -63,7 +63,13 @@ test("UI-V2 test 1: the schema covers every play-relevant Config field", () => {
   assert.deepEqual(choice("aoeMode"), ["no_ff", "off", "on"]);
   const startOnly = CONFIG_SCHEMA.filter((f) => !f.midGame).map((f) => f.key).sort();
   // incomeTiming: switching mid-match would pay the turn that straddles the change twice
-  assert.deepEqual(startOnly, ["incomeTiming", "mulligan", "startLife", "startMana"]);
+  // controlWinMode: 制圧点 earned under one mode mean nothing under the other
+  assert.deepEqual(startOnly, ["controlWinMode", "incomeTiming", "mulligan", "startLife", "startMana"]);
+  assert.deepEqual(choice("controlCount"), ["cells", "cost", "hp"]);
+  assert.deepEqual(choice("controlWinMode"), ["hold", "points"]);
+  assert.deepEqual(choice("incomeMode"), ["current", "ratchet"]);
+  assert.deepEqual(choice("killRewardCondition"), ["always", "behind", "upset"]);
+  assert.deepEqual(choice("underdogBy"), ["both", "cells", "chips"]);
 });
 
 test("UI-V2 test 2 (values): out-of-range and malformed values are refused", () => {

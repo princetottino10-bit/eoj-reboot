@@ -128,6 +128,7 @@ const boardOf = (s: GameState): BoardView => ({
       deckCount: ps.deck.length,
       grave: ps.grave.slice(),
       reshuffleCount: ps.reshuffleCount,
+      controlPoints: ps.controlPoints,
     };
   }) as BoardView["players"],
   turnPlayer: s.turnPlayer,

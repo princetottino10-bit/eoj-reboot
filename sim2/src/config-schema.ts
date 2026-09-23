@@ -103,6 +103,52 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     key: "killRewardBonus", group: "economy", kind: "int", min: -5, max: 5,
     label: "撃破報酬の加算", desc: "撃破報酬の額に足す値(合計は0より下がらない)。額を「0」にするとこの値が固定の報酬になる", midGame: true,
   },
+  {
+    key: "killRewardCondition", group: "economy", kind: "choice",
+    choices: [
+      { value: "always", label: "いつでも" },
+      { value: "behind", label: "占拠が相手以下のときだけ" },
+      { value: "upset", label: "格上撃破ボーナスあり" },
+    ],
+    label: "撃破報酬の条件",
+    desc: "撃破した側が受け取る報酬の条件(撃破報酬を受け取る側が「撃破した側」のときだけ効く)。占拠が相手以下のときだけ: 撃破の瞬間に撃破した側の占拠が相手より多ければ誰も得ない(「劣勢の判定」がチップならチップで比べる)。格上撃破ボーナス: 報酬に(撃破された式神の召喚コスト−撃破した式神の召喚コスト)÷2(切り捨て)を足す(霊具は使用コスト、反撃は反撃した式神で数える)",
+    midGame: true,
+  },
+  {
+    key: "incomeMode", group: "economy", kind: "choice",
+    choices: [
+      { value: "ratchet", label: "チップは減らない" },
+      { value: "current", label: "今の占拠で決まる" },
+    ],
+    label: "収入の決め方",
+    desc: "今の占拠で決まる: 収入を受け取る時点の占拠数(制圧の数え方に従う)がチップになり、それで収入の段階が決まる。占拠を失うと収入も下がる(チップの増え方は使わない)",
+    midGame: true,
+  },
+  {
+    key: "underdogDiscount", group: "economy", kind: "int", min: 0, max: 3,
+    label: "劣勢時の大型割引",
+    desc: "劣勢(「劣勢の判定」による)のとき、「大型割引の対象コスト」以上の式神の召喚(継承召喚を含む)をこの値だけ安くする。「占拠・チップそれぞれ」では1段ごとに引く(太極の軽減と重なり、1より下がらない。0でなし)",
+    midGame: true,
+  },
+  {
+    key: "underdogDiscountMinCost", group: "economy", kind: "int", min: 1, max: 20,
+    label: "大型割引の対象コスト", desc: "劣勢時の大型割引の対象になる式神の、カードの召喚コストの下限", midGame: true,
+  },
+  {
+    key: "underdogIncome", group: "economy", kind: "int", min: 0, max: 3,
+    label: "劣勢ボーナス", desc: "収入を受け取るとき、劣勢(「劣勢の判定」による)なら収入にこの値を足す。「占拠・チップそれぞれ」では1段ごとに足す(0でなし)", midGame: true,
+  },
+  {
+    key: "underdogBy", group: "economy", kind: "choice",
+    choices: [
+      { value: "cells", label: "占拠数" },
+      { value: "chips", label: "チップ(ラチェット)" },
+      { value: "both", label: "占拠・チップそれぞれ" },
+    ],
+    label: "劣勢の判定",
+    desc: "劣勢ボーナス・劣勢時の大型割引・撃破報酬の「占拠が相手以下のときだけ」が使う「劣勢」の決め方。占拠数: その時点の占拠数(制圧の数え方に従う)が相手より少ない。チップ: チップ(減らないラチェット)が相手より少ない(自分のターン中には変わらない)。占拠・チップそれぞれ: 占拠数で負けていれば1段、チップで負けていればさらに1段(撃破報酬はどちらか一方で相手以下なら受け取る)",
+    midGame: true,
+  },
   // ---------------------------------------------------------------- mana
   {
     key: "startMana", group: "mana", kind: "intPair", min: 0, max: 15, parts: ["先手", "後手"],
@@ -206,6 +252,50 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
       { value: "next_turn_start", label: "次の自ターン開始時に判定" },
     ],
     label: "制圧の保持判定", desc: "制圧に入ってから勝ちになるまでの判定の仕方", midGame: true,
+  },
+  {
+    key: "controlCount", group: "victory", kind: "choice",
+    choices: [
+      { value: "cells", label: "1体で1マス" },
+      { value: "hp", label: "HPが基準以上なら2マス分" },
+      { value: "cost", label: "召喚コストが基準以上なら2マス分" },
+    ],
+    label: "制圧の数え方",
+    desc: "占拠の数え方。制圧・占拠チップ(収入)・デッキ切れ判定・表示の占拠数のすべてに使う。HP: 今のHP(ダメージで基準を下回れば1マスに戻る)。召喚コスト: カードの召喚コスト。マヨヒガで隠れた式神は0",
+    midGame: true,
+  },
+  {
+    key: "controlCountThreshold", group: "victory", kind: "int", min: 1, max: 20,
+    label: "2マス分になる基準",
+    desc: "制圧の数え方が「HP」「召喚コスト」のとき、この値以上の式神を2マス分に数える(検討中の値: HPなら11、召喚コストなら8)",
+    midGame: true,
+  },
+  // not mid-match: points earned under one mode mean nothing under the other
+  {
+    key: "controlWinMode", group: "victory", kind: "choice",
+    choices: [
+      { value: "hold", label: "制圧を維持して勝つ" },
+      { value: "points", label: "制圧点をためて勝つ" },
+    ],
+    label: "制圧の勝ち方",
+    desc: "制圧点: 自分のターン終了時に占拠が「制圧に必要なマス数」以上なら制圧点+1(減らない)。「勝ちに必要な制圧点」に達したらその場で勝ち。制圧の保持判定は使わない",
+    midGame: false,
+  },
+  {
+    key: "controlPointsToWin", group: "victory", kind: "int", min: 1, max: 9,
+    label: "勝ちに必要な制圧点", desc: "制圧の勝ち方が「制圧点」のとき、この点数に達したら勝ち", midGame: true,
+  },
+  {
+    key: "controlWinLate", group: "victory", kind: "int", min: 0, max: 9,
+    label: "終盤の制圧ライン",
+    desc: "どちらかが初めて墓地を山札に戻した後は、制圧(成立・維持・制圧点)に必要なマス数をこの値にする(制圧の数え方に従う)。切り替わった時点で制圧中の側も判定し直す。0でなし",
+    midGame: true,
+  },
+  {
+    key: "instantWinCells", group: "victory", kind: "int", min: 0, max: 18,
+    label: "コールド勝ち",
+    desc: "自分のターン終了時に占拠(制圧の数え方に従う)がこの値以上ならその場で勝ち(制圧の勝ち方によらない)。0でなし",
+    midGame: true,
   },
   {
     key: "lifeValueEnabled", group: "victory", kind: "bool",

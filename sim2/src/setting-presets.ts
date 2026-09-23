@@ -23,7 +23,7 @@ import type { PlayablePack, RulePresetId } from "./presets.ts";
 import { normalizeSettings, parseSettings } from "./settings.ts";
 import type { GameSettings } from "./settings.ts";
 
-export const SETTING_PRESET_IDS = ["adj15", "adj15life"] as const;
+export const SETTING_PRESET_IDS = ["adj15", "adj15life", "incomeNow", "comeback", "bigComeback"] as const;
 export type SettingPresetId = (typeof SETTING_PRESET_IDS)[number];
 
 export type SettingPreset = {
@@ -118,7 +118,58 @@ const ADJ15_LIFE: SettingPreset = {
   cards: { ...ADJ15.cards },
 };
 
-export const SETTING_PRESETS: Record<SettingPresetId, SettingPreset> = { adj15: ADJ15, adj15life: ADJ15_LIFE };
+/**
+ * 調整案: 今の占拠で収入(開始時) — the team's next trial (9/23): 採用ルール 9/22
+ * with the income judged on the 占拠 as it stands when it is paid, at the start
+ * of your own turn. A break on the opponent's turn lowers your next income;
+ * the opening turns are paid exactly as under turn_end (no income on either
+ * player's first turn, the start mana 6/8 is that turn's budget).
+ */
+const INCOME_NOW: SettingPreset = {
+  id: "incomeNow",
+  label: "調整案: 今の占拠で収入(開始時)",
+  note: "採用ルール 9/22 の収入を、自分のターン開始時に「その時点の占拠数」で決める案。相手のターン中に占拠を崩されると次の収入が下がる(チップは減らないラチェットをやめる)。",
+  rule: "r0923",
+  pack: "adopted-0922",
+  config: { incomeMode: "current", incomeTiming: "turn_start" },
+  cards: {},
+};
+
+/** 調整案: 逆転しやすく — 今の占拠で収入(開始時) + two anti-snowball knobs. */
+const COMEBACK: SettingPreset = {
+  id: "comeback",
+  label: "調整案: 逆転しやすく",
+  note: "「今の占拠で収入(開始時)」に、撃破報酬は占拠が相手以下のときだけ・占拠で負けている側は収入+1(劣勢ボーナス)を足した案。勝っている側が撃破で霊力を積み増す雪だるま式の展開を抑える。",
+  rule: "r0923",
+  pack: "adopted-0922",
+  config: { ...INCOME_NOW.config, killRewardCondition: "behind", underdogIncome: 1 },
+  cards: {},
+};
+
+/**
+ * 調整案: 大型で逆転 — the paper rule "HP 11以上はHPバーのマーカー2つ": a unit
+ * whose current HP is 11+ counts 2 for control and chips, and a cost-8+
+ * shikigami is 1 cheaper to summon / inherit per 劣勢 condition met (behind on
+ * 占拠: −1, behind on chips: −1 more; underdogBy "both"). The ratchet stays.
+ * (controlCount "cost" and underdogBy cells / chips stay available as options.)
+ */
+const BIG_COMEBACK: SettingPreset = {
+  id: "bigComeback",
+  label: "調整案: 大型で逆転",
+  note: "HP11以上の式神は制圧・チップで2マス分(ダメージで11を下回れば1マス)。召喚コスト8以上の式神の召喚・継承召喚は、占拠数で負けていれば−1、チップで負けていればさらに−1(両方なら−2。大型に付ける効果の試作)。基準は採用ルール 9/22、収入のラチェットはそのまま。",
+  rule: "r0923",
+  pack: "adopted-0922",
+  config: { controlCount: "hp", controlCountThreshold: 11, underdogDiscount: 1, underdogDiscountMinCost: 8, underdogBy: "both" },
+  cards: {},
+};
+
+export const SETTING_PRESETS: Record<SettingPresetId, SettingPreset> = {
+  adj15: ADJ15,
+  adj15life: ADJ15_LIFE,
+  incomeNow: INCOME_NOW,
+  comeback: COMEBACK,
+  bigComeback: BIG_COMEBACK,
+};
 
 export const isSettingPresetId = (v: unknown): v is SettingPresetId =>
   typeof v === "string" && (SETTING_PRESET_IDS as readonly string[]).includes(v);

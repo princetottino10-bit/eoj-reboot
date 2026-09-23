@@ -21,6 +21,7 @@ const mkPlayer = (cfg: Config, mana: number): PlayerState => ({
   reach: false,
   firstTurnDone: true,
   reshuffleCount: 0,
+  controlPoints: 0,
 });
 
 /** Empty board, both players flush with mana, no cards in hand. */

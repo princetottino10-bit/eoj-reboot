@@ -3,7 +3,7 @@
 // rules maths (numbers come from engine helpers or from server-side previews).
 import { cardOf } from "../src/cards.ts";
 import type { Ctx } from "../src/state.ts";
-import { cardOfUnit, isHidden, unitHp } from "../src/state.ts";
+import { cardOfUnit, controlCount, unitHp } from "../src/state.ts";
 import { cellAttr, toBoardCells } from "../src/board.ts";
 import { isAoeAttack } from "../src/combat.ts";
 import { describeChange } from "../src/config-schema.ts";
@@ -48,8 +48,8 @@ export const cellName = (p: Pos): string => {
 
 export const cardName = (ctx: Ctx, id: string): string => cardOf(ctx.pack, id).nameJa;
 
-export const occupiedOf = (board: BoardView, p: PlayerId): number =>
-  board.units.reduce((n, u) => (u.owner === p && !isHidden(u) ? n + 1 : n), 0);
+/** 占拠 as the rules count it (controlCount: a heavy unit may count 2, hidden ones 0). */
+export const occupiedOf = (ctx: Ctx, board: BoardView, p: PlayerId): number => controlCount(ctx, board, p);
 
 export const unitAtPos = (board: BoardView, pos: Pos): Unit | undefined =>
   board.units.find((u) => u.pos.x === pos.x && u.pos.y === pos.y);
@@ -117,6 +117,10 @@ const turnWord = (from: Facing | undefined, to: Facing | undefined): string => {
 
 /** Fields a newer rotate event may carry (read defensively; older events lack them). */
 type RotateExtra = { cardId?: string; from?: Facing; facing?: Facing; to?: Facing };
+
+/** killRewardCondition notes on a destroy line: " (撃破報酬なし)" / " (格上撃破+N)". */
+const killRewardNote = (e: { rewardDenied?: boolean; upsetBonus?: number }): string =>
+  e.rewardDenied === true ? " (撃破報酬なし)" : (e.upsetBonus ?? 0) > 0 ? ` (格上撃破+${e.upsetBonus})` : "";
 
 export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, note?: LogNote): LogLine | null => {
   const name = (id: string): string => cardName(ctx, id);
@@ -188,7 +192,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
       if (!ctx.cfg.lifeValueEnabled && e.lifeLoss === 0) {
         const to = e.manaTo ?? null;
         const pay = e.manaGain > 0 && to !== null ? ` → ${seat(to)}の霊力+${e.manaGain}${ctx.cfg.killRewardBase === "card" ? "(霊力価)" : ""}` : "";
-        return { text: `　撃破: ${seat(e.owner)}の${name(e.cardId)}${pay}`, cls: "wr" };
+        return { text: `　撃破: ${seat(e.owner)}の${name(e.cardId)}${pay}${killRewardNote(e)}`, cls: "wr" };
       }
       let mana = "";
       if (e.manaGain > 0 && e.manaTo !== undefined && e.manaTo !== null) {
@@ -196,7 +200,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
           ? ` / 撃破により${seat(e.manaTo)}の霊力+${e.manaGain}`
           : ` / ${seat(e.manaTo)}に霊力+${e.manaGain}(還付)`;
       }
-      return { text: `　撃破: ${seat(e.owner)}の${name(e.cardId)} → 生命-${e.lifeLoss}${mana}`, cls: "wr" };
+      return { text: `　撃破: ${seat(e.owner)}の${name(e.cardId)} → 生命-${e.lifeLoss}${mana}${killRewardNote(e)}`, cls: "wr" };
     }
     case "move":
       return e.source === "rule"
@@ -231,6 +235,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
     case "turnEnd": {
       const bits = [`占拠${e.occupied}`];
       if (e.chipGained > 0) bits.push(`チップ+${e.chipGained}(計${e.chips})`);
+      else if (e.chipGained < 0) bits.push(`チップ−${-e.chipGained}(計${e.chips})`);
       if (e.discarded > 0) bits.push(`${e.discarded}枚捨てて${e.drawn}枚補充`);
       else if (e.drawn > 0) bits.push(`${e.drawn}枚補充`);
       return { text: `${seat(e.player)}: ターン終了 — ${bits.join(" / ")}`, cls: "" };
@@ -309,7 +314,7 @@ export const attackSummaryLines = (ctx: Ctx, board: BoardView, names: Names, uid
 
 export const inheritSummaryLines = (ctx: Ctx, pv: InheritPreview): string[] => [
   `${esc(cardName(ctx, pv.fromCardId))} → <b>${esc(cardName(ctx, pv.toCardId))}</b>(位置と向きを引き継ぐ)`,
-  `支払い <b>${pv.cost}</b> / 回収 <b>+${pv.refund}</b> → 霊力 ${pv.manaBefore} → <b>${pv.manaAfter}</b>`,
+  `支払い <b>${pv.cost}</b>${(pv.underdogDiscount ?? 0) > 0 ? `(本来${pv.cost + (pv.underdogDiscount ?? 0)}・劣勢割引 −${pv.underdogDiscount})` : ""} / 回収 <b>+${pv.refund}</b> → 霊力 ${pv.manaBefore} → <b>${pv.manaAfter}</b>`,
   `継承後のHP <b>${pv.hpAfter}</b>/${pv.maxHpAfter}${pv.carriedDamage > 0 ? `(ダメージ${pv.carriedDamage}を引き継ぎ)` : ""}`,
   `<span class="muted">元の式神は墓地へ(撃破ではないので${ctx.cfg.lifeValueEnabled ? "生命は減らない" : "霊力価は誰も得ない"})</span>`,
 ];

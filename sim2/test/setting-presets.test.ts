@@ -30,7 +30,9 @@ import {
   settingsDiff,
   settingsPack,
 } from "../src/settings.ts";
-import { makeCtx, unitMaxHp } from "../src/state.ts";
+import { controlCount, makeCtx, unitMaxHp } from "../src/state.ts";
+import { applyAction } from "../src/rules.ts";
+import { endTurn } from "../src/turn.ts";
 import { blankState, place } from "./helpers.ts";
 import { aiStep } from "./online-helpers.ts";
 
@@ -266,4 +268,74 @@ test("a bundle changes nothing outside itself: 現行ルール, the presets and 
   assert.equal(changedItemCount(plain), 0);
   assert.equal(matchingSettingPreset(plain, SHUTEN), null);
   assert.deepEqual(plain, { rule: "r0914", pack: "shuten-kyuryu", config: {}, cards: {} });
+});
+
+// ------------------------------------------------ 9/23 bundles (採用ルール 9/22)
+
+const ADOPTED = loadPack(packPath("adopted-0922"));
+
+test("9/23 bundles: 今の占拠で収入(開始時) / 逆転しやすく / 大型で逆転 — on r0923 + adopted-0922, exactly these rule values", () => {
+  const rulesOf = (id: "incomeNow" | "comeback" | "bigComeback"): Record<string, unknown> => {
+    const s = settingPresetSettings(id, ADOPTED);
+    assert.equal(s.rule, "r0923");
+    assert.equal(s.pack, "adopted-0922");
+    assert.deepEqual(s.cards, {}, "no card numbers");
+    return Object.fromEntries(settingsDiff(s).rules.map((c) => [c.key, c.to]));
+  };
+  assert.equal(SETTING_PRESETS.incomeNow.label, "調整案: 今の占拠で収入(開始時)");
+  assert.deepEqual(rulesOf("incomeNow"), { incomeTiming: "turn_start", incomeMode: "current" });
+  assert.equal(SETTING_PRESETS.comeback.label, "調整案: 逆転しやすく");
+  assert.deepEqual(rulesOf("comeback"), {
+    incomeTiming: "turn_start",
+    incomeMode: "current",
+    killRewardCondition: "behind",
+    underdogIncome: 1,
+  });
+  assert.equal(SETTING_PRESETS.bigComeback.label, "調整案: 大型で逆転");
+  // underdogDiscountMinCost 8 is the default, so it drops out of the diff but stays in the table
+  assert.deepEqual(rulesOf("bigComeback"), { controlCount: "hp", underdogDiscount: 1, underdogBy: "both" });
+  const big = settingsConfig(settingPresetSettings("bigComeback", ADOPTED));
+  assert.equal(big.controlCountThreshold, 11);
+  assert.equal(big.underdogDiscountMinCost, 8);
+  assert.equal(big.incomeMode, "ratchet", "大型で逆転 keeps the ratchet");
+  // the picker tells the three apart
+  for (const id of ["incomeNow", "comeback", "bigComeback"] as const) {
+    assert.equal(matchingSettingPreset(settingPresetSettings(id, ADOPTED), ADOPTED), id);
+  }
+  // the 1.5倍 bundles are untouched by the new settings: they stay on r0914 with the defaults
+  for (const id of ["adj15", "adj15life"] as const) {
+    const cfg = settingsConfig(settingPresetSettings(id, SHUTEN));
+    assert.equal(cfg.incomeMode, "ratchet");
+    assert.equal(cfg.controlCount, "cells");
+    assert.equal(cfg.underdogIncome, 0);
+  }
+});
+
+test("大型で逆転: a unit at HP 11+ is two cells for chips — 茨木童子 on its own 陰 cell (9+2) turns 2 chips into 4", () => {
+  const cfg = settingsConfig(settingPresetSettings("bigComeback", ADOPTED));
+  const ctx = makeCtx(cfg, ADOPTED);
+  const s = blankState(ctx, 8);
+  s.players[0].chips = 2;
+  place(s, "ad02", 0, 2, 0, 0);
+  place(s, "ad03", 0, 2, 2, 0);
+  s.players[0].hand = ["ad15"];
+  const r = applyAction(ctx, s, { kind: "summon", handIndex: 0, pos: { x: 0, y: 1 }, facing: 0 });
+  assert.equal(controlCount(ctx, r.state, 0), 4);
+  endTurn(ctx, r.state, []);
+  assert.equal(r.state.players[0].chips, 4);
+  assert.equal(r.state.players[0].mana, 8, "r0923 turn_end income: 6 + 2 steps");
+});
+
+test("9/23 bundles: a match plays several rounds with each and replays to the same board", () => {
+  for (const id of ["incomeNow", "comeback", "bigComeback"] as const) {
+    const s = settingPresetSettings(id, ADOPTED);
+    const f = createFlow(makeCtx(settingsConfig(s), settingsPack(s, ADOPTED)), 20260923);
+    for (let i = 0; i < 4000 && f.state.round < 5 && f.phase.kind !== "over"; i++) {
+      if (!aiStep(f)) break;
+    }
+    assert.ok(f.state.round >= 5 || f.phase.kind === "over", `${id}: reached round ${f.state.round}`);
+    const again = replayFlow(makeCtx(f.initialCfg, settingsPack(s, ADOPTED)), 20260923, f.inputs);
+    assert.deepEqual(again.state, f.state, id);
+    assert.deepEqual(again.log, f.log, id);
+  }
 });

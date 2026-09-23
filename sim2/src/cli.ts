@@ -6,19 +6,27 @@ import { makeCtx } from "./state.ts";
 import { defaultConfig } from "./types.ts";
 import { RULE_PRESET_IDS, isRulePresetId, presetConfig } from "./presets.ts";
 import { schemaHelpText } from "./config-schema.ts";
+import { isSettingPresetId, SETTING_PRESET_IDS, settingPresetSettings } from "./setting-presets.ts";
+import { settingsConfig, settingsPack } from "./settings.ts";
+import type { CardPack } from "./cards.ts";
 import type {
   AoeMode,
   ChipMode,
   Config,
+  ControlCount,
   ControlHold,
+  ControlWinMode,
   CounterMode,
   CounterResolve,
   DeckOutMode,
   HandMode,
+  IncomeMode,
   IncomeTiming,
   KillRewardBase,
+  KillRewardCondition,
   RefundMode,
   SummonCostScale,
+  UnderdogBy,
 } from "./types.ts";
 import { AI_KINDS, makeAi } from "./ai/index.ts";
 import type { AiSeat } from "./ai/index.ts";
@@ -73,6 +81,24 @@ EXP-0913B rule variants (defaults again reproduce the pre-EXP behaviour):
   --mulligan <on|off>          one mulligan each before turn 1     (default off)
   --control-hold <next_turn_start|next_turn_end>        (default next_turn_start)
   --hand-mode <refill_to_5|replace_discarded>           (default refill_to_5)
+
+9/23 optional settings (defaults = today's rules; each overrides the preset / bundle):
+
+  --bundle <id>                a built-in 調整案 (${SETTING_PRESET_IDS.join(" | ")}): its base
+                               preset, pack and card numbers, then its rule values. Replaces
+                               --preset and --pack; the flags below still override it.
+  --control-count <cells|hp|cost>     制圧の数え方 (default cells)
+  --control-count-threshold <n>       2マス分になる基準 (default 11; hp 11 / cost 8 discussed)
+  --control-win-mode <hold|points>    制圧の勝ち方 (default hold)
+  --control-points-to-win <n>         勝ちに必要な制圧点 (default 2)
+  --income-mode <ratchet|current>     収入の決め方 (default ratchet)
+  --kill-reward-condition <always|behind|upset>  撃破報酬の条件 (default always)
+  --underdog-income <n>               劣勢ボーナス 0-3 (default 0)
+  --underdog-discount <n>             劣勢時の大型割引 0-3 (default 0)
+  --underdog-discount-min-cost <n>    大型割引の対象コスト (default 8)
+  --underdog-by <cells|chips|both>    劣勢の判定 (default cells; both = one step per condition)
+  --control-win-late <n>              終盤の制圧ライン 0-9 (default 0 = off)
+  --instant-win-cells <n>             コールド勝ち 0-18 (default 0 = off)
 `;
 
 const parseArgs = (argv: string[]): Map<string, string> => {
@@ -96,6 +122,13 @@ const num = (m: Map<string, string>, k: string, d: number): number => {
   if (v === undefined) return d;
   const n = Number(v);
   if (!Number.isFinite(n)) throw new Error(`--${k} must be a number, got "${v}"`);
+  return n;
+};
+
+/** An integer flag within [lo, hi] (the CONFIG_SCHEMA range). */
+const intIn = (m: Map<string, string>, k: string, lo: number, hi: number, d: number): number => {
+  const n = num(m, k, d);
+  if (!Number.isInteger(n) || n < lo || n > hi) throw new Error(`--${k} must be an integer ${lo}..${hi}, got "${m.get(k)}"`);
   return n;
 };
 
@@ -124,7 +157,15 @@ ${schemaHelpText()}
   if (chipMode !== "catch_up" && chipMode !== "one_per_turn") {
     throw new Error(`--chip-mode must be catch_up|one_per_turn, got "${chipMode}"`);
   }
-  const packName = args.get("pack") ?? "placeholder22";
+  const bundleArg = args.get("bundle");
+  if (bundleArg !== undefined && !isSettingPresetId(bundleArg)) {
+    throw new Error(`--bundle must be ${SETTING_PRESET_IDS.join("|")}, got "${bundleArg}"`);
+  }
+  if (bundleArg !== undefined && (args.has("preset") || args.has("pack"))) {
+    throw new Error("--bundle already names its preset and pack; drop --preset / --pack");
+  }
+  const bundle = bundleArg === undefined ? null : settingPresetSettings(bundleArg);
+  const packName = bundle?.pack ?? args.get("pack") ?? "placeholder22";
   const aiNames = (args.get("ai") ?? "greedy,greedy").split(",");
   if (aiNames.length !== 2) throw new Error("--ai needs exactly two names, e.g. greedy,beam");
   const evalNames = (args.get("eval") ?? "territorial,territorial").split(",");
@@ -160,7 +201,7 @@ ${schemaHelpText()}
   if (presetArg !== undefined && !isRulePresetId(presetArg)) {
     throw new Error(`--preset must be ${RULE_PRESET_IDS.join("|")}, got "${presetArg}"`);
   }
-  const base = presetArg === undefined ? defaultConfig() : presetConfig(presetArg);
+  const base = bundle !== null ? settingsConfig(bundle) : presetArg === undefined ? defaultConfig() : presetConfig(presetArg);
   const cfg: Config = {
     ...base,
     chipMode,
@@ -212,8 +253,26 @@ ${schemaHelpText()}
       ["refill_to_5", "replace_discarded"] as const,
       base.handMode,
     ) as HandMode,
+    controlCount: pick("control-count", ["cells", "hp", "cost"] as const, base.controlCount) as ControlCount,
+    controlCountThreshold: intIn(args, "control-count-threshold", 1, 20, base.controlCountThreshold),
+    controlWinMode: pick("control-win-mode", ["hold", "points"] as const, base.controlWinMode) as ControlWinMode,
+    controlPointsToWin: intIn(args, "control-points-to-win", 1, 9, base.controlPointsToWin),
+    incomeMode: pick("income-mode", ["ratchet", "current"] as const, base.incomeMode) as IncomeMode,
+    killRewardCondition: pick(
+      "kill-reward-condition",
+      ["always", "behind", "upset"] as const,
+      base.killRewardCondition,
+    ) as KillRewardCondition,
+    underdogIncome: intIn(args, "underdog-income", 0, 3, base.underdogIncome),
+    underdogDiscount: intIn(args, "underdog-discount", 0, 3, base.underdogDiscount),
+    underdogDiscountMinCost: intIn(args, "underdog-discount-min-cost", 1, 20, base.underdogDiscountMinCost),
+    underdogBy: pick("underdog-by", ["cells", "chips", "both"] as const, base.underdogBy) as UnderdogBy,
+    controlWinLate: intIn(args, "control-win-late", 0, 9, base.controlWinLate),
+    instantWinCells: intIn(args, "instant-win-cells", 0, 18, base.instantWinCells),
   };
-  const ctx = makeCtx(cfg, loadPack(packPath(packName)));
+  const printed = loadPack(packPath(packName));
+  const pack: CardPack = bundle === null ? printed : settingsPack(bundle, printed);
+  const ctx = makeCtx(cfg, pack);
   const ais: [AiSeat, AiSeat] = [
     makeAi(aiNames[0], evalNames[0]),
     makeAi(aiNames[1], evalNames[1]),
@@ -223,7 +282,7 @@ ${schemaHelpText()}
   const seed = num(args, "seed", 20260830);
   const label =
     args.get("label") ??
-    `${packName}/${aiNames.join("-vs-")}/${evalNames.join("-vs-")}/${chipMode}/effects-${effectsArg}`;
+    `${bundleArg === undefined ? "" : `${bundleArg}/`}${packName}/${aiNames.join("-vs-")}/${evalNames.join("-vs-")}/${chipMode}/effects-${effectsArg}`;
 
   const started = process.hrtime.bigint();
   const records = runMatches(ctx, ais, {
@@ -238,7 +297,8 @@ ${schemaHelpText()}
   const summary = {
     ...summarise(label, records),
     config: {
-      preset: presetArg ?? null,
+      preset: bundle?.rule ?? presetArg ?? null,
+      bundle: bundleArg ?? null,
       pack: packName,
       ai: aiNames,
       eval: evalNames,
@@ -268,6 +328,18 @@ ${schemaHelpText()}
       mulligan: cfg.mulligan,
       controlHold: cfg.controlHold,
       handMode: cfg.handMode,
+      controlCount: cfg.controlCount,
+      controlCountThreshold: cfg.controlCountThreshold,
+      controlWinMode: cfg.controlWinMode,
+      controlPointsToWin: cfg.controlPointsToWin,
+      incomeMode: cfg.incomeMode,
+      killRewardCondition: cfg.killRewardCondition,
+      underdogIncome: cfg.underdogIncome,
+      underdogDiscount: cfg.underdogDiscount,
+      underdogDiscountMinCost: cfg.underdogDiscountMinCost,
+      underdogBy: cfg.underdogBy,
+      controlWinLate: cfg.controlWinLate,
+      instantWinCells: cfg.instantWinCells,
     },
     elapsedMs: Math.round(elapsedMs),
   };

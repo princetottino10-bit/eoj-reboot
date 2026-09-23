@@ -15,7 +15,7 @@ import { cardOf } from "../cards.ts";
 import { reiguImplemented } from "../effects.ts";
 import type { TansuChooser } from "../effects.ts";
 import { nextFloat, seedRng } from "../rng.ts";
-import { baseSummonCost, incomeFor } from "../rules.ts";
+import { baseSummonCost, incomeNow, underdogSummonDiscount } from "../rules.ts";
 import { opponent, unitHp } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import type { DiscardChooser, MulliganChooser } from "../turn.ts";
@@ -70,7 +70,7 @@ const REIGU_PRIORITY = ["ad22", "tm19", "ad21", "sk22", "tm22", "sk18", "tm18", 
 export const strongDiscard: DiscardChooser = (ctx, s, p) => {
   const ps = s.players[p];
   const cap = ctx.cfg.manaCap;
-  const income = incomeFor(ctx, ps.chips);
+  const income = incomeNow(ctx, s, p);
   const projected = ctx.cfg.incomeTiming === "turn_end" ? ps.mana : Math.min(cap, ps.mana + income);
   const boardHasUnits = s.units.length > 0;
   const damagedOwn = s.units.some((u) => u.owner === p && u.damage > 0);
@@ -94,7 +94,8 @@ export const strongDiscard: DiscardChooser = (ctx, s, p) => {
       seenId.add(id);
       continue;
     }
-    const cost = baseSummonCost(ctx, card);
+    const off = underdogSummonDiscount(ctx, s, p, card); // 劣勢時の大型割引 as it stands now
+    const cost = off === 0 ? baseSummonCost(ctx, card) : Math.max(1, baseSummonCost(ctx, card) - off);
     if (cost <= projected) {
       if (seenId.has(id) && cost * 2 > projected) drop.add(i); // a second copy that cannot both be played
       seenId.add(id);

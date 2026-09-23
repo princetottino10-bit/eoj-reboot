@@ -7,7 +7,7 @@ import { cardOf } from "./cards.ts";
 import { counterOrderChoice } from "./counter-order.ts";
 import { armDamage, clubDamage, forwardEnemy, fxOf, reiguTargeting, summonHpOverwrite } from "./effects.ts";
 import { applyAction, legalActions } from "./rules.ts";
-import { inheritRefund, summonCostAt } from "./rules.ts";
+import { inheritRefund, summonCostAt, summonCostFor } from "./rules.ts";
 import { unitByUid, unitHp, unitMaxHp } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import type { Action, AttackVariant, GameEvent, GameState, PlayerId, Pos } from "./types.ts";
@@ -75,11 +75,26 @@ export type ReiguPreview = {
   ends: { winner: PlayerId | null } | null;
 };
 
+/**
+ * A summon's cost, given only when 劣勢時の大型割引 changes it (every other
+ * summon costs what the card and the cell say, and carries no preview).
+ */
+export type SummonPreview = {
+  kind: "summon";
+  cost: number;
+  /** summonCostAt: the cost before the 劣勢割引 (scale and 太極 included). */
+  costBefore: number;
+  underdogDiscount: number;
+};
+
 export type InheritPreview = {
   kind: "inherit";
   fromCardId: string;
   toCardId: string;
+  /** What is paid, 劣勢時の大型割引 included. */
   cost: number;
+  /** 劣勢時の大型割引 taken off cost (absent when none). */
+  underdogDiscount?: number;
   refund: number;
   manaBefore: number;
   manaAfter: number;
@@ -92,7 +107,7 @@ export type InheritPreview = {
   maxHpAfter: number;
 };
 
-export type ActionPreview = AttackPreview | InheritPreview | ReiguPreview;
+export type ActionPreview = AttackPreview | InheritPreview | ReiguPreview | SummonPreview;
 
 /** A legal action together with its preview (attacks and inherits only). */
 export type LegalEntry = { action: Action; preview: ActionPreview | null };
@@ -218,7 +233,10 @@ export const previewInherit = (ctx: Ctx, s: GameState, a: Action): InheritPrevie
     kind: "inherit",
     fromCardId: old.cardId,
     toCardId: cardId,
-    cost: summonCostAt(ctx, card, old.pos),
+    cost: summonCostFor(ctx, s, s.turnPlayer, card, old.pos),
+    ...(summonCostAt(ctx, card, old.pos) > summonCostFor(ctx, s, s.turnPlayer, card, old.pos)
+      ? { underdogDiscount: summonCostAt(ctx, card, old.pos) - summonCostFor(ctx, s, s.turnPlayer, card, old.pos) }
+      : {}),
     // after the mana cap, as the event reports it
     refund: ev.inheritedFrom?.refund ?? inheritRefund(cardOf(ctx.pack, old.cardId)),
     manaBefore: ps.mana,
@@ -229,7 +247,19 @@ export const previewInherit = (ctx: Ctx, s: GameState, a: Action): InheritPrevie
   };
 };
 
+/** A summon under 劣勢時の大型割引: its discounted cost. null when no discount applies. */
+export const previewSummon = (ctx: Ctx, s: GameState, a: Action): SummonPreview | null => {
+  if (a.kind !== "summon") return null;
+  const cardId = s.players[s.turnPlayer].hand[a.handIndex];
+  if (cardId === undefined) return null;
+  const card = cardOf(ctx.pack, cardId);
+  const costBefore = summonCostAt(ctx, card, a.pos);
+  const cost = summonCostFor(ctx, s, s.turnPlayer, card, a.pos);
+  return cost < costBefore ? { kind: "summon", cost, costBefore, underdogDiscount: costBefore - cost } : null;
+};
+
 export const previewAction = (ctx: Ctx, s: GameState, a: Action): ActionPreview | null => {
+  if (a.kind === "summon") return previewSummon(ctx, s, a);
   if (a.kind === "attack") return previewAttack(ctx, s, a);
   if (a.kind === "inherit") return previewInherit(ctx, s, a);
   if (a.kind === "reigu") return previewReigu(ctx, s, a);

@@ -13,6 +13,8 @@ export type HandCard = {
   selected: boolean;
   /** Checked for discard / mulligan. */
   marked: boolean;
+  /** Summon cost now, when 劣勢時の大型割引 lowers it (absent otherwise). */
+  costNow?: number;
 };
 
 export type HandMode = "play" | "discard" | "mulligan" | "idle";
@@ -35,7 +37,7 @@ export const handHtml = (ctx: Ctx, cards: HandCard[], mode: HandMode, look: Card
       const verb = mode === "mulligan" ? "戻す札に選ぶ" : mode === "discard" ? "捨てる札に選ぶ" : c.playable ? "使う" : "詳しく見る";
       return `<button type="button" class="${cls}" data-act="hand" data-i="${c.index}" style="--i:${off.toFixed(2)};--n:${n}"
         aria-pressed="${c.selected || c.marked}" aria-label="手札${c.index + 1}枚目: ${verb}">
-        ${cardFaceHtml(ctx, c.cardId, { size: "md", ...look })}${c.marked ? `<span class="hand-seal">${seal}</span>` : ""}
+        ${cardFaceHtml(ctx, c.cardId, { size: "md", ...look, ...(c.costNow === undefined ? {} : { costNow: c.costNow }) })}${c.marked ? `<span class="hand-seal">${seal}</span>` : ""}
       </button>`;
     })
     .join("");

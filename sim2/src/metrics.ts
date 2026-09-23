@@ -245,7 +245,8 @@ export const buildRecord = (seed: number, events: GameEvent[]): GameRecord => {
         break;
       }
       case "effect": {
-        tally(rec.effectTriggers, e.source);
+        // rule lines (劣勢ボーナス, 制圧点, 劣勢割引) are not card effects
+        if (e.source !== "rule") tally(rec.effectTriggers, e.source);
         break;
       }
       case "attack": {
