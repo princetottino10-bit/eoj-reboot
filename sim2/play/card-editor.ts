@@ -22,6 +22,9 @@ import type { CardEdit, CardOverrides, CardStatKey } from "../src/card-overrides
 import { bulkStat, cellState, copyShape, costCounts, noChips, paintCell, resetCards, selectByChips, selectCards, setShape } from "../src/card-edits.ts";
 import type { CardChips, CardFilter, RangeTool } from "../src/card-edits.ts";
 import type { CardPack } from "../src/cards.ts";
+import { deckShape, firstTurnMana, OPENING_TRIALS, openingOdds } from "../src/opening-odds.ts";
+import { packLabel } from "../src/presets.ts";
+import type { OpeningOdds } from "../src/opening-odds.ts";
 import { makeCtx } from "../src/state.ts";
 import type { AttackType, Attr, Config } from "../src/types.ts";
 import { cardFaceHtml, counterCellsOf, esc, rangeSvg } from "./cards-view.ts";
@@ -30,7 +33,15 @@ import { mark } from "./marks.ts";
 /** bulkOpen: the まとめて変更 bar is expanded (collapsed by default so the table and editor get the height). */
 export type CardUi = { focus: string; selected: Set<string>; tool: RangeTool; chips: CardChips; bulkOpen: boolean };
 
-export type CardWork = { printed: CardPack; cards: CardOverrides; cfg: Config; packName: string; locked: boolean };
+export type CardWork = {
+  printed: CardPack;
+  cards: CardOverrides;
+  cfg: Config;
+  packName: string;
+  locked: boolean;
+  /** A running match: the decks are dealt, so 枚数 waits for the next match. */
+  midgame?: boolean;
+};
 
 export const initialCardUi = (printed: CardPack): CardUi => ({
   focus: (printed.cards.find((c) => c.kind === "shikigami") ?? printed.cards[0])?.id ?? "",
@@ -74,7 +85,9 @@ const tableHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
         if (!edits.includes(s.key)) return `<td class="na">—</td>`;
         const v = card[s.key];
         const mod = v !== base[s.key];
-        return `<td class="${mod ? "is-mod" : ""}"><input type="number" name="card.${esc(base.id)}.${s.key}" value="${v}" min="${statMin(base, s)}" max="${s.max}" ${dis(w.locked)} aria-label="${esc(base.nameJa)}の${esc(s.label)}" title="${mod ? `元の値 ${base[s.key]}` : esc(s.label)}"></td>`;
+        const lock = w.locked || (s.key === "copies" && w.midgame === true);
+        const tip = s.key === "copies" && w.midgame === true ? "枚数は次の試合から(配った山札は変わらない)" : mod ? `元の値 ${base[s.key]}` : s.label;
+        return `<td class="${mod ? "is-mod" : ""}"><input type="number" name="card.${esc(base.id)}.${s.key}" value="${v}" min="${statMin(base, s)}" max="${s.max}" ${dis(lock)} aria-label="${esc(base.nameJa)}の${esc(s.label)}" title="${esc(tip)}"></td>`;
       }).join("");
       const mini =
         base.kind === "reigu"
@@ -87,7 +100,7 @@ const tableHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
         ${cells}<td class="ce-shape-cell">${mini}</td></tr>`;
     })
     .join("");
-  return `<table class="sp-table ce-table"><thead><tr><th scope="col" class="ce-check"></th><th scope="col">カード(${esc(w.packName)})</th>${head}<th scope="col">範囲</th></tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="sp-table ce-table"><thead><tr><th scope="col" class="ce-check"></th><th scope="col">カード(${esc(packLabel(w.packName))})</th>${head}<th scope="col">範囲</th></tr></thead><tbody>${rows}</tbody></table>`;
 };
 
 const bulkHtml = (w: CardWork, ui: CardUi): string => {
@@ -188,6 +201,33 @@ const editorHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
 /** Number of changed card fields, for the section tab. */
 export const cardSectionCount = (w: CardWork): number => cardChangeCount(normalizeCardOverrides(w.printed, w.cards));
 
+/** The last opening-odds count, by everything it depends on (a redraw that changes none of it reuses it). */
+let oddsMemo: { key: string; odds: [OpeningOdds, OpeningOdds] } | null = null;
+
+const pct = (x: number): string => `${Math.round(x * 100)}%`;
+
+/** 初手の見込み: the chance of one / two shikigami on each side's first turn, for the deck as set up. */
+const oddsHtml = (w: CardWork, cards: CardOverrides): string => {
+  const pack = applyCardOverrides(w.printed, cards);
+  const c = w.cfg;
+  const key = JSON.stringify([
+    pack.deckList,
+    pack.cards.map((x) => [x.id, x.kind, x.summonCost]),
+    [firstTurnMana(c, 0), firstTurnMana(c, 1), c.handRefill, c.mulligan, c.summonLimit, c.taijiDiscount, c.taijiFloor, c.summonCostScale],
+  ]);
+  if (oddsMemo === null || oddsMemo.key !== key) oddsMemo = { key, odds: openingOdds(c, pack) };
+  const shape = deckShape(pack);
+  const row = (o: OpeningOdds): string =>
+    `<tr><th scope="row">${o.seat === 0 ? "先手" : "後手"}<small>(霊力${o.mana})</small></th><td>${pct(o.one)}</td><td><b>${pct(o.two)}</b>${
+      c.mulligan ? `<small>(配ったまま ${pct(o.twoAsDealt)})</small>` : ""
+    }</td></tr>`;
+  return `<div class="ce-odds">
+    <h4>初手の見込み<small>${c.mulligan ? "マリガン1回込み・" : ""}${OPENING_TRIALS / 10000}万回配って数えた値</small></h4>
+    <table><thead><tr><th scope="col"></th><th scope="col">1体以上</th><th scope="col">2体</th></tr></thead><tbody>${row(oddsMemo.odds[0])}${row(oddsMemo.odds[1])}</tbody></table>
+    <p class="ce-odds-deck">デッキ${shape.size}枚・式神${shape.shikigami}枚・召喚コスト4以下${shape.cheap}枚(最初のターンに出せる体数。2体は1体を太極に置いて軽くした場合)</p>
+  </div>`;
+};
+
 /** The whole カード section; hidden (but still in the form) when another section is shown. */
 export const cardSectionHtml = (w: CardWork, ui: CardUi, shown: boolean): string => {
   const cards = normalizeCardOverrides(w.printed, w.cards);
@@ -196,6 +236,7 @@ export const cardSectionHtml = (w: CardWork, ui: CardUi, shown: boolean): string
     <div class="sp-ghead"><h3 class="sp-gname">カード(数値・攻撃範囲)</h3>${count > 0 ? `<span class="sp-count">${count}か所変更</span>` : ""}${
       w.locked ? '<span class="sp-lock">変更できません</span>' : ""
     }<button type="button" class="btn btn-quiet sp-reset" data-reset="cards" ${dis(count === 0 || w.locked)}>カードを戻す</button></div>
+    ${oddsHtml(w, cards)}
     ${bulkHtml(w, ui)}
     <div class="ce-layout">
       <div class="sp-table-wrap">${tableHtml(w, ui, cards)}</div>

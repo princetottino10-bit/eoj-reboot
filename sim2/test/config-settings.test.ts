@@ -245,7 +245,7 @@ test("UI-V2 test 7: settings survive the share-URL round trip", () => {
   for (const bad of ["", "!!!", tampered, "x".repeat(5000), btoa("not json")]) {
     assert.equal(decodeSettings(bad, () => SK).ok, false, bad.slice(0, 20));
   }
-  // 召喚コスト・攻撃コスト・HP・ATK・生命価・霊力価 (the last one since 採用 9/22)
-  assert.equal(CARD_STATS.length, 6);
+  // 召喚コスト・攻撃コスト・HP・ATK・生命価・霊力価 (since 採用 9/22)・枚数 (2026-10-04)
+  assert.equal(CARD_STATS.length, 7);
   assert.equal(cardChangeCount({ sk03: { hp: 3, atk: 3 }, sk04: {} }), 2);
 });

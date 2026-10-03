@@ -22,7 +22,7 @@ import {
   sameValue,
 } from "../src/config-schema.ts";
 import type { ConfigField, ConfigPatch } from "../src/config-schema.ts";
-import { isRulePresetId, packLabel, PLAYABLE_PACKS, presetConfig, RULE_PRESETS } from "../src/presets.ts";
+import { isRulePresetId, OFFERED_RULE_IDS, packLabel, PLAYABLE_PACKS, presetConfig, RULE_PRESET_IDS, RULE_PRESETS } from "../src/presets.ts";
 import type { PlayablePack, RulePresetId } from "../src/presets.ts";
 import { isSettingPresetId, matchingSettingPreset, SETTING_PRESET_IDS, SETTING_PRESETS, settingPresetSettings } from "../src/setting-presets.ts";
 import type { SettingPresetId } from "../src/setting-presets.ts";
@@ -238,7 +238,7 @@ export const openSettingsPanel = async (host: HTMLElement, opts: PanelOptions): 
     )}</nav>`;
   };
 
-  const cardWork = (): CardWork => ({ printed: w.printed, cards: w.cards, cfg: w.cfg, packName: w.pack, locked: false });
+  const cardWork = (): CardWork => ({ printed: w.printed, cards: w.cards, cfg: w.cfg, packName: w.pack, locked: false, midgame: opts.mode === "midgame" });
 
   /** midgame: what the edited cards change against the cards in play. */
   const cardEditsNow = (): CardOverrides =>
@@ -279,7 +279,9 @@ export const openSettingsPanel = async (host: HTMLElement, opts: PanelOptions): 
     const s = settingsOf();
     const n = configChanges(base(), w.cfg).length + cardChangeCount(s.cards);
     const pendingCount = opts.current === undefined ? 0 : configChanges(opts.current, w.cfg).length + cardChangeCount(cardEditsNow());
-    const ruleSeg = Object.values(RULE_PRESETS)
+    // the offered rulesets, plus the one in use when a 調整案 or an old link brought an older one
+    const ruleSeg = RULE_PRESET_IDS.filter((id) => OFFERED_RULE_IDS.includes(id) || id === w.rule)
+      .map((id) => RULE_PRESETS[id])
       .map((r) => `<label class="${r.id === w.rule ? "on" : ""}"><input type="radio" name="rule" value="${r.id}" ${r.id === w.rule ? "checked" : ""} ${opts.allowRuleAndPack ? "" : "disabled"}><span>${esc(r.label)}</span></label>`)
       .join("");
     const packOpts = PLAYABLE_PACKS.map((p) => `<option value="${p}"${p === w.pack ? " selected" : ""}>${packLabel(p)}</option>`).join("");

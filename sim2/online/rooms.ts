@@ -557,6 +557,8 @@ const propose = (lobby: Lobby, room: Room, seat: PlayerId, input: Extract<Client
     const cards = parseCardOverrides(input.cards, m.flow.ctx.pack);
     if (!cards.ok) return no(422, cards.error);
     const edits = overridesBetween(m.flow.ctx.pack, applyCardOverrides(m.flow.ctx.pack, cards.value));
+    // the decks were dealt at the start: a card count only means something for the next match
+    if (Object.values(edits).some((e) => e.copies !== undefined)) return no(422, "カードの枚数は試合の途中では変えられません。次の試合の設定で変えてください");
     if (configChanges(m.flow.ctx.cfg, next).length === 0 && cardChangeCount(edits) === 0) return no(422, "今のルールとカードから変わる項目がありません");
     room.proposal = { ...head, scope: "now", matchNo: m.no, patch: effective, cards: edits };
     room.proposalSeq = id;

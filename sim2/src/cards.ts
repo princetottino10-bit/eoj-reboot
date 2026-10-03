@@ -209,6 +209,7 @@ const parseCard = (v: unknown, i: number, opts: ParseOptions): CardDef => {
     lifeValue: o.lifeValue as number,
     // 髴雁鴨萓｡: printed by the adopted 9/22 set; older packs get the half_floor reward
     manaValue: isInt(o.manaValue) ? o.manaValue : kind === "reigu" ? 0 : Math.floor((o.summonCost as number) / 2),
+    copies: isInt(o.copies) && (o.copies as number) >= 0 ? (o.copies as number) : 1,
     attribute: o.attribute,
     aoe: o.aoe,
     attackType,
@@ -261,7 +262,7 @@ export const packFromCards = (packId: string, cards: CardDef[]): CardPack => {
     if (byId.has(c.id)) throw new Error(`pack: duplicate card id ${c.id}`);
     byId.set(c.id, c);
   }
-  return { packId, cards, byId, deckList: cards.map((c) => c.id) };
+  return { packId, cards, byId, deckList: cards.flatMap((c) => Array.from({ length: c.copies }, () => c.id)) };
 };
 
 /** Validates a parsed pack JSON object. Works in node and in the browser. */

@@ -27,6 +27,8 @@ export type CardDef = {
    * floor(summonCost / 2) (the half_floor reward) for a pack that has none.
    */
   manaValue: number;
+  /** Copies of this card in each deck (the pack's deckList repeats the id this often; 0 = left out). Packs print 1. */
+  copies: number;
   attribute: Attr;
   attackRange: Pos[];
   blindSpots: Pos[];

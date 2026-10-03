@@ -8,7 +8,7 @@ import type { CardPack } from "./cards.ts";
 import type { AttackType, Attr, CardDef, Pos } from "./types.ts";
 import type { Parsed } from "./config-schema.ts";
 
-export type CardStatKey = "summonCost" | "attackCost" | "hp" | "atk" | "lifeValue" | "manaValue";
+export type CardStatKey = "summonCost" | "attackCost" | "hp" | "atk" | "lifeValue" | "manaValue" | "copies";
 
 export type CardStat = {
   key: CardStatKey;
@@ -27,7 +27,11 @@ export const CARD_STATS: readonly CardStat[] = [
   { key: "atk", label: "ATK", short: "ATK", desc: "与えるダメージの基本値", min: 0, max: 10 },
   { key: "lifeValue", label: "生命価", short: "命", desc: "撃破されたとき持ち主が失う生命", min: 0, max: 15 },
   { key: "manaValue", label: "霊力価", short: "霊", desc: "撃破した側が得る霊力(撃破報酬の額が「カードの霊力価」のとき)", min: 0, max: 15 },
+  { key: "copies", label: "枚数", short: "枚", desc: "1つのデッキに入れる枚数(0でデッキから外す)", min: 0, max: 4 },
 ];
+
+/** A deck smaller than this would run out within a few turns: card-count edits must leave at least this many. */
+export const MIN_DECK = 10;
 
 /** Everything of one card an override may replace. Absent = printed value. */
 export type CardEdit = Partial<Record<CardStatKey, number>> & {
@@ -70,7 +74,7 @@ const MAX_CELLS = (RANGE_REACH * 2 + 1) ** 2 - 1;
 
 /** Which numbers are meaningful for a card: a reigu only has its use cost. */
 export const editableStats = (card: CardDef): CardStatKey[] =>
-  card.kind === "reigu" ? ["summonCost"] : CARD_STATS.map((s) => s.key);
+  card.kind === "reigu" ? ["summonCost", "copies"] : CARD_STATS.map((s) => s.key);
 
 /** Attribute, attack type, range and friends exist only on shikigami. */
 export const canEditShape = (card: CardDef): boolean => card.kind === "shikigami";
@@ -232,6 +236,10 @@ export const parseCardOverrides = (raw: unknown, pack: CardPack | null): Parsed<
     if (relation !== null) return { ok: false, error: relation };
     out[id] = clean;
   }
+  if (pack !== null) {
+    const size = pack.cards.reduce((n, c) => n + (out[c.id]?.copies ?? c.copies), 0);
+    if (size < MIN_DECK) return { ok: false, error: `デッキが${size}枚になります。${MIN_DECK}枚以上にしてください` };
+  }
   return { ok: true, value: out };
 };
 
@@ -344,8 +352,8 @@ export const applyCardOverrides = (pack: CardPack, ov: CardOverrides): CardPack 
   const total = normalizeCardOverrides(printed, mergeOverrides(current, ov));
   if (cardChangeCount(total) === 0) return printed;
   const next = packFromCards(printed.packId, printed.cards.map((c) => editedCard(c, total[c.id])));
-  // keep the original deck order (one entry per copy)
-  return { ...next, deckList: printed.deckList.slice(), printed };
+  // the deck in pack order, one entry per copy (枚数 edits included)
+  return { ...next, printed };
 };
 
 // ----------------------------------------------------------------- changes

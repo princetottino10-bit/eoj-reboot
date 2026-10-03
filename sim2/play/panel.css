@@ -125,6 +125,16 @@
 .ce-chip.on small { color: oklch(35% 0.05 70); }
 .ce-chip:disabled { opacity: 0.45; cursor: not-allowed; }
 .ce-quick { padding-left: calc(6.5em + 4px); }
+/* 初手の見込み: two numbers per side, the one the talk is about (2体) in bold */
+.ce-odds { margin: 4px 0 12px; padding: 10px 14px; border: 1px solid var(--gold-line); border-radius: 6px; background: oklch(16% 0.014 260 / 0.6); width: fit-content; max-width: 100%; }
+.ce-odds h4 { margin: 0 0 6px; font-size: 14px; }
+.ce-odds h4 small { margin-left: 8px; font-weight: 400; font-size: 11.5px; color: var(--text-dim); }
+.ce-odds table { border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.ce-odds th, .ce-odds td { padding: 2px 12px 2px 0; text-align: left; font-size: 13.5px; }
+.ce-odds thead th { font-weight: 400; font-size: 11.5px; color: var(--text-dim); }
+.ce-odds td b { font-size: 16px; color: var(--gold-hi); }
+.ce-odds small { margin-left: 4px; font-size: 11px; color: var(--text-dim); }
+.ce-odds-deck { margin: 6px 0 0; font-size: 11.5px; color: var(--text-dim); }
 .ce-quick .btn { padding: 3px 9px; font-size: 12px; }
 .ce-fhint { margin-left: 6px; font-size: 11px; color: var(--text-dim); }
 .ce-selcount { margin-left: auto; font-size: 12.5px; color: var(--text-dim); }

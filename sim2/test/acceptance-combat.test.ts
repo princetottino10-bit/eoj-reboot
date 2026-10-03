@@ -165,6 +165,7 @@ test("T9 blind shot deals +2 and draws no counter, even when in the target's ran
       hp: 6,
       lifeValue: 1,
       manaValue: 2,
+      copies: 1,
       attribute: "yin",
       aoe: false,
       attackType: "phys",

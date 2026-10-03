@@ -30,6 +30,13 @@ import type { Config } from "./types.ts";
 export const RULE_PRESET_IDS = ["r1003", "r0923", "r0914", "r0913", "r0828"] as const;
 export type RulePresetId = (typeof RULE_PRESET_IDS)[number];
 
+/**
+ * The rulesets offered as a base in the settings panel (2026-10-04: the older
+ * ones are hardly ever called up). The others stay defined: old records,
+ * shared URLs, the 調整案 built on them and the tests still name them.
+ */
+export const OFFERED_RULE_IDS: readonly RulePresetId[] = ["r1003", "r0923"];
+
 export type RulePreset = {
   id: RulePresetId;
   label: string;
