@@ -1,0 +1,68 @@
+/* /print: A4 sheets of true-size cards (play/print-sheet.ts). The faces are the
+   table's lg card (table.css) with its width set to 63 mm; only the outer
+   frame changes for cutting (square, no shadow: the cards touch, the cut
+   lines are shared). Every length here is in mm so screen and PDF agree. */
+
+@page { size: A4 portrait; margin: 0; }
+
+html, body { height: auto; }
+body.pr-body {
+  margin: 0; background: #fff; background-image: none; color: #1d1d22;
+  font-family: var(--font-gothic); font-size: 10pt; line-height: 1.5;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+@media screen {
+  body.pr-body { background: #5b5b60; padding: 6mm 0; }
+  .pr-page { margin: 0 auto 6mm; box-shadow: 0 1mm 4mm rgb(0 0 0 / 0.45); }
+}
+.pr-loading { color: #fff; text-align: center; }
+
+.pr-page { position: relative; width: 210mm; height: 297mm; overflow: hidden; background: #fff; break-after: page; }
+.pr-page:last-child { break-after: auto; }
+
+/* crop marks: hairlines in the margins at each cut line */
+.pr-crop { position: absolute; left: 0; top: 0; }
+.pr-crop line { stroke: #000; stroke-width: 0.15; }
+
+/* the two notes sit between the marks, at least 8 mm in from the paper's edge */
+.pr-note { position: absolute; margin: 0; font-size: 7pt; line-height: 1.2; color: #555; white-space: nowrap; }
+.pr-head { left: 13mm; top: 10mm; }
+.pr-foot { left: 76mm; top: 284mm; }
+
+/* one card: exactly 63 x 88 mm */
+.pr-slot { position: absolute; width: 63mm; height: 88mm; }
+.fu.pr-card {
+  --fu-w: 63mm;
+  width: 63mm; height: 88mm; min-height: 88mm; aspect-ratio: auto;
+  border-radius: 0; box-shadow: none; overflow: hidden;
+}
+.fu.pr-card .fu-text { min-height: 0; }
+.fu.pr-card .fu-text.pr-overflow { box-shadow: inset 0 0 0 0.5mm var(--sym-verm); }
+
+/* the back: the 太極 mark and the name on the night lacquer, edge to edge */
+.pr-back {
+  position: absolute; inset: 0; overflow: hidden;
+  background: radial-gradient(120% 90% at 50% 42%, #2b3453 0%, #161b2b 55%, #0c0e15 100%);
+}
+.pr-back-frame { position: absolute; inset: 3.5mm; border: 0.35mm solid #c9a75a; border-radius: 2mm; box-shadow: inset 0 0 0 0.9mm #161b2b, inset 0 0 0 1.2mm rgb(201 167 90 / 0.6); }
+.pr-back .pr-back-mark { position: absolute; left: 50%; top: 40%; width: 30mm; height: 30mm; translate: -50% -50%; }
+.pr-back-name {
+  position: absolute; left: 0; right: 0; top: 64%; text-align: center;
+  font-family: var(--font-mincho); font-weight: 800; font-size: 15pt; letter-spacing: 0.35em; padding-left: 0.35em; color: #d7b565;
+}
+
+/* the 早見表 */
+.pr-rules { padding: 16mm 16mm 14mm; }
+.pr-rules h1 { margin: 0 0 4mm; font-family: var(--font-mincho); font-weight: 800; font-size: 19pt; letter-spacing: 0.04em; border-bottom: 0.5mm solid #1d1d22; padding-bottom: 1.5mm; }
+.pr-rules h2 { margin: 6mm 0 2.5mm; font-family: var(--font-mincho); font-weight: 800; font-size: 12.5pt; }
+.pr-qr { width: 100%; border-collapse: collapse; font-size: 10.5pt; line-height: 1.5; }
+.pr-qr th { width: 22mm; padding: 1.6mm 3mm 1.6mm 0; text-align: left; vertical-align: top; font-family: var(--font-mincho); font-weight: 800; white-space: nowrap; }
+.pr-qr td { padding: 1.6mm 0; }
+.pr-qr tr + tr > * { border-top: 0.2mm solid #c9c4b6; }
+.pr-legend { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm 6mm; font-size: 9.5pt; line-height: 1.4; }
+.pr-legend li { display: flex; align-items: center; gap: 2.5mm; }
+.pr-legend li:last-child { grid-column: 1 / -1; }
+.pr-li-ic { flex: none; display: flex; align-items: center; gap: 1mm; min-width: 12mm; }
+.pr-li-ic .mk { width: 6.5mm; height: 6.5mm; }
+.pr-li-ic .mk-flames { height: 6.5mm; width: auto; }
+.pr-li-ic .fu-range { width: 12mm; padding: 0.4mm; }

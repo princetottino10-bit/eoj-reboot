@@ -10,7 +10,7 @@ export type PackName = (typeof PACK_NAMES)[number];
  * attack cost that differs from ATK (spec 2.2), which the PACK_NAMES-wide
  * data invariants (attackCost === atk) do not hold for.
  */
-export const EXTRA_PACK_NAMES = ["shuten-kyuryu", "adopted-0922"] as const;
+export const EXTRA_PACK_NAMES = ["shuten-kyuryu", "adopted-0922", "adopted-1003"] as const;
 export const ALL_PACK_NAMES = [...PACK_NAMES, ...EXTRA_PACK_NAMES] as const;
 
 // ------------------------------------------------------------ tenkey notation

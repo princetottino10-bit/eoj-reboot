@@ -126,7 +126,6 @@ b, .num { font-variant-numeric: tabular-nums; }
   white-space: nowrap; max-width: 36vw; overflow: hidden; text-overflow: ellipsis;
 }
 button.rules-badge { cursor: pointer; }
-.lobby .rules-badge { max-width: 100%; white-space: normal; flex-wrap: wrap; text-align: left; line-height: 1.35; border-radius: 16px; }
 .rules-badge .mod { color: var(--gold); font-weight: 700; }
 
 /* ------------------------------------------------------------------ buttons */

@@ -64,7 +64,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   {
     key: "chipIncomeSteps", group: "economy", kind: "intList", min: 1, max: 9, maxLength: 6,
     label: "収入が増える占拠チップ数",
-    desc: "チップ(ターン終了時の占拠数まで増え、減らない)がこの枚数に達するたびに毎ターン収入+1。例 3,4,5 → 3枚で+1・4枚で+2・5枚で+3",
+    desc: "チップ(ターン終了時の占拠数まで増え、減らない)がこの枚数に達するたびに毎ターン収入+1。同じ枚数を2つ並べるとその枚数で+2。例 3,4,5 → 3枚で+1・4枚で+2・5枚で+3 / 4,5,5 → 4枚で+1・5枚で+3",
     midGame: true,
   },
   {
@@ -388,8 +388,9 @@ export const checkFieldValue = (field: ConfigField, v: unknown): Parsed<unknown>
       if (!v.every((x) => isInt(x) && x >= field.min && x <= field.max)) {
         return { ok: false, error: `${field.label}の各値は${field.min}〜${field.max}の整数にしてください` };
       }
+      // equal neighbours are allowed: each entry is one +1 step, so a repeat is a bigger jump (10/3: 4,5,5)
       for (let i = 1; i < v.length; i++) {
-        if ((v[i] as number) <= (v[i - 1] as number)) return { ok: false, error: `${field.label}は小さい順に並べてください` };
+        if ((v[i] as number) < (v[i - 1] as number)) return { ok: false, error: `${field.label}は小さい順に並べてください(同じ数は続けて並べられます)` };
       }
       return { ok: true, value: (v as number[]).slice() };
     }
@@ -486,10 +487,27 @@ export const formatConfigValue = (field: ConfigField, v: unknown): string => {
     case "intPair":
       return Array.isArray(v) ? `${field.parts[0]}${v[0]}・${field.parts[1]}${v[1]}` : String(v);
     case "intList":
-      return Array.isArray(v) ? (v.length === 0 ? "なし" : v.join(",")) : String(v);
+      if (!Array.isArray(v)) return String(v);
+      if (v.length === 0) return "なし";
+      // a repeated chip step is a +2 jump: spell the steps out so "4,5,5" reads as intended
+      return field.key === "chipIncomeSteps" && new Set(v).size < v.length ? `${v.join(",")}(${chipStepsText(v as number[])})` : v.join(",");
     default:
       return String(v);
   }
+};
+
+/**
+ * The chip steps as income changes: [4, 5, 5] -> "4枚で+1・5枚で+3", or with the
+ * base income -> "4枚で7・5枚で9". Each entry reached is +1 (rules.ts chipBonus).
+ */
+export const chipStepsText = (steps: readonly number[], baseIncome: number | null = null): string => {
+  const at = [...new Set(steps)].sort((a, b) => a - b);
+  return at
+    .map((n) => {
+      const bonus = steps.filter((x) => x <= n).length;
+      return baseIncome === null ? `${n}枚で+${bonus}` : `${n}枚で${baseIncome + bonus}`;
+    })
+    .join("・");
 };
 
 /** "収入 3→4" style text for one change. */

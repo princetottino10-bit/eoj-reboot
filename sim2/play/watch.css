@@ -1,0 +1,74 @@
+/* 観戦モード (/watch): the control bar and caption above the board, both hands face up. */
+
+.wt { display: flex; flex-direction: column; gap: 6px; padding: 2px 4px 6px; }
+
+/* ---------------------------------------------------------------- controls */
+.wt-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.wt-toggle { min-width: 6.5em; }
+.wt-speed { display: inline-flex; border: 1px solid var(--gold-line); border-radius: 8px; overflow: hidden; }
+.wt-speed .btn { border: 0; border-radius: 0; padding: 5px 10px; font-size: 12.5px; }
+.wt-speed .btn + .btn { border-left: 1px solid var(--gold-line); }
+.wt-speed .btn.is-on { background: oklch(80% 0.12 85 / 0.2); color: var(--gold-hi); font-weight: 700; }
+.wt-speed .btn:hover:not(:disabled) { transform: none; background: oklch(80% 0.12 85 / 0.1); }
+.wt-hands { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--text-dim); cursor: pointer; }
+.wt-hands input { width: 15px; height: 15px; accent-color: var(--gold); }
+.wt-status { font-size: 12.5px; color: var(--text-dim); min-height: 1em; }
+.wt-status.is-thinking { color: var(--amber); }
+.wt-status.is-thinking::before { content: ""; display: inline-block; width: 0.55em; height: 0.55em; margin-right: 0.4em; border-radius: 50%; background: currentColor; animation: wt-pulse 1s ease-in-out infinite; }
+@keyframes wt-pulse { 50% { opacity: 0.25; transform: scale(0.7); } }
+
+/* ------------------------------------------------------------------ caption */
+.wt-cap { display: flex; flex-direction: column; gap: 3px; min-height: 1.2em; }
+.wt-banner {
+  margin: 0; padding: 4px 12px; align-self: flex-start; max-width: 100%;
+  font-family: var(--font-mincho); font-weight: 800; font-size: 16px; letter-spacing: 0.04em; color: var(--ink);
+  background: linear-gradient(170deg, var(--gold-hi), var(--gold) 70%); border-radius: 6px; box-shadow: 0 2px 10px oklch(0% 0 0 / 0.4);
+}
+.wt-banner[data-level="end"] { background: linear-gradient(170deg, oklch(72% 0.17 32), var(--vermilion)); color: oklch(97% 0.01 85); }
+.wt-banner.is-in { animation: wt-in 420ms cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes wt-in { from { opacity: 0; transform: translateY(-6px) scale(0.96); } }
+.wt-subs { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1px; font-size: 12.5px; color: var(--text-dim); }
+.wt-subs li, .wt-hist li li { overflow-wrap: anywhere; }
+.wt-subs .wt-turn { color: var(--text); font-weight: 700; }
+.wt-subs .wt-key, .wt-hist .wt-key { color: var(--gold-hi); font-weight: 700; }
+
+/* the action itself: the prompt bar under the board says it, a little larger than a hint */
+.yy[data-viewer="watch"] .pr-idle .pr-hint { font-size: 14.5px; font-weight: 700; color: var(--text); }
+
+/* ------------------------------------------------------------------ history */
+.wt-hist { font-size: 12px; }
+.wt-hist summary { cursor: pointer; color: var(--text-dim); width: fit-content; }
+.wt-hist summary:hover { color: var(--text); }
+.wt-hist-list { margin: 6px 0 0; padding: 6px 8px; list-style: none; max-height: 38dvh; overflow-y: auto; background: var(--lacquer); border: 1px solid var(--gold-line); border-radius: 8px; }
+.wt-h { padding: 3px 0; border-bottom: 1px solid oklch(45% 0.04 70 / 0.25); }
+.wt-h ol { margin: 0; padding: 0; list-style: none; }
+.wt-h .wt-sub, .wt-h .wt-turn { padding-left: 1em; color: var(--text-dim); }
+.wt-err { margin: 0; }
+
+/* ------------------------------------------------------- the top seat's hand */
+.ohand-open { height: auto; min-height: 40px; padding: 0; flex-wrap: wrap; gap: 3px; }
+.oh-card { position: relative; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 5px; }
+.oh-card .fu-thumb { width: 34px; height: 34px; margin: 0; font-size: 18px; }
+.oh-card b { position: absolute; right: -2px; bottom: -2px; min-width: 15px; padding: 0 3px; font-size: 10.5px; line-height: 15px; text-align: center; color: var(--ink); background: var(--washi); border-radius: 8px; box-shadow: 0 0 0 1px var(--sym-ink); }
+.oh-card:hover .fu-thumb, .oh-card:focus-visible .fu-thumb { box-shadow: 0 0 0 2px var(--gold); }
+
+
+/* ----------------------------------------------------------------- phones */
+@media (max-width: 700px), (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  .yy[data-viewer="watch"] .yy-opp { flex-wrap: wrap; }
+  .yy[data-viewer="watch"] .yy-piles-opp .piles::before { content: "後手"; }
+  .yy[data-viewer="watch"] .yy-piles-self .piles::before { content: "先手"; }
+  .wt { padding: 2px 6px 4px; gap: 4px; }
+  .wt-bar { gap: 4px 6px; }
+  .wt-bar .btn { padding: 5px 9px; font-size: 12.5px; }
+  .wt-speed .btn { padding: 5px 8px; }
+  .wt-banner { font-size: 14px; padding: 3px 10px; }
+  .wt-subs { font-size: 11.5px; }
+  .ohand-open { min-height: 30px; }
+  .oh-card .fu-thumb { width: 26px; height: 26px; font-size: 14px; }
+  .yy[data-viewer="watch"] .pr-idle .pr-hint { font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wt-banner.is-in, .wt-status.is-thinking::before { animation: none; }
+}

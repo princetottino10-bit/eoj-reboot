@@ -24,8 +24,8 @@ test("9/14ルール = 9/13 rules with chip steps 3/4/5 (the default until 採用
   for (const id of ["r0923", "r0914", "r0913", "r0828"] as const) assert.equal(presetConfig(id).taijiDiscount, 1, id);
   assert.deepEqual(now.chipIncomeSteps, [3, 4, 5]);
   assert.deepEqual({ ...now, chipIncomeSteps: old.chipIncomeSteps }, old);
-  // 採用ルール 9/22 is the default since 9/23 (pinned in adopted-0922.test.ts)
-  assert.equal(defaultSettings().rule, "r0923");
+  // 10/3テスト案 is the default since 10/3 (pinned in adopted-1003.test.ts)
+  assert.equal(defaultSettings().rule, "r1003");
   const ctx = makeCtx(now, SK);
   assert.deepEqual([2, 3, 4, 5, 6].map((chips) => incomeFor(ctx, chips) - now.baseIncome), [0, 1, 2, 3, 3]);
   // the preset table is not reachable through a returned config

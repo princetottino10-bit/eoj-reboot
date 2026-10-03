@@ -19,6 +19,14 @@
 // pack. ad01 灯籠 +2, ad07 変面 heal ceil(ATK/2), ad13 僵尸 also moves after a
 // counter kill, ad15 茨木【再生】 / ad16 酒呑【飲酒】 paid attack variants,
 // ad21 茨木の左腕 拳/握, ad22 閻魔獄卒棒 (酒呑一門, a neighbour outside its blind spots).
+//
+// 10/3テスト案 (pack-adopted-1003, card ids ac*): the cards whose text is
+// unchanged keep the effect keys above; the changed ones get new keys:
+// ac07 変面 (the heal on an ally is the full ATK again; ad07 keeps ceil(ATK/2)),
+// ac15 茨木童子【再生】 (free, every attack, before the counters), ac17 玖龍街
+// (no rotate lock any more; its attack ignores blind spots and counter ranges),
+// ac23 鬼の酒 (set one shikigami's HP to 10, 15 on a【飲酒】 unit). 琵琶牧々 (HP+2
+// to every own unit) is tm20 unchanged.
 import { inBoard, posEq, rotateRel, toBoardCells } from "./board.ts";
 import { cardOf, effectKeyOf } from "./cards.ts";
 import { healUnit, isHidden, unitAt, unitHp, unitMaxHp, visibleUnitAt } from "./state.ts";
@@ -103,6 +111,26 @@ export const EFFECT_TEXT: Record<string, string> = {
   ad20: "【霊具】自軍盤上全体のHP+1",
   ad21: "【霊具】自分の式神1体の正面方向で直近の敵に3ダメージ。【拳】空いていれば1マス遠ざける /【握】空いていれば1マス近づける(反撃・死角なし)",
   ad22: "【霊具】酒呑一門の自分の式神1体を選び、隣(斜めを含む)の死角以外のマスの敵1体に5ダメージ(反撃なし)",
+  // pack-adopted-1003 (10/3テスト案). Card ids ac*; the effect keys are in the pack.
+  ac01: "この式神はダメージを与えられない。撃破された時、味方1体(召喚コスト最大)のHP+2",
+  ac02: "陰属性の相手を対象とする場合、ATK+1",
+  ac03: "【影討ち】死角からの攻撃時、ATK+1(死角+2と累積)",
+  ac05: "自分の手番開始時、HPを1減らして「霊力+1」か「1ドロー」を選べる",
+  ac07: "召喚攻撃・再攻撃の対象を味方にできる。その場合ダメージの代わりに、この式神のATK分だけ対象のHP+",
+  ac09: "【巨撃】攻撃の際、自身のほうが現在HPが多い対象には、ダメージ+1",
+  ac10: "召喚時、正面に式神がいた場合、そのHPと同じHPで召喚される",
+  ac11: "正面マスの式神が物理攻撃なら、自身のATKはそのATKを使用する(範囲は自身のもの)",
+  ac12: "【渾身】攻撃時にATK+1してよい(範囲内の全対象に乗る)。その場合、攻撃後に自身のHP-1",
+  ac13: "攻撃・反撃で対象のHPを0にした場合、その位置へ移動する(向きはそのまま。90度変える効果は未実装)",
+  ac15: "【再生】攻撃の際、自身のHP+1(相手の反撃の前。追加の霊力なし)",
+  ac16: "【飲酒】攻撃時、追加で霊力2を払うと、その攻撃のATK+1",
+  ac17: "自身の回転命令で、代わりに他の1体(敵味方を問わず)を90度回転できる。この式神の攻撃は死角・反撃間合いを無視する(死角+2なし・反撃されない)",
+  ac18: "【霊具】任意の式神1体を任意の向きに変える",
+  ac19: "【霊具】1体を隠す(使用者の次ターン開始まで対象外・継承召喚もできない・占拠/リーチ/チップのカウント外)。味方+1HP / 敵-1HP",
+  ac20: "【霊具】自軍盤上全体のHP+2",
+  ac21: "【霊具】自分の式神1体の正面方向で直近の敵に3ダメージ。【拳】空いていれば1マス遠ざける /【握】空いていれば1マス近づける(反撃・死角なし)",
+  ac22: "【霊具】酒呑一門の自分の式神1体を選び、隣(斜めを含む)の死角以外のマスの敵1体に5ダメージ(反撃なし)",
+  ac23: "【霊具】式神1体(敵味方を問わず)のHPを10にする(下がることもある)。【飲酒】をもつ式神なら15にする",
 };
 
 /** Reigu parameter tables: same effect shape, different numbers per pack. */
@@ -117,6 +145,17 @@ const DRINK_EXTRA_COST: Record<string, number> = { ad16: 2 };
 const ARM_DAMAGE: Record<string, number> = { ad21: 3 };
 const CLUB_DAMAGE: Record<string, number> = { ad22: 5 };
 const CLUB_CLAN: Record<string, string> = { ad22: "酒呑一門" };
+/** Free【再生】 on every attack, before the counters (ac15 茨木童子, 10/3): HP gained. */
+const FREE_REGEN: Record<string, number> = { ac15: 1 };
+/** Attacks that ignore blind spots (no blind bonus) and counter ranges (no counter): ac17 玖龍街 (10/3). */
+const IGNORES_BLIND_AND_COUNTER: Record<string, true> = { ac17: true };
+/** Proxy rotators (rotate command turns another unit) and the ones that also lock the opponent's rotate commands. */
+const PROXY_ROTATOR: Record<string, true> = { tm17: true, ac17: true };
+const ROTATE_LOCKER: Record<string, true> = { tm17: true };
+/** Heal-instead-of-attack cards and how much of the ATK they restore. */
+const HEAL_ATTACK: Record<string, "full" | "half_up"> = { tm06: "full", ad07: "half_up", ac07: "full" };
+/** 鬼の酒 (ac23, 10/3): the HP it sets, and the HP on a unit with【飲酒】. */
+const SAKE_HP: Record<string, { base: number; drinker: number }> = { ac23: { base: 10, drinker: 15 } };
 
 /** Damage a front-strike reigu (閻魔獄卒棒) deals; 0 for any other card. */
 export const frontStrikeDamage = (ctx: Ctx, cardId: string): number => FRONT_STRIKE_DAMAGE[fxOf(ctx, cardId)] ?? 0;
@@ -244,7 +283,7 @@ export const canUseVariant = (
   if (!effectsOn(ctx)) return false;
   const fx = fxOf(ctx, u.cardId);
   if (variant === "konshin") return fx === "tm09";
-  if (variant === "heal") return fx === "tm06" || fx === "ad07";
+  if (variant === "heal") return param(HEAL_ATTACK, fx) !== undefined;
   if (variant === "regen") return param(REGEN_EXTRA_COST, fx) !== undefined;
   if (variant === "drink") return param(DRINK_EXTRA_COST, fx) !== undefined;
   return false;
@@ -259,10 +298,32 @@ export const variantExtraCost = (ctx: Ctx, u: Unit, variant: AttackVariant): num
   return 0;
 };
 
-/** tm06: the heal-attack restores ATK worth of HP to one ally in range. ad07 (adopted 9/22): ceil(ATK / 2). */
+/**
+ * ac15 茨木童子【再生】 (10/3): HP+1 on every attack (summon-attack included, no
+ * extra mana), after the hits and before the counters; capped at its max.
+ * No-op for any other card and for the heal variant.
+ */
+export const onAttackBeforeCounters = (ctx: Ctx, attacker: Unit, variant: AttackVariant, events: GameEvent[]): void => {
+  if (!effectsOn(ctx) || variant === "heal") return;
+  const amount = param(FREE_REGEN, fxOf(ctx, attacker.cardId));
+  if (amount === undefined) return;
+  const before = unitHp(ctx, attacker);
+  healUnit(attacker, amount);
+  const gained = unitHp(ctx, attacker) - before;
+  log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? `【再生】HP+${gained}(反撃の前)` : "【再生】HPは最大のまま");
+};
+
+/** ac17 玖龍街 (10/3): this unit's attacks ignore blind spots and counter ranges. */
+export const ignoresBlindAndCounter = (ctx: Ctx, u: Unit): boolean =>
+  effectsOn(ctx) && param(IGNORES_BLIND_AND_COUNTER, fxOf(ctx, u.cardId)) === true;
+
+/**
+ * The heal-attack restores HP to one ally in range: tm06 and ac07 変面 (10/3) the
+ * full ATK, ad07 変面 (adopted 9/22) ceil(ATK / 2). Capped at the target's max by healUnit.
+ */
 export const healAttackAmount = (ctx: Ctx, s: GameState, u: Unit): number => {
   const atk = effectiveAtk(ctx, s, u);
-  return fxOf(ctx, u.cardId) === "ad07" ? Math.ceil(atk / 2) : atk;
+  return param(HEAL_ATTACK, fxOf(ctx, u.cardId)) === "half_up" ? Math.ceil(atk / 2) : atk;
 };
 
 /**
@@ -416,11 +477,12 @@ export const onTurnStart = (
  */
 export const rotateCommandLocked = (ctx: Ctx, s: GameState, p: PlayerId): boolean => {
   if (!effectsOn(ctx)) return false;
-  return s.units.some((u) => u.owner !== p && fxOf(ctx, u.cardId) === "tm17" && !isHidden(u));
+  return s.units.some((u) => u.owner !== p && param(ROTATE_LOCKER, fxOf(ctx, u.cardId)) === true && !isHidden(u));
 };
 
+/** tm17 / ac17: the rotate command may turn another unit instead. */
 export const isProxyRotator = (ctx: Ctx, u: Unit): boolean =>
-  effectsOn(ctx) && fxOf(ctx, u.cardId) === "tm17";
+  effectsOn(ctx) && param(PROXY_ROTATOR, fxOf(ctx, u.cardId)) === true;
 
 /**
  * sk13 Kyonshi-Kojo: after its attack brings the target to 0 HP it steps onto
@@ -519,6 +581,7 @@ const REIGU_TARGETING: ReadonlyMap<string, ReiguTargeting> = new Map<string, Rei
   ["sk22", "unit-own"],
   ["ad21", "unit-own-mode"],
   ["ad22", "unit-own-victim"],
+  ["ac23", "unit-any"],
 ]);
 
 /** The modes a unit-own-mode reigu offers. */
@@ -556,6 +619,9 @@ export const reiguTargetOk = (ctx: Ctx, s: GameState, cardId: string, target: Un
     }
     case "ad21":
       return target.owner === p && forwardEnemy(s, target) !== null;
+    case "ac23":
+      // any shikigami, ally or enemy; only when it changes the HP (a no-op is not a use)
+      return sakeHpFor(ctx, cardId, target) !== unitHp(ctx, target);
     case "ad22": {
       if (target.owner !== p) return false;
       if (cardOf(ctx.pack, target.cardId).clan !== param(CLUB_CLAN, "ad22")) return false;
@@ -705,6 +771,17 @@ export const applyReigu = (
       if (unitHp(ctx, victim) <= 0) destroy(victim);
       return;
     }
+    case "ac23": {
+      if (target === null) return;
+      const hp = sakeHpFor(ctx, cardId, target);
+      const before = unitHp(ctx, target);
+      // set, not heal: may exceed the card's own max (like tm21) and may go down
+      target.damage = unitMaxHp(ctx, target) - hp;
+      const drinker = param(DRINK_EXTRA_COST, fxOf(ctx, target.cardId)) !== undefined;
+      log(events, p, cardId, target.uid, `鬼の酒: ${nameOf(target)} のHPを${before}→${hp}に${drinker ? "(【飲酒】)" : ""}`);
+      if (unitHp(ctx, target) <= 0) destroy(target);
+      return;
+    }
     case "ad22": {
       if (target === null || choice.victimUid === undefined) return;
       const victim = clubVictims(ctx, s, target).find((v) => v.uid === choice.victimUid);
@@ -718,6 +795,17 @@ export const applyReigu = (
     default:
       return;
   }
+};
+
+/**
+ * The HP 鬼の酒 (ac23) sets `target` to: 15 on a unit with【飲酒】 (ad16 酒呑童子),
+ * else 10; never above the board's HP cap (maxHp). 0 for any other card.
+ */
+export const sakeHpFor = (ctx: Ctx, cardId: string, target: Unit): number => {
+  const t = param(SAKE_HP, fxOf(ctx, cardId));
+  if (t === undefined) return 0;
+  const drinker = param(DRINK_EXTRA_COST, fxOf(ctx, target.cardId)) !== undefined;
+  return Math.max(1, Math.min(ctx.cfg.maxHp, drinker ? t.drinker : t.base));
 };
 
 /** Mayohiga expires at the start of the turn of whoever cast it. */

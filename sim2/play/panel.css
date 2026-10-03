@@ -331,20 +331,18 @@
 .waiting-code b { font-family: var(--font-mincho); font-size: 30px; letter-spacing: 0.25em; color: var(--gold-hi); }
 .waiting-invite { display: flex; gap: 8px; margin: 12px 0; }
 .waiting-invite input { flex: 1; min-width: 0; }
-.waiting a, .lobby a { color: var(--gold); }
+.waiting a { color: var(--gold); }
 
-/* lobby */
-.lobby { width: min(760px, 94vw); margin: 0 auto; padding: 36px 0 60px; }
-.lobby-hero { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
-.lobby-hero h1 { margin: 0; font-family: var(--font-mincho); font-weight: 800; font-size: 32px; letter-spacing: 0.12em; }
-.lobby-hero p { margin: 0; color: var(--text-dim); font-size: 13px; }
-.lobby-card { padding: 20px 22px; margin-bottom: 16px; border-radius: 8px; background: var(--lacquer); border: 1px solid oklch(45% 0.04 70 / 0.45); box-shadow: 0 14px 36px oklch(0% 0 0 / 0.4); }
-.lobby-card h2 { margin: 0 0 12px; font-family: var(--font-mincho); font-weight: 800; font-size: 18px; letter-spacing: 0.1em; }
-.lobby-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; margin: 10px 0; }
-.lobby-row label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-dim); }
+/* lobby extras (the page itself is the entry shell below) */
 .lobby-code { font-family: var(--font-mincho); font-weight: 800; font-size: 34px; letter-spacing: 0.25em; color: var(--gold-hi); }
 .lobby-created[hidden] { display: none; }
-.join-code { text-transform: uppercase; width: 130px; }
+.join-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.join-row .join-code { flex: 1 1 150px; min-width: 0; min-height: 44px; text-transform: uppercase; letter-spacing: 0.12em; }
+.join-row .btn { flex: 0 0 auto; min-height: 44px; padding: 8px 18px; }
+@media (max-width: 420px) {
+  .join-row .join-code { flex-basis: 100%; }
+  .join-row .btn { flex: 1 1 0; }
+}
 
 /* ------------------------------------------------------------ settings page */
 /* /rules (play/rules.html): the panel is the page. The document scrolls: the
@@ -374,8 +372,6 @@ a.rp-home { flex: none; text-decoration: none; }
 .rp-message h2 { margin: 0 0 8px; font-family: var(--font-mincho); font-weight: 800; font-size: 19px; letter-spacing: 0.08em; }
 .rp-message p { margin: 8px 0; }
 a.btn { text-decoration: none; }
-.lobby a.btn { color: var(--text); }
-.lobby a.btn-gold { color: var(--ink); }
 
 .sp-page { height: auto; border-top: 1px solid var(--gold-line); background: linear-gradient(180deg, oklch(17% 0.016 48 / 0.94), oklch(14% 0.012 40 / 0.9) 360px); overflow-anchor: none; }
 .sp-page .sp-main { align-items: start; }
@@ -414,34 +410,124 @@ a.btn { text-decoration: none; }
   .sp-page .sp-actions .btn, .rp-back { min-height: 34px; }
 }
 
-/* the AI table's start card: seats, AI and seed here; the rules on the settings page */
-.yy-start { width: min(600px, calc(100vw - 16px)); }
-.start-card .setup-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.start-card .setup-grid select, .start-card .setup-grid input { width: 100%; min-width: 0; }
-.start-check { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; cursor: pointer; }
-.start-check input { width: 16px; height: 16px; accent-color: var(--gold); }
-.start-rules { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid oklch(45% 0.04 70 / 0.35); }
-.start-label { flex-basis: 100%; font-size: 12px; color: var(--text-dim); }
-.start-rules .rules-badge { max-width: 100%; white-space: normal; flex-wrap: wrap; line-height: 1.35; }
-.start-diff { margin-top: 8px; font-size: 12.5px; }
-.start-diff summary { cursor: pointer; color: var(--text-dim); }
-.start-diff summary:hover { color: var(--text); }
-.start-diff .diff-list { max-height: 30dvh; overflow-y: auto; }
-.start-card .err { margin: 10px 0 0; }
-/* 詳細: the AI's internal policy, out of the way of a first game */
-.start-more { margin-top: 10px; font-size: 12.5px; }
-.start-more summary { cursor: pointer; color: var(--text-dim); width: fit-content; }
-.start-more summary:hover { color: var(--text); }
-.start-more label { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12px; color: var(--text-dim); }
+/* ------------------------------------------------------------ entry shell */
+/* The three entry screens (play/entry-shell.ts): AIと対戦 /ai, オンライン対戦 /,
+   観戦 /watch share this page — header, mode switch, one panel (fields, the
+   rules-and-cards block, one gold button, quiet buttons under it). */
+.entry { width: min(640px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0 56px; }
+.entry[hidden] { display: none; }
+.entry-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.entry-head .brand-mark { flex: none; width: 40px; height: 40px; font-size: 25px; }
+.entry-titles { min-width: 0; }
+.entry-titles h1 { margin: 0; font-family: var(--font-mincho); font-weight: 800; font-size: 28px; line-height: 1.25; letter-spacing: 0.12em; }
+.entry-titles h1 small { margin-left: 2px; font-size: 0.5em; font-weight: 500; letter-spacing: 0.04em; color: var(--text-dim); }
+.entry-titles p { margin: 2px 0 0; font-size: 13px; color: var(--text-dim); }
+
+.entry-panel {
+  display: flex; flex-direction: column; gap: 14px; padding: 20px 22px 18px; margin-bottom: 16px; border-radius: 8px;
+  background: var(--lacquer); border: 1px solid oklch(45% 0.04 70 / 0.45); box-shadow: 0 14px 36px oklch(0% 0 0 / 0.4);
+}
+.entry-panel[hidden] { display: none; }
+.entry-panel h2 { margin: 0; font-family: var(--font-mincho); font-weight: 800; font-size: 19px; letter-spacing: 0.1em; }
+.entry-panel > p { margin: 0; }
+.entry a { color: var(--gold); }
+.entry a.btn { color: var(--text); }
+.entry a.btn-gold { color: var(--ink); }
+
+/* fields: labelled controls in a grid, every control a full-height tap target */
+.entry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.entry-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.entry-grid > label { display: flex; flex-direction: column; gap: 4px; min-width: 0; font-size: 12px; color: var(--text-dim); }
+.entry-grid select, .entry-grid input[type="text"], .entry-grid input[type="number"] { width: 100%; min-width: 0; min-height: 44px; }
+.entry-grid > .entry-check { grid-column: 1 / -1; flex-direction: row; }
+.entry-grid > label:only-child { grid-column: 1 / -1; }
+.entry-inline input { width: auto; }
+.entry-inline { display: flex; gap: 8px; }
+.entry-inline input { flex: 1 1 auto; }
+.entry-inline .btn { flex: none; min-height: 44px; }
+.entry-check { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 13px; color: var(--text); cursor: pointer; }
+.entry-check input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--gold); }
+
+/* folds: 詳細, ルールの説明, 基準からの変更点 — one look */
+.entry-more, .entry-fold { font-size: 12.5px; }
+.entry-more summary, .entry-fold summary { display: flex; align-items: center; gap: 6px; min-height: 36px; width: fit-content; cursor: pointer; color: var(--text-dim); list-style: none; }
+.entry-more summary::-webkit-details-marker, .entry-fold summary::-webkit-details-marker { display: none; }
+.entry-more summary::before, .entry-fold summary::before { content: "›"; display: inline-block; width: 0.8em; color: var(--gold); font-size: 16px; line-height: 1; transition: transform var(--t-fast) var(--ease-out); }
+.entry-more[open] summary::before, .entry-fold[open] summary::before { transform: rotate(90deg); }
+.entry-more summary:hover, .entry-fold summary:hover { color: var(--text); }
+.entry-more summary:focus-visible, .entry-fold summary:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; border-radius: 3px; }
+.entry-more > .entry-grid { margin-top: 6px; }
+.entry-fold > p, .entry-fold > .diff-list { margin: 4px 0 6px; padding: 10px 12px; border-radius: 6px; background: oklch(11% 0.01 40 / 0.6); border: 1px solid oklch(45% 0.04 70 / 0.3); line-height: 1.7; }
+.entry-fold > .diff-list { padding-left: 28px; max-height: 30dvh; overflow-y: auto; }
+.entry-fold > p.muted { background: none; border: 0; padding: 2px 0; }
+
+/* the shared rules-and-cards block */
+.entry-rules { display: flex; flex-direction: column; gap: 0; padding-top: 14px; border-top: 1px solid oklch(45% 0.04 70 / 0.35); }
+.entry-label { font-size: 12px; color: var(--text-dim); }
+.entry-rules-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 2px 0 4px; }
+.entry-rules-row .rules-badge { flex: 1 1 auto; max-width: 100%; min-height: 36px; white-space: normal; flex-wrap: wrap; line-height: 1.35; border-radius: 18px; }
+.entry-rules-row .btn { flex: none; min-height: 44px; }
+
+/* the foot: one gold button across the panel, quiet text buttons under it */
+.entry-panel .err { margin: 0; }
+.entry-primary { width: 100%; min-height: 50px; font-size: 16px; letter-spacing: 0.12em; }
+.entry-secondary { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin-top: -6px; }
+.entry-secondary:empty { display: none; }
+.btn-text {
+  min-height: 44px; padding: 6px 10px; border: 0; background: none; cursor: pointer;
+  color: var(--text-dim); font-size: 13.5px; text-decoration: underline; text-decoration-color: var(--gold-line); text-underline-offset: 4px;
+}
+.btn-text:hover { color: var(--text); text-decoration-color: var(--gold); }
+.btn-text:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; border-radius: 3px; }
+
 @media (max-width: 560px) {
-  .start-card { padding: 16px 14px 14px; }
-  .start-card .setup-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 8px; }
-  .start-card .setup-btns .btn { flex: 1; min-height: 42px; }
+  .entry { width: calc(100% - 32px); padding: 20px 0 40px; }
+  .entry-head { gap: 12px; margin-bottom: 14px; }
+  .entry-titles h1 { font-size: 24px; }
+  .entry-titles p { font-size: 12.5px; }
+  .entry-panel { padding: 16px 16px 14px; gap: 12px; }
+  .entry-grid, .entry-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  /* two columns: a last field left alone takes the whole row (no empty cell beside it) */
+  .entry-grid-3 > label:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .entry-more summary, .entry-fold summary { min-height: 44px; }
+  .entry-rules-row .btn { flex: 1 1 100%; }
+}
+@media (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  .entry { padding: 12px 0 24px; }
+  .entry-head { margin-bottom: 10px; }
+}
+
+/* 遊び方の切り替え (play/mode-switch.ts): AIと対戦 / オンライン対戦 / 観戦, at the top of each entry screen */
+.mode-switch {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 16px;
+  border: 1px solid var(--gold-line); border-radius: 8px; overflow: hidden;
+  background: oklch(11% 0.012 40 / 0.7); box-shadow: inset 0 1px 0 oklch(80% 0.12 85 / 0.08);
+}
+.mode-item {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-width: 0; min-height: 52px; padding: 7px 6px; text-align: center; text-decoration: none;
+  color: var(--text-dim); transition: background-color var(--t-fast), color var(--t-fast);
+}
+.mode-item + .mode-item { border-left: 1px solid var(--gold-line); }
+.entry .mode-item, .mode-item:visited { color: var(--text-dim); }
+.mode-label { font-family: var(--font-mincho); font-weight: 700; font-size: 15px; letter-spacing: 0.06em; line-height: 1.2; }
+.mode-hint { font-size: 11px; line-height: 1.3; color: var(--text-dim); opacity: 0.85; }
+.mode-item:hover { background: oklch(80% 0.12 85 / 0.1); color: var(--text); }
+.mode-item:active { background: oklch(80% 0.12 85 / 0.16); }
+.mode-item:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: -3px; z-index: 1; }
+.mode-item.is-current, .entry .mode-item.is-current { background: linear-gradient(170deg, oklch(80% 0.12 85 / 0.24), oklch(80% 0.12 85 / 0.1)); color: var(--gold-hi); cursor: default; }
+.mode-item.is-current .mode-label { font-weight: 800; }
+.mode-item.is-current .mode-hint { color: var(--text); opacity: 1; }
+.mode-item.is-current::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: 0; height: 2px; border-radius: 2px 2px 0 0; background: var(--gold); }
+.mode-slot { min-height: 54px; margin-bottom: 16px; }
+.mode-slot .mode-switch { margin: 0; }
+@media (max-width: 420px) {
+  .mode-label { font-size: 13.5px; letter-spacing: 0.02em; }
+  .mode-hint { font-size: 10.5px; }
+  .mode-item { padding: 6px 4px; }
 }
 @media (max-height: 520px) {
-  .yy-start { max-height: calc(100dvh - 12px); overflow: auto; }
-  .start-card { padding: 12px 18px; }
-  .start-card h2 { margin-bottom: 8px; font-size: 18px; }
-  .start-rules { margin-top: 10px; padding-top: 8px; }
-  .start-card .setup-btns { margin-top: 10px; }
+  .mode-switch { margin-bottom: 10px; }
+  .mode-item { min-height: 44px; padding: 4px 6px; }
+  .mode-hint { display: none; }
 }

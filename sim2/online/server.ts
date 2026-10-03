@@ -230,6 +230,12 @@ const STATIC_FILES = new Set([
   "play/index.html",
   // the settings page (/rules) serves the AI table, the lobby and the rooms
   "play/rules.html",
+  // 観戦 (AI vs AI), in the browser like the AI table
+  "play/watch.html",
+  // the 3D world (/world): a showcase scene, three.js vendored under play/vendor/three/ (see PLAY_VENDOR)
+  "play/world.html",
+  // the printable cards (/print): A4 sheets of true-size cards and the 早見表
+  "play/print.html",
   "online/lobby.html",
   "online/room.html",
   "online/lobby.ts",
@@ -242,6 +248,9 @@ const STATIC_FILES = new Set([
 /** Browser modules of the shared table (play/), never the local play server itself. */
 const PLAY_BROWSER = /^play\/(?!server\.ts$)[a-z-]+\.(ts|css)$/;
 
+/** Vendored three.js for /world: the build, OrbitControls and the postprocessing passes/shaders — .js only (not the .d.ts, not LICENSE). */
+const PLAY_VENDOR = /^play\/vendor\/three\/(?:three\.module|three\.core|OrbitControls|postprocessing\/[A-Za-z]+|shaders\/[A-Za-z]+)\.js$/;
+
 /** Card art cut from the print kit: play/art/<set>/<file>.webp|.jpg, nothing deeper. */
 const PLAY_ART = /^play\/art\/[a-z0-9-]+\/[A-Za-z0-9-]+\.(webp|jpg)$/;
 
@@ -249,7 +258,7 @@ const PLAY_ART = /^play\/art\/[a-z0-9-]+\/[A-Za-z0-9-]+\.(webp|jpg)$/;
 export const onlineStaticAllowed = (rel: string): boolean => {
   const head = rel.split("/")[0];
   if (head === "src" || head === "data") return true;
-  return STATIC_FILES.has(rel) || PLAY_BROWSER.test(rel) || PLAY_ART.test(rel);
+  return STATIC_FILES.has(rel) || PLAY_BROWSER.test(rel) || PLAY_ART.test(rel) || PLAY_VENDOR.test(rel);
 };
 
 export const staticTarget = (path: string): string => {
@@ -257,6 +266,9 @@ export const staticTarget = (path: string): string => {
   if (/^\/room\/[^/]+\/?$/.test(path)) return "/online/room.html";
   if (path === "/ai" || path === "/ai/") return "/play/index.html";
   if (path === "/rules" || path === "/rules/") return "/play/rules.html";
+  if (path === "/watch" || path === "/watch/") return "/play/watch.html";
+  if (path === "/world" || path === "/world/") return "/play/world.html";
+  if (path === "/print" || path === "/print/") return "/play/print.html";
   return path;
 };
 

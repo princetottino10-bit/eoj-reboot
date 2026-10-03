@@ -216,6 +216,8 @@ export type CardFaceOpts = {
   hp?: { now: number; max: number };
   /** A hand card's summon cost now when a rule lowers it (劣勢時の大型割引): the printed cost is struck through. */
   costNow?: number;
+  /** Effect text in place of the table's (the printed sheets: the card's own words where the table notes a gap). */
+  text?: string;
 };
 
 type Mod = { cls: string; tip: string };
@@ -284,7 +286,7 @@ const rangeBlockHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => 
 };
 
 const textHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => {
-  const printedText = effectTextOf(card.id);
+  const printedText = opts.text ?? effectTextOf(card.id);
   // the hand card has no room for the 【霊具】 tag the badge already shows
   const text = printedText !== null && opts.size === "md" ? printedText.replace(/^【霊具】/, "") : printedText;
   // the corner value: 生命価 (the cold flame) while life counts (霊力価 has its

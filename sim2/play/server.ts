@@ -114,11 +114,14 @@ export const serveFile = async (
   return { code: 200, body: raw, type: TYPES[ext] };
 };
 
-/** Page routes of the local server: the AI table at / and /ai, the settings page at /rules. */
+/** Page routes of the local server: the AI table at / and /ai, the settings page at /rules, 観戦 at /watch, the 3D world at /world, the printable cards at /print. */
 export const playTarget = (urlPath: string): string => {
   const path = urlPath.split("?")[0].split("#")[0];
   if (path === "/" || path === "" || path === "/ai" || path === "/ai/") return "/play/index.html";
   if (path === "/rules" || path === "/rules/") return "/play/rules.html";
+  if (path === "/watch" || path === "/watch/") return "/play/watch.html";
+  if (path === "/world" || path === "/world/") return "/play/world.html";
+  if (path === "/print" || path === "/print/") return "/play/print.html";
   return path;
 };
 

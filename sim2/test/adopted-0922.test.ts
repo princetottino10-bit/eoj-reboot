@@ -148,7 +148,7 @@ test("the share URL carries 霊力価 edits and the ratchet steps, and restores 
 
 // ------------------------------------------------------ preset and defaults
 
-test("r0923 = 採用ルール 9/22, and it is the default for new rooms and the AI table (older presets kept)", () => {
+test("r0923 = 採用ルール 9/22, still selectable next to the 10/3 default (older presets kept)", () => {
   const cfg = presetConfig("r0923");
   assert.deepEqual(cfg.startMana, [6, 8]);
   assert.equal(cfg.baseIncome, 6);
@@ -169,14 +169,13 @@ test("r0923 = 採用ルール 9/22, and it is the default for new rooms and the 
   const ctx = r0923();
   assert.deepEqual([0, 2, 3, 4, 5, 9].map((chips) => incomeFor(ctx, chips)), [6, 6, 7, 8, 8, 8]);
   assert.match(RULE_PRESETS.r0923.note, /3枚で7、4枚で8/);
-  // defaults
-  const d = defaultSettings();
-  assert.equal(d.rule, "r0923");
+  // the default moved to 10/3テスト案 (r1003, pinned in adopted-1003.test.ts); r0923 keeps its own pack
+  const d = defaultSettings("r0923");
   assert.equal(d.pack, "adopted-0922");
   assert.deepEqual(settingsConfig(d), cfg);
-  assert.equal(RULE_PRESET_IDS[0], "r0923");
-  for (const id of ["r0914", "r0913", "r0828"] as const) assert.ok(RULE_PRESET_IDS.includes(id));
-  for (const p of ["shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const) assert.ok(PLAYABLE_PACKS.includes(p));
+  assert.equal(RULE_PRESET_IDS[0], "r1003");
+  for (const id of ["r0923", "r0914", "r0913", "r0828"] as const) assert.ok(RULE_PRESET_IDS.includes(id));
+  for (const p of ["adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const) assert.ok(PLAYABLE_PACKS.includes(p));
   // the older presets did not move
   assert.equal(presetConfig("r0914").counterResolve, "sum");
   assert.equal(presetConfig("r0914").killRewardBase, "half_floor");

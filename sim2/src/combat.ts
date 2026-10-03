@@ -29,9 +29,11 @@ import {
   damageBonusReasons,
   effectiveAtk,
   healAttackAmount,
+  ignoresBlindAndCounter,
   movesOnCounterKill,
   movesOnKill,
   onAfterAttack,
+  onAttackBeforeCounters,
   onUnitDestroyed,
   variantExtraCost,
 } from "./effects.ts";
@@ -70,9 +72,10 @@ export const isAoeAttack = (ctx: Ctx, card: CardDef): boolean =>
 export const aoeSparesAllies = (ctx: Ctx, card: CardDef): boolean =>
   ctx.cfg.aoeMode === "no_ff" || (ctx.cfg.jutsuAoeSparesAllies && card.attackType === "jutsu");
 
-/** Only physical attacks can be blind shots; jutsu ignores blind spots. */
+/** Only physical attacks can be blind shots; jutsu ignores blind spots, and so does ac17 玖龍街 (10/3). */
 export const isBlindShot = (ctx: Ctx, attacker: Unit, target: Unit): boolean => {
   if (cardOfUnit(ctx, attacker).attackType !== "phys") return false;
+  if (ignoresBlindAndCounter(ctx, attacker)) return false;
   return blindCells(ctx, target).some((c) => posEq(c, attacker.pos));
 };
 
@@ -508,7 +511,10 @@ export const resolveAttack = (
   let attackerDestroyed = false;
   /** The counter that destroyed the attacker, and where: its on-kill move follows the attack event. */
   let counterKill: { unit: Unit; at: Pos } | null = null;
-  if (card.attackType === "phys") {
+  // 3c. ac15 茨木童子【再生】 (10/3): HP+1 before the counters
+  onAttackBeforeCounters(ctx, attacker, variant, events);
+  // ac17 玖龍街 (10/3): its attack ignores counter ranges, so nobody counters
+  if (card.attackType === "phys" && !ignoresBlindAndCounter(ctx, attacker)) {
     const gapMode = ctx.cfg.counterMode === "gap";
     const chosen = ctx.cfg.counterResolve === "chosen";
     const eligible: Unit[] = [];

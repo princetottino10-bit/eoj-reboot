@@ -8,7 +8,7 @@ import type { CardOverrides } from "./card-overrides.ts";
 import type { CardPack } from "./cards.ts";
 import { checkConfigRelations, configChanges, diffPatch, parseConfigPatch } from "./config-schema.ts";
 import type { ConfigChange, ConfigPatch, Parsed } from "./config-schema.ts";
-import { isPlayablePack, isRulePresetId, presetConfig, RULE_PRESETS } from "./presets.ts";
+import { DEFAULT_RULE_PRESET, isPlayablePack, isRulePresetId, presetConfig, RULE_PRESETS } from "./presets.ts";
 import type { PlayablePack, RulePresetId } from "./presets.ts";
 import type { Config, Pos } from "./types.ts";
 
@@ -20,7 +20,7 @@ export type GameSettings = {
   cards: CardOverrides;
 };
 
-export const defaultSettings = (rule: RulePresetId = "r0923"): GameSettings => ({
+export const defaultSettings = (rule: RulePresetId = DEFAULT_RULE_PRESET): GameSettings => ({
   rule,
   pack: RULE_PRESETS[rule].defaultPack as PlayablePack,
   config: {},

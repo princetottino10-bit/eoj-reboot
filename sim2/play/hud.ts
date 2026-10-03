@@ -3,7 +3,7 @@
 // Pure string builders over the public board view.
 import type { CardOverrides } from "../src/card-overrides.ts";
 import { cardOf } from "../src/cards.ts";
-import { incomeParts } from "../src/rules.ts";
+import { incomeFor, incomeParts } from "../src/rules.ts";
 import { cardOfUnit, controlNeed, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { CardDef, PlayerId, Unit } from "../src/types.ts";
@@ -32,7 +32,9 @@ const chipsHtml = (ctx: Ctx, board: BoardView, p: PlayerId): string => {
   for (let i = 1; i <= slots; i++) {
     const lit = i <= chips;
     const step = ctx.cfg.chipIncomeSteps.includes(i);
-    marks.push(`<i class="chip${lit ? " on" : ""}${step ? " step" : ""}" data-chip="${i}"></i>`);
+    // a step mark says the income it brings (a repeated step, 10/3's 4,5,5, jumps by 2)
+    const tip = step ? ` title="${i}枚で収入${incomeFor(ctx, i)}"` : "";
+    marks.push(`<i class="chip${lit ? " on" : ""}${step ? " step" : ""}" data-chip="${i}"${tip}></i>`);
   }
   return `<span class="np-chips" title="チップ ${chips}枚(${incomeTip(ctx, board, p)})">${marks.join("")}</span>`;
 };
@@ -96,6 +98,20 @@ export const oppHandHtml = (count: number): string => {
     return `<div class="ohand-card" style="--i:${off.toFixed(2)}">${cardBackHtml()}</div>`;
   }).join("");
   return `<div class="ohand" aria-label="相手の手札 ${count}枚">${backs}<span class="ohand-n">${count}</span></div>`;
+};
+
+/**
+ * Spectate: the top seat's hand face up, as small art tiles with the summon
+ * cost; a tap shows the card in the detail panel (data-act "peek").
+ */
+export const openHandHtml = (ctx: Ctx, cards: readonly string[], owner: string): string => {
+  const tiles = cards
+    .map((id) => {
+      const card = cardOf(ctx.pack, id);
+      return `<button type="button" class="oh-card" data-act="peek" data-card="${esc(id)}" title="${esc(card.nameJa)}(${card.summonCost})" aria-label="${esc(card.nameJa)} 霊力${card.summonCost}">${cardThumbHtml(card)}<b>${card.summonCost}</b></button>`;
+    })
+    .join("");
+  return `<div class="ohand ohand-open" aria-label="${esc(owner)}の手札 ${cards.length}枚">${cards.length === 0 ? '<span class="muted">手札なし</span>' : tiles}</div>`;
 };
 
 /** mulligan: both seats choose at once, so no one's turn is named. */

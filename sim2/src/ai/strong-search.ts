@@ -428,7 +428,8 @@ export const controlBroken = (ctx: Ctx, s: GameState, p: PlayerId): boolean =>
   s.ended ? s.winner === p : !hasControl(ctx, s, opponent(p));
 
 const isTurningReigu = (fx: string): boolean => fx === "tm18" || fx === "sk18";
-const isDamagingReigu = (fx: string): boolean => fx === "tm19" || fx === "tm22" || fx === "sk22" || fx === "ad21" || fx === "ad22";
+// ac23 鬼の酒 (10/3) sets HP to 10: on a big enemy it is damage (and can take it below the 占拠 HP threshold)
+const isDamagingReigu = (fx: string): boolean => fx === "tm19" || fx === "tm22" || fx === "sk22" || fx === "ad21" || fx === "ad22" || fx === "ac23";
 
 /** Actions that can be part of a kill: attacks, damage, and the preparations that bring an enemy into range. */
 const breakRelevant = (ctx: Ctx, s: GameState, p: PlayerId, acts: Action[]): Action[] => {

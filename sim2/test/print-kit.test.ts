@@ -116,7 +116,8 @@ test("printId and art are optional, validated card fields", () => {
 
 test("the other packs carry no print ids and no art", () => {
   for (const name of ALL_PACK_NAMES) {
-    if (name === "adopted-0922") continue;
+    // the adopted packs carry them (adopted-1003 takes them over from adopted-0922: adopted-1003.test.ts)
+    if (name === "adopted-0922" || name === "adopted-1003") continue;
     for (const c of loadPack(packPath(name)).cards) {
       assert.equal(c.printId, undefined, `${name} ${c.id}`);
       assert.equal(c.art, undefined, `${name} ${c.id}`);

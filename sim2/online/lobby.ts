@@ -4,12 +4,12 @@
 // pre-fills them the same way.
 import { parsePack } from "../src/cards.ts";
 import type { CardPack } from "../src/cards.ts";
-import { RULE_PRESETS } from "../src/presets.ts";
 import type { PlayablePack } from "../src/presets.ts";
 import { decodeSettings, defaultSettings, encodeSettings, settingsConfig } from "../src/settings.ts";
 import type { GameSettings } from "../src/settings.ts";
+import { entryTopHtml, rulesBlockHtml } from "../play/entry-shell.ts";
+import { bindModeSwitch } from "../play/mode-switch.ts";
 import { rulesHref } from "../play/rules-url.ts";
-import { badgeHtml } from "../play/settings-badge.ts";
 import { rememberToken, NAME_KEY } from "./storage.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => {
@@ -40,16 +40,27 @@ const SEAT_KEY = "sim2online:lobby-seat";
 
 const editHref = (): string => rulesHref({ for: "lobby", s: encodeSettings(settings) });
 
-const renderBadge = (): void => {
-  $("rulesBadge").innerHTML = badgeHtml({
+/**
+ * The switch to AIと対戦 / 観戦 carries the rules only when they differ from
+ * the defaults, so a plain visit to the lobby does not reset the rules the AI
+ * table remembers.
+ */
+const renderModeSwitch = (): void => {
+  const s = encodeSettings(settings);
+  $("entryTop").innerHTML = entryTopHtml("online", s === encodeSettings(defaultSettings()) ? null : s);
+};
+
+/** The shared rules-and-cards block (play/entry-shell.ts), as on the AI and spectate screens. */
+const renderRules = (): void => {
+  const look = {
     rule: settings.rule,
     pack: settings.pack,
     cfg: settingsConfig(settings),
     cards: settings.cards,
     printed: packs.get(settings.pack) ?? null,
-  });
-  $("ruleNote").textContent = RULE_PRESETS[settings.rule].note;
-  $<HTMLAnchorElement>("editSettings").href = editHref();
+  };
+  $("rulesBlock").innerHTML = rulesBlockHtml(look, editHref());
+  renderModeSwitch();
 };
 
 const remember = (): void => {
@@ -128,9 +139,12 @@ const create = async (): Promise<void> => {
 };
 
 const init = async (): Promise<void> => {
+  // drawn at once (no jump when the pack arrives), then again with the shared settings checked
+  renderRules();
+  bindModeSwitch($("entryTop"), remember);
   await fromShareLink();
   await loadPack(settings.pack).catch(() => null);
-  renderBadge();
+  renderRules();
   const nameInput = $<HTMLInputElement>("name");
   try {
     nameInput.value = localStorage.getItem(NAME_KEY) ?? "";
@@ -142,10 +156,9 @@ const init = async (): Promise<void> => {
   }
   nameInput.addEventListener("change", remember);
   $("seat").addEventListener("change", remember);
-  $("editSettings").addEventListener("click", remember);
-  $("rulesBadge").addEventListener("click", () => {
-    remember();
-    location.href = editHref();
+  // leaving for the settings page keeps the name and seat
+  $("rulesBlock").addEventListener("click", (ev) => {
+    if ((ev.target as HTMLElement).closest("[data-edit-rules]") !== null) remember();
   });
   $("create").addEventListener("click", () => void create());
   $("copy").addEventListener("click", () => {

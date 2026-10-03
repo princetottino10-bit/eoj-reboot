@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>陰陽符陣(仮) 玖龍街の夜</title>
+<meta name="description" content="陰陽符陣(仮)の世界を3Dで。夜の玖龍街の屋上、九宮盤の上に浮かぶ式神たち。">
+<!-- the 太極 mark of the 記号体系 (print/icon-system-v1) as the tab icon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%230b0b0e'/%3E%3Ccircle cx='32' cy='32' r='27.5' fill='none' stroke='%23d7b565' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='23' fill='%231b2340'/%3E%3Cpath d='M32 9A23 23 0 0 1 32 55A11.5 11.5 0 0 1 32 32A11.5 11.5 0 0 0 32 9Z' fill='%23f5f1e2'/%3E%3Ccircle cx='32' cy='43.5' r='4.4' fill='%231b2340'/%3E%3Ccircle cx='32' cy='20.5' r='4.4' fill='%23f5f1e2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/play/table.css">
+<link rel="stylesheet" href="/play/panel.css">
+<link rel="stylesheet" href="/play/world.css">
+<link rel="modulepreload" href="/play/vendor/three/three.core.js">
+<link rel="modulepreload" href="/play/vendor/three/three.module.js">
+<link rel="modulepreload" href="/play/vendor/three/postprocessing/UnrealBloomPass.js">
+</head>
+<body class="world">
+<div id="stage" class="world-stage" aria-label="夜の玖龍街の屋上。九宮盤の上に式神のカードが浮かんでいる(ドラッグで見回せます)" role="img"></div>
+<header class="world-head">
+  <div class="brand"><span class="brand-mark" aria-hidden="true">符</span><span class="brand-name">陰陽符陣<small>(仮)</small></span></div>
+  <p class="world-sub">玖龍街の夜 ― 玖龍街一門 対 酒呑一門</p>
+  <div class="world-actions">
+    <button type="button" id="capture" class="btn btn-quiet world-cap-open">撮影</button>
+    <a class="btn btn-gold world-play" href="/ai">遊ぶ</a>
+  </div>
+</header>
+<div id="capbar" class="world-capbar" role="toolbar" aria-label="撮影" hidden>
+  <p id="cap-status" class="world-cap-status" aria-live="polite"></p>
+  <span id="cap-progress" class="world-bar world-cap-progress" hidden><span id="cap-fill"></span></span>
+  <div class="world-cap-buttons">
+    <button type="button" class="btn btn-gold" data-cap="still">静止画を保存</button>
+    <button type="button" class="btn" data-cap="video">15秒ループ動画</button>
+    <button type="button" class="btn btn-quiet" data-cap="exit">戻る</button>
+  </div>
+</div>
+<p id="hint" class="world-hint">ドラッグで見回す ・ ピンチで寄る ・ カードをタップ</p>
+<p id="notice" class="world-notice" hidden></p>
+<aside id="caption" class="entry-panel world-caption" hidden aria-live="polite">
+  <button type="button" class="wc-close" aria-label="閉じる">×</button>
+  <p class="wc-clan"></p>
+  <h2 class="wc-name"></h2>
+  <p class="wc-effect"></p>
+  <p class="wc-stats"></p>
+  <p class="wc-board"></p>
+</aside>
+<div id="loading" class="world-loading" role="status">
+  <p id="loading-text">読み込み中…</p>
+  <span class="world-bar"><span id="loading-bar"></span></span>
+</div>
+<script type="module" src="/play/world.ts"></script>
+</body>
+</html>

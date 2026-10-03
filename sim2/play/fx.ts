@@ -20,7 +20,11 @@ export type FxStep = {
 
 export type FxHost = { root: HTMLElement; layer: HTMLElement; board: HTMLElement };
 
-export type Fx = { push: (step: FxStep) => void };
+export type Fx = {
+  push: (step: FxStep) => void;
+  /** How long until the steps already pushed have been drawn and have finished animating (ms). */
+  pendingMs: () => number;
+};
 
 export const reducedMotion = (): boolean =>
   typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -76,6 +80,7 @@ export const createFx = (host: FxHost): Fx => {
   };
 
   return {
+    pendingMs: () => Math.max(0, busyUntil - performance.now()),
     push: (step) => {
       if (step.immediate && queue.length > 0) {
         // own input: queued opponent steps are already superseded by this state

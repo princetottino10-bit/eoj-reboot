@@ -146,7 +146,8 @@ test("board: the control state puts the 「制」 seal and one lantern per neede
 test("the AI table starts with the strong AI; its policy sits behind 詳細", () => {
   assert.equal(defaultAiSetup().ai, "strong");
   const ui = readFileSync(join(import.meta.dirname, "..", "play", "ui.ts"), "utf8");
-  assert.match(ui, /<details class="start-more"><summary>詳細<\/summary>\s*<label>AIの方針<select name="eval">/);
+  // 詳細 is the shared fold of the entry screens (play/entry-shell.ts moreHtml)
+  assert.match(ui, /moreHtml\(`<label>AIの方針<select name="eval">/);
 });
 
 test("every page has the 太極 tab icon (no /favicon.ico request)", () => {

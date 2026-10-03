@@ -21,7 +21,7 @@ import { createFx } from "./fx.ts";
 import { handHtml } from "./hand-view.ts";
 import { ensureMarks } from "./marks.ts";
 import type { HandCard, HandMode } from "./hand-view.ts";
-import { detailHtml, logHtml, nameplateHtml, oppHandHtml, pilesHtml, turnHtml } from "./hud.ts";
+import { detailHtml, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, turnHtml } from "./hud.ts";
 import type { CardLook, Focus } from "./hud.ts";
 import { promptHtml } from "./prompt-view.ts";
 import { esc, resultHow, unitAtPos, unitById } from "./render.ts";
@@ -74,6 +74,10 @@ export type TableModel = {
   printed: (cardId: string) => CardDef | undefined;
   /** Short phase text for the turn indicator ("手札整理中" ...); "マリガン" marks the simultaneous mulligan. */
   phaseText: string;
+  /** Spectate: the top seat's hand face up (absent / null = backs only). `hand` is then the bottom seat's. */
+  oppHand?: string[] | null;
+  /** Spectate: the unit that just acted and what it aimed at, lit on the board while nothing is selected. */
+  spot?: { actor: number | null; targets: number[] } | null;
 };
 
 export type TableHandlers = {
@@ -89,6 +93,8 @@ export type TableHandlers = {
 
 export type Table = {
   update: (m: TableModel) => void;
+  /** How much longer the moves already drawn keep animating (ms; 0 when still). */
+  animatingMs: () => number;
   /** Areas the page fills itself; the table never touches their content. */
   slots: { header: HTMLElement; tools: HTMLElement; notice: HTMLElement };
 };
@@ -400,6 +406,11 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       return render();
     }
     pinned = { kind: "card", cardId };
+    // a spectator's tap only looks at the card: in the sheet when the detail panel is off screen
+    if (m.viewer === null && !detailVisible()) {
+      render();
+      return openSheet({ kind: "card", cardId, fromSeat: null });
+    }
     if (m.prompt.kind !== "main") return render();
     const card = cardOf(m.ctx.pack, cardId);
     const same = (sel.kind === "hand" || sel.kind === "place" || sel.kind === "inherit" || sel.kind === "reigu") && sel.handIndex === i;
@@ -534,6 +545,10 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       if (el.sheet.open) {
         sheet = { kind: "card", cardId: target.dataset.card ?? "", fromSeat: sheet?.kind === "grave" ? sheet.seat : null };
         renderSheet();
+      } else if (!detailVisible()) {
+        // a card tapped outside the detail panel (a spectator's view of a hand) while the panel is off screen
+        render();
+        return openSheet({ kind: "card", cardId: target.dataset.card ?? "", fromSeat: null });
       }
       return render();
     }
@@ -673,15 +688,26 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       const cu = unitById(m.board, uid);
       if (cu !== undefined) coMarks.set(`${cu.pos.x},${cu.pos.y}`, "target");
     }
+    // spectate: the last move's actor and targets, while the watcher has nothing selected
+    const spot = co === null && !main && s.kind === "none" && m.spot !== undefined && m.spot !== null ? m.spot : null;
+    if (spot !== null) for (const uid of spot.targets) {
+      const tu = unitById(m.board, uid);
+      if (tu !== undefined) coMarks.set(`${tu.pos.x},${tu.pos.y}`, "target");
+    }
     return {
       ctx: m.ctx,
       board: m.board,
       names: m.names,
       look: look(m),
       bottom: m.viewer === 1 ? 1 : 0,
-      marks: main ? cellMarks(m.board, lg, hand, s) : co !== null ? coMarks : new Map(),
+      marks: main ? cellMarks(m.board, lg, hand, s) : co !== null || spot !== null ? coMarks : new Map(),
       range: s.kind === "unit" || (s.kind === "aim" && s.targetUid === null && !s.area) ? rangeSets(m.ctx, shown) : null,
-      selectedUid: co !== null ? co.attackerUid : (shownUid ?? (s.kind === "inherit" || s.kind === "reigu" ? s.targetUid : null)),
+      selectedUid:
+        co !== null
+          ? co.attackerUid
+          : spot !== null && spot.actor !== null && unitById(m.board, spot.actor) !== undefined
+            ? spot.actor
+            : (shownUid ?? (s.kind === "inherit" || s.kind === "reigu" ? s.targetUid : null)),
       selectedCell: s.kind === "place" ? s.pos : null,
       prediction:
         aimed?.preview?.kind === "attack" && s.kind === "aim"
@@ -771,7 +797,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     root.dataset.viewer = m.viewer === null ? "watch" : String(m.viewer);
     root.dataset.prompt = m.prompt.kind;
     put(el.oppPlate, nameplateHtml(m.ctx, m.board, top, m.names, false));
-    put(el.oppHand, oppHandHtml(m.board.players[top].handCount));
+    put(el.oppHand, m.viewer === null && m.oppHand !== undefined && m.oppHand !== null ? openHandHtml(m.ctx, m.oppHand, m.names[top]) : oppHandHtml(m.board.players[top].handCount));
     put(el.selfPlate, nameplateHtml(m.ctx, m.board, bottom, m.names, m.viewer === bottom));
     put(el.pilesOpp, pilesHtml(m.ctx, m.board, top, lk));
     put(el.pilesSelf, pilesHtml(m.ctx, m.board, bottom, lk));
@@ -924,5 +950,5 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     fx.push({ fresh, immediate, viewer: m.viewer, show: () => present(m, fresh) });
   };
 
-  return { update, slots };
+  return { update, slots, animatingMs: () => fx.pendingMs() };
 };

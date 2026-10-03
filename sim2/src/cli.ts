@@ -39,8 +39,8 @@ const USAGE = `sim2 self-play
   node --experimental-strip-types sim2/src/cli.ts selfplay [options]
 
   --preset <id>        rule preset as the base config: ${RULE_PRESET_IDS.join(" | ")}
-                       (r0923 = 採用ルール 9/22, the default rules since 9/23; play it with
-                       --pack adopted-0922. r0913 = 9/13 test rules = EXP-0913B K0,
+                       (r1003 = 10/3テスト案, the default rules since 10/3; play it with
+                       --pack adopted-1003. r0923 = 採用ルール 9/22 (--pack adopted-0922). r0913 = 9/13 test rules = EXP-0913B K0,
                        r0828 = 8/28 rules = K8ts). Every flag below still overrides the preset.
   --games <n>          number of games            (default 20)
   --seed <n>           base seed                  (default 20260830)

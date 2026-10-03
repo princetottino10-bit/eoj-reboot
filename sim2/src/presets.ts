@@ -9,12 +9,17 @@
 //   r0828 = K8ts (8/28 rules with the 8/28 income timing, turn_start)
 // r0914 = the rules as the team played them until 9/22: r0913 with a third
 //   chip step (3/4/5 chips -> income +1/+2/+3). Not an experiment condition.
-// r0923 = 採用ルール 9/22 (sim2/out/adopted-0922-spec.json), the default since
-//   9/23: r0914 with the adopted numbers, no life (the destroyer gains the
+// r0923 = 採用ルール 9/22 (sim2/out/adopted-0922-spec.json), the default from
+//   9/23 to 10/3: r0914 with the adopted numbers, no life (the destroyer gains the
 //   card's 霊力価), no gap (every eligible defender counters, one at a time in
 //   the order the countering side chooses: counterResolve "chosen"). The two
 //   income ratchets are chipIncomeSteps [3, 4] (3 chips -> 7, 4 chips -> 8),
 //   the team's call of 9/23 (it replaced the first guess [4, 5]).
+// r1003 = 10/3テスト案 (sim2/out/sheet-1003), the default since 10/3: r0923
+//   with the 10/3 sheet (pack adopted-1003), income 6 -> 7 at 4 chips -> 9 at
+//   5 chips (chipIncomeSteps [4, 5, 5]: one +1 per entry reached, so the
+//   repeated 5 is the +2 jump), 太極 -2 (floor 1), max HP 19, and a unit at
+//   HP 11+ counts 2 toward 占拠 (controlCount "hp"); control at 5 counted that way.
 // The experiment scripts set their conditions with flags, not presets, so
 // their results still reproduce.
 // chipMode catch_up and effects on are the common conditions of that experiment.
@@ -22,7 +27,7 @@
 import { defaultConfig } from "./types.ts";
 import type { Config } from "./types.ts";
 
-export const RULE_PRESET_IDS = ["r0923", "r0914", "r0913", "r0828"] as const;
+export const RULE_PRESET_IDS = ["r1003", "r0923", "r0914", "r0913", "r0828"] as const;
 export type RulePresetId = (typeof RULE_PRESET_IDS)[number];
 
 export type RulePreset = {
@@ -62,7 +67,43 @@ const R0913_OVERRIDES: Partial<Config> = {
  */
 export const R0923_CHIP_STEPS: readonly number[] = [3, 4];
 
+/**
+ * 10/3テスト案's income ratchets (6 -> 7 -> 9): 4 chips -> 7, 5 chips -> 9. Each
+ * entry reached is +1, so 5 is listed twice for the +2 jump.
+ */
+export const R1003_CHIP_STEPS: readonly number[] = [4, 5, 5];
+
+/** The preset new games, rooms and the settings page start from. */
+export const DEFAULT_RULE_PRESET: RulePresetId = "r1003";
+
 export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
+  r1003: {
+    id: "r1003",
+    label: "10/3テスト案",
+    experiment: "",
+    defaultPack: "adopted-1003",
+    note: "10/3テスト案: 10/3のシートの数値(23枚、霊具「鬼の酒」を追加)。初期霊力 先手6・後手8、毎ターン収入6(占拠チップ4枚で7、5枚で9)、太極−2(下限1)、属性±2、死角+2、最大HP19。HP11以上の式神は占拠を2マス分と数え、制圧はその数え方で5。生命価なし・隙なし・反撃の順番は反撃側が選ぶ(採用ルール 9/22 と同じ)。",
+    overrides: {
+      ...R0913_OVERRIDES,
+      startMana: [6, 8],
+      baseIncome: 6,
+      chipIncomeSteps: R1003_CHIP_STEPS.slice(),
+      taijiDiscount: 2,
+      taijiFloor: 1,
+      attrBonus: 2,
+      blindBonus: 2,
+      maxHp: 19,
+      lifeValueEnabled: false,
+      refundMode: "killer_half",
+      killRewardBase: "card",
+      killRewardBonus: 0,
+      counterMode: "all",
+      counterResolve: "chosen",
+      controlCount: "hp",
+      controlCountThreshold: 11,
+      controlWin: 5,
+    },
+  },
   r0923: {
     id: "r0923",
     label: "採用ルール 9/22",
@@ -124,7 +165,7 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
 };
 
 /** Packs selectable from the play UI and the online lobby. */
-export const PLAYABLE_PACKS = ["adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const;
+export const PLAYABLE_PACKS = ["adopted-1003", "adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const;
 export type PlayablePack = (typeof PLAYABLE_PACKS)[number];
 
 export const isRulePresetId = (v: unknown): v is RulePresetId =>

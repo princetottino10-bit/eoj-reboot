@@ -60,7 +60,7 @@ const BIG_CARD = 5;
 const MAX_WAITING = 2;
 const MAX_REIGU_KEPT = 2;
 /** Reigu kept in preference order when the hand holds several. */
-const REIGU_PRIORITY = ["ad22", "tm19", "ad21", "sk22", "tm22", "sk18", "tm18", "tm21", "sk20", "tm20"];
+const REIGU_PRIORITY = ["ad22", "tm19", "ad21", "sk22", "tm22", "ac23", "sk18", "tm18", "tm21", "sk20", "tm20"];
 
 /**
  * End-of-turn hand cleanup. Unlike the engine's default policy it keeps a

@@ -11,26 +11,22 @@
 import { commandsFor } from "../src/commands.ts";
 import { parsePack } from "../src/cards.ts";
 import type { CardPack } from "../src/cards.ts";
-import { createFlow, submit, submitDiscardWith } from "../src/flow.ts";
+import { createFlow, submit } from "../src/flow.ts";
 import type { Flow, FlowInput } from "../src/flow.ts";
 import { legalEntries } from "../src/preview.ts";
 import { presetConfig } from "../src/presets.ts";
 import type { PlayablePack } from "../src/presets.ts";
-import { isLegal } from "../src/rules.ts";
 import { decodeSettings, encodeSettings, settingsConfig, settingsPack } from "../src/settings.ts";
 import type { GameSettings } from "../src/settings.ts";
 import { overridesBetween } from "../src/card-overrides.ts";
 import { diffPatch } from "../src/config-schema.ts";
 import { makeCtx, opponent } from "../src/state.ts";
-import { defaultDiscardPolicy, defaultMulliganPolicy } from "../src/turn.ts";
-import { defaultTansuPolicy } from "../src/effects.ts";
-import type { GameState, PlayerId } from "../src/types.ts";
+import type { PlayerId } from "../src/types.ts";
 import { AI_KINDS, AI_LABELS, makeAi } from "../src/ai/index.ts";
-import { bestCounterOrder, MAX_REPLANS } from "../src/ai/counter-order.ts";
 import { counterOrderCandidates, counterOrderOutcomes } from "../src/counter-order.ts";
 import { EVAL_PROFILE_NAMES } from "../src/ai/eval.ts";
 import type { AiSeat } from "../src/ai/index.ts";
-import type { BoardView, LogItem } from "../online/protocol.ts";
+import type { LogItem } from "../online/protocol.ts";
 import {
   AI_GAME_KEY,
   clearStoredGame,
@@ -48,7 +44,23 @@ import {
   writeStoredGame,
 } from "./ai-store.ts";
 import type { AiKind, AiSetup, LoadedGame, StoredAiGame, Stores } from "./ai-store.ts";
+import { decideAiMove, freshMemo, isPacedMove, playAiMove } from "./ai-seat.ts";
+import type { AiMemo } from "./ai-seat.ts";
+import { boardOf } from "./board-snapshot.ts";
 import { createTable } from "./table.ts";
+import { bindModeSwitch } from "./mode-switch.ts";
+import {
+  actionsHtml,
+  entryPanelHtml,
+  entryProblemHtml,
+  entryTopHtml,
+  modeSlotOf,
+  moreHtml,
+  quietButton,
+  rulesBlockHtml,
+  showEntryPage,
+  showTablePage,
+} from "./entry-shell.ts";
 import type { TableModel, TablePrompt } from "./table.ts";
 import { esc } from "./render.ts";
 import { rulesHref } from "./rules-url.ts";
@@ -72,6 +84,8 @@ type Game = {
   start: Start;
   human: PlayerId;
   ai: AiSeat;
+  /** The AI seat's plan for its turn (play/ai-seat.ts). */
+  memo: AiMemo;
   aiLabel: string;
   /** The starting settings with the cards in force (mid-game changes included), for the badge and the table. */
   settings: GameSettings;
@@ -87,7 +101,11 @@ let gameCounter = 0;
 const PACKS = new Map<string, CardPack>();
 const stores: Stores = { session: storageOr(() => sessionStorage), local: storageOr(() => localStorage) };
 
-const table = createTable($("table"), {
+/** The setup page (play/entry-shell.ts) and the table: one of them is shown at a time. */
+const entryEl = $("entry");
+const tableEl = $("table");
+
+const table = createTable(tableEl, {
   send: (input) => onHumanInput(input),
   extraControls: (box, m) => {
     if (m.prompt.kind === "over") {
@@ -113,31 +131,6 @@ $("newGame").addEventListener("click", () => void openSetup());
 $("rulesBadge").addEventListener("click", () => showDiff());
 
 // --------------------------------------------------------------- model
-
-// a snapshot: the flow mutates its state in place, and the table compares consecutive boards
-const boardOf = (s: GameState): BoardView => ({
-  units: s.units.map((u) => ({ ...u, pos: { ...u.pos } })),
-  players: [0, 1].map((p) => {
-    const ps = s.players[p];
-    return {
-      life: ps.life,
-      mana: ps.mana,
-      chips: ps.chips,
-      reach: ps.reach,
-      handCount: ps.hand.length,
-      deckCount: ps.deck.length,
-      grave: ps.grave.slice(),
-      reshuffleCount: ps.reshuffleCount,
-      controlPoints: ps.controlPoints,
-    };
-  }) as BoardView["players"],
-  turnPlayer: s.turnPlayer,
-  round: s.round,
-  ended: s.ended,
-  winner: s.winner,
-  winType: s.winType,
-  summonsThisTurn: s.summonsThisTurn,
-});
 
 const promptOf = (g: Game): TablePrompt => {
   const f = g.flow;
@@ -258,7 +251,11 @@ const onHumanInput = (input: FlowInput): void => {
   void pump(g);
 };
 
-/** Plays every input the AI seat owes, with a short delay per action. */
+/**
+ * Plays every input the AI seat owes (play/ai-seat.ts decides each one, the
+ * same driver the spectate page uses), with a short delay before each
+ * main-phase action and the discard.
+ */
 const pump = async (g: Game): Promise<void> => {
   if (g.busy) return;
   g.busy = true;
@@ -266,32 +263,16 @@ const pump = async (g: Game): Promise<void> => {
   try {
     for (;;) {
       if (G !== g) return;
-      const f = g.flow;
-      const ph = f.phase;
-      if (ph.kind === "mulligan" && !ph.submitted[aiSeat]) {
-        // a seat that answers for itself (strong) is asked; greedy / beam keep the engine defaults
-        const choose = g.ai.mulligan ?? defaultMulliganPolicy;
-        submit(f, aiSeat, { type: "mulligan", indices: choose(f.ctx, f.state, aiSeat) });
-      } else if (ph.kind === "tansu" && ph.player === aiSeat) {
-        const choose = g.ai.tansu ?? defaultTansuPolicy;
-        submit(f, aiSeat, {
-          type: "tansu",
-          answers: ph.uids.map((uid) => {
-            const unit = f.state.units.find((u) => u.uid === uid);
-            return { uid, choice: unit === undefined ? ("mana" as const) : choose(f.ctx, f.state, unit) };
-          }),
-        });
-      } else if (ph.kind === "counterOrder" && ph.player === aiSeat) {
-        // 案A: the AI seat orders its counters the way its eval likes best
-        const order = (g.ai.counterOrder ?? bestCounterOrder)(f.ctx, f.state, ph.action) ?? ph.uids;
-        submit(f, aiSeat, { type: "counterOrder", order });
-      } else if (ph.kind === "main" && ph.player === aiSeat) {
-        await runAiTurn(g, aiSeat);
-      } else if (ph.kind === "discard" && ph.player === aiSeat) {
+      const move = decideAiMove(g.flow, aiSeat, g.ai, g.memo);
+      if (move === null) return;
+      if (isPacedMove(move)) {
         await sleep(AI_DELAY_MS);
         if (G !== g) return;
-        submitDiscardWith(f, aiSeat, g.ai.discard ?? defaultDiscardPolicy);
-      } else {
+      }
+      const r = playAiMove(g.flow, aiSeat, move, g.memo);
+      if (!r.ok) {
+        g.error = `AIの手が受け付けられませんでした: ${r.error}`;
+        refresh();
         return;
       }
       refresh();
@@ -299,39 +280,6 @@ const pump = async (g: Game): Promise<void> => {
   } finally {
     g.busy = false;
   }
-};
-
-/**
- * The AI seat's main phase. The plan is taken again from the board as it is
- * whenever its next action is no longer legal (the human ordered their counters
- * differently from what the plan assumed: after a counterOrder input the pump
- * calls this afresh, so the plan is always made on the current board).
- */
-const runAiTurn = async (g: Game, seat: PlayerId): Promise<void> => {
-  const f = g.flow;
-  let plan = g.ai.planTurn(f.ctx, f.state);
-  let taken = 0;
-  let replans = 0;
-  while (f.phase.kind === "main") {
-    const a = plan[0];
-    if (a === undefined || a.kind === "pass" || taken >= f.ctx.cfg.maxActionsPerTurn) break;
-    if (!isLegal(f.ctx, f.state, a)) {
-      if (replans >= MAX_REPLANS) break;
-      replans += 1;
-      plan = g.ai.planTurn(f.ctx, f.state);
-      continue;
-    }
-    plan = plan.slice(1);
-    await sleep(AI_DELAY_MS);
-    if (G !== g) return;
-    submit(f, seat, { type: "action", action: a });
-    taken += 1;
-    refresh();
-  }
-  if (f.phase.kind !== "main") return;
-  await sleep(AI_DELAY_MS);
-  if (G !== g) return;
-  submit(f, seat, { type: "action", action: { kind: "pass" } });
 };
 
 // ------------------------------------------------------------------ setup
@@ -373,12 +321,11 @@ let waiting: LoadedGame | null = null;
 
 const canContinue = (): boolean => (G !== null && G.flow.phase.kind !== "over") || waiting !== null;
 
-const CONTINUE_BUTTON = '<button type="button" class="btn btn-quiet" data-continue>続きから</button>';
+const CONTINUE_BUTTON = quietButton("data-continue", "続きから");
 
 /** The start card's 「続きから」 follows storage: another tab may have finished, moved on or started a match meanwhile. */
 const syncContinue = async (): Promise<void> => {
-  const dlg = $<HTMLDialogElement>("setup");
-  const btns = dlg.open ? dlg.querySelector<HTMLElement>(".start-card .setup-btns") : null;
+  const btns = entryEl.hidden ? null : entryEl.querySelector<HTMLElement>(".entry-secondary");
   if (btns === null || (G !== null && G.flow.phase.kind !== "over")) return;
   waiting = await loadStoredGame(stores, loadPackByName);
   const shown = btns.querySelector("button[data-continue]");
@@ -389,10 +336,10 @@ const syncContinue = async (): Promise<void> => {
 let continuing = false;
 
 /** 「続きから」: the match as storage has it now, not as it was when the start card opened. */
-const continueStored = async (dlg: HTMLDialogElement): Promise<void> => {
+const continueStored = async (): Promise<void> => {
   if (continuing) return;
   if (G !== null && G.flow.phase.kind !== "over") {
-    dlg.close();
+    showTablePage(entryEl, tableEl);
     return;
   }
   continuing = true;
@@ -403,7 +350,6 @@ const continueStored = async (dlg: HTMLDialogElement): Promise<void> => {
       await openSetup("続きの対局はもうありません(別の画面で終わったか、消えました)");
       return;
     }
-    dlg.close();
     resume(latest);
   } finally {
     continuing = false;
@@ -413,33 +359,21 @@ const continueStored = async (dlg: HTMLDialogElement): Promise<void> => {
 const startCardHtml = (settings: GameSettings, printed: CardPack | null, problem: string): string => {
   const o = setup;
   const look = { rule: settings.rule, pack: settings.pack, cfg: settingsConfig(settings), cards: settings.cards, printed };
-  return `<form method="dialog" class="setup start-card" novalidate>
-    <h2>対局の準備</h2>
-    <div class="setup-grid">
-      <label>あなたの席<select name="seat">${option("0", "先手", o.human === 0)}${option("1", "後手", o.human === 1)}</select></label>
+  const encoded = encodeSettings(settings);
+  const fields = `<div class="entry-grid">
+      <label>あなたの席<select name="seat" data-first>${option("0", "先手", o.human === 0)}${option("1", "後手", o.human === 1)}</select></label>
       <label>AI<select name="ai">${AI_KINDS.map((k) => option(k, AI_LABELS[k], o.ai === k)).join("")}</select></label>
-      <label>シード<input name="seed" type="number" value="${o.seed}" inputmode="numeric"></label>
     </div>
-    <details class="start-more"><summary>詳細</summary>
-      <label>AIの方針<select name="eval">${EVAL_PROFILE_NAMES.map((p) => option(p, p, p === o.evalName)).join("")}</select></label>
-    </details>
-    ${
-      o.playedSeed === null
-        ? ""
-        : `<label class="start-check"><input type="checkbox" name="sameSeed"> 前回と同じシード(${o.playedSeed})で配り直す</label>`
-    }
-    <div class="start-rules">
-      <span class="start-label">ルールとカード</span>
-      <span class="rules-badge">${badgeHtml(look)}</span>
-      <a class="btn btn-quiet" data-edit-rules href="${esc(rulesHref({ for: "ai", s: encodeSettings(settings) }))}">ルールとカードを編集</a>
-    </div>
-    <details class="start-diff"><summary>基準からの変更点</summary>${diffFromPresetHtml(look)}</details>
-    ${problem === "" ? "" : `<p class="err" role="alert">${esc(problem)}</p>`}
-    <div class="setup-btns">
-      ${canContinue() ? CONTINUE_BUTTON : ""}
-      <button type="button" class="btn btn-gold" data-start>対局開始</button>
-    </div>
-  </form>`;
+    ${moreHtml(`<label>AIの方針<select name="eval">${EVAL_PROFILE_NAMES.map((p) => option(p, p, p === o.evalName)).join("")}</select></label>
+      <label>シード<input name="seed" type="number" value="${o.seed}" inputmode="numeric"></label>${
+        o.playedSeed === null
+          ? ""
+          : `<label class="entry-check"><input type="checkbox" name="sameSeed"> 前回と同じシード(${o.playedSeed})で配り直す</label>`
+      }`)}`;
+  return `${entryTopHtml("ai", encoded)}${entryPanelHtml(
+    "ai",
+    `${fields}${rulesBlockHtml(look, rulesHref({ for: "ai", s: encoded }))}${actionsHtml("ai", problem, canContinue() ? CONTINUE_BUTTON : "")}`,
+  )}`;
 };
 
 /** The start card's fields into the stored choices (kept across the settings page and reloads). */
@@ -467,17 +401,17 @@ const openSetup = async (problem = ""): Promise<void> => {
     saveSetup({ ...setup, s: defaultAiSetup().s });
     checked = await checkedSettings(setup.s);
     if (!checked.ok) {
-      $("rulesBadge").textContent = checked.error;
+      showEntryPage(entryEl, tableEl, entryProblemHtml("ai", checked.error));
       return;
     }
   }
   const shown = checked.value;
-  const dlg = $<HTMLDialogElement>("setup");
-  dlg.className = "yy-dialog yy-start";
-  dlg.innerHTML = startCardHtml(shown, checked.printed, problem);
-  const form = dlg.querySelector<HTMLFormElement>("form");
+  const form = showEntryPage(entryEl, tableEl, startCardHtml(shown, checked.printed, problem));
   if (form === null) return;
   form.addEventListener("change", () => saveSetup(readStartForm(form)));
+  // leaving for 観戦 or the lobby keeps the seat, AI and seed chosen here
+  bindModeSwitch(modeSlotOf(entryEl), () => saveSetup(readStartForm(form)));
+  form.addEventListener("submit", (ev) => ev.preventDefault());
   form.addEventListener("click", (ev) => {
     const t = ev.target as HTMLElement;
     if (t.closest("[data-edit-rules]") !== null) {
@@ -485,7 +419,7 @@ const openSetup = async (problem = ""): Promise<void> => {
       return;
     }
     if (t.closest("button[data-continue]") !== null) {
-      void continueStored(dlg);
+      void continueStored();
       return;
     }
     if (t.closest("button[data-start]") !== null) {
@@ -493,11 +427,10 @@ const openSetup = async (problem = ""): Promise<void> => {
       const same = new FormData(form).get("sameSeed") !== null && o.playedSeed !== null;
       const seed = same && o.playedSeed !== null ? o.playedSeed : o.seed;
       saveSetup({ ...o, s: encodeSettings(shown), playedSeed: seed });
-      dlg.close();
+      showTablePage(entryEl, tableEl);
       void startGame({ id: newGameId(), settings: shown, human: o.human, ai: o.ai, evalName: o.evalName, seed });
     }
   });
-  if (!dlg.open) dlg.showModal();
 };
 
 const showDiff = (): void => {
@@ -531,6 +464,7 @@ const play = (start: Start, flow: Flow, printed: CardPack): void => {
     start,
     human: start.human,
     ai,
+    memo: freshMemo(),
     aiLabel: label,
     settings: { ...start.settings, cards: overridesBetween(printed, flow.ctx.pack) },
     printed,
@@ -540,6 +474,7 @@ const play = (start: Start, flow: Flow, printed: CardPack): void => {
   };
   G = g;
   waiting = null;
+  showTablePage(entryEl, tableEl);
   if (location.search !== "") history.replaceState(null, "", location.pathname);
   renderBadge(g);
   refresh();
