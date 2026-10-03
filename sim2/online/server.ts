@@ -27,6 +27,7 @@ import type { Served, ServedBytes } from "../play/server.ts";
 import { isPlayablePack, isRulePresetId } from "../src/presets.ts";
 import { checkRecordDir, packFor, printedPack } from "./match.ts";
 import { recordsResponse } from "./records.ts";
+import { loadRooms, restoredSummary, saveAllRooms } from "./room-store.ts";
 import { parseClientInput, parseCreateRoom, parseJoin } from "./protocol.ts";
 import {
   allowHit,
@@ -574,7 +575,10 @@ export const shutdown = (
 ): void => {
   if (app.shuttingDown) return;
   app.shuttingDown = true;
-  process.stdout.write(`online: shutting down — rooms=${app.lobby.rooms.size} streams=${app.streams.size}\n`);
+  // first, while nothing else can change: the rooms go to disk and come back on the next boot
+  const saved = saveAllRooms(app.lobby);
+  const savedText = app.lobby.opts.roomDir === null ? "off" : String(saved);
+  process.stdout.write(`online: shutting down — rooms=${app.lobby.rooms.size} saved=${savedText} streams=${app.streams.size}\n`);
   for (const res of [...app.streams]) {
     app.streams.delete(res);
     try {
@@ -632,6 +636,7 @@ if (isEntry()) {
     recordDir: args.recordDir,
     trustProxy: args.trustProxy,
     log: (line) => process.stdout.write(`${line}\n`),
+    roomDir: join(args.recordDir, "rooms"),
   });
   // the record directory is a mounted volume in production: empty, and possibly
   // not writable, the first time the machine boots. Say so and keep serving.
@@ -639,6 +644,11 @@ if (isEntry()) {
   if (!rec.ok) {
     process.stderr.write(`online: records are NOT being saved to ${args.recordDir}: ${rec.error}\n`);
   }
+  const restored = loadRooms(app.lobby).flatMap((code) => {
+    const room = app.lobby.rooms.get(code);
+    return room === undefined ? [] : [restoredSummary(room)];
+  });
+  if (restored.length > 0) process.stdout.write(`online: restored ${restored.length} room(s): ${restored.join(", ")}\n`);
   startSweep(app);
   const server = createOnlineServer(app);
   for (const sig of ["SIGTERM", "SIGINT"] as const) {

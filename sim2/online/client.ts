@@ -115,7 +115,7 @@ const joinRoom = async (): Promise<Resolved> => {
 const joinSecondSeat = async (): Promise<void> => {
   const r = await joinRoom();
   if (r.kind !== "token") {
-    if (r.kind === "gone") setError(GONE);
+    if (r.kind === "gone") showGone();
     else if (r.kind === "retry") setError(r.why);
     return;
   }
@@ -144,6 +144,10 @@ const send = async (input: ClientInput): Promise<boolean> => {
       signal: abort.signal,
     });
     if (res.ok) return true;
+    if (res.status === 404) {
+      showGone();
+      return false;
+    }
     const json = (await res.json().catch(() => ({}))) as { error?: string };
     setError(json.error ?? `送信できませんでした (${res.status})`);
   } catch {
@@ -382,6 +386,8 @@ const setConn = (text: string, bad: boolean): void => {
   const el = $("conn");
   el.textContent = text;
   el.className = bad ? "conn bad" : "conn";
+  // while the stream is down nothing sent would land: the table dims and takes no taps until it is back
+  $("table").classList.toggle("is-offline", bad);
 };
 
 /** Why the last stream could not open (the server's message), shown with the retry countdown. */
@@ -447,7 +453,29 @@ const readStream = async (t: string, onLive: () => void): Promise<"retry" | "rea
   }
 };
 
-const GONE = "部屋が見つかりません(サーバーが再起動した可能性があります)。ロビーから作り直してください。";
+const GONE_WHY =
+  "部屋が閉じられたか、長いあいだ誰もつながらずに片づけられたか、サーバーの入れ替えで戻せなかったためです。ロビーから部屋を作り直してください。";
+
+/**
+ * The room is gone for good (the server answers 404): say so over the whole
+ * page, with the way out. The table under it stays as it was for reading,
+ * but nothing on it can be answered any more, the reconnecting stops and the
+ * tab title no longer says it is your turn.
+ */
+const showGone = (): void => {
+  stopped = true;
+  streamAbort?.abort();
+  setError("");
+  setConn("", false);
+  $("table").classList.add("is-offline");
+  $("goneCode").textContent = CODE;
+  $("goneWhy").textContent = GONE_WHY;
+  $("gone").hidden = false;
+  document.title = `${BASE_TITLE} ${CODE}`;
+  $<HTMLButtonElement>("goneRetry").focus();
+};
+
+$<HTMLButtonElement>("goneRetry").addEventListener("click", () => location.reload());
 
 const run = async (): Promise<void> => {
   if (!/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$/.test(CODE)) {
@@ -469,8 +497,8 @@ const run = async (): Promise<void> => {
         continue;
       }
       if (r.kind !== "token") {
-        if (r.kind === "gone") setError(GONE);
-        setConn("未接続", true);
+        if (r.kind === "gone") showGone();
+        else setConn("未接続", true);
         return;
       }
       token = r.token;
@@ -482,8 +510,7 @@ const run = async (): Promise<void> => {
     });
     if (token !== held) continue; // this tab took another seat: connect with the new token at once
     if (outcome === "gone") {
-      setError(GONE);
-      setConn("未接続", true);
+      showGone();
       return;
     }
     if (outcome === "reauth") {

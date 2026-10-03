@@ -27,6 +27,16 @@
     <p><a href="/">ロビーへ戻る</a></p>
   </div>
 </div>
+<div id="gone" class="gone" role="alertdialog" aria-labelledby="goneTitle" hidden>
+  <div class="waiting-card">
+    <span class="brand-mark" aria-hidden="true">符</span>
+    <h1 id="goneTitle">この部屋はもうありません</h1>
+    <p class="gone-code">部屋 <b id="goneCode">------</b></p>
+    <p class="muted" id="goneWhy"></p>
+    <p class="gone-actions"><a class="btn btn-gold" href="/">ロビーへ</a>
+      <button type="button" class="btn btn-quiet" id="goneRetry">もう一度つなぐ</button></p>
+  </div>
+</div>
 <p id="error" class="page-error" role="alert" hidden></p>
 <p id="conn" class="conn" aria-live="polite">接続中…</p>
 <div id="table" hidden></div>

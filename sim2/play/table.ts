@@ -892,12 +892,13 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const lk = look(m);
     root.dataset.viewer = m.viewer === null ? "watch" : String(m.viewer);
     root.dataset.prompt = m.prompt.kind;
-    put(el.oppPlate, nameplateHtml(m.ctx, m.board, top, m.names, false));
+    const mulligan = m.phaseText === "マリガン" || m.prompt.kind === "mulligan";
+    put(el.oppPlate, nameplateHtml(m.ctx, m.board, top, m.names, false, mulligan));
     put(el.oppHand, m.viewer === null && m.oppHand !== undefined && m.oppHand !== null ? openHandHtml(m.ctx, m.oppHand, m.names[top]) : oppHandHtml(m.board.players[top].handCount));
-    put(el.selfPlate, nameplateHtml(m.ctx, m.board, bottom, m.names, m.viewer === bottom));
+    put(el.selfPlate, nameplateHtml(m.ctx, m.board, bottom, m.names, m.viewer === bottom, mulligan));
     put(el.pilesOpp, pilesHtml(m.ctx, m.board, top, lk));
     put(el.pilesSelf, pilesHtml(m.ctx, m.board, bottom, lk));
-    put(el.turn, turnHtml(m.ctx, m.board, m.names, { phaseText: m.phaseText, mulligan: m.phaseText === "マリガン" || m.prompt.kind === "mulligan" }));
+    put(el.turn, turnHtml(m.ctx, m.board, m.names, { phaseText: m.phaseText, mulligan }));
     put(el.board, boardHtml(boardVM(m)));
     renderHand(m);
     put(

@@ -78,9 +78,10 @@ const pointsHtml = (ctx: Ctx, points: number | undefined): string =>
     ? `<span class="np-stat np-pts" data-stat="points" title="制圧点(${ctx.cfg.controlPointsToWin}点で勝利)"><i>制圧点</i><b>${points ?? 0}</b><small>/${ctx.cfg.controlPointsToWin}</small></span>`
     : "";
 
-export const nameplateHtml = (ctx: Ctx, board: BoardView, p: PlayerId, names: Names, you: boolean): string => {
+/** `mulligan`: both seats choose at once, so neither plate says 手番. */
+export const nameplateHtml = (ctx: Ctx, board: BoardView, p: PlayerId, names: Names, you: boolean, mulligan = false): string => {
   const ps = board.players[p];
-  const turn = board.turnPlayer === p && !board.ended;
+  const turn = board.turnPlayer === p && !board.ended && !mulligan;
   const ctl = ps.reach && !board.ended;
   const occ = occupiedOf(ctx, board, p);
   const need = controlNeed(ctx, board);

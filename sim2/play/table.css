@@ -984,7 +984,8 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   .yy-piles-self .piles::before { content: "自分"; }
   /* whose turn is already on the name plates; this line only names it and the phase */
   .turn { flex-direction: row; align-items: center; gap: 5px; padding: 1px 7px; border-left-width: 3px; min-width: 0; box-shadow: none; }
-  .turn-round { display: none; }
+  /* the round stays: how far the game has gone is what the 10/3 tests measure */
+  .turn-round { font-size: 10px; letter-spacing: 0; white-space: nowrap; flex-shrink: 0; }
   .turn-who { font-family: var(--font-gothic); font-weight: 700; font-size: 11px; flex-wrap: nowrap; white-space: nowrap; gap: 3px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .turn-seal { width: 14px; height: 14px; font-size: 9px; }
   .turn-phase { font-size: 10px; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -1023,10 +1024,13 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   .rd[data-x="2"] { translate: -22px 0; }
   .fc[data-x="0"] .fc-3 { left: -2px; }
   .fc[data-x="2"] .fc-1 { right: -2px; }
-  .fc-btn { width: 38px; height: 38px; }
-  .fc-arrow { inset: 10px 11px 12px; }
-  .fc-0, .fc-2 { left: calc(50% - 19px); }
-  .fc-1, .fc-3 { top: calc(50% - 19px); }
+  /* 44px: a finger's width. Top and bottom rows keep their outer arrow inside the board */
+  .fc-btn { width: 44px; height: 44px; }
+  .fc-arrow { inset: 12px 13px 14px; }
+  .fc-0, .fc-2 { left: calc(50% - 22px); }
+  .fc-1, .fc-3 { top: calc(50% - 22px); }
+  .fc[data-row="1"] .fc-0 { top: 2px; }
+  .fc[data-row="3"] .fc-2 { bottom: 2px; }
   .fc-btn:hover { transform: none; }
 
   /* ordering counters (the other side's turn, the hand is not in play): my side folds to its

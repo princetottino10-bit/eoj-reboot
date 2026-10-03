@@ -323,14 +323,28 @@
 .conn.bad { color: oklch(80% 0.14 40); font-weight: 700; }
 /* over the hand on a phone: on its own dark pill, so it reads and the card text under it does not bleed through */
 .conn.bad { max-width: calc(100vw - 24px); padding: 2px 9px; border-radius: 999px; background: oklch(12% 0.012 260 / 0.94); border: 1px solid oklch(62% 0.12 40 / 0.6); }
+/* a broken connection is not a footnote: top centre, readable, while the table under it is dimmed and still */
+.conn.bad { top: 8px; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); width: max-content; padding: 6px 14px; font-size: 13.5px; box-shadow: 0 8px 22px oklch(0% 0 0 / 0.55); }
+#table.is-offline { filter: saturate(0.35) brightness(0.62); pointer-events: none; transition: filter 0.3s; }
+/* the room is gone for good: nothing on the table can be answered any more */
+.gone { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px; background: oklch(8% 0.01 260 / 0.78); backdrop-filter: blur(3px); }
+.gone[hidden] { display: none; }
+.gone-code b { font-family: var(--font-mincho); font-size: 24px; letter-spacing: 0.22em; color: var(--gold-hi); }
+.gone-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 18px 0 0; }
+.gone-actions .btn { min-height: 44px; min-width: 140px; display: inline-grid; place-items: center; text-decoration: none; }
+.gone .waiting-card a.btn-gold { color: var(--ink, oklch(15% 0.02 60)); }
 /* a message, not a control: taps go through to the board and plates under it */
 .page-error { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); z-index: 60; margin: 0; padding: 8px 14px; border-radius: 6px; background: oklch(40% 0.14 30 / 0.95); color: oklch(97% 0.01 85); font-weight: 700; box-shadow: 0 10px 24px oklch(0% 0 0 / 0.5); pointer-events: none; width: max-content; max-width: calc(100vw - 16px); }
 .page-error[hidden] { display: none; }
+/* a phone has the board right under the plates: say it over the plates, not over the top row of the board */
+@media (max-width: 700px) { .page-error { top: 50px; font-size: 13px; } }
 
 .waiting { min-height: 100dvh; display: grid; place-items: center; padding: 20px; }
 .waiting[hidden] { display: none; }
 .waiting-card { width: min(560px, 100%); padding: 28px 30px; text-align: center; border-radius: 10px; background: linear-gradient(170deg, oklch(21% 0.02 50), oklch(14% 0.012 40)); border: 1px solid var(--gold-line); box-shadow: 0 30px 80px oklch(0% 0 0 / 0.6); }
 .waiting-card h1 { margin: 12px 0 4px; font-family: var(--font-mincho); font-size: 24px; letter-spacing: 0.12em; }
+/* a phone: the heading on one line, not with its last character alone on the next */
+@media (max-width: 420px) { .waiting-card { padding: 24px 18px; } .waiting-card h1 { font-size: 19px; letter-spacing: 0.04em; } }
 .waiting-code b { font-family: var(--font-mincho); font-size: 30px; letter-spacing: 0.25em; color: var(--gold-hi); }
 .waiting-invite { display: flex; gap: 8px; margin: 12px 0; }
 .waiting-invite input { flex: 1; min-width: 0; }

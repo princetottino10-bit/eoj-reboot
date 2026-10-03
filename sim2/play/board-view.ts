@@ -159,7 +159,8 @@ const facingHtml = (vm: BoardVM): string => {
     )
     .join("");
   const turn = f.turn === undefined ? "" : ` fc-turn from-${f.turn.from}`;
-  return `<div class="fc${turn}" data-x="${f.pos.x}" style="${gridPlace(f.pos)}">
+  // data-row: 1 = the top row on screen (gridPlace puts y=2 there), so the arrows can stay inside the board
+  return `<div class="fc${turn}" data-x="${f.pos.x}" data-row="${3 - f.pos.y}" style="${gridPlace(f.pos)}">
     <div class="fc-ghost">${cardFaceHtml(vm.ctx, f.cardId, { size: "sm", ...vm.look })}</div>${buttons}
   </div>`;
 };

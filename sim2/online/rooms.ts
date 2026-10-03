@@ -1,7 +1,8 @@
 // Rooms: creation / joining, seat tokens, live connections, rematches and the
 // idle sweep. Players are identified by their seat token ONLY - knowing a room
 // code lets you look and join a free seat, never act for someone else.
-// Everything lives in memory; a server restart drops every room.
+// Rooms live in memory; with LobbyOptions.roomDir set, each one is also kept on
+// disk (room-store.ts) so a restart picks the games up where they were.
 import { randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { applyCardOverrides, cardChangeCount, cloneCardOverrides, overridesBetween, parseCardOverrides } from "../src/card-overrides.ts";
 import type { CardOverrides } from "../src/card-overrides.ts";
@@ -13,6 +14,7 @@ import type { GameSettings } from "../src/settings.ts";
 import { opponent } from "../src/state.ts";
 import type { PlayerId } from "../src/types.ts";
 import { createMatch, matchOver, matchSubmit, packFor, saveRecord } from "./match.ts";
+import { forgetRoom, saveRoom } from "./room-store.ts";
 import type { Match, MatchSettings } from "./match.ts";
 import type {
   ClientInput,
@@ -121,6 +123,8 @@ export type LobbyOptions = {
    * server CLI points it at stdout.
    */
   log?: (line: string) => void;
+  /** Where rooms are saved so they survive a restart (room-store.ts). Default null: memory only. */
+  roomDir?: string | null;
 };
 
 export type Lobby = {
@@ -154,6 +158,7 @@ export const createLobby = (opts: LobbyOptions): Lobby => ({
     coin: opts.coin ?? (() => randomInt(2) as PlayerId),
     flowOptions: opts.flowOptions ?? {},
     log: opts.log ?? (() => {}),
+    roomDir: opts.roomDir ?? null,
   },
   rooms: new Map(),
   hits: new Map(),
@@ -226,6 +231,7 @@ export const createRoom = (
     idleSince: lobby.opts.now(),
   };
   lobby.rooms.set(code, room);
+  saveRoom(lobby, room);
   lobby.opts.log(`room ${code} created seat=${seat} rule=${room.settings.rule} pack=${room.settings.pack} rooms=${lobby.rooms.size}`);
   return { ok: true, value: { code, token: member.token, seat } };
 };
@@ -273,6 +279,7 @@ export const joinRoom = (
     const member: Member = { token: newToken(), name: req.name || fallback, connections: 0 };
     room.seats[seat] = member;
     if (room.match === null) startMatch(lobby, room);
+    saveRoom(lobby, room);
     lobby.opts.log(`room ${room.code} seat ${seat} joined match=${room.match === null ? "none" : room.match.no}`);
     broadcast(room);
     return { ok: true, value: { token: member.token, role: "player", seat } };
@@ -285,6 +292,7 @@ export const joinRoom = (
   }
   const member: Member = { token: newToken(), name: req.name || "観戦者", connections: 0 };
   room.spectators.push(member);
+  saveRoom(lobby, room);
   lobby.opts.log(`room ${room.code} spectator joined spectators=${room.spectators.length}`);
   broadcast(room);
   return { ok: true, value: { token: member.token, role: "spectator", seat: null } };
@@ -457,6 +465,7 @@ export const sweep = (lobby: Lobby): string[] => {
     if (idle < (room.matchCount === 0 ? EMPTY_ROOM_MS : lobby.opts.idleMs)) continue;
     saveUnfinished(lobby, room);
     lobby.rooms.delete(code);
+    forgetRoom(lobby, code);
     gone.push(code);
   }
   for (const [key, times] of lobby.hits) {
@@ -475,6 +484,7 @@ export const closeRoom = (lobby: Lobby, ms: Membership): Outcome<{ code: string 
   if (ms.role !== "player" || ms.seat === null) return no(403, "部屋を閉じられるのは席に着いている人だけです");
   const { room } = ms;
   if (!lobby.rooms.delete(room.code)) return no(404, "部屋が見つかりません");
+  forgetRoom(lobby, room.code);
   saveUnfinished(lobby, room);
   lobby.opts.log(`room ${room.code} closed by seat ${ms.seat} matches=${room.matchCount} streams=${room.clients.size}`);
   for (const c of [...room.clients]) {
@@ -638,6 +648,9 @@ export const roomInput = (lobby: Lobby, ms: Membership, input: ClientInput): Out
       );
     }
   }
-  if (out.ok || room.proposal !== proposalBefore) broadcast(room);
+  if (out.ok || room.proposal !== proposalBefore) {
+    saveRoom(lobby, room);
+    broadcast(room);
+  }
   return out;
 };
