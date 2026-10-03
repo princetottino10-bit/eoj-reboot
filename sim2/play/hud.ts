@@ -89,7 +89,7 @@ export const nameplateHtml = (ctx: Ctx, board: BoardView, p: PlayerId, names: Na
   const cls = ["np", `o${p}`, turn ? "is-turn" : "", ctl ? "is-ctl" : "", you ? "is-you" : ""].join(" ");
   return `<div class="${cls}" data-seat="${p}">
     <span class="np-seal" aria-label="${p === 0 ? "先手" : "後手"}">${SEAT_SEAL[p]}</span>
-    <span class="np-who"><span class="np-name">${esc(names[p])}</span>${turn ? '<span class="np-turn">手番</span>' : ""}${
+    <span class="np-who"><span class="np-name" title="${esc(names[p])}">${you ? `<span class="np-full">${esc(names[p])}</span><span class="np-short">あなた</span>` : esc(names[p])}</span>${turn ? '<span class="np-turn">手番</span>' : ""}${
       ctl ? `<span class="np-ctl">${controlLabel(ctx)}</span>` : ""
     }</span>
     ${ctx.cfg.lifeValueEnabled ? `<span class="np-stat np-life" data-stat="life" title="生命"><i>生命</i><b>${Math.max(0, ps.life)}</b></span>` : ""}
@@ -152,7 +152,7 @@ export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInf
     ? "対局終了"
     : info.mulligan === true
       ? "マリガン(両者)"
-      : `<span class="turn-seal">${SEAT_SEAL[p]}</span>${esc(names[p])}の番`;
+      : `<span class="turn-seal">${SEAT_SEAL[p]}</span><span><span class="turn-name">${esc(names[p])}</span>の番</span>`;
   const how = board.ended ? resultHow(board.winType, board.winner, names, endOcc(ctx, board), endCold(ctx, board)) : null;
   const result =
     board.winner === null || (board.winType === "deck_out" && how !== null)
@@ -165,7 +165,7 @@ export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInf
   return `<div class="turn o${board.ended || info.mulligan === true ? "x" : p}">
     <span class="turn-round">第${board.round}ラウンド</span>
     <span class="turn-who">${who}</span>
-    ${phase === "" ? "" : `<span class="turn-phase">${phase}</span>`}
+    ${phase === "" ? "" : `<span class="turn-phase${phaseText === "行動中" ? " is-plain" : ""}">${phase}</span>`}
     ${holders.map((h) => `<span class="turn-ctl o${h}" title="${esc(names[h])} ${controlLabel(ctx)}(占拠${occupiedOf(ctx, board, h)})"><span class="turn-ctl-who">${esc(names[h])} </span>${controlLabel(ctx)}<span class="turn-ctl-occ">(占拠${occupiedOf(ctx, board, h)})</span></span>`).join("")}
   </div>`;
 };

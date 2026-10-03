@@ -176,6 +176,7 @@ button.rules-badge { cursor: pointer; }
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
 }
 .np-turn, .np-ctl { font-size: 10px; letter-spacing: 0.12em; }
+.np-short { display: none; }
 .np-turn { color: var(--gold); }
 .np-ctl { color: var(--ink); background: var(--gold); padding: 0 6px; border-radius: 2px; align-self: flex-start; margin-top: 2px; font-weight: 700; }
 .np-stat { display: flex; flex-direction: column; align-items: center; line-height: 1.05; }
@@ -986,6 +987,8 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   .turn { flex-direction: row; align-items: center; gap: 5px; padding: 1px 7px; border-left-width: 3px; min-width: 0; box-shadow: none; }
   /* the round stays: how far the game has gone is what the 10/3 tests measure */
   .turn-round { font-size: 10px; letter-spacing: 0; white-space: nowrap; flex-shrink: 0; }
+  /* the seal says whose turn (先/後 in the seat colour); the name and the everyday 行動中 do not fit beside the round */
+  .turn-name, .turn-phase.is-plain { display: none; }
   .turn-who { font-family: var(--font-gothic); font-weight: 700; font-size: 11px; flex-wrap: nowrap; white-space: nowrap; gap: 3px; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .turn-seal { width: 14px; height: 14px; font-size: 9px; }
   .turn-phase { font-size: 10px; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -1049,10 +1052,15 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   .yy-self-plate { grid-area: plate; padding: 0; min-width: 0; }
   .yy-self-plate .np { flex-wrap: nowrap; }
   .yy-self-plate .np-chips { flex-basis: auto; padding-left: 0; }
+  /* my own plate: "あなた" instead of the full name, which ターン終了 and 投了 squeezed down to two letters */
+  .yy-self-plate .np { gap: 6px; }
+  .yy-self-plate .np-full { display: none; }
+  .yy-self-plate .np-short { display: inline; }
+  .yy-self-plate .np-who { flex-shrink: 0; }
   .yy-actions { grid-area: actions; flex-direction: row; align-items: center; gap: 6px; padding: 0; }
   .yy-extra { flex-wrap: nowrap; gap: 4px; }
-  .yy-extra .btn { padding: 5px 8px; font-size: 12px; }
-  .btn-end { font-size: 14px; letter-spacing: 0.08em; padding: 8px 12px; box-shadow: inset 0 0 0 2px var(--board), inset 0 0 0 3px var(--gold-line); }
+  .yy-extra .btn { padding: 5px 6px; font-size: 12px; }
+  .btn-end { font-size: 14px; letter-spacing: 0.02em; padding: 8px 9px; box-shadow: inset 0 0 0 2px var(--board), inset 0 0 0 3px var(--gold-line); }
 
   .yy-hand { grid-area: hand; height: auto; }
   .hand { position: static; inset: auto; container-type: normal; display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 12px 2px 4px; scroll-snap-type: x proximity; scrollbar-width: none; }

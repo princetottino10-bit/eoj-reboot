@@ -106,5 +106,5 @@ test("turn panel: both seats during the mulligan, the result once over (no doubl
   assert.match(over, /AI greedyの勝ち・生命勝ち\(あなたの生命が0\)/);
   assert.match(nameplateHtml(ctx, boardView(s), 0, NAMES, true), /data-stat="life"[^>]*><i>生命<\/i><b>0<\/b>/);
   const online = turnHtml(ctx, boardView({ ...s, ended: false }), ["たろう", "はなこ"], { phaseText: "たろうが行動中" });
-  assert.match(online, /たろうの番<\/span>\s*<span class="turn-phase">行動中</);
+  assert.match(online, /たろう<\/span>の番<\/span><\/span>\s*<span class="turn-phase is-plain">行動中</);
 });
