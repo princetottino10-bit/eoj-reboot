@@ -6,7 +6,7 @@ import type { Config } from "./types.ts";
 
 // ------------------------------------------------------------------ groups
 
-export type ConfigGroupId = "economy" | "mana" | "board" | "action" | "combat" | "victory" | "hand" | "special";
+export type ConfigGroupId = "economy" | "mana" | "board" | "action" | "combat" | "victory" | "hand" | "special" | "rare";
 
 /** The first group holds the variables the balance talk keeps coming back to; the panel opens it first. */
 export const CONFIG_GROUPS: readonly { id: ConfigGroupId; label: string }[] = [
@@ -18,6 +18,8 @@ export const CONFIG_GROUPS: readonly { id: ConfigGroupId; label: string }[] = [
   { id: "victory", label: "勝敗" },
   { id: "hand", label: "手札" },
   { id: "special", label: "特殊" },
+  // never set by any ruleset or 調整案 so far: kept working, out of the way
+  { id: "rare", label: "議論に出ていない設定" },
 ];
 
 /**
@@ -63,6 +65,16 @@ export type ConfigField =
 
 export const CONFIG_SCHEMA: readonly ConfigField[] = [
   // ------------------------------------------------------------- economy
+  {
+    key: "incomeMode", group: "economy", kind: "choice",
+    choices: [
+      { value: "ratchet", label: "ラチェット(チップは減らない)" },
+      { value: "current", label: "ダイヤル(今の占拠で上下する)" },
+    ],
+    label: "収入の決め方(ラチェット / ダイヤル)",
+    desc: "ラチェット: 一度届いたチップの段は下がらない。ダイヤル: 収入を受け取る時点の占拠数(制圧の数え方に従う)がチップになり、それで収入の段階が決まる。占拠を失うと収入も下がる(チップの増え方は使わない)",
+    midGame: true,
+  },
   {
     key: "baseIncome", group: "economy", kind: "int", min: 0, max: 10,
     label: "毎ターン収入", desc: "チップによる上乗せを除いた、毎ターンの霊力の収入", midGame: true,
@@ -138,16 +150,6 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     midGame: true,
   },
   {
-    key: "incomeMode", group: "economy", kind: "choice",
-    choices: [
-      { value: "ratchet", label: "チップは減らない" },
-      { value: "current", label: "今の占拠で決まる" },
-    ],
-    label: "収入の決め方",
-    desc: "今の占拠で決まる: 収入を受け取る時点の占拠数(制圧の数え方に従う)がチップになり、それで収入の段階が決まる。占拠を失うと収入も下がる(チップの増え方は使わない)",
-    midGame: true,
-  },
-  {
     key: "underdogDiscount", group: "economy", kind: "int", min: 0, max: 3,
     label: "劣勢時の大型割引",
     desc: "劣勢(「劣勢の判定」による)のとき、「大型割引の対象コスト」以上の式神の召喚(継承召喚を含む)をこの値だけ安くする。「占拠・チップそれぞれ」では1段ごとに引く(太極の軽減と重なり、1より下がらない。0でなし)",
@@ -178,7 +180,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     label: "初期霊力", desc: "最初の自分のターンに持っている霊力", midGame: false,
   },
   {
-    key: "manaCap", group: "mana", kind: "int", min: 1, max: 30,
+    key: "manaCap", group: "rare", kind: "int", min: 1, max: 30,
     label: "霊力上限", desc: "霊力はこの値を超えて貯まらない", midGame: true,
   },
   // not mid-match: the turn that straddles a switch would be paid twice (turn_end -> turn_start) or not at all
@@ -213,7 +215,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   },
   // -------------------------------------------------------------- action
   {
-    key: "rotateCost", group: "action", kind: "int", min: 0, max: 5,
+    key: "rotateCost", group: "rare", kind: "int", min: 0, max: 5,
     label: "回転コスト", desc: "回転命令1回に払う霊力", midGame: true,
   },
   {
@@ -241,7 +243,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     midGame: true,
   },
   {
-    key: "aoeMode", group: "combat", kind: "choice",
+    key: "aoeMode", group: "rare", kind: "choice",
     choices: [
       { value: "on", label: "味方も巻き込む" },
       { value: "no_ff", label: "敵だけに当たる" },
@@ -256,7 +258,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     midGame: true,
   },
   {
-    key: "summonCostScale", group: "combat", kind: "choice",
+    key: "summonCostScale", group: "rare", kind: "choice",
     choices: [
       { value: "full", label: "通常" },
       { value: "half", label: "半額" },
@@ -295,7 +297,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   },
   // not mid-match: points earned under one mode mean nothing under the other
   {
-    key: "controlWinMode", group: "victory", kind: "choice",
+    key: "controlWinMode", group: "rare", kind: "choice",
     choices: [
       { value: "hold", label: "制圧を維持して勝つ" },
       { value: "points", label: "制圧点をためて勝つ" },
@@ -305,11 +307,11 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     midGame: false,
   },
   {
-    key: "controlPointsToWin", group: "victory", kind: "int", min: 1, max: 9,
+    key: "controlPointsToWin", group: "rare", kind: "int", min: 1, max: 9,
     label: "勝ちに必要な制圧点", desc: "制圧の勝ち方が「制圧点」のとき、この点数に達したら勝ち", midGame: true,
   },
   {
-    key: "controlWinLate", group: "victory", kind: "int", min: 0, max: 9,
+    key: "controlWinLate", group: "rare", kind: "int", min: 0, max: 9,
     label: "終盤の制圧ライン",
     desc: "どちらかが初めて墓地を山札に戻した後は、制圧(成立・維持・制圧点)に必要なマス数をこの値にする(制圧の数え方に従う)。切り替わった時点で制圧中の側も判定し直す。0でなし",
     midGame: true,
@@ -359,16 +361,16 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     midGame: true,
   },
   {
-    key: "roundLimit", group: "victory", kind: "int", min: 1, max: 99,
+    key: "roundLimit", group: "rare", kind: "int", min: 1, max: 99,
     label: "ラウンド上限", desc: "このラウンドを超えたら引き分け", midGame: true,
   },
   {
-    key: "simultaneousDeathTurnPlayerWins", group: "victory", kind: "bool",
+    key: "simultaneousDeathTurnPlayerWins", group: "rare", kind: "bool",
     label: "同時に生命0なら手番側の勝ち", desc: "オフにすると、両者の生命が同時に0になったとき手番でない側の勝ち", midGame: true,
   },
   // ---------------------------------------------------------------- hand
   {
-    key: "handRefill", group: "hand", kind: "int", min: 1, max: 10,
+    key: "handRefill", group: "rare", kind: "int", min: 1, max: 10,
     label: "補充枚数", desc: "開始時の手札枚数と、ターン終了時にこの枚数まで引く上限", midGame: true,
   },
   {
@@ -389,7 +391,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     label: "継承召喚", desc: "自分の式神を、より召喚コストの高い式神に置き換えて召喚できる", midGame: true,
   },
   {
-    key: "moveOnKill", group: "special", kind: "bool",
+    key: "moveOnKill", group: "rare", kind: "bool",
     label: "撃破時に移動", desc: "敵をちょうど1体撃破したとき、攻撃した式神がそのマスへ移動する", midGame: true,
   },
   {
