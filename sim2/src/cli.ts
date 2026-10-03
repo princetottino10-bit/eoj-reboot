@@ -23,6 +23,7 @@ import type {
   IncomeMode,
   IncomeTiming,
   InstantWinCount,
+  FreeSummonAttack,
   InstantWinTiming,
   KillRewardBase,
   KillRewardCondition,
@@ -103,6 +104,8 @@ EXP-0913B rule variants (defaults again reproduce the pre-EXP behaviour):
   --instant-win-cells <n>             コールド勝ち 0-18 (default 0 = off)
   --instant-win-timing <turn_end|immediate>  コールド勝ちの判定 (default turn_end)
   --instant-win-count <occupation|units>     コールド勝ちの数え方 (default occupation)
+  --free-summon-attack <off|optional>        召喚した手番の1回目の攻撃はコストなし (default off)
+  --free-summon-attack-inherit <on|off>      継承召喚にも適用 (default off)
 `;
 
 const parseArgs = (argv: string[]): Map<string, string> => {
@@ -275,6 +278,8 @@ ${schemaHelpText()}
     instantWinCells: intIn(args, "instant-win-cells", 0, 18, base.instantWinCells),
     instantWinTiming: pick("instant-win-timing", ["turn_end", "immediate"] as const, base.instantWinTiming) as InstantWinTiming,
     instantWinCount: pick("instant-win-count", ["occupation", "units"] as const, base.instantWinCount) as InstantWinCount,
+    freeSummonAttack: pick("free-summon-attack", ["off", "optional"] as const, base.freeSummonAttack) as FreeSummonAttack,
+    freeSummonAttackInherit: onOff("free-summon-attack-inherit", base.freeSummonAttackInherit),
   };
   const printed = loadPack(packPath(packName));
   const pack: CardPack = bundle === null ? printed : settingsPack(bundle, printed);
@@ -348,6 +353,8 @@ ${schemaHelpText()}
       instantWinCells: cfg.instantWinCells,
       instantWinTiming: cfg.instantWinTiming,
       instantWinCount: cfg.instantWinCount,
+      freeSummonAttack: cfg.freeSummonAttack,
+      freeSummonAttackInherit: cfg.freeSummonAttackInherit,
     },
     elapsedMs: Math.round(elapsedMs),
   };

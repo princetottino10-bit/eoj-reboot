@@ -116,7 +116,7 @@ const controlHtml = (f: ConfigField, v: unknown, disabled: boolean): string => {
         )
         .join("")}</span>`;
     default:
-      return `<label class="sp-toggle"><input type="checkbox" name="${name}" ${v === true ? "checked" : ""} ${disabled ? "disabled" : ""}><span class="sp-knob" aria-hidden="true"></span><span class="sp-toggle-text">${v === true ? "オン" : "オフ"}</span></label>`;
+      return `<label class="sp-toggle"><input type="checkbox" name="${name}" ${v === true ? "checked" : ""} ${disabled ? "disabled" : ""}><span class="sp-knob" aria-hidden="true"></span><span class="sp-toggle-text">${esc(formatConfigValue(f, v))}</span></label>`;
   }
 };
 
@@ -197,14 +197,16 @@ export const openSettingsPanel = async (host: HTMLElement, opts: PanelOptions): 
     const changed = fields.filter((f) => !sameValue(b[f.key], cur[f.key])).length;
     const rows = fields
       .map((f) => {
-        const locked = opts.mode === "midgame" && !f.midGame;
+        // a sub-option (dependsOn) is shown only while its parent is on
+        const off = f.dependsOn !== undefined && sameValue(cur[f.dependsOn.key], f.dependsOn.off);
+        const locked = (opts.mode === "midgame" && !f.midGame) || off;
         const mod = !sameValue(b[f.key], cur[f.key]);
         const live = opts.current as unknown as Record<string, unknown> | undefined;
         const pending = live !== undefined && !sameValue(live[f.key], cur[f.key]);
-        return `<div class="sp-row${mod ? " is-mod" : ""}${locked ? " is-locked" : ""}${pending ? " is-pending" : ""}">
+        return `<div class="sp-row${mod ? " is-mod" : ""}${locked ? " is-locked" : ""}${pending ? " is-pending" : ""}${f.dependsOn !== undefined ? " is-sub" : ""}" data-key="${f.key}"${off ? " hidden" : ""}>
           <div class="sp-label"><span class="sp-name">${mod ? '<i class="sp-dot" title="基準から変更"></i>' : ""}${esc(f.label)}</span>
             <span class="sp-desc">${esc(f.desc)}${mod ? ` <span class="sp-base">基準: ${esc(formatConfigValue(f, b[f.key]))}</span>` : ""}${
-              locked ? ' <span class="sp-lock">次の試合から</span>' : ""
+              locked && !off ? ' <span class="sp-lock">次の試合から</span>' : ""
             }</span></div>
           <div class="sp-ctl">${controlHtml(f, cur[f.key], locked)}</div>
         </div>`;

@@ -28,6 +28,8 @@ export type RadialItem = {
   reason: string | null;
   affordable: boolean;
   active: boolean;
+  /** The free summon attack: the label already says 「コスト0」. */
+  free?: boolean;
 };
 
 export type PredictionHit = { uid: number; dmg: number; blind: boolean; destroyed: boolean; ally: boolean; heal: boolean; hpAfter: number };
@@ -134,8 +136,9 @@ const radialHtml = (vm: BoardVM): string => {
   const angleOf = (id: CommandId): number => (u.pos.y === 2 ? 180 - ANGLE[id] : ANGLE[id]);
   const items = r.items
     .map((it) => {
-      const tip = it.enabled ? `${it.label}(霊力${it.cost})` : `${it.label}: ${it.reason ?? "使えない"}`;
-      const cls = ["rd-btn", it.enabled ? "" : "is-off", it.active ? "is-active" : ""].join(" ");
+      const paid = it.free === true && it.cost === 0 ? it.label : `${it.label}(霊力${it.cost})`;
+      const tip = it.enabled ? paid : `${it.label}: ${it.reason ?? "使えない"}`;
+      const cls = ["rd-btn", it.enabled ? "" : "is-off", it.active ? "is-active" : "", it.free === true ? "is-free" : ""].join(" ");
       return `<button type="button" class="${cls}" data-act="cmd" data-cmd="${it.id}" style="--a:${angleOf(it.id)}deg"
         aria-label="${esc(tip)}" aria-disabled="${!it.enabled}" data-tip="${esc(tip)}">
         <span class="rd-glyph">${GLYPH[it.id]}</span><span class="rd-cost ${it.affordable ? "ok" : "short"}">${it.cost}</span>

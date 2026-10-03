@@ -181,6 +181,14 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
     { label: "手札", text: hand },
   ];
   if (cfg.inheritSummon) rows.push({ label: "継承召喚", text: "自分の式神を、より召喚コストの高い式神に置き換えて召喚できる (位置と向きを引き継ぐ)。" });
+  if (cfg.freeSummonAttack === "optional") {
+    rows.push({
+      label: "召喚攻撃",
+      text: `召喚した手番に、その式神の1回目の攻撃は攻撃コストなし (攻撃するかは自由。【飲酒】などの追加の霊力は払う)。${
+        cfg.inheritSummon ? (cfg.freeSummonAttackInherit ? "継承召喚で置いた式神も同じ (置き換えた式神が攻撃済みなら攻撃できない)。" : "継承召喚で置いた式神は攻撃コストを払う。") : ""
+      }`,
+    });
+  }
   if (cfg.summonLimit !== null) rows.push({ label: "召喚", text: `1ターンに${cfg.summonLimit}回まで。` });
   rows.push({ label: "効果", text: cfg.effects ? "各カードの文面のとおり。" : "カードの効果は使わない。" });
   return rows;

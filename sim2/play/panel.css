@@ -52,6 +52,9 @@
 .sp-row.is-mod { box-shadow: inset 3px 0 0 var(--gold); background: oklch(80% 0.12 85 / 0.06); }
 .sp-row.is-pending .sp-name { color: var(--gold-hi); }
 .sp-row.is-locked { opacity: 0.55; }
+.sp-row[hidden] { display: none; }
+/* a sub-option (dependsOn) hangs under its parent */
+.sp-row.is-sub { margin-left: 18px; border-left: 1px dashed oklch(70% 0.04 85 / 0.4); }
 .sp-label { display: flex; flex-direction: column; min-width: 0; }
 .sp-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; }
 .sp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 8px var(--gold); display: inline-block; }

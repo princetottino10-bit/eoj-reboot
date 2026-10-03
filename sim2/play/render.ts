@@ -184,8 +184,13 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
       return { text: `★ ${e.text}${turned ? ` → ${FACING_LABEL[to]}向き` : ""}`, cls: "fx" };
     }
     case "attack": {
+      // freeSummonAttack: 「先手: 影鬼の召喚攻撃(霊力0)」 (a paid variant's extra still shows)
+      const paid = e.free === true && e.cost === 0 ? "(霊力0)" : ` (霊力-${e.cost})`;
       if (e.variant === "heal") {
         const h = e.hits[0];
+        if (e.free === true) {
+          return { text: `${seat(e.player)}: ${name(e.cardId)}の召喚攻撃${paid} 味方 ${name(h.cardId)} を回復 +${-h.dmg}`, cls: "" };
+        }
         return {
           text: `${seat(e.player)}: ${name(e.cardId)}が味方 ${name(h.cardId)} を回復 +${-h.dmg} (霊力-${e.cost})`,
           cls: "",
@@ -198,6 +203,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
       const dead = e.attackerDestroyed ? " → 攻撃側撃破" : "";
       const kind =
         e.variant === "konshin" ? "渾身" : e.variant === "regen" ? "【再生】" : e.variant === "drink" ? "【飲酒】" : e.aoe ? "範囲" : "";
+      if (e.free === true) return { text: `${seat(e.player)}: ${name(e.cardId)}の${kind}召喚攻撃${paid} ${hits}${counter}${dead}`, cls: "" };
       return { text: `${seat(e.player)}: ${name(e.cardId)}が${kind}攻撃 (霊力-${e.cost}) ${hits}${counter}${dead}`, cls: "" };
     }
     case "destroy": {

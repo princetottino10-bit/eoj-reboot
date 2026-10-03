@@ -6,7 +6,7 @@
 // Pure: no node builtins.
 import { turnFacing } from "./board.ts";
 import { canAttack, cardOf } from "./cards.ts";
-import { alliesInRange, attackCostFor, enemiesInRange, isAoeAttack } from "./combat.ts";
+import { alliesInRange, attackCostFor, enemiesInRange, hasFreeSummonAttack, isAoeAttack } from "./combat.ts";
 import { canUseVariant, fxOf, isProxyRotator, rotateCommandLocked } from "./effects.ts";
 import { legalActions, rotateCostOf } from "./rules.ts";
 import { isHidden } from "./state.ts";
@@ -24,6 +24,8 @@ export type CommandInfo = {
   reason: string | null;
   /** Attack commands: an area attack needs no target choice. */
   area: boolean;
+  /** Attack commands: the free summon attack (freeSummonAttack) drops the attack cost. */
+  free?: true;
 };
 
 /** uid -> that unit's commands. Keys are uids as strings (JSON objects). */
@@ -77,8 +79,10 @@ export const unitCommands = (ctx: Ctx, s: GameState, u: Unit, legal: Action[]): 
   const mine = legal.filter((a) => "uid" in a && a.uid === u.uid);
   const hidden = isHidden(u) ? "隠れている(マヨヒガ)" : null;
   const out: CommandInfo[] = [];
-  const push = (id: CommandId, cost: number, enabled: boolean, reason: () => string, area = false): void => {
-    out.push({ id, label: LABEL[id], cost, enabled, reason: enabled ? null : (hidden ?? reason()), area });
+  const push = (id: CommandId, cost: number, enabled: boolean, reason: () => string, area = false, free = false): void => {
+    // 「攻撃(召喚攻撃・コスト0)」; a paid variant still pays its extra: 「飲酒(召喚攻撃・攻撃コスト0)」
+    const label = !free ? LABEL[id] : `${LABEL[id]}(召喚攻撃・${cost === 0 ? "コスト0" : "攻撃コスト0"})`;
+    out.push({ id, label, cost, enabled, reason: enabled ? null : (hidden ?? reason()), area, ...(free ? { free: true as const } : {}) });
   };
   const area = isAoeAttack(ctx, card);
   const variants: [CommandId, AttackVariant][] = [["attack", "normal"]];
@@ -87,9 +91,10 @@ export const unitCommands = (ctx: Ctx, s: GameState, u: Unit, legal: Action[]): 
   if (canUseVariant(ctx, u, "regen")) variants.push(["regen", "regen"]);
   if (canUseVariant(ctx, u, "drink")) variants.push(["drink", "drink"]);
   if (canUseVariant(ctx, u, "heal")) variants.push(["heal", "heal"]);
+  const free = hasFreeSummonAttack(ctx, u);
   for (const [id, variant] of variants) {
     const enabled = mine.some((a) => variantOf(a) === variant);
-    push(id, attackCostFor(ctx, u, variant), enabled, () => attackReason(ctx, s, u, variant), variant === "heal" ? false : area);
+    push(id, attackCostFor(ctx, u, variant), enabled, () => attackReason(ctx, s, u, variant), variant === "heal" ? false : area, free);
   }
   const rotCost = rotateCostOf(ctx, u);
   for (const [id, dir] of [["rotateLeft", -1], ["rotateRight", 1]] as [CommandId, 1 | -1][]) {

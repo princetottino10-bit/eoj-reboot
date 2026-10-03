@@ -23,7 +23,7 @@ import type { PlayablePack, RulePresetId } from "./presets.ts";
 import { changedItemCount, normalizeSettings, parseSettings, settingsConfig } from "./settings.ts";
 import type { GameSettings } from "./settings.ts";
 
-export const SETTING_PRESET_IDS = ["adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive"] as const;
+export const SETTING_PRESET_IDS = ["adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive", "freeSummon"] as const;
 export type SettingPresetId = (typeof SETTING_PRESET_IDS)[number];
 
 export type SettingPreset = {
@@ -185,6 +185,22 @@ const COLD_FIVE: SettingPreset = {
   overlay: true,
 };
 
+/**
+ * 召喚攻撃はコストなし (10/3 designer request): on the turn a unit is
+ * summoned (継承召喚 included), its first attack that turn skips the attack
+ * cost. An overlay like 5体目で即勝ち: it goes on top of the selected ruleset.
+ */
+const FREE_SUMMON: SettingPreset = {
+  id: "freeSummon",
+  label: "召喚攻撃はコストなし",
+  note: "今のルールに重ねる: 式神を召喚した手番に、その式神の1回目の攻撃は攻撃コストなし(継承召喚で置いた式神も。置き換えた式神が攻撃済みなら攻撃できないのは同じ)。【飲酒】などの追加の霊力は払う。基準ルール・パック・カードはそのまま。",
+  rule: DEFAULT_RULE_PRESET,
+  pack: RULE_PRESETS[DEFAULT_RULE_PRESET].defaultPack as PlayablePack,
+  config: { freeSummonAttack: "optional", freeSummonAttackInherit: true },
+  cards: {},
+  overlay: true,
+};
+
 export const SETTING_PRESETS: Record<SettingPresetId, SettingPreset> = {
   adj15: ADJ15,
   adj15life: ADJ15_LIFE,
@@ -192,6 +208,7 @@ export const SETTING_PRESETS: Record<SettingPresetId, SettingPreset> = {
   comeback: COMEBACK,
   bigComeback: BIG_COMEBACK,
   coldFive: COLD_FIVE,
+  freeSummon: FREE_SUMMON,
 };
 
 export const isSettingPresetId = (v: unknown): v is SettingPresetId =>

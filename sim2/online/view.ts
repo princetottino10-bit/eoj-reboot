@@ -29,6 +29,7 @@ const publicUnit = (u: Unit): Unit => ({
   summonedThisTurn: u.summonedThisTurn,
   hiddenBy: u.hiddenBy,
   atkBuff: u.atkBuff,
+  ...(u.freeAttack === true ? { freeAttack: true as const } : {}),
 });
 
 const publicPlayer = (p: PlayerState): PublicPlayer => ({
@@ -132,7 +133,7 @@ const EVENT_FIELDS: Record<string, readonly string[]> = {
   summon: ["player", "uid", "cardId", "pos", "facing", "cost", "taiji", "baseCost", "inheritedFrom", "underdogDiscount"],
   attack: [
     "player", "uid", "cardId", "aoe", "cost", "hits", "counterTotal", "counterCount", "counterUids",
-    "attackerDestroyed", "variant",
+    "attackerDestroyed", "variant", "free",
   ],
   reigu: ["player", "cardId", "targetUid", "cost"],
   effect: ["player", "source", "uid", "text", "from", "to"],

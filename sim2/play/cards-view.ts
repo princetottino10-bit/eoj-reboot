@@ -17,7 +17,7 @@
 //   card number             the print kit's number (T-001) at the bottom right (md / lg)
 import type { CardOverrides } from "../src/card-overrides.ts";
 import { cardOf } from "../src/cards.ts";
-import { isAoeAttack } from "../src/combat.ts";
+import { hasFreeSummonAttack, isAoeAttack } from "../src/combat.ts";
 import { effectTextOf, rotateIsFree } from "../src/effects.ts";
 import { cardOfUnit, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
@@ -368,11 +368,13 @@ export const pieceHtml = (
   const flagTip = u.attackedThisTurn ? "このターン攻撃済み" : "このターン回転済み";
   const cls = ["pc", `o${u.owner}`, `f${u.facing}`, spent ? "is-spent" : "", isHidden(u) ? "is-hidden" : "", opts.control ? "is-ctl" : ""].join(" ");
   const buff = u.atkBuff > 0 ? `<span class="pc-buff" title="このターンATK+${u.atkBuff}">ATK+${u.atkBuff}</span>` : "";
+  // freeSummonAttack: the summon-turn attack that costs no attack cost is still there
+  const free = current && hasFreeSummonAttack(ctx, u) ? '<span class="pc-free" title="召喚攻撃はコスト0(このターンの1回目の攻撃)">0</span>' : "";
   return `<div class="${cls}" data-uid="${u.uid}">
     <div class="pc-dir f${u.facing}" aria-hidden="true"><i class="pc-arrow"></i></div>
     <div class="pc-body">${cardFaceHtml(ctx, card.id, { size: "sm", mods: opts.mods, printed: opts.printed, facing: u.facing, hp: { now: hp, max } })}${mark("cube", "pc-cube")}</div>
     ${flag === "" ? "" : `<span class="pc-flag" title="${flagTip}">${flag}</span>`}
-    ${buff}
+    ${buff}${free}
     ${isHidden(u) ? `<span class="pc-fog" aria-hidden="true"></span><span class="pc-hidden">隠</span>` : ""}
   </div>`;
 };

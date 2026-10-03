@@ -43,6 +43,12 @@ type FieldBase = {
   desc: string;
   /** false = only between matches ("次の試合から"). */
   midGame: boolean;
+  /**
+   * The panel shows (and enables) the field only while another field holds a
+   * value other than `off`: a sub-option of that one. The value itself is kept
+   * and validated either way.
+   */
+  dependsOn?: { key: PlayKey; off: unknown };
 };
 
 export type Choice = { value: string; label: string };
@@ -53,7 +59,7 @@ export type ConfigField =
   | (FieldBase & { kind: "intList"; min: number; max: number; maxLength: number })
   | (FieldBase & { kind: "optInt"; min: number; max: number; nullLabel: string })
   | (FieldBase & { kind: "choice"; choices: readonly Choice[] })
-  | (FieldBase & { kind: "bool" });
+  | (FieldBase & { kind: "bool"; /** words for on / off instead of オン / オフ */ words?: readonly [string, string] });
 
 export const CONFIG_SCHEMA: readonly ConfigField[] = [
   // ------------------------------------------------------------- economy
@@ -78,6 +84,23 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   {
     key: "attackCostDelta", group: "economy", kind: "int", min: -5, max: 5,
     label: "攻撃コストの増減", desc: "全カードの攻撃コストに足す値(攻撃コストは1より下がらない)。カードごとの値は「カード」で変える", midGame: true,
+  },
+  {
+    key: "freeSummonAttack", group: "economy", kind: "choice",
+    choices: [
+      { value: "off", label: "毎回コストを払う" },
+      { value: "optional", label: "1回目はコストなし" },
+    ],
+    label: "召喚した手番の攻撃",
+    desc: "1回目はコストなし: 式神を召喚した手番に、その式神の1回目の攻撃は攻撃コストを払わない(攻撃するかは自由)。2回目以降・次の手番からは払う。【飲酒】などの追加の霊力は払う",
+    midGame: true,
+  },
+  {
+    key: "freeSummonAttackInherit", group: "economy", kind: "bool",
+    label: "継承召喚にも適用", words: ["する", "しない"],
+    desc: "する: 継承召喚で置いた式神も、その手番の1回目の攻撃は攻撃コストなし。置き換えた式神がこの手番にもう攻撃していたら、これまでどおり攻撃できない",
+    midGame: true,
+    dependsOn: { key: "freeSummonAttack", off: "off" },
   },
   {
     key: "refundMode", group: "economy", kind: "choice",
@@ -501,7 +524,7 @@ export const diffPatch = (base: Config, cfg: Config): ConfigPatch => {
 export const formatConfigValue = (field: ConfigField, v: unknown): string => {
   switch (field.kind) {
     case "bool":
-      return v === true ? "オン" : "オフ";
+      return v === true ? (field.words?.[0] ?? "オン") : (field.words?.[1] ?? "オフ");
     case "choice":
       return field.choices.find((c) => c.value === v)?.label ?? String(v);
     case "optInt":

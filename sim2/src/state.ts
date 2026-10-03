@@ -33,6 +33,7 @@ const cloneUnit = (u: Unit): Unit => ({
   summonedThisTurn: u.summonedThisTurn,
   hiddenBy: u.hiddenBy,
   atkBuff: u.atkBuff,
+  ...(u.freeAttack === true ? { freeAttack: true as const } : {}),
 });
 
 export const cloneState = (s: GameState): GameState => ({

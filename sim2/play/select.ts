@@ -156,6 +156,7 @@ export const radialItems = (commands: UnitCommands, uid: number, mana: number, s
     enabled: c.enabled,
     reason: c.reason,
     affordable: mana >= c.cost,
+    free: c.free === true,
     active:
       (sel.kind === "aim" && commandMode(c.id) === sel.mode) || (sel.kind === "proxy" && c.id === "proxyRotate"),
   }));

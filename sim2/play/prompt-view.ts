@@ -2,6 +2,7 @@
 // confirm, and the buttons of the current step. Pure string builder; the
 // controller wires the data-act buttons.
 import { cardOf } from "../src/cards.ts";
+import { hasFreeSummonAttack } from "../src/combat.ts";
 import { armDamage, fxOf, REIGU_MODE_LABEL, REIGU_MODES, reiguTargeting } from "../src/effects.ts";
 import type { CounterOrderOutcome } from "../src/counter-order.ts";
 import type { LanternAsk } from "../src/lantern.ts";
@@ -334,11 +335,12 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
         return bar("pick", `${verb}する${s.mode === "heal" ? "味方" : "相手"}を盤上で選ぶ ${LEGEND}`, [], [cancel], f);
       }
       const lines = e.preview?.kind === "attack" ? attackSummaryLines(vm.ctx, vm.board, vm.names, s.uid, e.preview) : [];
-      const cost = e.preview?.kind === "attack" ? `(霊力−${e.preview.cost})` : "";
+      const who = unitById(vm.board, s.uid);
+      const free = who !== undefined && hasFreeSummonAttack(vm.ctx, who);
+      const cost = e.preview?.kind === "attack" ? (free ? `(召喚攻撃・霊力${e.preview.cost === 0 ? "0" : `−${e.preview.cost}`})` : `(霊力−${e.preview.cost})`) : "";
       const buttons = [btn("confirm", `${verb}を確定${cost}`, s.mode === "heal" ? "btn-jade" : "btn-red")];
       if (!s.area) buttons.push(btn("retarget", "対象を選び直す", "btn-quiet"));
       buttons.push(cancel);
-      const who = unitById(vm.board, s.uid);
       return bar("confirm", `<b>${who === undefined ? "" : esc(cardName(vm.ctx, who.cardId))}</b>の${verb}:`, lines, buttons, f);
     }
     case "proxy": {

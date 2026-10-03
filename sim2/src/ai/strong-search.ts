@@ -58,7 +58,7 @@ export const stateKey = (s: GameState, p: PlayerId): string => {
   const parts: string[] = [];
   for (const u of s.units) {
     parts.push(
-      `${u.cardId}${u.owner}${u.pos.x}${u.pos.y}${u.facing}${u.damage}${u.attackedThisTurn ? "a" : ""}${u.rotatedThisTurn ? "r" : ""}${u.summonedThisTurn ? "s" : ""}${u.hiddenBy === null ? "" : `h${u.hiddenBy}`}${u.atkBuff === 0 ? "" : `b${u.atkBuff}`}`,
+      `${u.cardId}${u.owner}${u.pos.x}${u.pos.y}${u.facing}${u.damage}${u.attackedThisTurn ? "a" : ""}${u.rotatedThisTurn ? "r" : ""}${u.summonedThisTurn ? "s" : ""}${u.hiddenBy === null ? "" : `h${u.hiddenBy}`}${u.atkBuff === 0 ? "" : `b${u.atkBuff}`}${u.freeAttack === true ? "f" : ""}`,
     );
   }
   parts.sort();

@@ -63,7 +63,8 @@ const attackLine = (e: Extract<GameEvent, { t: "attack" }>, seat: string, name: 
     const h = e.hits[0];
     return `${seat}: ${who}が味方の${h === undefined ? "駒" : name(h.cardId)}を${h === undefined ? 0 : -h.dmg}回復${cost(e.cost)}`;
   }
-  const kind = e.variant === "konshin" ? "渾身の攻撃" : e.variant === "regen" ? "攻撃【再生】" : e.variant === "drink" ? "攻撃【飲酒】" : e.aoe ? "範囲攻撃" : "攻撃";
+  const base = e.free === true ? "召喚攻撃" : "攻撃";
+  const kind = e.variant === "konshin" ? `渾身の${base}` : e.variant === "regen" ? `${base}【再生】` : e.variant === "drink" ? `${base}【飲酒】` : e.aoe ? `範囲${base}` : base;
   const single = e.hits.length === 1;
   const hits = e.hits.map((h) => {
     const tags = `${h.ally ? "(味方)" : ""}`;
@@ -74,7 +75,9 @@ const attackLine = (e: Extract<GameEvent, { t: "attack" }>, seat: string, name: 
   const hitText = hits.length === 0 ? "当たらず" : hits.join("・");
   const counter = e.counterTotal > 0 ? ` / 反撃で${e.counterTotal}ダメージ${e.counterCount > 1 ? `(${e.counterCount}体)` : ""}` : "";
   const fell = e.attackerDestroyed ? `、${who}は撃破された` : "";
-  return `${seat}: ${who}の${kind}${cost(e.cost)} → ${hitText}${counter}${fell}`;
+  // freeSummonAttack: 「先手: 影鬼の召喚攻撃(霊力0) → …」
+  const paid = e.free === true && e.cost === 0 ? "(霊力0)" : cost(e.cost);
+  return `${seat}: ${who}の${kind}${paid} → ${hitText}${counter}${fell}`;
 };
 
 /** A step's own action line from its events (null when the event is not an action). */

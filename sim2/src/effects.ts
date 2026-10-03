@@ -817,7 +817,11 @@ export const clearExpiredHidden = (s: GameState, p: PlayerId, events: GameEvent[
 };
 
 export const clearTurnBuffs = (s: GameState): void => {
-  for (const u of s.units) u.atkBuff = 0;
+  for (const u of s.units) {
+    u.atkBuff = 0;
+    // an unused free summon attack (freeSummonAttack) does not outlive its turn
+    delete u.freeAttack;
+  }
 };
 
 /** Kept for callers that only have a position. */

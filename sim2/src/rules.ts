@@ -224,6 +224,10 @@ const applyInherit = (
     summonedThisTurn: true, // any attack it makes this turn is a summon-attack
     hiddenBy: null,
     atkBuff: 0,
+    // the inherited 攻撃済み still blocks: the free attack only goes to one that may attack
+    ...(ctx.cfg.freeSummonAttack === "optional" && ctx.cfg.freeSummonAttackInherit && !old.attackedThisTurn
+      ? { freeAttack: true as const }
+      : {}),
   };
   s.nextUid += 1;
   s.units = s.units.map((u) => (u.uid === old.uid ? unit : u));
@@ -530,6 +534,7 @@ const applyActionCore = (
       summonedThisTurn: true,
       hiddenBy: null,
       atkBuff: 0,
+      ...(ctx.cfg.freeSummonAttack === "optional" ? { freeAttack: true as const } : {}),
     };
     s.nextUid += 1;
     s.units.push(unit);

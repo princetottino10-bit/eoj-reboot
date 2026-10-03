@@ -373,6 +373,12 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
   font-family: var(--font-mincho); font-size: max(10px, 7.5cqw); font-weight: 800; color: var(--text); background: oklch(22% 0.02 260 / 0.95); border: 1px solid oklch(62% 0.03 260 / 0.7);
 }
 .pc.is-spent .fu-sm { filter: brightness(0.66) saturate(0.7); }
+.pc-free {
+  position: absolute; left: 3cqw; top: 3cqh; z-index: 2; min-width: 12cqw; height: 12cqw; display: grid; place-items: center; border-radius: 50%;
+  font-size: max(10px, 7.5cqw); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink); background: var(--gold);
+  box-shadow: 0 0 0 1px oklch(30% 0.02 85 / 0.6), 0 0 2.5cqw oklch(85% 0.12 85 / 0.7);
+}
+.rd-btn.is-free .rd-cost.ok { box-shadow: 0 0 0 1px var(--ink), 0 0 6px var(--gold-hi); }
 .pc-buff { position: absolute; right: 3cqw; bottom: 3cqh; z-index: 2; font-size: max(10px, 7cqw); font-weight: 700; color: var(--ink); background: var(--amber); padding: 0 1.5cqw; border-radius: 1cqw; }
 .pc-fog {
   position: absolute; left: 20cqw; right: 20cqw; top: 10cqh; bottom: 10cqh; z-index: 2; border-radius: 3cqw; pointer-events: none;

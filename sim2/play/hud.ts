@@ -3,6 +3,7 @@
 // Pure string builders over the public board view.
 import type { CardOverrides } from "../src/card-overrides.ts";
 import { cardOf } from "../src/cards.ts";
+import { hasFreeSummonAttack } from "../src/combat.ts";
 import { incomeFor, incomeParts } from "../src/rules.ts";
 import { cardOfUnit, controlNeed, instantWinCountOf, isHidden, meetsInstantWin, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
@@ -184,6 +185,7 @@ const unitStatus = (ctx: Ctx, u: Unit, names: Names, turnPlayer: PlayerId): stri
   if (current && u.attackedThisTurn) flags.push("このターン攻撃済み");
   else if (current && u.rotatedThisTurn) flags.push("このターン回転済み");
   if (current && u.summonedThisTurn) flags.push("このターン召喚");
+  if (current && hasFreeSummonAttack(ctx, u)) flags.push("召喚攻撃はコスト0(1回目の攻撃)");
   if (u.atkBuff > 0) flags.push(`ATK+${u.atkBuff}(このターン)`);
   const note = gapNote(ctx, u);
   return `<div class="dt-status o${u.owner}">

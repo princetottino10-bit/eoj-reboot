@@ -92,6 +92,13 @@ export type Unit = {
   hiddenBy: PlayerId | null;
   /** Turn-scoped ATK bonus (tm16 Shuten-Doji). Cleared at end of turn. */
   atkBuff: number;
+  /**
+   * freeSummonAttack: set on the turn the unit was summoned (or, under
+   * freeSummonAttackInherit, placed by 継承召喚 while it may still attack);
+   * its first attack that turn skips the attack cost. Cleared by that attack
+   * and at the end of the turn. Absent = none pending.
+   */
+  freeAttack?: true;
 };
 
 export type PlayerState = {
@@ -208,6 +215,14 @@ export type InstantWinTiming = "turn_end" | "immediate";
  */
 export type InstantWinCount = "occupation" | "units";
 
+/**
+ * 召喚した手番の攻撃 (10/3 designer request). off: every attack pays its
+ * attack cost. optional: on the turn a unit is summoned, its first attack
+ * that turn skips the attack cost (a paid variant's extra, e.g. 【飲酒】+2,
+ * is still paid); attacking stays optional.
+ */
+export type FreeSummonAttack = "off" | "optional";
+
 export type Config = {
   chipMode: ChipMode;
   startLife: number;
@@ -305,6 +320,10 @@ export type Config = {
   instantWinTiming: InstantWinTiming;
   /** What コールド勝ち counts. */
   instantWinCount: InstantWinCount;
+  /** Whether a summoned unit's first attack that turn is free. */
+  freeSummonAttack: FreeSummonAttack;
+  /** freeSummonAttack also for a unit placed by 継承召喚 (only while it may still attack). */
+  freeSummonAttackInherit: boolean;
 };
 
 export const defaultConfig = (): Config => ({
@@ -365,6 +384,8 @@ export const defaultConfig = (): Config => ({
   instantWinCells: 0,
   instantWinTiming: "turn_end",
   instantWinCount: "occupation",
+  freeSummonAttack: "off",
+  freeSummonAttackInherit: false,
 });
 
 /**
@@ -440,6 +461,8 @@ export type GameEvent =
       counterUids?: number[];
       attackerDestroyed: boolean;
       variant: AttackVariant;
+      /** freeSummonAttack: this was the summon-turn attack that skipped the attack cost. */
+      free?: true;
     }
   | {
       t: "reigu";

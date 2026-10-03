@@ -63,9 +63,22 @@ export const counterCells = (ctx: Ctx, u: Unit): Pos[] => {
 export const attackCostOf = (ctx: Ctx, card: CardDef): number =>
   Math.max(1, card.attackCost + ctx.cfg.attackCostDelta);
 
-/** What one attack by `u` with `variant` costs: the attack cost plus a paid variant's extra (再生 +1, 飲酒 +2). */
+/**
+ * freeSummonAttack "optional": does `u` still hold the free first attack of
+ * the turn it was summoned (or, under freeSummonAttackInherit, placed by
+ * 継承召喚)? Read against the rule as it is now, so turning the option off
+ * mid-match takes effect at once.
+ */
+export const hasFreeSummonAttack = (ctx: Ctx, u: Unit): boolean =>
+  ctx.cfg.freeSummonAttack === "optional" && u.freeAttack === true && !u.attackedThisTurn;
+
+/**
+ * What one attack by `u` with `variant` costs: the attack cost plus a paid
+ * variant's extra (再生 +1, 飲酒 +2). A pending free summon attack drops the
+ * attack cost only; the extra is still paid.
+ */
 export const attackCostFor = (ctx: Ctx, u: Unit, variant: AttackVariant = "normal"): number =>
-  attackCostOf(ctx, cardOfUnit(ctx, u)) + variantExtraCost(ctx, u, variant);
+  (hasFreeSummonAttack(ctx, u) ? 0 : attackCostOf(ctx, cardOfUnit(ctx, u))) + variantExtraCost(ctx, u, variant);
 
 /**
  * EXP-0913 aoeMode. "off" downgrades range cards to single-target attacks;
@@ -414,9 +427,12 @@ export const resolveAttack = (
   const card = cardOfUnit(ctx, attacker);
   const wasSummonAttack = attacker.summonedThisTurn;
 
+  const free = hasFreeSummonAttack(ctx, attacker);
   const attackCost = attackCostFor(ctx, attacker, variant);
   s.players[attacker.owner].mana -= attackCost;
   attacker.attackedThisTurn = true;
+  // only the first attack is free: a later one (should a rule allow it) pays
+  delete attacker.freeAttack;
 
   // tm06 heal-attack: restores an ally instead of striking. No damage, no
   // destruction, no counter - so it short-circuits the whole exchange.
@@ -435,6 +451,7 @@ export const resolveAttack = (
       cardId: attacker.cardId,
       aoe: false,
       cost: attackCost,
+      ...(free ? { free: true as const } : {}),
       hits: [
         {
           uid: ally.uid,
@@ -651,6 +668,7 @@ export const resolveAttack = (
     cardId: attacker.cardId,
     aoe: isAoeAttack(ctx, card),
     cost: attackCost,
+    ...(free ? { free: true as const } : {}),
     hits,
     counterTotal,
     counterCount,
