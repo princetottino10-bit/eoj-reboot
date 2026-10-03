@@ -147,7 +147,7 @@ const EVENT_FIELDS: Record<string, readonly string[]> = {
     "player", "round", "occupied", "chips", "chipGained", "reach", "discarded", "drawn",
     "boardHp", "manaLeft", "occBoth", "handBoth", "points",
   ],
-  gameEnd: ["winner", "winType", "round", "occ", "by"],
+  gameEnd: ["winner", "winType", "round", "occ", "by", "cold"],
   resign: ["player", "round"],
   counterOrder: ["player", "round", "order", "cards"],
   config: ["player", "round", "changes"],

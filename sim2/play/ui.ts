@@ -16,7 +16,11 @@ import type { Flow, FlowInput } from "../src/flow.ts";
 import { legalEntries } from "../src/preview.ts";
 import { presetConfig } from "../src/presets.ts";
 import type { PlayablePack } from "../src/presets.ts";
-import { decodeSettings, encodeSettings, settingsConfig, settingsPack } from "../src/settings.ts";
+import { decodeSettings, encodeSettings, settingsConfig, settingsHash, settingsPack } from "../src/settings.ts";
+import { settingsLabel } from "../src/setting-presets.ts";
+import { summaryLine } from "../src/match-summary.ts";
+import { addHistory, clearHistory, downloadText, historyCsv, historyHtml, readHistory } from "./result-history.ts";
+import { summaryOfView } from "./result-stats.ts";
 import type { GameSettings } from "../src/settings.ts";
 import { overridesBetween } from "../src/card-overrides.ts";
 import { diffPatch } from "../src/config-schema.ts";
@@ -194,6 +198,7 @@ const refresh = (): void => {
     cardMods: g.settings.cards,
     printed: (id) => g.printed.byId.get(id),
     phaseText: PHASE_TEXT[f.phase.kind] ?? "",
+    rules: f.phase.kind === "over" ? rememberResult(g, log) : undefined,
   };
   // nothing to change mid-game once it is over
   $("changeRules").hidden = f.phase.kind === "over";
@@ -314,6 +319,34 @@ const checkedSettings = async (encoded: string): Promise<{ ok: true; value: Game
 
 const freshSeed = (): number => 1 + Math.floor(Math.random() * 999_999_999);
 
+/**
+ * A finished match: its settings in a few words for the result line, and (once
+ * per match) its numbers into this browser's result list (play/result-history.ts).
+ */
+const rememberResult = (g: Game, log: LogItem[]): string => {
+  const inForce = settingsInForce(g);
+  const rules = settingsLabel(inForce, g.printed);
+  const sum = summaryOfView(log, boardOf(g.flow.state), g.flow.ctx.cfg);
+  addHistory(stores.local, {
+    id: g.start.id,
+    at: new Date().toISOString(),
+    rules,
+    hash: settingsHash(inForce, g.printed),
+    line: summaryLine(sum, rules),
+    human: g.human,
+    ai: AI_LABELS[g.start.ai],
+    round: sum.round,
+    turnPlayer: sum.turnPlayer,
+    turns: sum.turns,
+    endLabel: sum.endLabel,
+    winner: sum.winner,
+    first: sum.first,
+    steps: sum.steps,
+    stepRounds: sum.stepRounds,
+  });
+  return rules;
+};
+
 /** The rules and cards in force in a game, mid-game changes included. */
 const settingsInForce = (g: Game): GameSettings => ({
   ...g.settings,
@@ -380,7 +413,7 @@ const startCardHtml = (settings: GameSettings, printed: CardPack | null, problem
       }`)}`;
   return `${entryTopHtml("ai", encoded)}${entryPanelHtml(
     "ai",
-    `${fields}${rulesBlockHtml(look, rulesHref({ for: "ai", s: encoded }))}${actionsHtml("ai", problem, canContinue() ? CONTINUE_BUTTON : "")}`,
+    `${fields}${rulesBlockHtml(look, rulesHref({ for: "ai", s: encoded }))}${actionsHtml("ai", problem, canContinue() ? CONTINUE_BUTTON : "")}${historyHtml(readHistory(stores.local))}`,
   )}`;
 };
 
@@ -428,6 +461,17 @@ const openSetup = async (problem = ""): Promise<void> => {
     }
     if (t.closest("button[data-continue]") !== null) {
       void continueStored();
+      return;
+    }
+    if (t.closest("button[data-history-csv]") !== null) {
+      downloadText("ai-results.csv", historyCsv(readHistory(stores.local)), "text/csv");
+      return;
+    }
+    if (t.closest("button[data-history-clear]") !== null) {
+      if (window.confirm("この端末の最近の結果を消しますか?")) {
+        clearHistory(stores.local);
+        t.closest(".entry-history")?.remove();
+      }
       return;
     }
     if (t.closest("button[data-start]") !== null) {

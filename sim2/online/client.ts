@@ -5,6 +5,9 @@ import { applyCardOverrides } from "../src/card-overrides.ts";
 import { parsePack } from "../src/cards.ts";
 import type { CardPack } from "../src/cards.ts";
 import type { FlowInput } from "../src/flow.ts";
+import { diffPatch } from "../src/config-schema.ts";
+import { isPlayablePack, presetConfig } from "../src/presets.ts";
+import { settingsLabel } from "../src/setting-presets.ts";
 import { makeCtx } from "../src/state.ts";
 import type { PlayerId } from "../src/types.ts";
 import { createTable } from "../play/table.ts";
@@ -356,6 +359,10 @@ const renderGame = async (msg: StateMessage): Promise<void> => {
     cardMods: g.cards,
     printed: (id) => printed.byId.get(id),
     phaseText: phaseText(msg, names),
+    rules:
+      g.phase.kind === "over" && isPlayablePack(g.pack)
+        ? settingsLabel({ rule: g.rule, pack: g.pack, config: diffPatch(presetConfig(g.rule), g.config), cards: g.cards }, printed)
+        : undefined,
   };
   table.update(model);
 };

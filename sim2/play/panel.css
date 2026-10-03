@@ -454,6 +454,10 @@ a.btn { text-decoration: none; }
 .entry-more summary::-webkit-details-marker, .entry-fold summary::-webkit-details-marker { display: none; }
 .entry-more summary::before, .entry-fold summary::before { content: "›"; display: inline-block; width: 0.8em; color: var(--gold); font-size: 16px; line-height: 1; transition: transform var(--t-fast) var(--ease-out); }
 .entry-more[open] summary::before, .entry-fold[open] summary::before { transform: rotate(90deg); }
+/* the AI table's recent results (play/result-history.ts) */
+.entry-history-list { margin: 4px 0 8px; padding-left: 1.4em; font-size: 12px; color: var(--text); overflow-wrap: anywhere; }
+.entry-history-list time { color: var(--text-dim); font-variant-numeric: tabular-nums; }
+.entry-history-btns { display: flex; gap: 8px; flex-wrap: wrap; }
 .entry-more summary:hover, .entry-fold summary:hover { color: var(--text); }
 .entry-more summary:focus-visible, .entry-fold summary:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; border-radius: 3px; }
 .entry-more > .entry-grid { margin-top: 6px; }

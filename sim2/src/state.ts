@@ -128,6 +128,19 @@ export const controlWeight = (ctx: Ctx, u: Unit): number => {
 export const controlCount = (ctx: Ctx, s: { readonly units: readonly Unit[] }, p: PlayerId): number =>
   s.units.reduce((n, u) => (u.owner === p ? n + controlWeight(ctx, u) : n), 0);
 
+/**
+ * What コールド勝ち counts for p under instantWinCount: 占拠 (controlCount) or
+ * the number of p's units on the board (hidden by マヨヒガ: not counted).
+ */
+export const instantWinCountOf = (ctx: Ctx, s: { readonly units: readonly Unit[] }, p: PlayerId): number =>
+  ctx.cfg.instantWinCount === "units"
+    ? s.units.reduce((n, u) => (u.owner === p && !isHidden(u) ? n + 1 : n), 0)
+    : controlCount(ctx, s, p);
+
+/** Does p stand on コールド勝ち right now (instantWinCells on)? */
+export const meetsInstantWin = (ctx: Ctx, s: { readonly units: readonly Unit[] }, p: PlayerId): boolean =>
+  ctx.cfg.instantWinCells > 0 && instantWinCountOf(ctx, s, p) >= ctx.cfg.instantWinCells;
+
 /** 終盤: has either player reshuffled their grave into a new deck yet? */
 export const isLatePhase = (s: { readonly players: readonly { readonly reshuffleCount: number }[] }): boolean =>
   s.players.some((ps) => ps.reshuffleCount > 0);

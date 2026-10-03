@@ -6,7 +6,9 @@ import {
   controlNeed,
   gainMana,
   healUnit,
+  instantWinCountOf,
   isHidden,
+  meetsInstantWin,
   opponent,
   unitByUid,
   unitHp,
@@ -15,9 +17,12 @@ import type { Ctx } from "./state.ts";
 import type {
   CardDef,
   AttackVariant,
+  ColdWin,
   GameEvent,
   GameState,
   HitRecord,
+  InstantWinCount,
+  InstantWinTiming,
   PlayerId,
   Pos,
   Unit,
@@ -280,6 +285,55 @@ export const recheckControl = (ctx: Ctx, s: GameState, events: GameEvent[]): voi
       events.push(controlEvent(ctx, p, "lost", need));
     }
   }
+};
+
+/** 「式神5体」 / 「占拠7」: what a コールド勝ち counted. */
+export const coldCountWords = (by: InstantWinCount, count: number): string =>
+  by === "units" ? `式神${count}体` : `占拠${count}`;
+
+/**
+ * コールド勝ち for p, checked at `timing`: the rule line, the control win and
+ * the game end (winType "control", with `cold` saying how it was reached).
+ * placed: the action that reached it was p's own summon / 継承召喚.
+ */
+export const coldWinNow = (
+  ctx: Ctx,
+  s: GameState,
+  p: PlayerId,
+  events: GameEvent[],
+  timing: InstantWinTiming,
+  placed = false,
+): void => {
+  const count = instantWinCountOf(ctx, s, p);
+  const by = ctx.cfg.instantWinCount;
+  const seat = p === 0 ? "先手" : "後手";
+  events.push({ t: "effect", player: p, source: "rule", uid: null, text: `${seat}: コールド勝ち(${coldCountWords(by, count)})` });
+  events.push(controlEvent(ctx, p, "win", controlNeed(ctx, s)));
+  s.ended = true;
+  s.winner = p;
+  s.winType = "control";
+  const cold: ColdWin = { count, by, timing, ...(placed ? { placed: true } : {}) };
+  events.push({ t: "gameEnd", winner: p, winType: "control", round: s.round, cold });
+};
+
+/**
+ * instantWinTiming "immediate": ends the game the moment a side stands on
+ * コールド勝ち. Called only between resolutions - after an action has fully
+ * resolved (counters, owner choices, effects) and after the turn-start
+ * effects - never inside one. Both sides at once (an area attack, a heal that
+ * lifts the other side): the turn player wins. A game already decided in the
+ * same resolution (生命0) stays decided. true = the game is over.
+ * placed: the action was a summon / 継承召喚.
+ */
+export const checkInstantWin = (ctx: Ctx, s: GameState, events: GameEvent[], placed = false): boolean => {
+  if (s.ended) return true;
+  if (ctx.cfg.instantWinCells <= 0 || ctx.cfg.instantWinTiming !== "immediate") return false;
+  const t = s.turnPlayer;
+  const o = opponent(t);
+  const winner = meetsInstantWin(ctx, s, t) ? t : meetsInstantWin(ctx, s, o) ? o : null;
+  if (winner === null) return false;
+  coldWinNow(ctx, s, winner, events, "immediate", placed && winner === t);
+  return true;
 };
 
 /**

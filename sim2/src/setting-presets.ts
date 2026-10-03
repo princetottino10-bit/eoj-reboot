@@ -16,14 +16,14 @@
 import { parseCardOverrides } from "./card-overrides.ts";
 import type { CardOverrides } from "./card-overrides.ts";
 import type { CardPack } from "./cards.ts";
-import { parseConfigPatch } from "./config-schema.ts";
+import { configChanges, parseConfigPatch } from "./config-schema.ts";
 import type { ConfigPatch } from "./config-schema.ts";
-import { isPlayablePack, isRulePresetId } from "./presets.ts";
+import { DEFAULT_RULE_PRESET, isPlayablePack, isRulePresetId, presetConfig, RULE_PRESETS } from "./presets.ts";
 import type { PlayablePack, RulePresetId } from "./presets.ts";
-import { normalizeSettings, parseSettings } from "./settings.ts";
+import { changedItemCount, normalizeSettings, parseSettings, settingsConfig } from "./settings.ts";
 import type { GameSettings } from "./settings.ts";
 
-export const SETTING_PRESET_IDS = ["adj15", "adj15life", "incomeNow", "comeback", "bigComeback"] as const;
+export const SETTING_PRESET_IDS = ["adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive"] as const;
 export type SettingPresetId = (typeof SETTING_PRESET_IDS)[number];
 
 export type SettingPreset = {
@@ -40,6 +40,12 @@ export type SettingPreset = {
   config: ConfigPatch;
   /** Card numbers the bundle sets, as the sheet prints them. */
   cards: CardOverrides;
+  /**
+   * true = a quick option laid on top of whatever base rule, pack and cards
+   * are selected: picking it sets only `config` (no cards). `rule` / `pack`
+   * are then just what the bundle is checked and shown against on its own.
+   */
+  overlay?: boolean;
 };
 
 /**
@@ -163,12 +169,29 @@ const BIG_COMEBACK: SettingPreset = {
   cards: {},
 };
 
+/**
+ * 5体目で即勝ち (10/3 designer request): コールド勝ち at 5 of your own
+ * units, judged the moment an action has resolved — so placing the fifth
+ * wins on the spot. An overlay: it goes on top of the selected ruleset.
+ */
+const COLD_FIVE: SettingPreset = {
+  id: "coldFive",
+  label: "5体目で即勝ち",
+  note: "今のルールに重ねる: 盤上の自分の式神が5体になった瞬間に勝ち(コールド勝ち5・判定は置いた瞬間・数え方は式神の数。マヨヒガで隠れた式神は数えない)。基準ルール・パック・カードはそのまま。",
+  rule: DEFAULT_RULE_PRESET,
+  pack: RULE_PRESETS[DEFAULT_RULE_PRESET].defaultPack as PlayablePack,
+  config: { instantWinCells: 5, instantWinTiming: "immediate", instantWinCount: "units" },
+  cards: {},
+  overlay: true,
+};
+
 export const SETTING_PRESETS: Record<SettingPresetId, SettingPreset> = {
   adj15: ADJ15,
   adj15life: ADJ15_LIFE,
   incomeNow: INCOME_NOW,
   comeback: COMEBACK,
   bigComeback: BIG_COMEBACK,
+  coldFive: COLD_FIVE,
 };
 
 export const isSettingPresetId = (v: unknown): v is SettingPresetId =>
@@ -180,11 +203,10 @@ export const isSettingPresetId = (v: unknown): v is SettingPresetId =>
  * importer should hear about it at once. Card ids and each card's own limits
  * need the pack, so they are checked in settingPresetSettings.
  *
- * Throwing here is on purpose, and its blast radius is the settings panel:
- * today only play/settings-panel.ts (hence the /rules page) and the tests
- * import this file, so a bad entry breaks the editor and fails the tests
- * without touching the table or the server. Anything that later imports it
- * from the table or a server module inherits that, so keep the data honest.
+ * Throwing here is on purpose. The settings panel, the tables (for the
+ * result line's 「ルール: …」) and the online server's records (settingsLabel)
+ * import this file, so a bad entry fails the tests at once and would break
+ * those pages: keep the data honest.
  */
 const checkAtLoad = (b: SettingPreset): void => {
   const bad = (text: string): never => {
@@ -214,16 +236,25 @@ export const settingPresetSettings = (id: SettingPresetId, printed: CardPack | n
   return parsed.value;
 };
 
+/** Does the config hold every value an overlay bundle sets? */
+const overlayHolds = (b: SettingPreset, s: GameSettings): boolean => {
+  const cfg = settingsConfig(s) as unknown as Record<string, unknown>;
+  const want = presetConfig(s.rule, b.config) as unknown as Record<string, unknown>;
+  return Object.keys(b.config).every((k) => JSON.stringify(cfg[k]) === JSON.stringify(want[k]));
+};
+
 /**
  * Which bundle these settings are, exactly (base rule, pack, rules and cards),
  * or null. `printed` is the pack `s` is played with. Used by the picker to show
  * the bundle while the settings still match it, and 「(なし)」 once they do not.
+ * An overlay bundle matches any settings that hold its values, but only when
+ * no whole bundle matches exactly.
  */
 export const matchingSettingPreset = (s: GameSettings, printed: CardPack | null): SettingPresetId | null => {
   let key: string | null = null;
   for (const id of SETTING_PRESET_IDS) {
     const b = SETTING_PRESETS[id];
-    if (b.rule !== s.rule || b.pack !== s.pack) continue;
+    if (b.overlay === true || b.rule !== s.rule || b.pack !== s.pack) continue;
     // both sides go through the same normalizer, so the key order is the schema's
     if (key === null) key = JSON.stringify(normalizeSettings(s, printed));
     try {
@@ -232,5 +263,28 @@ export const matchingSettingPreset = (s: GameSettings, printed: CardPack | null)
       continue; // a bundle this pack cannot take is simply not the one in the panel
     }
   }
+  for (const id of SETTING_PRESET_IDS) {
+    if (SETTING_PRESETS[id].overlay === true && overlayHolds(SETTING_PRESETS[id], s)) return id;
+  }
   return null;
+};
+
+/**
+ * The settings in a few words, for result lines and records: the base rule's
+ * label, then the bundle when the settings are one (「10/3テスト案+5体目で即勝ち」,
+ * 「9/14ルール(旧・現行)+調整案1.5倍」), else the number of changed items
+ * (「採用ルール 9/22+3項目変更」). An overlay bundle with more changed on top
+ * says so (「…+5体目で即勝ち+他2項目」). `printed`: the pack `s` is played with.
+ */
+export const settingsLabel = (s: GameSettings, printed: CardPack | null): string => {
+  const base = RULE_PRESETS[s.rule].label;
+  const n = normalizeSettings(s, printed);
+  const changed = changedItemCount(n);
+  const id = matchingSettingPreset(s, printed);
+  if (id === null) return changed > 0 ? `${base}+${changed}項目変更` : base;
+  const b = SETTING_PRESETS[id];
+  if (b.overlay !== true) return `${base}+${b.label}`;
+  const own = configChanges(presetConfig(s.rule), presetConfig(s.rule, b.config)).length;
+  const extra = changed - own;
+  return `${base}+${b.label}${extra > 0 ? `+他${extra}項目` : ""}`;
 };

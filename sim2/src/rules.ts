@@ -3,6 +3,7 @@ import { canAttack, cardOf } from "./cards.ts";
 import {
   alliesInRange,
   attackCostFor,
+  checkInstantWin,
   checkLifeLoss,
   counterersOf,
   destroyUnit,
@@ -479,7 +480,9 @@ export const legalActions = (ctx: Ctx, s: GameState): Action[] => {
 
 /**
  * Mutates `s`. Assumes `isLegal` already held. Occupied counts are rechecked
- * after every action (EXP-0913B 1.5; a no-op under the default controlHold).
+ * after every action (EXP-0913B 1.5; a no-op under the default controlHold),
+ * and コールド勝ち under instantWinTiming "immediate" is judged once the
+ * action has fully resolved (a no-op under the default turn_end).
  */
 export const applyActionInPlace = (
   ctx: Ctx,
@@ -489,6 +492,7 @@ export const applyActionInPlace = (
 ): void => {
   applyActionCore(ctx, s, a, events);
   recheckControl(ctx, s, events);
+  checkInstantWin(ctx, s, events, a.kind === "summon" || a.kind === "inherit");
 };
 
 const applyActionCore = (

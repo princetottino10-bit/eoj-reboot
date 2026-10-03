@@ -487,7 +487,8 @@ export const openSettingsPanel = async (host: HTMLElement, opts: PanelOptions): 
    */
   const applyBundle = async (id: SettingPresetId): Promise<void> => {
     const b = SETTING_PRESETS[id];
-    const full = opts.allowRuleAndPack;
+    // an overlay goes on top of the selected base rule, pack and cards
+    const full = opts.allowRuleAndPack && b.overlay !== true;
     const gen = ++switchGen;
     if (full && b.pack !== w.pack) {
       const pack = await opts.loadPack(b.pack);
@@ -515,8 +516,8 @@ export const openSettingsPanel = async (host: HTMLElement, opts: PanelOptions): 
     }
     w.cfg = applyConfigPatch(w.cfg, patch as ConfigPatch);
     // the bundle's card numbers belong to its own pack; a match on another pack keeps its cards
-    const samePack = w.pack === b.pack;
-    if (samePack) w.cards = settingPresetSettings(id, w.printed).cards;
+    const samePack = w.pack === b.pack || b.overlay === true;
+    if (samePack && b.overlay !== true) w.cards = settingPresetSettings(id, w.printed).cards;
     error = "";
     notice = `「${b.label}」を反映しました${held.length > 0 ? `(${held.join("・")}は次の試合から)` : ""}${
       samePack ? "" : `(カードの数値は ${b.pack} 用なので反映していません)`

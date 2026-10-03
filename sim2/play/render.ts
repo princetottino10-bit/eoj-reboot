@@ -5,13 +5,13 @@ import { cardOf } from "../src/cards.ts";
 import type { Ctx } from "../src/state.ts";
 import { cardOfUnit, controlCount, unitHp } from "../src/state.ts";
 import { cellAttr, toBoardCells } from "../src/board.ts";
-import { isAoeAttack } from "../src/combat.ts";
+import { coldCountWords, isAoeAttack } from "../src/combat.ts";
 import { describeChange } from "../src/config-schema.ts";
 import { lanternAmount } from "../src/lantern.ts";
 import { turnsOnMove } from "../src/kyonshi.ts";
 import type { AttackPreview, InheritPreview } from "../src/preview.ts";
 import type { FlowEvent } from "../src/flow.ts";
-import type { ControlHold, Facing, GameEvent, PlayerId, Pos, Unit } from "../src/types.ts";
+import type { ColdWin, ControlHold, Facing, GameEvent, PlayerId, Pos, Unit } from "../src/types.ts";
 import type { BoardView } from "../online/protocol.ts";
 import { esc } from "./cards-view.ts";
 import { mark } from "./marks.ts";
@@ -109,6 +109,14 @@ const winHow = (winType: string | null, loser: string): string =>
         : winType === "turn_limit"
           ? "ラウンド上限の判定"
           : "決着";
+
+/**
+ * A コールド勝ち in words: 「5体目を置いて勝ち(コールド勝ち)」 when the
+ * winner's own summon reached it on units, else 「コールド勝ち(式神5体)」 /
+ * 「コールド勝ち(占拠7)」.
+ */
+export const coldWinHow = (c: ColdWin): string =>
+  c.by === "units" && c.placed === true ? `${c.count}体目を置いて勝ち(コールド勝ち)` : `コールド勝ち(${coldCountWords(c.by, c.count)})`;
 
 /** "右へ" / "左へ" / "反対へ" for a facing change, "" when unknown or unchanged. */
 const turnWord = (from: Facing | undefined, to: Facing | undefined): string => {
@@ -259,7 +267,11 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
       const who =
         e.winner === null
           ? `引き分け(${winHow(e.winType, "両者")}${occ})`
-          : `${seat(e.winner)}の勝ち(${winHow(e.winType, seat(e.winner === 0 ? 1 : 0))}${occ})`;
+          : e.cold !== undefined
+            ? e.cold.by === "units" && e.cold.placed === true
+              ? `${seat(e.winner)}が${coldWinHow(e.cold)}`
+              : `${seat(e.winner)}の勝ち(コールド勝ち・${coldCountWords(e.cold.by, e.cold.count)})`
+            : `${seat(e.winner)}の勝ち(${winHow(e.winType, seat(e.winner === 0 ? 1 : 0))}${occ})`;
       return { text: `◆ 決着 (R${e.round}): ${who}`, cls: "wr" };
     }
     default:
@@ -335,8 +347,15 @@ export const occVersus = (occ: readonly [number, number], winner: PlayerId | nul
  * resign, which has no winType). deck_out with `occ` (each side's 占拠 at the
  * end) says the whole result: 「2回目の山札切れ — 占拠 4 対 3 で先手の勝ち」.
  */
-export const resultHow = (winType: string | null, winner: PlayerId | null, names: Names, occ?: readonly [number, number]): string | null => {
+export const resultHow = (
+  winType: string | null,
+  winner: PlayerId | null,
+  names: Names,
+  occ?: readonly [number, number],
+  cold?: ColdWin,
+): string | null => {
   if (winType === null) return null;
+  if (winType === "control" && winner !== null && cold !== undefined) return coldWinHow(cold);
   if (winType === "deck_out" && occ !== undefined) {
     return `${winHow(winType, "")} — ${occVersus(occ, winner)} で${winner === null ? "引き分け" : `${names[winner]}の勝ち`}`;
   }

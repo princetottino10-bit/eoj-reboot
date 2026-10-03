@@ -18,6 +18,8 @@ import { cloneSettings, settingsConfig, settingsPack } from "../src/settings.ts"
 import type { GameSettings } from "../src/settings.ts";
 import { makeCtx } from "../src/state.ts";
 import type { Config, GameEvent, PlayerId, WinType } from "../src/types.ts";
+import { recordSummary } from "./records.ts";
+import type { RecordSummary } from "./records.ts";
 
 /** A match is fully described by its settings (preset + changes + card numbers). */
 export type MatchSettings = GameSettings;
@@ -117,6 +119,13 @@ export type MatchRecord = {
     round: number;
     life: [number, number];
   };
+  /**
+   * How the game went, for comparing rule variants (/records): rounds, the
+   * deciding turn, the kind of end, the ruleset label and settings hash, the
+   * round each seat's chips reached each income step. Older records lack it
+   * (the /records page rebuilds it from the rest).
+   */
+  summary?: RecordSummary;
   events: GameEvent[];
 };
 
@@ -163,6 +172,7 @@ export const buildRecord = (m: Match, room: string, unfinished = false): MatchRe
       round: s.round,
       life: [s.players[0].life, s.players[1].life],
     },
+    summary: recordSummary(m.settings, printedPack(m.settings.pack), m.flow),
     events: m.flow.events,
   };
 };

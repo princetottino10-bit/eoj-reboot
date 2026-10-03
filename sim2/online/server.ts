@@ -25,7 +25,8 @@ import { gzipSync } from "node:zlib";
 import { isImagePath, serveFile, serveImage } from "../play/server.ts";
 import type { Served, ServedBytes } from "../play/server.ts";
 import { isPlayablePack, isRulePresetId } from "../src/presets.ts";
-import { checkRecordDir, packFor } from "./match.ts";
+import { checkRecordDir, packFor, printedPack } from "./match.ts";
+import { recordsResponse } from "./records.ts";
 import { parseClientInput, parseCreateRoom, parseJoin } from "./protocol.ts";
 import {
   allowHit,
@@ -305,7 +306,7 @@ const headersFor = (app: OnlineApp): Record<string, string> =>
  * deploys (the specifiers carry no hash, so only time separates them).
  */
 export const staticCacheControl = (target: string): string => {
-  if (target.endsWith(".html")) return "no-store";
+  if (target.endsWith(".html") || target.startsWith("/records")) return "no-store";
   return isImagePath(target) ? `public, max-age=${ART_MAX_AGE_S}` : `public, max-age=${STATIC_MAX_AGE_S}`;
 };
 
@@ -508,6 +509,13 @@ const route = async (app: OnlineApp, req: IncomingMessage, res: ServerResponse):
   }
   if (method !== "GET" && method !== "HEAD") {
     sendJson(res, err(405, "method not allowed"), app);
+    return;
+  }
+  // /records and /records.csv: the finished games' numbers, read-only
+  const rec = recordsResponse(path, url.searchParams, app.lobby.opts.recordDir, printedPack);
+  if (rec !== null) {
+    if (rec.download !== undefined) res.setHeader("Content-Disposition", `attachment; filename="${rec.download}"`);
+    sendStatic(app, req, res, path, rec, method === "HEAD");
     return;
   }
   const target = staticTarget(path);

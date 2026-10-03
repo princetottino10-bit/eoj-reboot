@@ -4,9 +4,9 @@
 import type { CardOverrides } from "../src/card-overrides.ts";
 import { cardOf } from "../src/cards.ts";
 import { incomeFor, incomeParts } from "../src/rules.ts";
-import { cardOfUnit, controlNeed, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
+import { cardOfUnit, controlNeed, instantWinCountOf, isHidden, meetsInstantWin, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
-import type { CardDef, PlayerId, Unit } from "../src/types.ts";
+import type { CardDef, ColdWin, PlayerId, Unit } from "../src/types.ts";
 import type { BoardView, LogItem } from "../online/protocol.ts";
 import { cardBackHtml, cardFaceHtml, cardThumbHtml, esc, SEAT_SEAL } from "./cards-view.ts";
 import { orderLog } from "./log-order.ts";
@@ -46,6 +46,17 @@ const occTip = (ctx: Ctx): string =>
     : ctx.cfg.controlCount === "cost"
       ? `・召喚コスト${ctx.cfg.controlCountThreshold}以上の駒は2マス分`
       : "";
+
+/**
+ * The コールド勝ち a finished board ended with, read off the board (the
+ * winner still stands on instantWinCells; a plain control win never does, the
+ * cold check runs first), or undefined. The log's gameEnd carries the exact one.
+ */
+export const endCold = (ctx: Ctx, board: BoardView): ColdWin | undefined => {
+  if (!board.ended || board.winType !== "control" || board.winner === null) return undefined;
+  if (!meetsInstantWin(ctx, board, board.winner)) return undefined;
+  return { count: instantWinCountOf(ctx, board, board.winner), by: ctx.cfg.instantWinCount, timing: ctx.cfg.instantWinTiming };
+};
 
 /** Each side's 占拠 on a board that ended by deck_out (the result names them); undefined otherwise. */
 export const endOcc = (ctx: Ctx, board: BoardView): [number, number] | undefined =>
@@ -140,7 +151,7 @@ export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInf
     : info.mulligan === true
       ? "マリガン(両者)"
       : `<span class="turn-seal">${SEAT_SEAL[p]}</span>${esc(names[p])}の番`;
-  const how = board.ended ? resultHow(board.winType, board.winner, names, endOcc(ctx, board)) : null;
+  const how = board.ended ? resultHow(board.winType, board.winner, names, endOcc(ctx, board), endCold(ctx, board)) : null;
   const result =
     board.winner === null || (board.winType === "deck_out" && how !== null)
       ? esc(how ?? "引き分け")

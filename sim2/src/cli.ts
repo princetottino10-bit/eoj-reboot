@@ -22,6 +22,8 @@ import type {
   HandMode,
   IncomeMode,
   IncomeTiming,
+  InstantWinCount,
+  InstantWinTiming,
   KillRewardBase,
   KillRewardCondition,
   RefundMode,
@@ -99,6 +101,8 @@ EXP-0913B rule variants (defaults again reproduce the pre-EXP behaviour):
   --underdog-by <cells|chips|both>    劣勢の判定 (default cells; both = one step per condition)
   --control-win-late <n>              終盤の制圧ライン 0-9 (default 0 = off)
   --instant-win-cells <n>             コールド勝ち 0-18 (default 0 = off)
+  --instant-win-timing <turn_end|immediate>  コールド勝ちの判定 (default turn_end)
+  --instant-win-count <occupation|units>     コールド勝ちの数え方 (default occupation)
 `;
 
 const parseArgs = (argv: string[]): Map<string, string> => {
@@ -269,6 +273,8 @@ ${schemaHelpText()}
     underdogBy: pick("underdog-by", ["cells", "chips", "both"] as const, base.underdogBy) as UnderdogBy,
     controlWinLate: intIn(args, "control-win-late", 0, 9, base.controlWinLate),
     instantWinCells: intIn(args, "instant-win-cells", 0, 18, base.instantWinCells),
+    instantWinTiming: pick("instant-win-timing", ["turn_end", "immediate"] as const, base.instantWinTiming) as InstantWinTiming,
+    instantWinCount: pick("instant-win-count", ["occupation", "units"] as const, base.instantWinCount) as InstantWinCount,
   };
   const printed = loadPack(packPath(packName));
   const pack: CardPack = bundle === null ? printed : settingsPack(bundle, printed);
@@ -340,6 +346,8 @@ ${schemaHelpText()}
       underdogBy: cfg.underdogBy,
       controlWinLate: cfg.controlWinLate,
       instantWinCells: cfg.instantWinCells,
+      instantWinTiming: cfg.instantWinTiming,
+      instantWinCount: cfg.instantWinCount,
     },
     elapsedMs: Math.round(elapsedMs),
   };

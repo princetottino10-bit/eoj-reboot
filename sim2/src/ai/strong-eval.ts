@@ -17,7 +17,7 @@ import { incomeNow, rotateCostOf } from "../rules.ts";
 import { controlCount, controlNeed, isHidden, opponent, unitHp } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import type { Facing, GameState, PlayerId, Pos, Unit } from "../types.ts";
-import { deckOutTerm } from "./eval.ts";
+import { coldTerm, deckOutTerm } from "./eval.ts";
 
 export type StrongWeights = {
   /** Per occupied cell (hidden units are off the count, as the rules say). */
@@ -268,10 +268,8 @@ export const strongEvaluate = (
   if (occO >= cw) score -= w.reach;
   if (pp.reach && occP >= cw) score += w.holdControl;
   if (po.reach && occO >= cw) score -= w.oppControl;
-  // コールド勝ち: standing on instantWinCells wins at that side's turn end
-  const cold = ctx.cfg.instantWinCells;
-  if (cold > 0 && occP >= cold) score += w.holdControl;
-  if (cold > 0 && occO >= cold) score -= w.oppControl;
+  // コールド勝ち: on it (turn_end) or one summon short of it (immediate)
+  score += coldTerm(ctx, s, p, w.holdControl, w.oppControl);
   if (ctx.cfg.controlWinMode === "points") {
     // a 制圧点 is banked; one short on controlWin 占拠 is the control state of this mode
     const need = ctx.cfg.controlPointsToWin;

@@ -7,8 +7,11 @@ import { parsePack } from "../src/cards.ts";
 import type { CardPack } from "../src/cards.ts";
 import { AI_KINDS, AI_LABELS, makeAi } from "../src/ai/index.ts";
 import type { AiKind } from "../src/ai/index.ts";
+import { diffPatch } from "../src/config-schema.ts";
+import { presetConfig } from "../src/presets.ts";
 import type { PlayablePack } from "../src/presets.ts";
 import { decodeSettings, encodeSettings, settingsConfig, settingsPack } from "../src/settings.ts";
+import { settingsLabel } from "../src/setting-presets.ts";
 import type { GameSettings } from "../src/settings.ts";
 import { overridesBetween } from "../src/card-overrides.ts";
 import { makeCtx } from "../src/state.ts";
@@ -229,6 +232,7 @@ const modelOf = (w: Watch): TableModel => {
     printed: (id) => w.printed.byId.get(id),
     phaseText: PHASE_TEXT[f.phase.kind] ?? "",
     spot: w.last === null ? null : { actor: w.last.actor, targets: w.last.targets },
+    rules: f.phase.kind === "over" ? settingsLabel({ ...w.settings, config: diffPatch(presetConfig(w.settings.rule), f.ctx.cfg) }, w.printed) : undefined,
   };
 };
 

@@ -1,5 +1,5 @@
 import { attackCells, isBlindShot } from "../combat.ts";
-import { boardHpTotal, controlCount, controlNeed, opponent } from "../state.ts";
+import { boardHpTotal, controlCount, controlNeed, instantWinCountOf, opponent } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import { posEq } from "../board.ts";
 import { canAttack, cardOf } from "../cards.ts";
@@ -93,6 +93,30 @@ export const deckOutTerm = (ctx: Ctx, s: GameState, occP: number, occO: number, 
   return occW * 2 * u * lead + reachW * u * u * Math.sign(lead);
 };
 
+/**
+ * コールド勝ち (instantWinCells) for `p`, counted as instantWinCount says.
+ * turn_end: standing on it wins at that side's turn end. immediate: reaching
+ * it ends the game at once (the engine has already scored a live state that
+ * did), so what is left to weigh is being one summon short with a free cell:
+ * the opponent there wins on their first summon, and `p` there is a turn from
+ * winning. Shared by both evals (reach = the weight of a control reach).
+ */
+export const coldTerm = (ctx: Ctx, s: GameState, p: PlayerId, reach: number, oppLoss: number = reach * 2): number => {
+  const cold = ctx.cfg.instantWinCells;
+  if (cold <= 0) return 0;
+  const o = opponent(p);
+  const cP = instantWinCountOf(ctx, s, p);
+  const cO = instantWinCountOf(ctx, s, o);
+  let sc = 0;
+  if (cP >= cold) sc += reach;
+  if (cO >= cold) sc -= oppLoss;
+  if (ctx.cfg.instantWinTiming === "immediate" && s.units.length < ctx.cfg.boardCells) {
+    if (cO + 1 >= cold) sc -= oppLoss;
+    if (cP + 1 >= cold) sc += reach * 0.5;
+  }
+  return sc;
+};
+
 /** Scalar board score from `p`'s point of view. Higher is better for p. */
 export const evaluate = (
   ctx: Ctx,
@@ -122,10 +146,7 @@ export const evaluate = (
   if (occO >= cw) score -= w.reach;
   // an opponent already on reach is one turn from winning
   if (s.players[o].reach && occO >= cw) score -= w.reach * 2;
-  // コールド勝ち: standing on instantWinCells wins at that side's turn end
-  const cold = ctx.cfg.instantWinCells;
-  if (cold > 0 && occP >= cold) score += w.reach;
-  if (cold > 0 && occO >= cold) score -= w.reach * 2;
+  score += coldTerm(ctx, s, p, w.reach);
   // controlWinMode "points": every 制圧点 is banked progress, and an opponent
   // one point short on controlWin 占拠 is one turn end from winning
   if (ctx.cfg.controlWinMode === "points") {

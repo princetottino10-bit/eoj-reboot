@@ -1,8 +1,8 @@
 import { cardOf } from "./cards.ts";
-import { checkControlAtStart, controlEvent, recheckControl } from "./combat.ts";
+import { checkControlAtStart, checkInstantWin, coldWinNow, controlEvent, recheckControl } from "./combat.ts";
 import { shuffle } from "./rng.ts";
 import { baseSummonCost, incomeNow, incomeParts, nextChips, underdogSummonDiscount } from "./rules.ts";
-import { boardHpTotal, controlCount, controlNeed, opponent, underdogNote } from "./state.ts";
+import { boardHpTotal, cloneState, controlCount, controlNeed, meetsInstantWin, opponent, underdogNote } from "./state.ts";
 import {
   clearExpiredHidden,
   clearTurnBuffs,
@@ -67,6 +67,8 @@ export const pendingTansuChoices = (ctx: Ctx, s: GameState): number[] => {
   ) {
     return [];
   }
+  // コールド勝ち (immediate) at this turn start, before the effects
+  if (checkInstantWin(ctx, cloneState(s), [])) return [];
   return tansuCandidates(ctx, s, p);
 };
 
@@ -90,10 +92,13 @@ export const startTurn = (
   // control check, since it changes the occupied count.
   clearExpiredHidden(s, p, events);
   if (checkControlAtStart(ctx, s, events)) return;
+  // instantWinTiming "immediate": a unit back from マヨヒガ may reach it
+  if (checkInstantWin(ctx, s, events)) return;
 
   const ps = s.players[p];
   // rulebook 7: effects resolve before income
   onTurnStart(ctx, s, p, events, chooseTansu, (who) => drawOne(ctx, s, who, events));
+  if (checkInstantWin(ctx, s, events)) return;
   let income = 0;
   let underdog = 0;
   // EXP-0913 incomeTiming "turn_end" moves this tick to endTurn.
@@ -345,10 +350,10 @@ export const endTurn = (
   const chipGained = nextChips(ctx, ps.chips, occ) - ps.chips;
   ps.chips += chipGained;
 
-  // コールド勝ち: before either control mode
-  if (ctx.cfg.instantWinCells > 0 && occ >= ctx.cfg.instantWinCells) {
-    events.push({ t: "effect", player: p, source: "rule", uid: null, text: `${seatWord(p)}: コールド勝ち(占拠${occ})` });
-    controlWinNow(ctx, s, p, events);
+  // コールド勝ち: before either control mode. Under "immediate" it has
+  // normally ended the game already; this still catches a rule changed mid-turn.
+  if (meetsInstantWin(ctx, s, p)) {
+    coldWinNow(ctx, s, p, events, "turn_end");
     return;
   }
   if (ctx.cfg.controlWinMode === "points") {

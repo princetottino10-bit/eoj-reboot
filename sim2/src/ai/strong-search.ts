@@ -10,7 +10,7 @@ import { toBoardCells } from "../board.ts";
 import { canAttack, cardOf } from "../cards.ts";
 import { applyActionInPlace, incomeFor, incomeNow, legalActions, underdogBonus } from "../rules.ts";
 import { clearExpiredHidden, clearTurnBuffs, fxOf } from "../effects.ts";
-import { cloneState, controlCount, controlNeed, isHidden, opponent, unitByUid, unitHp } from "../state.ts";
+import { cloneState, controlCount, controlNeed, isHidden, meetsInstantWin, opponent, unitByUid, unitHp } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import type { Action, Facing, GameEvent, GameState, PlayerId, Pos, Unit } from "../types.ts";
 import { STRONG_WIN, cellCovers, hasControl, rangeCells, strongEvaluate } from "./strong-eval.ts";
@@ -204,7 +204,7 @@ export const projectTurnEnd = (ctx: Ctx, s: GameState, p: PlayerId): Projection 
   const chips = chipsAfter(ctx, ps.chips, occ);
   const pointsMode = ctx.cfg.controlWinMode === "points";
   const points = ps.controlPoints + (pointsMode && occ >= cw ? 1 : 0);
-  const cold = ctx.cfg.instantWinCells > 0 && occ >= ctx.cfg.instantWinCells;
+  const cold = meetsInstantWin(ctx, s, p);
   const win =
     cold ||
     (pointsMode
@@ -262,7 +262,7 @@ const replyScore = (ctx: Ctx, s: GameState, p: PlayerId, w: StrongWeights): numb
   let sc = strongEvaluate(ctx, s, p, w, p === 0 ? [nextP, nextO] : [nextO, nextP]);
   // control they would declare at this turn end, with what their unseen hand could add
   // コールド勝ち on their turn end is a loss
-  if (ctx.cfg.instantWinCells > 0 && occO >= ctx.cfg.instantWinCells) sc -= w.oppControl;
+  if (meetsInstantWin(ctx, s, o)) sc -= w.oppControl;
   // controlWinMode "points": their last 制圧点 on this turn end is a loss
   if (ctx.cfg.controlWinMode === "points" && occO >= cw && theirs.controlPoints + 1 >= ctx.cfg.controlPointsToWin) sc -= w.oppControl;
   if (occO >= cw) sc -= w.reach * 0.5;

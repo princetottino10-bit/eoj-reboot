@@ -178,3 +178,18 @@ export const decodeSettings = (
   if (!isObj(raw) || raw.v !== 1) return { ok: false, error: "設定の文字列の版が違います" };
   return parseSettings({ rule: raw.r, pack: raw.p, config: raw.c, cards: expandCards(raw.k) }, packOf);
 };
+
+/**
+ * A short fingerprint of the settings (base rule, pack, rule changes, card
+ * numbers): 8 hex digits of FNV-1a over the normalized share string, so two
+ * matches played under the very same settings carry the same hash.
+ */
+export const settingsHash = (s: GameSettings, printed: CardPack | null): string => {
+  const text = encodeSettings(normalizeSettings(s, printed));
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+};

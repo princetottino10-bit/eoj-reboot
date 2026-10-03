@@ -294,7 +294,27 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   {
     key: "instantWinCells", group: "victory", kind: "int", min: 0, max: 18,
     label: "コールド勝ち",
-    desc: "自分のターン終了時に占拠(制圧の数え方に従う)がこの値以上ならその場で勝ち(制圧の勝ち方によらない)。0でなし",
+    desc: "数(下の「コールド勝ちの数え方」)がこの値以上になったら勝ち(制圧の勝ち方によらない)。いつ判定するかは「コールド勝ちの判定」。0でなし",
+    midGame: true,
+  },
+  {
+    key: "instantWinTiming", group: "victory", kind: "choice",
+    choices: [
+      { value: "turn_end", label: "手番の終わり" },
+      { value: "immediate", label: "置いた瞬間" },
+    ],
+    label: "コールド勝ちの判定",
+    desc: "手番の終わり: 自分のターン終了時に数が足りていれば勝ち。置いた瞬間: 召喚・継承召喚・攻撃(反撃と灯籠の精・僵尸公主の選択まで)・霊具・効果が解決し終わった時点と、ターン開始時の効果の後に判定し、足りた側がその場で勝ち。両者が同時に足りたら手番側の勝ち。同じ行動で生命0の決着がついたらそちらが先",
+    midGame: true,
+  },
+  {
+    key: "instantWinCount", group: "victory", kind: "choice",
+    choices: [
+      { value: "occupation", label: "占拠(制圧の数え方に従う)" },
+      { value: "units", label: "式神の数" },
+    ],
+    label: "コールド勝ちの数え方",
+    desc: "占拠: 制圧の数え方に従う(HPが基準以上なら2マス分など)。式神の数: 盤上の自分の式神1体を1と数える(マヨヒガで隠れた式神は数えない)。「5体目を置いたら勝ち」にするには、コールド勝ち5・置いた瞬間・式神の数",
     midGame: true,
   },
   {

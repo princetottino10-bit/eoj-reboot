@@ -14,7 +14,7 @@ import type { LegalEntry } from "../src/preview.ts";
 import { baseSummonCost, underdogSummonDiscount } from "../src/rules.ts";
 import { isHidden } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
-import type { CardDef, Facing, PlayerId, Pos } from "../src/types.ts";
+import type { CardDef, ColdWin, Facing, PlayerId, Pos } from "../src/types.ts";
 import type { BoardView, LogItem } from "../online/protocol.ts";
 import { boardHtml } from "./board-view.ts";
 import type { BoardVM, Prediction } from "./board-view.ts";
@@ -23,10 +23,11 @@ import { createFx } from "./fx.ts";
 import { handHtml } from "./hand-view.ts";
 import { ensureMarks } from "./marks.ts";
 import type { HandCard, HandMode } from "./hand-view.ts";
-import { detailHtml, endOcc, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, turnHtml } from "./hud.ts";
+import { detailHtml, endCold, endOcc, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, turnHtml } from "./hud.ts";
 import type { CardLook, Focus } from "./hud.ts";
 import { promptHtml } from "./prompt-view.ts";
 import { esc, resultHow, unitAtPos, unitById } from "./render.ts";
+import { resultStatsHtml, summaryOfView } from "./result-stats.ts";
 import type { LogNote, Names } from "./render.ts";
 import {
   aimedEntry,
@@ -91,6 +92,8 @@ export type TableModel = {
   oppHand?: string[] | null;
   /** Spectate: the unit that just acted and what it aimed at, lit on the board while nothing is selected. */
   spot?: { actor: number | null; targets: number[] } | null;
+  /** The settings in a few words (settingsLabel), for the result's copyable line. */
+  rules?: string;
 };
 
 export type TableHandlers = {
@@ -121,7 +124,7 @@ const SKELETON = `
   <aside class="yy-left"><div class="yy-piles-opp"></div><div class="yy-turn"></div><div class="yy-piles-self"></div></aside>
   <main class="yy-center">
     <div class="yy-slot-notice"></div>
-    <div class="yy-board-wrap"><div class="yy-board"></div><div class="yy-result" hidden><div class="yy-result-mark"></div><p class="yy-result-text"></p><p class="yy-result-how"></p><div class="yy-result-actions"></div></div></div>
+    <div class="yy-board-wrap"><div class="yy-board"></div><div class="yy-result" hidden><div class="yy-result-mark"></div><p class="yy-result-text"></p><p class="yy-result-how"></p><div class="yy-result-stats"></div><div class="yy-result-actions"></div></div></div>
     <div class="yy-prompt" aria-live="polite"></div>
   </main>
   <aside class="yy-right"><div class="yy-detail"></div><div class="yy-log"></div></aside>
@@ -134,6 +137,15 @@ const SKELETON = `
   <div class="yy-fx" aria-hidden="true"></div>`;
 
 type SheetView = { kind: "grave"; seat: PlayerId } | { kind: "card"; cardId: string; fromSeat: PlayerId | null };
+
+/** The コールド勝ち the match ended with: the log's gameEnd says it exactly (with 「N体目を置いて」), else read off the board. */
+const coldOf = (m: TableModel): ColdWin | undefined => {
+  for (let i = m.log.length - 1; i >= 0; i--) {
+    const e = m.log[i].event;
+    if (e.t === "gameEnd") return e.cold ?? endCold(m.ctx, m.board);
+  }
+  return endCold(m.ctx, m.board);
+};
 
 const q = <T extends HTMLElement = HTMLElement>(root: HTMLElement, sel: string): T => {
   const el = root.querySelector<T>(sel);
@@ -189,6 +201,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     resultMark: q(root, ".yy-result-mark"),
     resultText: q(root, ".yy-result-text"),
     resultHow: q(root, ".yy-result-how"),
+    resultStats: q(root, ".yy-result-stats"),
     resultActions: q(root, ".yy-result-actions"),
   };
   const slots = { header: q(root, ".yy-slot-header"), tools: q(root, ".yy-slot-tools"), notice: q(root, ".yy-slot-notice") };
@@ -571,6 +584,20 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     if (!el.sheet.open) el.sheet.showModal();
   };
 
+  // 「結果をコピー」: the one-line summary to the clipboard; where that is refused, the line is selected for a manual copy
+  el.resultStats.addEventListener("click", (ev) => {
+    const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>("[data-copy-result]");
+    const field = el.resultStats.querySelector<HTMLInputElement>("[data-result-line]");
+    if (btn === null || field === null) return;
+    const done = (ok: boolean): void => {
+      btn.textContent = ok ? "コピーしました" : "選択しました(Ctrl+C でコピー)";
+      if (!ok) field.select();
+    };
+    const clip = typeof navigator === "undefined" ? undefined : navigator.clipboard;
+    if (clip === undefined) return done(false);
+    clip.writeText(field.value).then(() => done(true), () => done(false));
+  });
+
   root.addEventListener("click", (ev) => {
     const target = (ev.target as HTMLElement).closest<HTMLElement>("[data-act]");
     if (target === null || !root.contains(target)) return;
@@ -917,7 +944,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const mark = p.winner === null ? "分" : m.viewer === null ? `${SEAT_SEAL[p.winner]}勝` : p.winner === m.viewer ? "勝" : "敗";
     const tone = p.winner === null ? "draw" : m.viewer === null ? "watch" : p.winner === m.viewer ? "win" : "lose";
     const resigned = m.log.some((l) => l.event.t === "resign");
-    const how = resigned ? "投了" : resultHow(m.board.winType, m.board.winner, m.names, endOcc(m.ctx, m.board));
+    const how = resigned ? "投了" : resultHow(m.board.winType, m.board.winner, m.names, endOcc(m.ctx, m.board), coldOf(m));
     el.result.hidden = false;
     el.result.dataset.tone = tone;
     el.resultMark.classList.toggle("is-pair", mark.length > 1);
@@ -927,6 +954,12 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const howText = how === null || p.text.includes(how) ? "" : how;
     if (el.resultHow.textContent !== howText) el.resultHow.textContent = howText;
     el.resultHow.hidden = howText === "";
+    // redrawn only when it changes, so 「コピーしました」 stays until the next result
+    const stats = resultStatsHtml(summaryOfView(m.log, m.board, m.ctx.cfg), m.rules ?? "—");
+    if (el.resultStats.dataset.html !== stats) {
+      el.resultStats.innerHTML = stats;
+      el.resultStats.dataset.html = stats;
+    }
   };
 
   /** After an own summon / inherit, offer the fresh unit's summon-attack. */
