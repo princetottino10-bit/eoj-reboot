@@ -5,7 +5,7 @@ import type { CardOverrides } from "../src/card-overrides.ts";
 import type { CardPack } from "../src/cards.ts";
 import { configChanges, describeChange } from "../src/config-schema.ts";
 import type { ConfigChange } from "../src/config-schema.ts";
-import { presetConfig, RULE_PRESETS } from "../src/presets.ts";
+import { packLabel, presetConfig, RULE_PRESETS } from "../src/presets.ts";
 import type { RulePresetId } from "../src/presets.ts";
 import type { Config } from "../src/types.ts";
 import { esc } from "./cards-view.ts";
@@ -17,7 +17,7 @@ export const changeCountOf = (s: SettingsLook): number =>
 
 export const badgeHtml = (s: SettingsLook): string => {
   const n = changeCountOf(s);
-  return `${esc(RULE_PRESETS[s.rule].label)}<span class="badge-pack">${esc(s.pack)}</span>${
+  return `${esc(RULE_PRESETS[s.rule].label)}<span class="badge-pack">${esc(packLabel(s.pack))}</span>${
     n > 0 ? `<span class="mod">+${n}項目変更</span>` : '<span class="badge-plain">基準のまま</span>'
   }`;
 };

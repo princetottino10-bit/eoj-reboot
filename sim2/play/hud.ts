@@ -225,6 +225,45 @@ export const detailHtml = (ctx: Ctx, board: BoardView, names: Names, focus: Focu
 
 export const LOG_SHORT = 5;
 
+/**
+ * What the other side did on its last turn, in one line, while it is the
+ * viewer's turn now: 「相手の番: 鎖鬼を召喚 → … → ターン終了」. The phone keeps the
+ * log far below the board, so the board would otherwise just change. Empty
+ * for a spectator, on the other side's turn and once the game is over.
+ * `seq` (the viewer's turn start) lets the table forget a recap once read.
+ */
+export const recapOf = (
+  ctx: Ctx,
+  names: Names,
+  log: LogItem[],
+  viewer: PlayerId | null,
+  board: { turnPlayer: PlayerId; ended: boolean },
+): { seq: number; lines: string[] } | null => {
+  if (viewer === null || board.ended || board.turnPlayer !== viewer) return null;
+  const opp: PlayerId = viewer === 0 ? 1 : 0;
+  const items = orderLog(log);
+  const starts = items.flatMap((it, i) => (it.event.t === "turnStart" ? [i] : []));
+  const mine = starts.at(-1);
+  const theirs = starts.at(-2);
+  if (mine === undefined || theirs === undefined) return null;
+  const a = items[theirs].event;
+  const b = items[mine].event;
+  if (a.t !== "turnStart" || b.t !== "turnStart" || a.player !== opp || b.player !== viewer) return null;
+  const prefix = `${names[opp]}: `;
+  const lines = items
+    .slice(theirs + 1, mine)
+    .flatMap((it) => {
+      const line = describeEvent(ctx, names, it.event);
+      return line === null ? [] : [line.text.startsWith(prefix) ? line.text.slice(prefix.length) : line.text];
+    });
+  return lines.length === 0 ? null : { seq: items[mine].seq, lines };
+};
+
+export const recapHtml = (r: { seq: number; lines: string[] } | null): string =>
+  r === null
+    ? ""
+    : `<button type="button" class="recap" data-act="recap" data-seq="${r.seq}" title="記録を開く"><b>相手の番</b><span>${r.lines.map(esc).join(" → ")}</span></button>`;
+
 /** Lines in cause -> effect order (log-order.ts). `notes` adds what the table saw (rotations). */
 export const logHtml = (ctx: Ctx, names: Names, log: LogItem[], expanded: boolean, notes?: ReadonlyMap<number, LogNote>): string => {
   const lines: string[] = [];

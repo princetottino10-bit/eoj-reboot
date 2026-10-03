@@ -85,10 +85,10 @@ test("wording: cell names instead of coordinates, the control threshold from the
   const stored = describeEvent(ctx, NAMES, { t: "effect", player: 0, source: "sk18", uid: 3, text: "家鳴り: 一目鬼 を回転", from: 0, to: 2 });
   assert.equal(stored?.text, "★ 家鳴り: 一目鬼 を回転 → 下向き");
   const win = describeEvent(ctx, NAMES, { t: "gameEnd", winner: 1, winType: "life", round: 6 });
-  assert.equal(win?.text, "◆ 決着 (R6): AI greedyの勝ち(あなたの生命が0)");
+  assert.equal(win?.text, "◆ 決着 (第6ラウンド): AI greedyの勝ち(あなたの生命が0)");
   const summon = describeEvent(ctx, NAMES, { t: "summon", player: 0, uid: 2, cardId: "sk09", pos: { x: 2, y: 2 }, facing: 0, cost: 4, taiji: false, baseCost: 4 });
   assert.match(summon?.text ?? "", /一目鬼 を 右上の空 に召喚/);
-  assert.equal(resultHow("control", 0, NAMES), "制圧勝ち");
+  assert.equal(resultHow("control", 0, NAMES), "制圧勝利");
   assert.equal(resultHow("life", 0, NAMES), "生命勝ち(AI greedyの生命が0)");
   assert.equal(resultHow(null, 0, NAMES), null);
 });

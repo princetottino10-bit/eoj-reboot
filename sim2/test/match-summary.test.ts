@@ -63,7 +63,7 @@ test("summary: deciding round and seat, turns, end, and the first round each sea
   assert.deepEqual(s.stepRounds, [[3, 5], [4, null]]);
   assert.equal(
     summaryLine(s, "10/3テスト案+5体目で即勝ち"),
-    "ルール: 10/3テスト案+5体目で即勝ち | R7 後手の手番で決着(14手番) | 制圧勝利 先手 | 4枚到達 先R3/後R4 | 5枚 先R5/後—",
+    "ルール: 10/3テスト案+5体目で即勝ち | 第7ラウンド 後手の手番で決着(14手番) | 制圧勝利 先手 | 4枚到達 先手 第3ラウンド/後手 第4ラウンド | 5枚 先手 第5ラウンド/後手 —",
   );
   // the panel: 「届かず」 for a step never reached, and the line in a copyable field
   const html = resultStatsHtml(s, "10/3テスト案");
@@ -71,7 +71,7 @@ test("summary: deciding round and seat, turns, end, and the first round each sea
   assert.ok(html.includes("制圧勝利"));
   assert.ok(html.includes("届かず"));
   assert.ok(html.includes("結果をコピー"));
-  assert.ok(html.includes('value="ルール: 10/3テスト案 | R7'));
+  assert.ok(html.includes('data-result-line>ルール: 10/3テスト案 | 第7ラウンド'));
 });
 
 test("summary: コールド勝ち, 投了, the round limit and an unfinished match", () => {

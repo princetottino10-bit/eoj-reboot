@@ -318,6 +318,8 @@
 .seat-dot.o0.on { background: var(--p0); }
 .seat-dot.o1.on { background: var(--p1); }
 .room-you { font-size: 12px; color: var(--text-dim); }
+.lbl-short { display: none; }
+@media (max-width: 700px) { .lbl-long { display: none; } .lbl-short { display: inline; } }
 .conn { position: fixed; right: 12px; bottom: 8px; z-index: 50; margin: 0; font-size: 11px; color: var(--text-dim); pointer-events: none; }
 .conn:empty { display: none; }
 .conn.bad { color: oklch(80% 0.14 40); font-weight: 700; }
@@ -325,6 +327,11 @@
 .conn.bad { max-width: calc(100vw - 24px); padding: 2px 9px; border-radius: 999px; background: oklch(12% 0.012 260 / 0.94); border: 1px solid oklch(62% 0.12 40 / 0.6); }
 /* a broken connection is not a footnote: top centre, readable, while the table under it is dimmed and still */
 .conn.bad { top: 8px; bottom: auto; left: 50%; right: auto; transform: translateX(-50%); width: max-content; padding: 6px 14px; font-size: 13.5px; box-shadow: 0 8px 22px oklch(0% 0 0 / 0.55); }
+/* the other seat lost its connection: said under the top bar, so a long wait is not a mystery */
+.away { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); z-index: 49; margin: 0; width: max-content; max-width: calc(100vw - 24px);
+  padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; color: oklch(90% 0.08 85); background: oklch(14% 0.015 260 / 0.94);
+  border: 1px solid var(--gold-line); box-shadow: 0 8px 22px oklch(0% 0 0 / 0.55); pointer-events: none; }
+.away[hidden] { display: none; }
 #table.is-offline { filter: saturate(0.35) brightness(0.62); pointer-events: none; transition: filter 0.3s; }
 /* the room is gone for good: nothing on the table can be answered any more */
 .gone { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px; background: oklch(8% 0.01 260 / 0.78); backdrop-filter: blur(3px); }

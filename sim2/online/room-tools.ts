@@ -190,7 +190,11 @@ export const createRoomTools = (opts: RoomToolsOptions): { render: (msg: StateMe
     const owner = msg.you.seat !== null && msg.room.owner === msg.you.seat;
     const g = msg.game;
     const canPropose = owner && g !== null && msg.room.seats[0].taken && msg.room.seats[1].taken;
-    const label = g !== null && g.phase.kind !== "over" ? "ルール・カード変更を提案" : "次の試合の設定";
+    // a phone header has room for a short word only: the long one ran into the seat dots and 観戦0
+    const label =
+      g !== null && g.phase.kind !== "over"
+        ? '<span class="lbl-long">ルール・カード変更を提案</span><span class="lbl-short">変更を提案</span>'
+        : '<span class="lbl-long">次の試合の設定</span><span class="lbl-short">次の設定</span>';
     // only once the match is over: a live game is left by 投了, not by deleting the room under the other seat
     const canClose = msg.you.role === "player" && msg.room.status === "over";
     const html = `<div class="tools">

@@ -63,7 +63,7 @@ export type BoardVM = {
    * The facing picker. `turn` = an existing unit is being turned (家鳴り, proxy
    * rotate): the ghost starts at its current facing and the piece under it fades.
    */
-  facing: { pos: Pos; cardId: string; options: { facing: Facing; enabled: boolean }[]; turn?: { from: Facing } } | null;
+  facing: { pos: Pos; cardId: string; options: { facing: Facing; enabled: boolean }[]; turn?: { from: Facing }; preview?: Facing } | null;
 };
 
 const GLYPH: Record<CommandId, string> = {
@@ -154,11 +154,11 @@ const facingHtml = (vm: BoardVM): string => {
   const verb = f.turn === undefined ? "向きで召喚" : "向きにする";
   const buttons = f.options
     .map(
-      (o) => `<button type="button" class="fc-btn fc-${o.facing}" data-act="face" data-f="${o.facing}" ${o.enabled ? "" : "disabled"}
+      (o) => `<button type="button" class="fc-btn fc-${o.facing}${f.preview === o.facing ? " is-pre" : ""}" data-act="face" data-f="${o.facing}" ${o.enabled ? "" : "disabled"}
         aria-label="${FACING_LABEL[o.facing]}${verb}"><i class="fc-arrow"></i></button>`,
     )
     .join("");
-  const turn = f.turn === undefined ? "" : ` fc-turn from-${f.turn.from}`;
+  const turn = `${f.turn === undefined ? "" : ` fc-turn from-${f.turn.from}`}${f.preview === undefined ? "" : ` pre-${f.preview}`}`;
   // data-row: 1 = the top row on screen (gridPlace puts y=2 there), so the arrows can stay inside the board
   return `<div class="fc${turn}" data-x="${f.pos.x}" data-row="${3 - f.pos.y}" style="${gridPlace(f.pos)}">
     <div class="fc-ghost">${cardFaceHtml(vm.ctx, f.cardId, { size: "sm", ...vm.look })}</div>${buttons}

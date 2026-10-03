@@ -386,7 +386,7 @@ test("deck-out: r1003 ends at the second 山札切れ once the refill is done; m
   const names: [string, string] = ["先手", "後手"];
   assert.equal(resultHow("deck_out", 0, names, [3, 2]), "2回目の山札切れ — 占拠 3 対 2 で先手の勝ち");
   assert.equal(resultHow("deck_out", 1, names, [3, 4]), "2回目の山札切れ — 占拠 4 対 3 で後手の勝ち");
-  assert.equal(describeEvent(ctx, names, end)?.text, "◆ 決着 (R1): 先手の勝ち(2回目の山札切れ・占拠 3 対 2)");
+  assert.equal(describeEvent(ctx, names, end)?.text, "◆ 決着 (第1ラウンド): 先手の勝ち(2回目の山札切れ・占拠 3 対 2)");
   const turn = turnHtml(ctx, boardOf(s), names, { phaseText: "" });
   assert.match(turn, /2回目の山札切れ — 占拠 3 対 2 で先手の勝ち/);
   assert.doesNotMatch(turn, /先手の勝ち・/);

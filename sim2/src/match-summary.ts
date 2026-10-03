@@ -103,8 +103,8 @@ export const summarizeMatch = (m: SummaryInput): MatchSummary => {
   };
 };
 
-/** 「R3」, or `none` when the step was never reached. */
-const stepAt = (r: number | null, none: string): string => (r === null ? none : `R${r}`);
+/** 「第3ラウンド」, or `none` when the step was never reached. */
+const stepAt = (r: number | null, none: string): string => (r === null ? none : `第${r}ラウンド`);
 
 /** 「第7ラウンド(後手の手番)」 */
 export const decidedText = (s: MatchSummary): string => `第${s.round}ラウンド(${SEAT_WORD[s.turnPlayer]}の手番)`;
@@ -113,23 +113,23 @@ export const decidedText = (s: MatchSummary): string => `第${s.round}ラウン�
 export const resultText = (s: MatchSummary): string =>
   `${s.endLabel} ${s.winner === null ? (s.finished ? "引き分け" : "") : SEAT_WORD[s.winner]}`.trim();
 
-/** Per step, both players: 「4枚 先R3/後R4」, the first with 到達 (「4枚到達 先R3/後R4」). */
+/** Per step, both players: 「4枚到達 先手 第3ラウンド/後手 第4ラウンド」 (到達 on the first step only). */
 export const stepsText = (s: MatchSummary, none = "—"): string[] =>
   s.steps.map(
-    (n, i) => `${n}枚${i === 0 ? "到達" : ""} 先${stepAt(s.stepRounds[0][i], none)}/後${stepAt(s.stepRounds[1][i], none)}`,
+    (n, i) => `${n}枚${i === 0 ? "到達" : ""} 先手 ${stepAt(s.stepRounds[0][i], none)}/後手 ${stepAt(s.stepRounds[1][i], none)}`,
   );
 
-/** The round one player's chips reached a step, for the result panel: 「R3」 / 「届かず」. */
+/** The round one player's chips reached a step, for the result panel: 「第3ラウンド」 / 「届かず」. */
 export const stepCell = (s: MatchSummary, p: PlayerId, i: number): string => stepAt(s.stepRounds[p][i], "届かず");
 
 /**
  * One line to paste into a sheet:
- * 「ルール: 10/3テスト案+5体目で即勝ち | R7 後手の手番で決着(13手番) | 制圧勝利 先手 | 4枚到達 先R3/後R4 | 5枚 先R5/後—」
+ * 「ルール: 10/3テスト案+5体目で即勝ち | 第7ラウンド 後手の手番で決着(13手番) | 制圧勝利 先手 | 4枚到達 先手 第3ラウンド/後手 第4ラウンド | 5枚 先手 第5ラウンド/後手 —」
  */
 export const summaryLine = (s: MatchSummary, rules: string): string =>
   [
     `ルール: ${rules}`,
-    s.finished ? `R${s.round} ${SEAT_WORD[s.turnPlayer]}の手番で決着(${s.turns}手番)` : `R${s.round} ${SEAT_WORD[s.turnPlayer]}の手番で中断(${s.turns}手番)`,
+    `第${s.round}ラウンド ${SEAT_WORD[s.turnPlayer]}の手番で${s.finished ? "決着" : "中断"}(${s.turns}手番)`,
     resultText(s),
     ...stepsText(s),
   ].join(" | ");

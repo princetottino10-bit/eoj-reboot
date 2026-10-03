@@ -40,5 +40,5 @@ export const resultStatsHtml = (s: MatchSummary, rules: string): string => {
   return `<dl class="yy-rs">
     <div><dt>決着</dt><dd>${esc(decidedText(s))}・${s.turns}手番</dd></div>
     <div><dt>決着の仕方</dt><dd>${esc(s.endLabel)}</dd></div>
-  </dl>${stepsTable(s)}<div class="yy-rs-line"><input type="text" readonly value="${esc(line)}" aria-label="結果の1行まとめ" data-result-line><button type="button" class="btn btn-quiet" data-copy-result>結果をコピー</button></div>`;
+  </dl>${stepsTable(s)}<div class="yy-rs-line"><textarea readonly rows="2" aria-label="結果の1行まとめ" data-result-line>${esc(line)}</textarea><button type="button" class="btn btn-quiet" data-copy-result>結果をコピー</button></div>`;
 };

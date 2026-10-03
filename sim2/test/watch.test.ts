@@ -169,7 +169,7 @@ test("importance: an income step, a unit counting 2, control and the end are key
     { t: "turnStart", player: 1, round: 5, income: 7 },
   ]);
   assert.equal(end.level, "end");
-  assert.equal(end.banner, "決着 (R5): 先手の勝ち(制圧)");
+  assert.equal(end.banner, "決着 (第5ラウンド): 先手の勝ち(制圧)");
 });
 
 test("pacing: 速さ ゆっくり / ふつう / はやい, key moments linger longer", () => {

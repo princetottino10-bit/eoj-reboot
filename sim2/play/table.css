@@ -105,6 +105,8 @@ b, .num { font-variant-numeric: tabular-nums; }
 .yy-opp { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; gap: 18px; min-width: 0; }
 .yy-slot-tools { flex: 0 0 auto; display: flex; justify-content: flex-end; }
 .yy-slot-notice:empty { display: none; }
+/* the other side's last turn in a line: portrait phones only (elsewhere the log is beside the board) */
+.yy-recap { display: none; }
 
 /* ------------------------------------------------------------------- brand */
 
@@ -177,6 +179,9 @@ button.rules-badge { cursor: pointer; }
 }
 .np-turn, .np-ctl { font-size: 10px; letter-spacing: 0.12em; }
 .np-short { display: none; }
+/* my own plate says あなた (the full name is its tooltip): a long name was cut to 「プレイヤー1(あ…」 */
+.np.is-you .np-full { display: none; }
+.np.is-you .np-short { display: inline; }
 .np-turn { color: var(--gold); }
 .np-ctl { color: var(--ink); background: var(--gold); padding: 0 6px; border-radius: 2px; align-self: flex-start; margin-top: 2px; font-weight: 700; }
 .np-stat { display: flex; flex-direction: column; align-items: center; line-height: 1.05; }
@@ -308,7 +313,9 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
   content: "隙"; position: absolute; right: -9cqw; bottom: -9cqh; padding: 0 1.8cqw; border-radius: 1cqw;
   background: var(--sym-amber); color: var(--ink); font-family: var(--font-mincho); font-weight: 800; font-size: max(10px, 9cqw); line-height: 1.3;
 }
-.cell.mk-summon::after { inset: 0; border-radius: 0.5cqw; box-shadow: inset 0 0 0 0.9cqw oklch(88% 0.1 88 / 0.9), inset 0 0 14cqw oklch(80% 0.12 85 / 0.45); animation: glow-breathe 1.8s ease-in-out infinite; }
+.cell.mk-summon::after { inset: 0; border-radius: 0.5cqw; box-shadow: inset 0 0 0 1.4cqw oklch(88% 0.1 88 / 0.95), inset 0 0 16cqw oklch(80% 0.12 85 / 0.55); animation: glow-breathe 1.8s ease-in-out infinite; }
+/* while a card waits for its cell, the cells it cannot go to step back, so the lit ones read at a glance on a phone */
+.yy-board:has(.cell.mk-summon, .cell.mk-inherit) .cell:not(.mk-summon, .mk-inherit) { filter: brightness(0.5) saturate(0.55); transition: filter var(--t-fast); }
 .cell.mk-inherit::after { inset: 3cqw; border: 1cqw dashed var(--violet); border-radius: 3cqw; box-shadow: 0 0 6cqw oklch(72% 0.14 305 / 0.5); animation: glow-breathe 1.8s ease-in-out infinite; }
 .cell.mk-target::after { inset: 3cqw; border: 1.2cqw solid var(--sym-verm-hi); border-radius: 50%; animation: target-pulse 1.1s ease-in-out infinite; }
 .cell.mk-heal::after { inset: 3cqw; border: 1.2cqw solid var(--jade); border-radius: 50%; animation: target-pulse 1.1s ease-in-out infinite; }
@@ -729,6 +736,12 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .fc-3 { left: -14px; top: calc(50% - 21px); }
 .fc-3 .fc-arrow { transform: rotate(270deg); }
 .fc-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+/* touch: the first tap shows that facing (ghost turned, its ranges on the board); the second tap commits */
+.fc.pre-0 .fc-ghost, .fc.fc-turn.pre-0 .fc-ghost { --r: 0deg; opacity: 0.92; }
+.fc.pre-1 .fc-ghost, .fc.fc-turn.pre-1 .fc-ghost { --r: 90deg; opacity: 0.92; }
+.fc.pre-2 .fc-ghost, .fc.fc-turn.pre-2 .fc-ghost { --r: 180deg; opacity: 0.92; }
+.fc.pre-3 .fc-ghost, .fc.fc-turn.pre-3 .fc-ghost { --r: 270deg; opacity: 0.92; }
+.fc-btn.is-pre, .fc-btn.is-pre:hover { box-shadow: 0 0 0 3px var(--gold-hi), 0 0 18px oklch(85% 0.14 85 / 0.8); transform: scale(1.12); }
 
 .pv { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0.3cqw; padding-bottom: 5.5cqw; pointer-events: none; }
 .pv-num {
@@ -837,7 +850,10 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .yy-rs-steps th, .yy-rs-steps td { padding: 1px 8px; text-align: center; border-bottom: 1px solid oklch(100% 0 0 / 0.12); }
 .yy-rs-steps th[scope="row"], .yy-rs-steps thead th:first-child { color: var(--text-dim, oklch(75% 0.02 80)); font-weight: 400; }
 .yy-rs-line { display: flex; gap: 6px; width: min(560px, 100%); }
-.yy-rs-line input { flex: 1; min-width: 0; font: inherit; font-size: 12px; padding: 4px 6px; color: var(--text); background: oklch(12% 0.01 260 / 0.85); border: 1px solid oklch(100% 0 0 / 0.18); border-radius: 4px; }
+/* wrapped, not cut: on a phone the line was 「ルール: 10/3テスト案 | 第6ラウンド 後手の手…」 */
+.yy-rs-line textarea { resize: none; line-height: 1.45; overflow: auto; field-sizing: content; min-height: 3.2em; max-height: 9em; }
+.yy-rs-line { align-items: center; }
+.yy-rs-line textarea { flex: 1; min-width: 0; font: inherit; font-size: 12px; padding: 4px 6px; color: var(--text); background: oklch(12% 0.01 260 / 0.85); border: 1px solid oklch(100% 0 0 / 0.18); border-radius: 4px; }
 .yy-rs-line .btn { white-space: nowrap; }
 .yy.is-over .bd { filter: brightness(0.7) saturate(0.7); }
 
@@ -999,6 +1015,16 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   /* the board takes the full width */
   /* contents: the prompt becomes a child of the page column, so it can stick above my side */
   .yy-center { display: contents; }
+  .yy-recap { display: block; order: 2; margin: 2px 6px 0; pointer-events: auto; }
+  .yy-recap:empty { display: none; }
+  /* the result panel sits on the board: the pasteable line itself would push もう一戦 off it, the copy button is enough */
+  .yy-rs-line { justify-content: center; }
+  .yy-rs-line textarea { display: none; }
+  .yy-rs-line textarea.is-shown { display: block; }
+  .recap { display: flex; gap: 6px; align-items: baseline; width: 100%; padding: 4px 8px; text-align: left; font: inherit; font-size: 11.5px; line-height: 1.4; color: var(--text);
+    background: oklch(16% 0.014 260 / 0.92); border: 1px solid var(--gold-line); border-left: 3px solid var(--gold); border-radius: 4px; cursor: pointer; }
+  .recap b { flex: 0 0 auto; color: var(--gold-hi); font-size: 11px; }
+  .recap span { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
   .yy-slot-notice { order: 3; }
   .yy-board-wrap { order: 3; flex: 0 0 auto; margin: 2px 4px 0; container-type: inline-size; display: block; position: relative; z-index: 5; }
   /* edge to edge, unless the prompt and my pinned side would then cover its bottom row: it
@@ -1016,7 +1042,8 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   .pr-confirm .pr-lines { justify-content: center; flex-basis: 100%; }
   .kbd-hint { display: none; }
   .pr-btns .btn { padding: 6px 10px; font-size: 13px; }
-  .legend { display: none; }
+  /* the range colours are on the board as soon as a piece is chosen: say what they are, on a line of their own */
+  .legend { display: flex; flex-wrap: wrap; margin: 3px 0 0; gap: 2px 6px; font-size: 10.5px; line-height: 1.3; }
 
   /* radial menu and facing arrows sized for fingers on a narrow board */
   .rd-btn { width: 40px; height: 40px; margin: -20px 0 0 -20px; transform: rotate(var(--a)) translateY(-17cqw) rotate(calc(-1 * var(--a))); }
@@ -1062,7 +1089,13 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   .yy-extra .btn { padding: 5px 6px; font-size: 12px; }
   .btn-end { font-size: 14px; letter-spacing: 0.02em; padding: 8px 9px; box-shadow: inset 0 0 0 2px var(--board), inset 0 0 0 3px var(--gold-line); }
 
-  .yy-hand { grid-area: hand; height: auto; }
+  .yy-hand { grid-area: hand; height: auto; position: relative; }
+  /* more cards off the edge: a fade and a chevron say the row scrolls */
+  .yy-hand::before, .yy-hand::after { content: ""; position: absolute; top: 10px; bottom: 0; width: 28px; z-index: 2; pointer-events: none; opacity: 0; transition: opacity var(--t-fast);
+    display: grid; place-items: center; font-size: 22px; font-weight: 800; color: var(--gold-hi); }
+  .yy-hand::before { left: 0; content: "‹"; background: linear-gradient(90deg, oklch(10% 0.012 260 / 0.95), transparent); }
+  .yy-hand::after { right: 0; content: "›"; background: linear-gradient(270deg, oklch(10% 0.012 260 / 0.95), transparent); }
+  .yy-hand.more-l::before, .yy-hand.more-r::after { opacity: 1; }
   .hand { position: static; inset: auto; container-type: normal; display: flex; gap: 6px; overflow-x: auto; overflow-y: hidden; padding: 12px 2px 4px; scroll-snap-type: x proximity; scrollbar-width: none; }
   .hand::-webkit-scrollbar { display: none; }
   .hand.is-empty, .hand.is-watch { display: flex; justify-content: center; padding: 10px; }
@@ -1132,6 +1165,7 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
     grid-template-areas: "board top" "board left" "board notice" "board prompt" "board self" "right right";
   }
   .yy-center { display: contents; }
+  .yy-recap { display: none; }
   .yy-top { grid-area: top; padding: 3px 6px 0; gap: 2px 6px; }
   .yy-left { grid-area: left; padding: 1px 6px; min-height: 20px; }
   .yy-slot-notice { grid-area: notice; }

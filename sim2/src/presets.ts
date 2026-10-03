@@ -170,6 +170,18 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
 export const PLAYABLE_PACKS = ["adopted-1003", "adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const;
 export type PlayablePack = (typeof PLAYABLE_PACKS)[number];
 
+/** What a pack is called on screen (the ids stay in files, URLs and records). */
+export const PACK_LABELS: Record<PlayablePack, string> = {
+  "adopted-1003": "10/3版の札",
+  "adopted-0922": "9/22版の札",
+  "shuten-kyuryu": "9/13版の札",
+  "tsukumo-miyako": "付喪神・京の鬼(効果なし)",
+  "kyubi-ryu": "九尾・竜(効果なし)",
+};
+
+/** The on-screen name of a pack; an unknown id is shown as it is. */
+export const packLabel = (id: string): string => (isPlayablePack(id) ? PACK_LABELS[id] : id);
+
 export const isRulePresetId = (v: unknown): v is RulePresetId =>
   typeof v === "string" && (RULE_PRESET_IDS as readonly string[]).includes(v);
 

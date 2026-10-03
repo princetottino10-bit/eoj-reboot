@@ -241,7 +241,7 @@ export const recordsHtml = (all: readonly RecordRow[], rules: string): string =>
   const head = [...COLUMNS, ...steps.flatMap((n) => [`先手${n}枚`, `後手${n}枚`])].map((c) => `<th scope="col">${esc(c)}</th>`).join("");
   const body = rows
     .map((r) => `<tr${r.unfinished || !r.summary.finished ? ' class="cut"' : ""}>${rowCells(r, steps)
-      .map((c, i) => `<td${i >= COLUMNS.length ? ' class="n"' : ""}>${esc(c === null ? (i >= COLUMNS.length ? "—" : "") : typeof c === "number" && i >= COLUMNS.length ? `R${c}` : String(c))}</td>`)
+      .map((c, i) => `<td${i >= COLUMNS.length ? ' class="n"' : ""}>${esc(c === null ? (i >= COLUMNS.length ? "—" : "") : typeof c === "number" && i >= COLUMNS.length ? `第${c}ラウンド` : String(c))}</td>`)
       .join("")}</tr>`)
     .join("");
   return `<!doctype html>

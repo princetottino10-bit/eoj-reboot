@@ -138,7 +138,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
   switch (e.t) {
     case "turnStart":
       return {
-        text: `── R${e.round} ${seat(e.player)}のターン開始${
+        text: `── 第${e.round}ラウンド ${seat(e.player)}のターン開始${
           ctx.cfg.incomeTiming === "turn_start" ? ` (霊力+${e.income})` : ""
         }`,
         cls: "hl",
@@ -278,7 +278,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
               ? `${seat(e.winner)}が${coldWinHow(e.cold)}`
               : `${seat(e.winner)}の勝ち(コールド勝ち・${coldCountWords(e.cold.by, e.cold.count)})`
             : `${seat(e.winner)}の勝ち(${winHow(e.winType, seat(e.winner === 0 ? 1 : 0))}${occ})`;
-      return { text: `◆ 決着 (R${e.round}): ${who}`, cls: "wr" };
+      return { text: `◆ 決着 (第${e.round}ラウンド): ${who}`, cls: "wr" };
     }
     default:
       return null;
@@ -349,7 +349,7 @@ export const occVersus = (occ: readonly [number, number], winner: PlayerId | nul
   winner === 1 ? `占拠 ${occ[1]} 対 ${occ[0]}` : `占拠 ${occ[0]} 対 ${occ[1]}`;
 
 /**
- * Result words for a finished board ("制圧勝ち"); null while undecided (and on
+ * Result words for a finished board ("制圧勝利"); null while undecided (and on
  * resign, which has no winType). deck_out with `occ` (each side's 占拠 at the
  * end) says the whole result: 「2回目の山札切れ — 占拠 4 対 3 で先手の勝ち」.
  */
@@ -366,7 +366,7 @@ export const resultHow = (
     return `${winHow(winType, "")} — ${occVersus(occ, winner)} で${winner === null ? "引き分け" : `${names[winner]}の勝ち`}`;
   }
   if (winner === null) return `引き分け(${winHow(winType, "両者")})`;
-  if (winType === "control") return "制圧勝ち";
+  if (winType === "control") return "制圧勝利";
   if (winType === "life") return `生命勝ち(${names[winner === 0 ? 1 : 0]}の生命が0)`;
   return winHow(winType, "");
 };

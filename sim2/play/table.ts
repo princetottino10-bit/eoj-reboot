@@ -14,7 +14,7 @@ import type { LegalEntry } from "../src/preview.ts";
 import { baseSummonCost, underdogSummonDiscount } from "../src/rules.ts";
 import { isHidden } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
-import type { CardDef, ColdWin, Facing, PlayerId, Pos } from "../src/types.ts";
+import type { CardDef, ColdWin, Facing, PlayerId, Pos, Unit } from "../src/types.ts";
 import type { BoardView, LogItem } from "../online/protocol.ts";
 import { boardHtml } from "./board-view.ts";
 import type { BoardVM, Prediction } from "./board-view.ts";
@@ -23,7 +23,7 @@ import { createFx } from "./fx.ts";
 import { handHtml } from "./hand-view.ts";
 import { ensureMarks } from "./marks.ts";
 import type { HandCard, HandMode } from "./hand-view.ts";
-import { detailHtml, endCold, endOcc, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, turnHtml } from "./hud.ts";
+import { detailHtml, endCold, endOcc, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, recapHtml, recapOf, turnHtml } from "./hud.ts";
 import type { CardLook, Focus } from "./hud.ts";
 import { promptHtml } from "./prompt-view.ts";
 import { esc, resultHow, unitAtPos, unitById } from "./render.ts";
@@ -126,6 +126,7 @@ const SKELETON = `
     <div class="yy-slot-notice"></div>
     <div class="yy-board-wrap"><div class="yy-board"></div><div class="yy-result" hidden><div class="yy-result-mark"></div><p class="yy-result-text"></p><p class="yy-result-how"></p><div class="yy-result-stats"></div><div class="yy-result-actions"></div></div></div>
     <div class="yy-prompt" aria-live="polite"></div>
+    <div class="yy-recap"></div>
   </main>
   <aside class="yy-right"><div class="yy-detail"></div><div class="yy-log"></div></aside>
   <footer class="yy-self">
@@ -188,6 +189,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     pilesSelf: q(root, ".yy-piles-self"),
     board: q(root, ".yy-board"),
     prompt: q(root, ".yy-prompt"),
+    recap: q(root, ".yy-recap"),
     turn: q(root, ".yy-turn"),
     detail: q(root, ".yy-detail"),
     log: q(root, ".yy-log"),
@@ -272,7 +274,12 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
   /** Something other than ending the turn is still possible. */
   const hasMoves = (): boolean => legal().some((e) => e.action.kind !== "pass");
 
+  /** Touch only: the facing shown but not yet chosen (see previewFacing). */
+  let facePreview: Facing | null = null;
+  const touchOnly = (): boolean => typeof matchMedia === "function" && matchMedia("(hover: none)").matches;
+
   const setSel = (next: Sel, remember = true): void => {
+    facePreview = null;
     if (remember && sel.kind !== "none") history = [...history.slice(-20), sel];
     if (next.kind === "none") history = [];
     sel = next;
@@ -464,6 +471,12 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
   };
 
   const onFace = (f: number): void => {
+    if (touchOnly() && facePreview !== f) {
+      facePreview = f as Facing;
+      say("この向きの攻撃範囲を表示中。もう一度押すと決まります");
+      return render();
+    }
+    facePreview = null;
     const s = sel;
     const m = model;
     if (m !== null && m.prompt.kind === "kyonshi") {
@@ -587,11 +600,15 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
   // 「結果をコピー」: the one-line summary to the clipboard; where that is refused, the line is selected for a manual copy
   el.resultStats.addEventListener("click", (ev) => {
     const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>("[data-copy-result]");
-    const field = el.resultStats.querySelector<HTMLInputElement>("[data-result-line]");
+    const field = el.resultStats.querySelector<HTMLTextAreaElement>("[data-result-line]");
     if (btn === null || field === null) return;
     const done = (ok: boolean): void => {
       btn.textContent = ok ? "コピーしました" : "選択しました(Ctrl+C でコピー)";
-      if (!ok) field.select();
+      if (!ok) {
+        // a phone hides the line itself: bring it out so it can be selected by hand
+        field.classList.add("is-shown");
+        field.select();
+      }
     };
     const clip = typeof navigator === "undefined" ? undefined : navigator.clipboard;
     if (clip === undefined) return done(false);
@@ -606,6 +623,11 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     if (act === "cell") return onCell({ x: Number(target.dataset.x), y: Number(target.dataset.y) });
     if (act === "cmd") return onCommand(target.dataset.cmd ?? "");
     if (act === "face") return onFace(Number(target.dataset.f));
+    if (act === "recap") {
+      recapRead = Number(target.dataset.seq);
+      el.log.scrollIntoView({ block: "center" });
+      return render();
+    }
     if (act === "hand") return onHand(Number(target.dataset.i));
     if (act === "grave") {
       const seat = Number(target.dataset.seat) as PlayerId;
@@ -777,7 +799,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       const tu = unitById(m.board, uid);
       if (tu !== undefined) coMarks.set(`${tu.pos.x},${tu.pos.y}`, "target");
     }
-    return {
+    const vm: BoardVM = {
       ctx: m.ctx,
       board: m.board,
       names: m.names,
@@ -833,6 +855,23 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
               }
             : null,
     };
+    return previewFacing(m, vm);
+  };
+
+  /**
+   * Touch screens have no hover: the first tap on a facing arrow only turns the
+   * ghost that way and draws its ranges; a second tap on the same arrow commits.
+   */
+  const previewFacing = (m: TableModel, vm: BoardVM): BoardVM => {
+    const f = facePreview;
+    const fc = vm.facing;
+    if (f === null || fc === null || !fc.options.some((o) => o.facing === f && o.enabled)) return vm;
+    const here = vm.board.units.find((u) => u.pos.x === fc.pos.x && u.pos.y === fc.pos.y && u.cardId === fc.cardId);
+    const ghost: Unit =
+      here !== undefined
+        ? { ...here, facing: f }
+        : { uid: -1, cardId: fc.cardId, owner: m.viewer ?? 0, pos: fc.pos, facing: f, damage: 0, attackedThisTurn: false, rotatedThisTurn: false, summonedThisTurn: true, hiddenBy: null, atkBuff: 0 };
+    return { ...vm, facing: { ...fc, preview: f }, range: rangeSets(m.ctx, ghost) };
   };
 
   /** 劣勢時の大型割引 on a hand shikigami of the viewer, as the board stands: { costNow } or nothing. */
@@ -856,6 +895,16 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       };
     });
 
+  /** The phone hand scrolls sideways: a fade and an arrow on the side that has more cards (none on a row that fits). */
+  const markHandOverflow = (): void => {
+    const row = el.hand.querySelector<HTMLElement>(".hand");
+    const room = row === null ? 0 : row.scrollWidth - row.clientWidth;
+    el.hand.classList.toggle("more-r", row !== null && room > 4 && row.scrollLeft < room - 4);
+    el.hand.classList.toggle("more-l", row !== null && room > 4 && row.scrollLeft > 4);
+  };
+  el.hand.addEventListener("scroll", markHandOverflow, { capture: true, passive: true });
+  window.addEventListener("resize", markHandOverflow);
+
   const renderHand = (m: TableModel): void => {
     const mode: HandMode =
       m.prompt.kind === "discard" ? "discard" : m.prompt.kind === "mulligan" ? "mulligan" : m.prompt.kind === "main" ? "play" : "idle";
@@ -875,6 +924,14 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     reveal = null;
     const card = shown === null ? null : row.querySelector(`.hand-card[data-i="${shown}"]`);
     if (card !== null) revealInRow(row, card);
+    markHandOverflow();
+  };
+
+  /** The recap the player tapped (it opens the log and goes away until the next turn). */
+  let recapRead = -1;
+  const renderRecap = (m: TableModel): void => {
+    const r = recapOf(m.ctx, m.names, m.log, m.viewer, m.board);
+    put(el.recap, r === null || r.seq === recapRead ? "" : recapHtml(r));
   };
 
   const renderLog = (m: TableModel): void => {
@@ -925,6 +982,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
         : "",
     );
     renderLog(m);
+    renderRecap(m);
     renderDetail();
     if (el.sheet.open) renderSheet();
     renderResult(m);

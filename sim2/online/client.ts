@@ -247,10 +247,15 @@ const tools = createRoomTools({
   loadPack: (name) => loadPack(name),
 });
 
+/** The server's fallback names; they follow the joining order, not the seats, which swap on a rematch. */
+const DEFAULT_NAME = /^プレイヤー[12]$/;
+
 const namesOf = (msg: StateMessage): Names =>
   [0, 1].map((p) => {
     const s = msg.room.seats[p];
-    return `${s.name}${msg.you.seat === p ? "(あなた)" : ""}`;
+    // nobody typed a name: call the seat by its side, so a rematch never shows 「後 プレイヤー1」
+    const name = DEFAULT_NAME.test(s.name) ? seatWord(p as PlayerId) : s.name;
+    return `${name}${msg.you.seat === p ? "(あなた)" : ""}`;
   }) as Names;
 
 const phaseText = (msg: StateMessage, names: Names): string => {
@@ -339,6 +344,52 @@ const renderRoom = (msg: StateMessage): void => {
   tools.render(msg);
 };
 
+// ------------------------------------------------- the other seat away
+
+/** A drop shorter than this is a reconnect in passing (a page reload, a network hiccup): not worth a notice. */
+const AWAY_GRACE_MS = 5000;
+/** Since when each seat has been seen without a connection (null = connected or empty). */
+const awaySince: [number | null, number | null] = [null, null];
+let awayTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Whose absence this page reports: a player the opponent, a spectator either seat. */
+const awaySeats = (msg: StateMessage): PlayerId[] =>
+  msg.you.seat === null ? [0, 1] : [msg.you.seat === 0 ? 1 : 0];
+
+const renderAway = (): void => {
+  const msg = last;
+  const el = $("away");
+  const now = Date.now();
+  // while this page itself is cut off, what it knows about the other seat is stale (and the top line is taken)
+  const playing = msg !== null && msg.game !== null && msg.game.phase.kind !== "over" && !stopped && !$("conn").classList.contains("bad");
+  const gone = playing && msg !== null
+    ? awaySeats(msg).filter((p) => awaySince[p] !== null && now - (awaySince[p] ?? now) >= AWAY_GRACE_MS)
+    : [];
+  if (gone.length === 0 || msg === null) {
+    el.hidden = true;
+    return;
+  }
+  const p = gone[0];
+  const mins = Math.floor((now - (awaySince[p] ?? now)) / 60000);
+  const who = msg.you.seat === null ? namesOf(msg)[p] : "相手";
+  // short: it sits over the top bar. (A running match is ended by 投了; the room closes only after it.)
+  el.textContent = `${who}の接続が切れています${mins >= 1 ? `(${mins}分)` : ""}`;
+  el.hidden = false;
+};
+
+const trackAway = (msg: StateMessage): void => {
+  const now = Date.now();
+  for (const p of [0, 1] as PlayerId[]) {
+    const s = msg.room.seats[p];
+    const away = s.taken && !s.connected;
+    if (!away) awaySince[p] = null;
+    else if (awaySince[p] === null) awaySince[p] = now;
+  }
+  renderAway();
+  // the grace period and the minutes move on without a message from the server
+  if (awayTimer === null) awayTimer = setInterval(renderAway, 2000);
+};
+
 const renderGame = async (msg: StateMessage): Promise<void> => {
   const g = msg.game;
   if (g === null) return;
@@ -377,6 +428,7 @@ const onState = (msg: StateMessage): void => {
   log = [...log, ...msg.log.filter((l) => l.seq > lastSeq)];
   last = msg;
   renderRoom(msg);
+  trackAway(msg);
   void renderGame(msg);
 };
 
@@ -464,6 +516,7 @@ const GONE_WHY =
  */
 const showGone = (): void => {
   stopped = true;
+  $("away").hidden = true;
   streamAbort?.abort();
   setError("");
   setConn("", false);

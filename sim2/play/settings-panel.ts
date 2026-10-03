@@ -22,7 +22,7 @@ import {
   sameValue,
 } from "../src/config-schema.ts";
 import type { ConfigField, ConfigPatch } from "../src/config-schema.ts";
-import { isRulePresetId, PLAYABLE_PACKS, presetConfig, RULE_PRESETS } from "../src/presets.ts";
+import { isRulePresetId, packLabel, PLAYABLE_PACKS, presetConfig, RULE_PRESETS } from "../src/presets.ts";
 import type { PlayablePack, RulePresetId } from "../src/presets.ts";
 import { isSettingPresetId, matchingSettingPreset, SETTING_PRESET_IDS, SETTING_PRESETS, settingPresetSettings } from "../src/setting-presets.ts";
 import type { SettingPresetId } from "../src/setting-presets.ts";
@@ -282,7 +282,7 @@ export const openSettingsPanel = async (host: HTMLElement, opts: PanelOptions): 
     const ruleSeg = Object.values(RULE_PRESETS)
       .map((r) => `<label class="${r.id === w.rule ? "on" : ""}"><input type="radio" name="rule" value="${r.id}" ${r.id === w.rule ? "checked" : ""} ${opts.allowRuleAndPack ? "" : "disabled"}><span>${esc(r.label)}</span></label>`)
       .join("");
-    const packOpts = PLAYABLE_PACKS.map((p) => `<option value="${p}"${p === w.pack ? " selected" : ""}>${p}</option>`).join("");
+    const packOpts = PLAYABLE_PACKS.map((p) => `<option value="${p}"${p === w.pack ? " selected" : ""}>${packLabel(p)}</option>`).join("");
     // the picked bundle is read back from the settings, so an edit afterwards turns the picker to 「(なし)」 by itself
     const bundle = matchingSettingPreset(s, w.printed);
     const bundleOpts = [
@@ -522,7 +522,7 @@ export const openSettingsPanel = async (host: HTMLElement, opts: PanelOptions): 
     if (samePack && b.overlay !== true) w.cards = settingPresetSettings(id, w.printed).cards;
     error = "";
     notice = `「${b.label}」を反映しました${held.length > 0 ? `(${held.join("・")}は次の試合から)` : ""}${
-      samePack ? "" : `(カードの数値は ${b.pack} 用なので反映していません)`
+      samePack ? "" : `(カードの数値は ${packLabel(b.pack)} 用なので反映していません)`
     }`;
     confirmResetAll = false;
     render();
