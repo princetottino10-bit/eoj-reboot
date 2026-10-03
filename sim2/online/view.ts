@@ -9,6 +9,8 @@ import { overridesBetween } from "../src/card-overrides.ts";
 import type { CardPack } from "../src/cards.ts";
 import { commandsFor } from "../src/commands.ts";
 import { counterOrderCandidates, counterOrderOutcomes } from "../src/counter-order.ts";
+import type { LanternAsk } from "../src/lantern.ts";
+import type { KyonshiAsk } from "../src/kyonshi.ts";
 import type { Flow, FlowEvent, LogEntry } from "../src/flow.ts";
 import { legalEntries } from "../src/preview.ts";
 import type { RulePresetId } from "../src/presets.ts";
@@ -70,6 +72,23 @@ export const phaseView = (f: Flow): PhaseView => {
         uids: ph.uids.slice(),
         outcomes: counterOrderOutcomes(f.ctx, f.state, ph.action, counterOrderCandidates(ph.uids)),
       };
+    case "lantern":
+      return {
+        kind: "lantern",
+        player: ph.player,
+        actor: ph.actor,
+        actorUid: ph.action.kind === "attack" ? ph.action.uid : null,
+        ask: JSON.parse(JSON.stringify(ph.ask)) as LanternAsk,
+        step: ph.picks.length,
+      };
+    case "kyonshi":
+      return {
+        kind: "kyonshi",
+        player: ph.player,
+        actor: ph.actor,
+        actorUid: ph.action.kind === "attack" ? ph.action.uid : null,
+        ask: JSON.parse(JSON.stringify(ph.ask)) as KyonshiAsk,
+      };
     case "discard":
       return { kind: "discard", player: ph.player };
     default:
@@ -128,7 +147,7 @@ const EVENT_FIELDS: Record<string, readonly string[]> = {
     "player", "round", "occupied", "chips", "chipGained", "reach", "discarded", "drawn",
     "boardHp", "manaLeft", "occBoth", "handBoth", "points",
   ],
-  gameEnd: ["winner", "winType", "round"],
+  gameEnd: ["winner", "winType", "round", "occ", "by"],
   resign: ["player", "round"],
   counterOrder: ["player", "round", "order", "cards"],
   config: ["player", "round", "changes"],

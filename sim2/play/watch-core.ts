@@ -58,7 +58,8 @@ const playOne = (g: WatchGame, seat: PlayerId, played: FlowInput[]): void => {
 
 /**
  * Plays one visible step: the next seat's input, then what belongs to the same
- * moment - the counter order the other seat owes for a declared attack, and the
+ * moment - the counter order the other seat owes for a declared attack, the
+ * 灯籠の精 / 僵尸公主 choices it leaves, and the
  * turn end (discard) after a pass. Returns it in words; null once the match is over.
  */
 export const playWatchStep = (g: WatchGame): WatchStep | null => {
@@ -71,7 +72,7 @@ export const playWatchStep = (g: WatchGame): WatchStep | null => {
   playOne(g, seat, played);
   for (;;) {
     const ph = f.phase;
-    if (ph.kind === "counterOrder" || ph.kind === "discard") playOne(g, ph.player, played);
+    if (ph.kind === "counterOrder" || ph.kind === "lantern" || ph.kind === "kyonshi" || ph.kind === "discard") playOne(g, ph.player, played);
     else break;
   }
   const events = f.log.slice(logFrom).filter((l) => l.audience === "all").map((l) => l.event);

@@ -7,6 +7,9 @@ import { applyAction, isLegal, legalActions } from "../src/rules.ts";
 import { endTurn, pendingTansuChoices, startTurn } from "../src/turn.ts";
 import { cardOf } from "../src/cards.ts";
 import { effectTextOf } from "../src/effects.ts";
+import { withLanternPicks } from "../src/lantern.ts";
+import type { LanternAsk } from "../src/lantern.ts";
+import type { ApplyResult } from "../src/types.ts";
 import { occupied, unitByUid, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Action, GameEvent } from "../src/types.ts";
 import { runGame } from "../src/runner.ts";
@@ -26,7 +29,7 @@ const hasEffect = (events: GameEvent[], source: string): boolean =>
   events.some((e) => e.t === "effect" && e.source === source);
 
 // --- tm01 灯籠の精 -----------------------------------------------------
-test("tm01: on destruction, heals the owner's priciest survivor by 1", () => {
+test("tm01: on destruction, the owner's chosen survivor gets +1 (2026-10-03: the owner chooses)", () => {
   const ctx = on();
   const s = blankState(ctx, 20);
   const victim = place(s, "tm01", 1, 0, 2, 2); // yang hp2 on empty corner -> effMax 2
@@ -36,13 +39,22 @@ test("tm01: on destruction, heals the owner's priciest survivor by 1", () => {
   unitByUid(s, pricey)!.damage = 3;
   unitByUid(s, cheap)!.damage = 1;
   const killer = place(s, "tm03", 0, 0, 1, 0); // atk1, range (0,2)
+  const attack: Action = { kind: "attack", uid: killer, targetUid: victim };
 
-  const before = unitHp(ctx, unitByUid(s, pricey)!);
-  const r = applyAction(ctx, s, { kind: "attack", uid: killer, targetUid: victim });
-  assert.equal(unitByUid(r.state, victim), undefined, "the lamp died");
-  assert.equal(unitHp(ctx, unitByUid(r.state, pricey)!), before + 1, "priciest healed");
-  assert.equal(unitByUid(r.state, cheap)!.damage, 1, "the cheap one is untouched");
-  assert.ok(hasEffect(r.events, "tm01"));
+  for (const chosen of [pricey, cheap]) {
+    const other = chosen === pricey ? cheap : pricey;
+    const before = unitHp(ctx, unitByUid(s, chosen)!);
+    const picked: { result: ApplyResult; asks: LanternAsk[] } = withLanternPicks([chosen], (): ApplyResult => applyAction(ctx, s, attack));
+    const { result: r, asks } = picked;
+    assert.equal(asks.length, 1, "one choice: two allies are left");
+    assert.equal(unitByUid(r.state, victim), undefined, "the lamp died");
+    assert.equal(unitHp(ctx, unitByUid(r.state, chosen)!), before + 1, "the chosen ally healed");
+    assert.equal(unitByUid(r.state, other)!.damage, unitByUid(s, other)!.damage, "the other one is untouched");
+    assert.ok(hasEffect(r.events, "tm01"));
+  }
+  // nobody answering (the headless default): equal gains -> the most damaged (lowest HP)
+  const r = applyAction(ctx, s, attack);
+  assert.equal(unitByUid(r.state, cheap)!.damage, 0);
 });
 
 test("tm01: no survivors means the effect just fizzles", () => {

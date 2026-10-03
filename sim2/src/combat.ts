@@ -23,6 +23,7 @@ import type {
   Unit,
 } from "./types.ts";
 import { cardOf } from "./cards.ts";
+import { applyKyonshiTurn, turnsOnMove } from "./kyonshi.ts";
 import {
   atkReplacementNote,
   damageBonus,
@@ -334,7 +335,9 @@ const counterKillMove = (ctx: Ctx, s: GameState, u: Unit, at: Pos, events: GameE
   const from = { x: u.pos.x, y: u.pos.y };
   u.pos = { x: at.x, y: at.y };
   events.push({ t: "move", player: u.owner, uid: u.uid, from, to: { x: at.x, y: at.y }, source: u.cardId });
-  events.push({ t: "effect", player: u.owner, source: u.cardId, uid: u.uid, text: `${c.nameJa}: 反撃で撃破した位置へ移動` });
+  // ac13 (10/3): its owner may turn it 90° (src/kyonshi.ts); the line names the choice
+  if (turnsOnMove(ctx, u.cardId)) applyKyonshiTurn(ctx, s, u, from, "counter", events);
+  else events.push({ t: "effect", player: u.owner, source: u.cardId, uid: u.uid, text: `${c.nameJa}: 反撃で撃破した位置へ移動` });
 };
 
 /**
@@ -488,7 +491,10 @@ export const resolveAttack = (
           to: { x: attacker.pos.x, y: attacker.pos.y },
           source,
         });
-        if (source !== "rule") {
+        if (turnsOnMove(ctx, attacker.cardId)) {
+          // ac13 (10/3): its owner may turn it 90° right after the move, before any counter
+          applyKyonshiTurn(ctx, s, attacker, from, "attack", events);
+        } else if (source !== "rule") {
           events.push({
             t: "effect",
             player: attacker.owner,

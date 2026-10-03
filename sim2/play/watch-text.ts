@@ -10,6 +10,8 @@ import { controlWeight, unitHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { Facing, GameEvent, GameState, PlayerId, Pos } from "../src/types.ts";
 import { cellName, describeEvent, FACING_LABEL, seatWord } from "./render.ts";
+import { lanternAmount } from "../src/lantern.ts";
+import { turnsOnMove } from "../src/kyonshi.ts";
 import type { Names } from "./render.ts";
 
 /** main: the action itself / sub: what followed from it / turn: whose turn now / key: a moment worth stopping at. */
@@ -213,7 +215,9 @@ export const narrateStep = (
         break;
       }
       case "effect":
-        lines.push({ text: `★ ${e.text}`, tone: "sub" });
+        // 灯籠の精: whose light it was (the owner chose the ally) - 「先手: 灯籠の精の灯 → 僵尸公主 HP+2」
+        // 僵尸公主 (10/3): whose choice the facing was - 「先手: 僵尸公主が移動 → 右へ90度(下向き)」
+        lines.push({ text: lanternAmount(ctx, e.source) !== undefined || turnsOnMove(ctx, e.source) ? `${seatWord(e.player)}: ${e.text}` : `★ ${e.text}`, tone: "sub" });
         if (e.uid !== null && e.text.includes("回転") && actor !== null && e.uid !== actor) targets.push(e.uid);
         break;
       case "move":

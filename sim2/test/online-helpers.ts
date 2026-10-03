@@ -1,4 +1,6 @@
 // Shared helpers for the online tests.
+import { bestLanternPick } from "../src/ai/lantern.ts";
+import { bestKyonshiTurn } from "../src/ai/kyonshi.ts";
 import { packFromCards } from "../src/cards.ts";
 import type { CardPack } from "../src/cards.ts";
 import { loadPack, packPath } from "../src/pack-io.ts";
@@ -80,6 +82,22 @@ export const aiStep = (f: Flow, taken = { n: 0 }, ais: [AiSeat, AiSeat] = GREEDY
     const r = submit(f, ph.player, { type: "counterOrder", order });
     if (!r.ok) throw new Error(r.error);
     // the attacker's plan assumed the default order: it plans again on the board as it is now
+    plans.delete(f);
+    return true;
+  }
+  if (ph.kind === "lantern") {
+    // 灯籠の精: the lantern's owner (often not the seat on turn) picks the ally
+    const uid = (ais[ph.player].lantern ?? bestLanternPick())(f.ctx, f.state, ph.action, ph.picks, ph.ask);
+    const r = submit(f, ph.player, { type: "lantern", uid });
+    if (!r.ok) throw new Error(r.error);
+    plans.delete(f);
+    return true;
+  }
+  if (ph.kind === "kyonshi") {
+    // 僵尸公主: its owner (the defending seat after a counter) picks the facing
+    const turn = (ais[ph.player].kyonshi ?? bestKyonshiTurn())(f.ctx, f.state, ph.action, ph.picks, ph.turns, ph.ask);
+    const r = submit(f, ph.player, { type: "kyonshi", turn });
+    if (!r.ok) throw new Error(r.error);
     plans.delete(f);
     return true;
   }

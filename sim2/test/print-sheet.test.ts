@@ -106,11 +106,12 @@ test("the sheets: true-size lg faces of the table, the 10/3 numbers, crop marks 
   assert.match(face("ac23"), /O-012/);
   // art where the kit has it
   assert.equal(count(html, "<img "), AC.cards.filter((c) => c.art !== undefined).length);
-  // the paper card says what the table has not done yet
-  assert.equal(printTextOf("ac13"), PRINT_TEXT.ac13);
-  assert.match(face("ac13"), /向きを90度変えられる/);
+  // 僵尸公主's 90° turn is in the table now: the paper card and the table say the sheet's words
+  assert.equal(printTextOf("ac13"), undefined);
+  assert.deepEqual(PRINT_TEXT, {});
+  assert.match(face("ac13"), /攻撃・反撃によって対象のHPを0にした場合、その位置に移動する。この時、向きを90度変えられる/);
   assert.doesNotMatch(html, /未実装/);
-  assert.match(EFFECT_TEXT.ac13, /未実装/, "the table keeps its note");
+  assert.doesNotMatch(EFFECT_TEXT.ac13, /未実装/);
   // the grid: centred, margins of 8 mm or more, cards edge to edge
   assert.equal(GRID_X * 2 + SHEET.cols * SHEET.cardW, SHEET.pageW);
   assert.equal(GRID_Y * 2 + SHEET.rows * SHEET.cardH, SHEET.pageH);

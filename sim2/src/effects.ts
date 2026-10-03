@@ -31,6 +31,7 @@ import { inBoard, posEq, rotateRel, toBoardCells } from "./board.ts";
 import { cardOf, effectKeyOf } from "./cards.ts";
 import { healUnit, isHidden, unitAt, unitHp, unitMaxHp, visibleUnitAt } from "./state.ts";
 import type { Ctx } from "./state.ts";
+import { chooseLanternTarget, lanternAmount } from "./lantern.ts";
 import type { AttackVariant, GameEvent, GameState, PlayerId, Pos, ReiguMode, Unit } from "./types.ts";
 
 /** Own-key lookup in a parameter table (never reaches Object.prototype). */
@@ -54,7 +55,7 @@ export const rotateIsFree = (ctx: Ctx, u: Unit): boolean => effectsOn(ctx) && fx
  * no effect. Summarised from EFFECTS-SPEC.md section 1 and 2.
  */
 export const EFFECT_TEXT: Record<string, string> = {
-  tm01: "ダメージを与えられない。撃破された時、味方1体(召喚コスト最大)のHP+1",
+  tm01: "ダメージを与えられない。撃破された時、盤上の味方1体を選んでHP+1",
   tm02: "陰属性の相手を対象とする場合、ATK+1",
   tm03: "【影討ち】死角からの攻撃時、ATK+1(死角+2と累積)",
   tm04: "この式神の回転命令に必要な霊力は0",
@@ -73,7 +74,7 @@ export const EFFECT_TEXT: Record<string, string> = {
   tm21: "【霊具】自分のユニット1体の現HPを7にする(実効最大を超えてよい)",
   tm22: "【霊具】自分のユニット1体を選び、その正面のユニットに4ダメージ(反撃・死角の対象外)",
   // pack-shuten-kyuryu (EXP-0913B Sec.2.3)
-  sk01: "ダメージを与えられない。撃破された時、味方1体(召喚コスト最大)のHP+1",
+  sk01: "ダメージを与えられない。撃破された時、盤上の味方1体を選んでHP+1",
   sk02: "陰属性の相手を対象とする場合、ATK+1",
   sk03: "【影討ち】死角からの攻撃時、ATK+1(死角+2と累積)",
   sk04: "この式神の回転命令に必要な霊力は0",
@@ -93,7 +94,7 @@ export const EFFECT_TEXT: Record<string, string> = {
   sk21: "【霊具】自分のユニット1体の現HPを7にする(実効最大を超えてよい)",
   sk22: "【霊具】自分のユニット1体を選び、その正面のユニットに3ダメージ(反撃・死角の対象外)",
   // pack-adopted-0922 (採用 9/22). ad* = new or changed effect, the rest reuse tm* / sk*.
-  ad01: "この式神はダメージを与えられない。撃破された時、味方1体(召喚コスト最大)のHP+2",
+  ad01: "この式神はダメージを与えられない。撃破された時、盤上の味方1体を選んでHP+2",
   ad02: "陰属性の相手を対象とする場合、ATK+1",
   ad03: "【影討ち】死角からの攻撃時、ATK+1(死角+2と累積)",
   ad05: "自分の手番開始時、HPを1減らして「霊力+1」か「1ドロー」を選べる",
@@ -112,7 +113,7 @@ export const EFFECT_TEXT: Record<string, string> = {
   ad21: "【霊具】自分の式神1体の正面方向で直近の敵に3ダメージ。【拳】空いていれば1マス遠ざける /【握】空いていれば1マス近づける(反撃・死角なし)",
   ad22: "【霊具】酒呑一門の自分の式神1体を選び、隣(斜めを含む)の死角以外のマスの敵1体に5ダメージ(反撃なし)",
   // pack-adopted-1003 (10/3テスト案). Card ids ac*; the effect keys are in the pack.
-  ac01: "この式神はダメージを与えられない。撃破された時、味方1体(召喚コスト最大)のHP+2",
+  ac01: "この式神はダメージを与えられない。撃破された時、盤上の味方1体を選んでHP+2",
   ac02: "陰属性の相手を対象とする場合、ATK+1",
   ac03: "【影討ち】死角からの攻撃時、ATK+1(死角+2と累積)",
   ac05: "自分の手番開始時、HPを1減らして「霊力+1」か「1ドロー」を選べる",
@@ -121,7 +122,7 @@ export const EFFECT_TEXT: Record<string, string> = {
   ac10: "召喚時、正面に式神がいた場合、そのHPと同じHPで召喚される",
   ac11: "正面マスの式神が物理攻撃なら、自身のATKはそのATKを使用する(範囲は自身のもの)",
   ac12: "【渾身】攻撃時にATK+1してよい(範囲内の全対象に乗る)。その場合、攻撃後に自身のHP-1",
-  ac13: "攻撃・反撃で対象のHPを0にした場合、その位置へ移動する(向きはそのまま。90度変える効果は未実装)",
+  ac13: "攻撃・反撃によって対象のHPを0にした場合、その位置に移動する。この時、向きを90度変えられる",
   ac15: "【再生】攻撃の際、自身のHP+1(相手の反撃の前。追加の霊力なし)",
   ac16: "【飲酒】攻撃時、追加で霊力2を払うと、その攻撃のATK+1",
   ac17: "自身の回転命令で、代わりに他の1体(敵味方を問わず)を90度回転できる。この式神の攻撃は死角・反撃間合いを無視する(死角+2なし・反撃されない)",
@@ -137,7 +138,6 @@ export const EFFECT_TEXT: Record<string, string> = {
 const HEAL_ALL_AMOUNT: Record<string, number> = { tm20: 2, sk20: 1 };
 const FRONT_STRIKE_DAMAGE: Record<string, number> = { tm22: 4, sk22: 3 };
 /** 灯籠の精: HP given to one ally on death. */
-const DEATH_HEAL: Record<string, number> = { tm01: 1, ad01: 2 };
 /** Paid attack variants: the extra mana on top of the attack cost. */
 const REGEN_EXTRA_COST: Record<string, number> = { ad15: 1 };
 const DRINK_EXTRA_COST: Record<string, number> = { ad16: 2 };
@@ -394,9 +394,9 @@ export const onSummon = (ctx: Ctx, s: GameState, u: Unit, events: GameEvent[]): 
 };
 
 /**
- * tm01 Toro-no-Sei: on death, +1 HP to the owner's priciest survivor. Units
- * destroyed in the same resolution are removed one at a time and still stand
- * at 0 HP here; they are not survivors, whatever their board order.
+ * tm01 / ad01 灯籠の精: on death, its owner chooses one surviving ally to heal
+ * (src/lantern.ts: the candidates, the pick, the default). Units destroyed in
+ * the same resolution still stand at 0 HP here and are not candidates.
  */
 export const onUnitDestroyed = (
   ctx: Ctx,
@@ -404,24 +404,15 @@ export const onUnitDestroyed = (
   u: Unit,
   events: GameEvent[],
 ): void => {
-  if (!effectsOn(ctx)) return;
-  const amount = param(DEATH_HEAL, fxOf(ctx, u.cardId));
+  const amount = lanternAmount(ctx, u.cardId);
   if (amount === undefined) return;
-  const friends = s.units.filter(
-    (x) => x.owner === u.owner && x.uid !== u.uid && !isHidden(x) && unitHp(ctx, x) > 0,
-  );
-  if (friends.length === 0) return;
-  let best = friends[0];
-  for (const f of friends) {
-    const a = cardOf(ctx.pack, f.cardId).summonCost;
-    const b = cardOf(ctx.pack, best.cardId).summonCost;
-    if (a > b || (a === b && f.uid < best.uid)) best = f;
-  }
-  if (unitHp(ctx, best) >= unitMaxHp(ctx, best)) return;
-  const before = unitHp(ctx, best);
-  healUnit(best, amount);
-  const gained = unitHp(ctx, best) - before;
-  log(events, u.owner, u.cardId, best.uid, `灯籠の精: ${cardOf(ctx.pack, best.cardId).nameJa} にHP+${gained}`);
+  const target = chooseLanternTarget(ctx, s, u, amount);
+  if (target === null) return;
+  const before = unitHp(ctx, target);
+  healUnit(target, amount);
+  const gained = unitHp(ctx, target) - before;
+  const lamp = cardOf(ctx.pack, u.cardId).nameJa;
+  log(events, u.owner, u.cardId, target.uid, `${lamp}の灯 → ${cardOf(ctx.pack, target.cardId).nameJa} HP+${gained}`);
 };
 
 /**
@@ -491,11 +482,18 @@ export const isProxyRotator = (ctx: Ctx, u: Unit): boolean =>
 export const movesOnKill = (ctx: Ctx, u: Unit): boolean => {
   if (!effectsOn(ctx)) return false;
   const fx = fxOf(ctx, u.cardId);
-  return fx === "sk13" || fx === "ad13";
+  return fx === "sk13" || fx === "ad13" || fx === "ac13";
 };
 
-/** ad13 僵尸公主 (adopted 9/22): a counter that destroys the attacker also moves it onto that cell. */
-export const movesOnCounterKill = (ctx: Ctx, u: Unit): boolean => effectsOn(ctx) && fxOf(ctx, u.cardId) === "ad13";
+/**
+ * ad13 僵尸公主 (adopted 9/22) / ac13 (10/3, which also may turn 90° after the
+ * move: src/kyonshi.ts): a counter that destroys the attacker also moves it onto that cell.
+ */
+export const movesOnCounterKill = (ctx: Ctx, u: Unit): boolean => {
+  if (!effectsOn(ctx)) return false;
+  const fx = fxOf(ctx, u.cardId);
+  return fx === "ad13" || fx === "ac13";
+};
 
 // ------------------------------------------------- adopted 9/22 reigu geometry
 

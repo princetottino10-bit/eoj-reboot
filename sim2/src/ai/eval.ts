@@ -62,6 +62,37 @@ const threatAgainst = (ctx: Ctx, s: GameState, p: PlayerId): number => {
   return total;
 };
 
+/** Deck cards left at which a side one reshuffle from the end starts to feel it (urgency 0 above, 1 at an empty deck). */
+export const DECK_OUT_HORIZON = 8;
+
+/**
+ * deckOutMode "second" (the 10/3 default): how near the game is to its end by
+ * the second 山札切れ, 0 (off, or nobody has reshuffled yet) .. 1 (a side that
+ * already reshuffled once has an empty deck: its next draw ends the game).
+ * Grows as the deck of a side on its last deck runs down.
+ */
+export const deckOutUrgency = (ctx: Ctx, s: GameState): number => {
+  if (ctx.cfg.deckOutMode !== "second") return 0;
+  let u = 0;
+  for (const ps of s.players) {
+    if (ps.reshuffleCount < 1) continue;
+    u = Math.max(u, Math.min(1, Math.max(0, 1 - ps.deck.length / DECK_OUT_HORIZON)));
+  }
+  return u;
+};
+
+/**
+ * What the coming deck-out end adds for `p`: the 占拠 lead weighs up to three
+ * times as much, and being ahead at all (the side ahead wins outright) is worth
+ * up to a control reach. 0 when the end is not near. Shared by both evals.
+ */
+export const deckOutTerm = (ctx: Ctx, s: GameState, occP: number, occO: number, occW: number, reachW: number): number => {
+  const u = deckOutUrgency(ctx, s);
+  if (u === 0) return 0;
+  const lead = occP - occO;
+  return occW * 2 * u * lead + reachW * u * u * Math.sign(lead);
+};
+
 /** Scalar board score from `p`'s point of view. Higher is better for p. */
 export const evaluate = (
   ctx: Ctx,
@@ -102,6 +133,8 @@ export const evaluate = (
     score += w.reach * (s.players[p].controlPoints - s.players[o].controlPoints);
     if (s.players[o].controlPoints + 1 >= need && occO >= cw) score -= w.reach * 2;
   }
+  // 2回目の山札切れ is near: the side ahead on 占拠 then wins
+  score += deckOutTerm(ctx, s, occP, occO, w.occ, w.reach);
   score -= w.threat * threatAgainst(ctx, s, p);
   return score;
 };

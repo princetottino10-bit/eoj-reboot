@@ -82,7 +82,7 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
     label: "10/3テスト案",
     experiment: "",
     defaultPack: "adopted-1003",
-    note: "10/3テスト案: 10/3のシートの数値(23枚、霊具「鬼の酒」を追加)。初期霊力 先手6・後手8、毎ターン収入6(占拠チップ4枚で7、5枚で9)、太極−2(下限1)、属性±2、死角+2、最大HP19。HP11以上の式神は占拠を2マス分と数え、制圧はその数え方で5。生命価なし・隙なし・反撃の順番は反撃側が選ぶ(採用ルール 9/22 と同じ)。",
+    note: "10/3テスト案: 10/3のシートの数値(23枚、霊具「鬼の酒」を追加)。初期霊力 先手6・後手8、毎ターン収入6(占拠チップ4枚で7、5枚で9)、太極−2(下限1)、属性±2、死角+2、最大HP19。HP11以上の式神は占拠を2マス分と数え、制圧はその数え方で5。生命価なし・隙なし・反撃の順番は反撃側が選ぶ(採用ルール 9/22 と同じ)。どちらかが2回目の山札切れを起こしたら、その補充が終わったところで終了し、占拠の多い方の勝ち(同じなら引き分け)。",
     overrides: {
       ...R0913_OVERRIDES,
       startMana: [6, 8],
@@ -102,6 +102,8 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
       controlCount: "hp",
       controlCountThreshold: 11,
       controlWin: 5,
+      // the paper rule the team plays (10/3): the 2nd 山札切れ ends the game, more 占拠 wins
+      deckOutMode: "second",
     },
   },
   r0923: {

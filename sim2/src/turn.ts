@@ -39,10 +39,12 @@ export const checkDeckOut = (ctx: Ctx, s: GameState, events: GameEvent[]): boole
   const o0 = controlCount(ctx, s, 0);
   const o1 = controlCount(ctx, s, 1);
   const winner: PlayerId | null = o0 === o1 ? null : o0 > o1 ? 0 : 1;
+  // the turn player's draws are the ones that run a deck out; else whoever reached 2
+  const by: PlayerId = s.players[s.turnPlayer].reshuffleCount >= 2 ? s.turnPlayer : opponent(s.turnPlayer);
   s.ended = true;
   s.winner = winner;
   s.winType = "deck_out";
-  events.push({ t: "gameEnd", winner, winType: "deck_out", round: s.round });
+  events.push({ t: "gameEnd", winner, winType: "deck_out", round: s.round, occ: [o0, o1], by });
   return true;
 };
 

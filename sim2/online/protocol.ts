@@ -9,6 +9,8 @@ import type { AttackAction, CounterOrderOutcome } from "../src/counter-order.ts"
 import { parseConfigPatch } from "../src/config-schema.ts";
 import type { ConfigPatch } from "../src/config-schema.ts";
 import type { FlowEvent, FlowInput } from "../src/flow.ts";
+import type { LanternAsk } from "../src/lantern.ts";
+import type { KyonshiAsk } from "../src/kyonshi.ts";
 import { parseAction, parseFlowInput } from "../src/input-parse.ts";
 import type { LegalEntry } from "../src/preview.ts";
 import type { PlayablePack, RulePresetId } from "../src/presets.ts";
@@ -60,6 +62,18 @@ export type PhaseView =
    * candidate order leads to (public: every number in it is on the board).
    */
   | { kind: "counterOrder"; player: PlayerId; attacker: PlayerId; action: AttackAction; uids: number[]; outcomes: CounterOrderOutcome[] }
+  /**
+   * 灯籠の精: `actor`'s action destroys a lantern of `player`, who chooses the
+   * ally it heals (`ask`: the options and what each would gain, public - the
+   * action resolves right after). `step`: how many lantern choices came before.
+   */
+  | { kind: "lantern"; player: PlayerId; actor: PlayerId; actorUid: number | null; ask: LanternAsk; step: number }
+  /**
+   * 僵尸公主 (10/3): `actor`'s attack moves a 僵尸公主 of `player`, who keeps its
+   * facing or turns it 90° (`ask`: where it moves and what each facing covers,
+   * public - the action resolves right after).
+   */
+  | { kind: "kyonshi"; player: PlayerId; actor: PlayerId; actorUid: number | null; ask: KyonshiAsk }
   | { kind: "discard"; player: PlayerId }
   | { kind: "over"; winner: PlayerId | null; winType: WinType | null; resignedBy: PlayerId | null };
 

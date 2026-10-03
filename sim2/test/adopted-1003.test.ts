@@ -48,7 +48,7 @@ const SHEET: [string, string, number, number, number, number, number, string, bo
   ["ac10", "雲外鏡", 6, 3, 8, 2, 2, "none", false, "12346", "", "789", "tm11"],
   ["ac11", "照魔鏡", 6, 3, 8, 2, 2, "none", false, "12346", "", "789", "tm12"],
   ["ac12", "首引の姫鬼", 7, 3, 9, 3, 2, "yang", true, "123", "2", "78", "tm09"],
-  ["ac13", "僵尸公主", 8, 3, 11, 4, 2, "yin", false, "1379", "2468", "", "ad13"],
+  ["ac13", "僵尸公主", 8, 3, 11, 4, 2, "yin", false, "1379", "2468", "", "ac13"],
   ["ac14", "両面", 7, 4, 8, 4, 2, "yang", true, "28", "28", "", undefined],
   ["ac15", "茨木童子", 8, 4, 9, 5, 2, "yin", false, "-223", "-223", "6", "ac15"],
   ["ac16", "酒呑童子", 9, 6, 11, 5, 2, "yang", true, "124", "12", "8", "ad16"],
@@ -124,9 +124,12 @@ test("r1003 = 10/3テスト案: the numbers, and it is the default for new rooms
   assert.equal(cfg.controlCount, "hp");
   assert.equal(cfg.controlCountThreshold, 11);
   assert.equal(cfg.controlWin, 5);
+  // the paper rule (10/3): the 2nd 山札切れ ends the game; the 9/22 preset keeps none
+  assert.equal(cfg.deckOutMode, "second");
   // everything else is r0923
   const base = presetConfig("r0923");
-  const same = { ...cfg, chipIncomeSteps: base.chipIncomeSteps, taijiDiscount: base.taijiDiscount, maxHp: base.maxHp, controlCount: base.controlCount };
+  assert.equal(base.deckOutMode, "none");
+  const same = { ...cfg, chipIncomeSteps: base.chipIncomeSteps, taijiDiscount: base.taijiDiscount, maxHp: base.maxHp, controlCount: base.controlCount, deckOutMode: base.deckOutMode };
   assert.deepEqual(same, base);
   assert.equal(RULE_PRESETS.r1003.label, "10/3テスト案");
   assert.equal(RULE_PRESETS.r1003.defaultPack, "adopted-1003");

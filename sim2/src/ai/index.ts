@@ -5,12 +5,17 @@ import { makeGreedy } from "./greedy.ts";
 import type { Ai } from "./greedy.ts";
 import { makeBeam } from "./beam.ts";
 import { profileWeights } from "./eval.ts";
+import type { Weights } from "./eval.ts";
 import { makeStrong } from "./strong.ts";
 import type { StrongOptions } from "./strong.ts";
 import { strongProfileWeights } from "./strong-eval.ts";
 import type { DiscardChooser, MulliganChooser } from "../turn.ts";
 import type { TansuChooser } from "../effects.ts";
 import type { CounterOrderChooser } from "./counter-order.ts";
+import type { LanternChooser } from "../lantern-choice.ts";
+import { bestLanternPick } from "./lantern.ts";
+import type { KyonshiChooser } from "../kyonshi-choice.ts";
+import { bestKyonshiTurn } from "./kyonshi.ts";
 
 export const AI_KINDS = ["greedy", "beam", "strong"] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -36,6 +41,10 @@ export type AiSeat = Ai & {
   tansu?: TansuChooser;
   /** 案A counter order when this seat counters (absent = ai/counter-order.ts bestCounterOrder). */
   counterOrder?: CounterOrderChooser;
+  /** 灯籠の精: the ally this seat heals when its lantern is destroyed (absent = ai/lantern.ts bestLanternPick). */
+  lantern?: LanternChooser;
+  /** 僵尸公主 (10/3): the facing after its move (absent = ai/kyonshi.ts bestKyonshiTurn). */
+  kyonshi?: KyonshiChooser;
 };
 
 export type MakeAiOptions = {
@@ -48,7 +57,8 @@ export type MakeAiOptions = {
 /** Builds an AI seat. Throws on an unknown kind or eval profile. */
 export const makeAi = (kind: string, evalName = "territorial", opts: MakeAiOptions = {}): AiSeat => {
   if (!isAiKind(kind)) throw new Error(`unknown ai "${kind}" (expected ${AI_KINDS.join("|")})`);
-  if (kind === "greedy") return makeGreedy(profileWeights(evalName));
-  if (kind === "beam") return makeBeam({ weights: profileWeights(evalName) });
+  const w = (): Weights => profileWeights(evalName);
+  if (kind === "greedy") return { ...makeGreedy(w()), lantern: bestLanternPick(w()), kyonshi: bestKyonshiTurn(w()) };
+  if (kind === "beam") return { ...makeBeam({ weights: w() }), lantern: bestLanternPick(w()), kyonshi: bestKyonshiTurn(w()) };
   return makeStrong({ ...opts.strong, weights: strongProfileWeights(evalName), seed: opts.seed ?? 0 });
 };

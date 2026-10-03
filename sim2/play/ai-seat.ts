@@ -1,5 +1,5 @@
 // One AI seat of a local match, one input at a time: what the seat owes right
-// now (mulligan, 古箪笥, counter order, the next main-phase action, the
+// now (mulligan, 古箪笥, counter order, 灯籠の精's ally, 僵尸公主's facing, the next main-phase action, the
 // hand-size discard) and playing it through the flow. The AI table (ui.ts)
 // drives its AI seat with it and the spectate page (watch.ts) drives both
 // seats with it, so the two never differ in how an AI plays. Pure: no DOM.
@@ -9,6 +9,8 @@
 // another seat answered something since this seat's last input (the other
 // side ordered its counters differently from what the plan assumed).
 import { bestCounterOrder, MAX_REPLANS } from "../src/ai/counter-order.ts";
+import { bestLanternPick } from "../src/ai/lantern.ts";
+import { bestKyonshiTurn } from "../src/ai/kyonshi.ts";
 import type { AiSeat } from "../src/ai/index.ts";
 import { defaultTansuPolicy } from "../src/effects.ts";
 import { submit, submitDiscardWith } from "../src/flow.ts";
@@ -96,6 +98,16 @@ export const decideAiMove = (f: Flow, seat: PlayerId, ai: AiSeat, memo: AiMemo):
       // 案A: the seat orders its counters the way its eval likes best
       const order = (ai.counterOrder ?? bestCounterOrder)(f.ctx, f.state, ph.action) ?? ph.uids;
       return { kind: "input", input: { type: "counterOrder", order } };
+    }
+    case "lantern": {
+      // 灯籠の精: the ally this seat's eval likes best after the whole action
+      const uid = (ai.lantern ?? bestLanternPick())(f.ctx, f.state, ph.action, ph.picks, ph.ask);
+      return { kind: "input", input: { type: "lantern", uid } };
+    }
+    case "kyonshi": {
+      // 僵尸公主: the facing this seat's eval likes best after the whole action
+      const turn = (ai.kyonshi ?? bestKyonshiTurn())(f.ctx, f.state, ph.action, ph.picks, ph.turns, ph.ask);
+      return { kind: "input", input: { type: "kyonshi", turn } };
     }
     case "main":
       return mainMove(f, ai, memo);

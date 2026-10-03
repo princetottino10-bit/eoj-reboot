@@ -84,6 +84,8 @@ export const nextAiInput = (f: Flow, perTurn: { key: string; n: number }): [Play
   if (ph.kind === "tansu") return [ph.player, { type: "tansu", answers: ph.uids.map((uid) => ({ uid, choice: "mana" })) }];
   if (ph.kind === "discard") return [ph.player, { type: "discard", indices: defaultDiscardPolicy(f.ctx, f.state, ph.player) }];
   if (ph.kind === "counterOrder") return [ph.player, { type: "counterOrder", order: ph.uids.slice() }];
+  if (ph.kind === "lantern") return [ph.player, { type: "lantern", uid: ph.ask.options[0].uid }];
+  if (ph.kind === "kyonshi") return [ph.player, { type: "kyonshi", turn: 0 }];
   const key = `${f.state.round}:${ph.player}`;
   if (perTurn.key !== key) {
     perTurn.key = key;

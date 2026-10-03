@@ -188,6 +188,9 @@ button.rules-badge { cursor: pointer; }
 /* the late-game control line (controlWinLate) and 制圧点 (controlWinMode points) */
 .np-occ.is-late small { color: var(--sym-verm-hi); font-weight: 700; }
 .np-pts b { color: var(--gold-hi); }
+/* 山札切れ n/2 (deckOutMode second): vermilion once one more ends the game */
+.np-deckout b { font-size: 18px; }
+.np-deckout.is-late b, .np-deckout.is-late small { color: var(--sym-verm-hi); }
 .np-chips { display: grid; grid-auto-flow: column; gap: 2px; align-self: center; }
 .chip { display: block; width: 9px; height: 9px; border-radius: 50%; border: 1px solid oklch(60% 0.03 80 / 0.6); }
 .chip.step { border-color: var(--gold-dim); }
@@ -643,6 +646,10 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .pr-confirm { max-width: min(1080px, 100%); column-gap: 18px; }
 .pr-confirm .pr-lines { justify-content: flex-start; flex: 1 1 380px; }
 .pr-confirm .pr-hint { flex: 0 0 auto; }
+/* 灯籠の精 / 僵尸公主: a long question on top that wraps (a phone would push it off the sides), then the notes and the choices */
+.pr-confirm.lantern .pr-hint, .pr-confirm.kyonshi .pr-hint { flex: 1 1 100%; min-width: 0; text-align: center; }
+.pr-confirm.lantern .pr-lines, .pr-confirm.kyonshi .pr-lines { justify-content: center; }
+.pr-confirm.lantern .pr-btns, .pr-confirm.kyonshi .pr-btns { justify-content: center; }
 .kbd-hint { color: var(--text-dim); font-size: 0.9em; }
 .btn .kbd-hint { color: inherit; opacity: 0.75; }
 @media (hover: none), (pointer: coarse) { .kbd-hint { display: none; } }
@@ -807,7 +814,7 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .yy-result[data-tone="draw"] .yy-result-mark, .yy-result[data-tone="watch"] .yy-result-mark { color: var(--text); }
 .yy-result-mark.is-pair { font-size: min(22cqh, 170px); letter-spacing: -0.04em; }
 .yy-result-text { margin: 0; font-family: var(--font-mincho); font-size: 17px; color: var(--text); text-align: center; padding: 0 12px; }
-.yy-result-how { margin: -4px 0 0; font-family: var(--font-mincho); font-weight: 800; font-size: 20px; letter-spacing: 0.12em; color: var(--gold-hi); }
+.yy-result-how { margin: -4px 0 0; font-family: var(--font-mincho); font-weight: 800; font-size: 20px; letter-spacing: 0.12em; color: var(--gold-hi); text-wrap: balance; text-align: center; max-width: 92%; }
 .yy-result-how[hidden] { display: none; }
 .yy-result-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 .yy.is-over .bd { filter: brightness(0.7) saturate(0.7); }

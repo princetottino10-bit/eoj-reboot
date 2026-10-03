@@ -17,6 +17,7 @@ import { incomeNow, rotateCostOf } from "../rules.ts";
 import { controlCount, controlNeed, isHidden, opponent, unitHp } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import type { Facing, GameState, PlayerId, Pos, Unit } from "../types.ts";
+import { deckOutTerm } from "./eval.ts";
 
 export type StrongWeights = {
   /** Per occupied cell (hidden units are off the count, as the rules say). */
@@ -278,6 +279,9 @@ export const strongEvaluate = (
     if (pp.controlPoints + 1 >= need && occP >= cw) score += w.holdControl;
     if (po.controlPoints + 1 >= need && occO >= cw) score -= w.oppControl;
   }
+
+  // 2回目の山札切れ is near (deckOutMode second): the side ahead on 占拠 then wins
+  score += deckOutTerm(ctx, s, occP, occO, w.occ, w.reach);
 
   const manaP = nextMana === undefined ? nextTurnMana(ctx, s, p) : nextMana[p];
   const manaO = nextMana === undefined ? nextTurnMana(ctx, s, o) : nextMana[o];

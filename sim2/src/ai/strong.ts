@@ -21,6 +21,10 @@ import type { Ctx } from "../state.ts";
 import type { DiscardChooser, MulliganChooser } from "../turn.ts";
 import type { Action, GameState, PlayerId } from "../types.ts";
 import type { Ai } from "./greedy.ts";
+import type { LanternChooser } from "../lantern-choice.ts";
+import { strongLanternPick } from "./lantern.ts";
+import type { KyonshiChooser } from "../kyonshi-choice.ts";
+import { strongKyonshiTurn } from "./kyonshi.ts";
 import { STRONG_WEIGHTS, STRONG_WIN, hasControl } from "./strong-eval.ts";
 import type { StrongWeights } from "./strong-eval.ts";
 import {
@@ -48,6 +52,8 @@ export type StrongAi = Ai & {
   discard: DiscardChooser;
   mulligan: MulliganChooser;
   tansu: TansuChooser;
+  lantern: LanternChooser;
+  kyonshi: KyonshiChooser;
 };
 
 /** Break candidates that get a full continuation search (the rest are ranked two-ply only). */
@@ -211,6 +217,8 @@ export const makeStrong = (opts: Partial<StrongOptions> = {}): StrongAi => {
     discard: strongDiscard,
     mulligan: strongMulligan,
     tansu: strongTansu,
+    lantern: strongLanternPick(o.weights),
+    kyonshi: strongKyonshiTurn(o.weights),
   };
 };
 

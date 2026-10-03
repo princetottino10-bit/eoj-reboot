@@ -6,6 +6,8 @@
 import { cardOf } from "../src/cards.ts";
 import type { CardOverrides } from "../src/card-overrides.ts";
 import type { CounterOrderOutcome } from "../src/counter-order.ts";
+import type { LanternAsk } from "../src/lantern.ts";
+import type { KyonshiAsk } from "../src/kyonshi.ts";
 import type { UnitCommands } from "../src/commands.ts";
 import type { FlowInput, TansuAnswer } from "../src/flow.ts";
 import type { LegalEntry } from "../src/preview.ts";
@@ -15,13 +17,13 @@ import type { Ctx } from "../src/state.ts";
 import type { CardDef, Facing, PlayerId, Pos } from "../src/types.ts";
 import type { BoardView, LogItem } from "../online/protocol.ts";
 import { boardHtml } from "./board-view.ts";
-import type { BoardVM } from "./board-view.ts";
+import type { BoardVM, Prediction } from "./board-view.ts";
 import { SEAT_SEAL, watchArtErrors } from "./cards-view.ts";
 import { createFx } from "./fx.ts";
 import { handHtml } from "./hand-view.ts";
 import { ensureMarks } from "./marks.ts";
 import type { HandCard, HandMode } from "./hand-view.ts";
-import { detailHtml, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, turnHtml } from "./hud.ts";
+import { detailHtml, endOcc, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, turnHtml } from "./hud.ts";
 import type { CardLook, Focus } from "./hud.ts";
 import { promptHtml } from "./prompt-view.ts";
 import { esc, resultHow, unitAtPos, unitById } from "./render.ts";
@@ -55,6 +57,17 @@ export type TablePrompt =
   | { kind: "tansu"; uids: number[] }
   /** 案A: this screen's seat puts the counterers of the declared attack in order. */
   | { kind: "counterOrder"; attackerUid: number; uids: number[]; outcomes: CounterOrderOutcome[] }
+  /**
+   * 灯籠の精: this screen's seat chooses the ally its destroyed lantern heals
+   * (tap a glowing ally, or its button). actorUid: the attacker, if an attack;
+   * step: how many lantern choices this action asked before.
+   */
+  | { kind: "lantern"; ask: LanternAsk; actorUid: number | null; step: number }
+  /**
+   * 僵尸公主 (10/3): this screen's seat chooses its facing after the move (the
+   * arrows over the cell it moves to, or the buttons). actorUid: the attacker.
+   */
+  | { kind: "kyonshi"; ask: KyonshiAsk; actorUid: number | null }
   | { kind: "over"; text: string; winner: PlayerId | null };
 
 export type TableModel = {
@@ -137,6 +150,17 @@ const revealInRow = (row: HTMLElement, child: Element): void => {
   if (c.left < r.left + pad) row.scrollLeft -= r.left + pad - c.left;
   else if (c.right > r.right - pad) row.scrollLeft += Math.min(c.right - (r.right - pad), c.left - (r.left + pad));
 };
+
+/** 灯籠の精: each ally the light may go to, with the HP it would gain (+0 when already full). */
+export const lanternPrediction = (ask: LanternAsk): Prediction => ({
+  attackerUid: null,
+  hits: ask.options.map((o) => ({ uid: o.uid, dmg: -o.gain, blind: false, destroyed: false, ally: true, heal: true, hpAfter: o.hp + o.gain })),
+  heal: true,
+  counterTotal: 0,
+  counterCount: 0,
+  attackerDestroyed: false,
+  attackerHpAfter: 0,
+});
 
 export const createTable = (root: HTMLElement, handlers: TableHandlers): Table => {
   root.classList.add("yy");
@@ -344,6 +368,10 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       counterTaps = counterTaps + 1 >= counterPick.length ? 0 : counterTaps + 1;
       return render();
     }
+    if (m.prompt.kind === "lantern") {
+      if (u !== undefined && m.prompt.ask.options.some((o) => o.uid === u.uid)) return send({ type: "lantern", uid: u.uid });
+      return;
+    }
     if (m.prompt.kind === "main") {
       const mark = cellMarks(m.board, lg, hand, sel).get(`${pos.x},${pos.y}`);
       const s = sel;
@@ -424,6 +452,12 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
 
   const onFace = (f: number): void => {
     const s = sel;
+    const m = model;
+    if (m !== null && m.prompt.kind === "kyonshi") {
+      const o = m.prompt.ask.options.find((x) => x.facing === f);
+      if (o !== undefined) send({ type: "kyonshi", turn: o.turn });
+      return;
+    }
     if (s.kind === "place") return sendAction(summonFacings(legal(), handOf(), s.handIndex, s.pos).find((o) => o.facing === f)?.entry);
     if (s.kind === "reigu" && s.targetUid !== null) {
       return sendAction(reiguEntriesFor(s.handIndex, s.targetUid).find((e) => e.action.kind === "reigu" && e.action.facing === f));
@@ -494,6 +528,19 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
         counterPick = null;
         counterTaps = 0;
         return render();
+      case "lantern": {
+        if (m.prompt.kind !== "lantern") return;
+        const uid = Number(data.uid);
+        if (!m.prompt.ask.options.some((o) => o.uid === uid)) return;
+        return send({ type: "lantern", uid });
+      }
+      case "kyonshi": {
+        if (m.prompt.kind !== "kyonshi") return;
+        const turn = Number(data.turn);
+        const o = m.prompt.ask.options.find((x) => x.turn === turn);
+        if (o === undefined) return;
+        return send({ type: "kyonshi", turn: o.turn });
+      }
       case "co-send":
         if (m.prompt.kind !== "counterOrder") return;
         return send({ type: "counterOrder", order: pickNow() });
@@ -683,13 +730,22 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const reiguPv = main && s.kind === "reigu" ? reiguEntry(lg, hand, s)?.preview : undefined;
     // 案A: the counterers glow (tap them in order), the attacker is the selected piece
     const co = m.prompt.kind === "counterOrder" ? m.prompt : null;
-    const coMarks = new Map<string, "target">();
+    const coMarks = new Map<string, "target" | "heal" | "move">();
     if (co !== null) for (const uid of co.uids) {
       const cu = unitById(m.board, uid);
       if (cu !== undefined) coMarks.set(`${cu.pos.x},${cu.pos.y}`, "target");
     }
+    // 灯籠の精: the allies the light may go to glow, each with what it would gain
+    const lp = m.prompt.kind === "lantern" ? m.prompt : null;
+    if (lp !== null) for (const o of lp.ask.options) {
+      const lu = unitById(m.board, o.uid);
+      if (lu !== undefined) coMarks.set(`${lu.pos.x},${lu.pos.y}`, "heal");
+    }
     // spectate: the last move's actor and targets, while the watcher has nothing selected
-    const spot = co === null && !main && s.kind === "none" && m.spot !== undefined && m.spot !== null ? m.spot : null;
+    // 僵尸公主: the arrows over the cell it moves to (keep / left / right; no 180°)
+    const kp = m.prompt.kind === "kyonshi" ? m.prompt : null;
+    if (kp !== null) coMarks.set(`${kp.ask.to.x},${kp.ask.to.y}`, "move");
+    const spot = co === null && lp === null && kp === null && !main && s.kind === "none" && m.spot !== undefined && m.spot !== null ? m.spot : null;
     if (spot !== null) for (const uid of spot.targets) {
       const tu = unitById(m.board, uid);
       if (tu !== undefined) coMarks.set(`${tu.pos.x},${tu.pos.y}`, "target");
@@ -700,17 +756,23 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       names: m.names,
       look: look(m),
       bottom: m.viewer === 1 ? 1 : 0,
-      marks: main ? cellMarks(m.board, lg, hand, s) : co !== null || spot !== null ? coMarks : new Map(),
+      marks: main ? cellMarks(m.board, lg, hand, s) : co !== null || lp !== null || kp !== null || spot !== null ? coMarks : new Map(),
       range: s.kind === "unit" || (s.kind === "aim" && s.targetUid === null && !s.area) ? rangeSets(m.ctx, shown) : null,
       selectedUid:
         co !== null
           ? co.attackerUid
-          : spot !== null && spot.actor !== null && unitById(m.board, spot.actor) !== undefined
+          : lp !== null
+            ? lp.ask.lanternUid
+            : kp !== null
+              ? kp.ask.uid
+              : spot !== null && spot.actor !== null && unitById(m.board, spot.actor) !== undefined
             ? spot.actor
             : (shownUid ?? (s.kind === "inherit" || s.kind === "reigu" ? s.targetUid : null)),
       selectedCell: s.kind === "place" ? s.pos : null,
       prediction:
-        aimed?.preview?.kind === "attack" && s.kind === "aim"
+        lp !== null
+          ? lanternPrediction(lp.ask)
+          : aimed?.preview?.kind === "attack" && s.kind === "aim"
           ? predictionOf(s.uid, aimed.preview)
           : reiguPv?.kind === "reigu"
             ? reiguPreviewPrediction(reiguPv)
@@ -722,7 +784,14 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
           ? { uid: shown.uid, items: radialItems(commands(), shown.uid, m.board.players[shown.owner].mana, s) }
           : null,
       facing:
-        main && s.kind === "place"
+        kp !== null
+          ? {
+              pos: kp.ask.to,
+              cardId: kp.ask.cardId,
+              options: ([0, 1, 2, 3] as Facing[]).map((f) => ({ facing: f, enabled: kp.ask.options.some((o) => o.facing === f) })),
+              turn: { from: kp.ask.facing },
+            }
+          : main && s.kind === "place"
           ? {
               pos: s.pos,
               cardId: hand[s.handIndex] ?? "",
@@ -848,7 +917,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const mark = p.winner === null ? "分" : m.viewer === null ? `${SEAT_SEAL[p.winner]}勝` : p.winner === m.viewer ? "勝" : "敗";
     const tone = p.winner === null ? "draw" : m.viewer === null ? "watch" : p.winner === m.viewer ? "win" : "lose";
     const resigned = m.log.some((l) => l.event.t === "resign");
-    const how = resigned ? "投了" : resultHow(m.board.winType, m.board.winner, m.names);
+    const how = resigned ? "投了" : resultHow(m.board.winType, m.board.winner, m.names, endOcc(m.ctx, m.board));
     el.result.hidden = false;
     el.result.dataset.tone = tone;
     el.resultMark.classList.toggle("is-pair", mark.length > 1);
@@ -890,7 +959,9 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     }
     model = m;
     const lastSeq = m.log.length === 0 ? -1 : m.log[m.log.length - 1].seq;
-    const nextStamp = `${m.key}|${lastSeq}|${m.prompt.kind}|${m.board.units.length}|${m.hand?.length ?? -1}`;
+    const ask =
+      m.prompt.kind === "lantern" ? `${m.prompt.ask.lanternUid}:${m.prompt.step}` : m.prompt.kind === "kyonshi" ? `${m.prompt.ask.uid}` : "";
+    const nextStamp = `${m.key}|${lastSeq}|${m.prompt.kind}${ask}|${m.board.units.length}|${m.hand?.length ?? -1}`;
     if (nextStamp !== stamp) {
       const keep =
         (sel.kind === "unit" && m.prompt.kind !== "main" && unitById(m.board, sel.uid) !== undefined) ||

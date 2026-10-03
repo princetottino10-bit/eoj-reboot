@@ -141,7 +141,13 @@ const promptOf = (g: Game): TablePrompt => {
   }
   if (ph.kind === "mulligan") return ph.submitted[g.human] ? { kind: "idle", text: "AIのマリガン待ち…" } : { kind: "mulligan" };
   if (ph.kind === "counterOrder" && ph.player !== g.human) return { kind: "idle", text: "相手が反撃の順番を選んでいます…" };
+  if (ph.kind === "lantern" && ph.player !== g.human) return { kind: "idle", text: "相手が灯籠の精の灯を託す相手を選んでいます…" };
+  if (ph.kind === "kyonshi" && ph.player !== g.human) return { kind: "idle", text: "相手が僵尸公主の向きを選んでいます…" };
   if (ph.player !== g.human) return { kind: "idle", text: "AIが考えています…" };
+  if (ph.kind === "lantern") {
+    return { kind: "lantern", ask: ph.ask, actorUid: ph.action.kind === "attack" ? ph.action.uid : null, step: ph.picks.length };
+  }
+  if (ph.kind === "kyonshi") return { kind: "kyonshi", ask: ph.ask, actorUid: ph.action.kind === "attack" ? ph.action.uid : null };
   if (ph.kind === "counterOrder") {
     return {
       kind: "counterOrder",
@@ -160,6 +166,8 @@ const PHASE_TEXT: Record<string, string> = {
   mulligan: "マリガン",
   tansu: "古箪笥の選択",
   counterOrder: "反撃の順番",
+  lantern: "灯籠の精の灯",
+  kyonshi: "僵尸公主の向き",
   main: "行動中",
   discard: "手札整理",
   over: "対局終了",

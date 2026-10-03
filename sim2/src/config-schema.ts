@@ -309,9 +309,11 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     key: "deckOutMode", group: "victory", kind: "choice",
     choices: [
       { value: "none", label: "なし" },
-      { value: "second", label: "2回目の山札切れで判定" },
+      { value: "second", label: "2回目の山札切れで終了" },
     ],
-    label: "デッキ切れ判定", desc: "どちらかが墓地を2回山札に戻した時点で、占拠数の多い側の勝ち", midGame: true,
+    label: "山札切れでの終了",
+    desc: "どちらかのプレイヤーが2回目の山札切れ(墓地を山札に戻すのが2回目)を起こしたら、その補充が終わったところでゲーム終了。占拠(制圧と同じ数え方)の多い方の勝ち、同じなら引き分け",
+    midGame: true,
   },
   {
     key: "roundLimit", group: "victory", kind: "int", min: 1, max: 99,

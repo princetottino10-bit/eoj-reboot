@@ -47,6 +47,19 @@ const occTip = (ctx: Ctx): string =>
       ? `・召喚コスト${ctx.cfg.controlCountThreshold}以上の駒は2マス分`
       : "";
 
+/** Each side's 占拠 on a board that ended by deck_out (the result names them); undefined otherwise. */
+export const endOcc = (ctx: Ctx, board: BoardView): [number, number] | undefined =>
+  board.ended && board.winType === "deck_out" ? [occupiedOf(ctx, board, 0), occupiedOf(ctx, board, 1)] : undefined;
+
+/**
+ * deckOutMode "second": 「山札切れ 1/2」 - how many times this side's grave went
+ * back into the deck; the second one ends the game. Nothing under "none".
+ */
+const deckOutHtml = (ctx: Ctx, reshuffles: number): string =>
+  ctx.cfg.deckOutMode === "second"
+    ? `<span class="np-stat np-deckout${reshuffles >= 1 ? " is-late" : ""}" data-stat="deckout" title="山札切れ(墓地を山札に戻した回数)。どちらかが2回目を起こしたら、その補充が終わったところで終了し、占拠の多い方の勝ち"><i>山札切れ</i><b>${Math.min(reshuffles, 2)}</b><small>/2</small></span>`
+    : "";
+
 /** controlWinMode "points": 「制圧点 1/2」. Nothing under "hold". */
 const pointsHtml = (ctx: Ctx, points: number | undefined): string =>
   ctx.cfg.controlWinMode === "points"
@@ -70,6 +83,7 @@ export const nameplateHtml = (ctx: Ctx, board: BoardView, p: PlayerId, names: Na
     <span class="np-stat np-mana" data-stat="mana" title="霊力(上限 ${ctx.cfg.manaCap})"><i>霊力</i><b>${ps.mana}</b></span>
     <span class="np-stat np-occ${late ? " is-late" : ""}" data-need="${need}" title="占拠 / 制圧に必要なマス${late ? "(終盤)" : ""}${occTip(ctx)}"><i>占拠</i><b>${occ}</b><small>/${need}</small></span>
     ${pointsHtml(ctx, ps.controlPoints)}
+    ${deckOutHtml(ctx, ps.reshuffleCount)}
     ${chipsHtml(ctx, board, p)}
   </div>`;
 };
@@ -126,9 +140,11 @@ export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInf
     : info.mulligan === true
       ? "マリガン(両者)"
       : `<span class="turn-seal">${SEAT_SEAL[p]}</span>${esc(names[p])}の番`;
-  const how = board.ended ? resultHow(board.winType, board.winner, names) : null;
+  const how = board.ended ? resultHow(board.winType, board.winner, names, endOcc(ctx, board)) : null;
   const result =
-    board.winner === null ? esc(how ?? "引き分け") : `${esc(names[board.winner])}の勝ち${how === null ? "" : `・${esc(how)}`}`;
+    board.winner === null || (board.winType === "deck_out" && how !== null)
+      ? esc(how ?? "引き分け")
+      : `${esc(names[board.winner])}の勝ち${how === null ? "" : `・${esc(how)}`}`;
   // "たろうが行動中" under "たろうの番" only needs "行動中"
   const own = `${names[p]}が`;
   const phaseText = info.phaseText.startsWith(own) ? info.phaseText.slice(own.length) : info.phaseText;

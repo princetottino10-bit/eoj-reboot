@@ -149,7 +149,14 @@ export type RefundMode = "half" | "none" | "killer_half";
 export type KillRewardBase = "half_floor" | "half_ceil" | "full" | "zero" | "card";
 /** half = summon costs ceil(summonCost/2), floor 1. */
 export type SummonCostScale = "full" | "half";
-/** second = the game ends when either grave has been reshuffled twice. */
+/**
+ * second = the game ends when either grave has been reshuffled twice (EXP-0913;
+ * since 10/3 also the paper rule the team plays: 「どちらかのプレイヤーが2回目の
+ * 山札切れを起こしたら、その補充が終わったところでゲーム終了。占拠の多い方の勝ち。
+ * 同じなら引き分け」, the default of r1003). The check runs once the draws that
+ * caused it are done: at the end of the turn-start effects and after the
+ * turn-end refill.
+ */
 export type DeckOutMode = "none" | "second";
 export type IncomeTiming = "turn_start" | "turn_end";
 /** EXP-0913B. next_turn_start = R2 (reach, win at the next own turn start).
@@ -473,6 +480,10 @@ export type GameEvent =
       /** controlWinMode "points": both players' 制圧点 at this turn end. */
       points?: [number, number];
     }
-  | { t: "gameEnd"; winner: PlayerId | null; winType: WinType; round: number };
+  /**
+   * occ / by: deck_out only - each side's 占拠 when it ended (controlCount) and
+   * the seat whose grave went back for the second time.
+   */
+  | { t: "gameEnd"; winner: PlayerId | null; winType: WinType; round: number; occ?: [number, number]; by?: PlayerId };
 
 export type ApplyResult = { state: GameState; events: GameEvent[] };

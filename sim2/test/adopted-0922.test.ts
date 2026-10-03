@@ -218,7 +218,7 @@ test("destruction without a destroyer follows refundMode: a 渾身 self-kill pay
 
 // ----------------------------------------------------------------- effects
 
-test("ad01 灯籠の精: on death +2 HP to the priciest surviving ally (tm01 stays +1)", () => {
+test("ad01 灯籠の精: on death +2 HP to a surviving ally (no answer given: the default pick, most HP gained; tm01 stays +1)", () => {
   const ctx = r0923();
   const s = blankState(ctx, 10);
   const ib = place(s, "ad15", 0, 0, 0, 0); // 茨木童子 ATK5, range (0,2) (1,2) (0,1) (1,1)

@@ -195,6 +195,8 @@ const PHASE_TEXT: Record<string, string> = {
   mulligan: "マリガン",
   tansu: "古箪笥の選択",
   counterOrder: "反撃の順番",
+  lantern: "灯籠の精の灯",
+  kyonshi: "僵尸公主の向き",
   main: "行動中",
   discard: "手札整理",
   over: "対局終了",

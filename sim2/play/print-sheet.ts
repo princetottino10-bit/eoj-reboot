@@ -90,12 +90,10 @@ const notesHtml = (head: string, foot: string): string =>
 
 /**
  * Paper cards print the card's own words where the table's text notes a part
- * the simulator does not do yet (players at a table can do it by hand):
- * 僵尸公主 (10/3 sheet) may turn 90 degrees when it moves.
+ * the simulator does not do yet (players at a table can do it by hand). Empty
+ * since 10/3: 僵尸公主's 90° turn (the last entry) is in the simulator now.
  */
-export const PRINT_TEXT: Record<string, string> = {
-  ac13: "攻撃・反撃で対象のHPを0にした場合、その位置へ移動する。この時、向きを90度変えられる",
-};
+export const PRINT_TEXT: Record<string, string> = {};
 
 /** The effect text a printed card carries (undefined = the table's own). */
 export const printTextOf = (cardId: string): string | undefined =>
@@ -178,7 +176,7 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
     { label: "反撃", text: counter },
     { label: "撃破", text: reward },
     { label: "占拠", text: `自分の式神がいるマスを占拠と数える。${twoCells}` },
-    { label: "勝ち", text: hold },
+    { label: "勝ち", text: cfg.deckOutMode === "second" ? `${hold}どちらかが2回目の山札切れを起こしたら、その補充が終わったところで終了。占拠の多い方の勝ち (同じなら引き分け)。` : hold },
     { label: "生命", text: cfg.lifeValueEnabled ? `生命${cfg.startLife}。撃破された式神の生命価だけ減り、0で負け。` : "生命価なし (生命の増減・生命での勝ち負けはない)。" },
     { label: "手札", text: hand },
   ];

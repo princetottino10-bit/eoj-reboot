@@ -4,7 +4,11 @@
 import { cardOf } from "../src/cards.ts";
 import { armDamage, fxOf, REIGU_MODE_LABEL, REIGU_MODES, reiguTargeting } from "../src/effects.ts";
 import type { CounterOrderOutcome } from "../src/counter-order.ts";
+import type { LanternAsk } from "../src/lantern.ts";
+import { kyonshiTurnWord } from "../src/kyonshi.ts";
+import type { KyonshiAsk } from "../src/kyonshi.ts";
 import type { LegalEntry, ReiguPreview } from "../src/preview.ts";
+import { unitHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { PlayerId } from "../src/types.ts";
 import type { BoardView } from "../online/protocol.ts";
@@ -22,6 +26,10 @@ export type PromptKind =
   | { kind: "tansu"; uids: number[] }
   /** 案A: this seat puts the counterers of the declared attack in order. */
   | { kind: "counterOrder"; attackerUid: number; uids: number[]; outcomes: CounterOrderOutcome[] }
+  /** 灯籠の精: this seat chooses the ally its destroyed lantern heals. */
+  | { kind: "lantern"; ask: LanternAsk; actorUid: number | null; step: number }
+  /** 僵尸公主 (10/3): this seat chooses its facing after the move. */
+  | { kind: "kyonshi"; ask: KyonshiAsk; actorUid: number | null }
   | { kind: "over"; text: string };
 
 export type PromptVM = {
@@ -69,6 +77,80 @@ const counterOrderBar = (vm: PromptVM, p: Extract<PromptKind, { kind: "counterOr
     `<b>反撃の順番</b>(${aName}へ上から順に反撃・撃破したら残りは反撃しない)`,
     lines,
     [btn("co-send", "この順番で確定", "btn-gold"), def ? "" : btn("co-reset", "既定の順番に戻す", "btn-quiet")].filter((b) => b !== ""),
+    vm.flash,
+  );
+};
+
+/**
+ * 灯籠の精 prompt: who destroys it, then one button per ally (also tappable on
+ * the board, where each glows with its +N). A full-HP ally can be chosen; it
+ * gains nothing, and its button says so.
+ */
+const lanternBar = (vm: PromptVM, p: Extract<PromptKind, { kind: "lantern" }>): string => {
+  const ask = p.ask;
+  const lamp = esc(cardName(vm.ctx, ask.lanternCardId));
+  const actor = p.actorUid === null ? undefined : unitById(vm.board, p.actorUid);
+  const cause = actor === undefined ? "" : `${esc(cardName(vm.ctx, actor.cardId))}の攻撃で`;
+  const buttons = ask.options.map((o) => {
+    const u = unitById(vm.board, o.uid);
+    const where = u === undefined ? "" : `<span class="muted">(${esc(cellName(u.pos))})</span>`;
+    const gain = o.gain > 0 ? `HP ${o.hp}→${o.hp + o.gain} <b>+${o.gain}</b>` : `HP ${o.hp} 満タン(+0)`;
+    return btn("lantern", `${esc(cardName(vm.ctx, o.cardId))}${where} ${gain}`, o.gain > 0 ? "btn-gold" : "btn-quiet", `data-uid="${o.uid}"`);
+  });
+  const notes: string[] = [];
+  // the same attack / reigu can hit an ally too: the HP shown is the one it has when the light comes
+  const hit = ask.options.some((o) => {
+    const u = unitById(vm.board, o.uid);
+    return u !== undefined && unitHp(vm.ctx, u) !== o.hp;
+  });
+  if (hit) notes.push(`HPは${actor === undefined ? "この霊具" : "この攻撃"}のダメージを受けた後の値です`);
+  if (ask.options.some((o) => o.gain === 0)) notes.push("満タンの味方も選べますが、HPは増えません");
+  return bar(
+    "confirm lantern",
+    `<b>${lamp}の灯</b>: ${cause}${lamp}が撃破されます。灯を託す味方を1体選んでください(HP+${ask.amount}・最大HPまで)`,
+    notes,
+    buttons,
+    vm.flash,
+  );
+};
+
+const FACING_WORD = ["上", "右", "下", "左"];
+
+/**
+ * 僵尸公主 prompt: where it moves and why, then keep / left 90° / right 90°
+ * (also the arrows on the board, over the cell it moves to). Each button
+ * names the enemies its attack would cover facing that way.
+ */
+const kyonshiBar = (vm: PromptVM, p: Extract<PromptKind, { kind: "kyonshi" }>): string => {
+  const ask = p.ask;
+  const me = esc(cardName(vm.ctx, ask.cardId));
+  const actor = p.actorUid === null ? undefined : unitById(vm.board, p.actorUid);
+  const cause =
+    ask.cause === "counter"
+      ? `反撃で${actor === undefined ? "攻撃した式神" : esc(cardName(vm.ctx, actor.cardId))}を撃破し`
+      : "攻撃で対象を撃破し";
+  const reachOf = (targets: number[]): string =>
+    targets.length === 0
+      ? "敵なし"
+      : targets
+          .map((uid) => {
+            const u = unitById(vm.board, uid);
+            return u === undefined ? "?" : esc(cardName(vm.ctx, u.cardId));
+          })
+          .join("・");
+  // the 10/3 range (all four diagonals) covers the same cells every way: then one note instead of three
+  const same = ask.options.every((o) => o.targets.join() === ask.options[0].targets.join());
+  const buttons = ask.options.map((o) => {
+    const label = `<b>${kyonshiTurnWord(o.turn)}</b>(${FACING_WORD[o.facing]}向き)${same ? "" : ` 攻撃範囲: ${reachOf(o.targets)}`}`;
+    return btn("kyonshi", label, o.turn === 0 ? "btn-quiet" : "btn-gold", `data-turn="${o.turn}"`);
+  });
+  const notes = ["反対向き(180度)にはできません"];
+  if (same) notes.push(`どの向きでも攻撃範囲に入る敵は同じです(${reachOf(ask.options[0].targets)})`);
+  return bar(
+    "confirm kyonshi",
+    `<b>${me}の向き</b>: ${cause}、${esc(cellName(ask.to))}へ移動します。向きを90度変えられます(盤上の矢印でも選べます)`,
+    notes,
+    buttons,
     vm.flash,
   );
 };
@@ -323,6 +405,10 @@ export const promptHtml = (vm: PromptVM): string => {
     }
     case "counterOrder":
       return counterOrderBar(vm, p);
+    case "lantern":
+      return lanternBar(vm, p);
+    case "kyonshi":
+      return kyonshiBar(vm, p);
     case "over":
       return bar("over", esc(p.text), [], [], vm.flash);
     default: {

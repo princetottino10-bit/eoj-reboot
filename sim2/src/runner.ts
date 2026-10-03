@@ -1,10 +1,14 @@
-import { applyActionInPlace, isLegal } from "./rules.ts";
+import { isLegal } from "./rules.ts";
 import { createGame } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import { checkRoundLimit, defaultMulliganPolicy, endTurn, performMulligan, startTurn } from "./turn.ts";
 import type { Action, GameEvent, GameState } from "./types.ts";
 import type { AiSeat } from "./ai/index.ts";
 import { bestCounterOrder, MAX_REPLANS, withCounterOrder } from "./ai/counter-order.ts";
+import { bestLanternPick } from "./ai/lantern.ts";
+import { resolveLanternPicks } from "./lantern-choice.ts";
+import { bestKyonshiTurn } from "./ai/kyonshi.ts";
+import { applyInPlaceWithChoices, resolveKyonshiTurns } from "./kyonshi-choice.ts";
 
 export { MAX_REPLANS };
 import { opponent } from "./state.ts";
@@ -20,8 +24,9 @@ export type GameResult = {
 /**
  * The turn player's main phase, action by action. The plan is taken again from
  * the current board whenever its next action is no longer legal, and right after
- * an attack whose counter order the other seat chose (the rest of the plan was
- * made for the default order). With no counter-order choice in the rules the
+ * an attack whose counter order the other seat chose, or after which a
+ * 灯籠の精's owner chose whom it heals (the rest of the plan was made for the
+ * default order / pick). With no counter-order choice in the rules the
  * plan is never stale, so this is the plain "apply the plan" loop.
  */
 export const playMainPhase = (ctx: Ctx, s: GameState, ais: [AiSeat, AiSeat], events: GameEvent[]): void => {
@@ -41,9 +46,13 @@ export const playMainPhase = (ctx: Ctx, s: GameState, ais: [AiSeat, AiSeat], eve
     plan = plan.slice(1);
     // 案A: the countering seat chooses the order of several counters
     const act = a.kind === "attack" ? withCounterOrder(ctx, s, a, ais[opponent(p)].counterOrder ?? bestCounterOrder) : a;
-    applyActionInPlace(ctx, s, act, events);
+    // 灯籠の精: each destroyed lantern's owner picks the ally it heals
+    const picks = resolveLanternPicks(ctx, s, act, (ask) => ais[ask.owner].lantern ?? bestLanternPick());
+    // 僵尸公主 (10/3): the owner of a 僵尸公主 that moves chooses its facing
+    const turns = resolveKyonshiTurns(ctx, s, act, picks, (ask) => ais[ask.owner].kyonshi ?? bestKyonshiTurn());
+    applyInPlaceWithChoices(ctx, s, act, picks, turns, events);
     taken += 1;
-    if (act !== a && !s.ended) plan = ais[p].planTurn(ctx, s);
+    if ((act !== a || picks.length > 0 || turns.length > 0) && !s.ended) plan = ais[p].planTurn(ctx, s);
   }
 };
 

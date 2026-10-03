@@ -7,6 +7,8 @@ import { cardOfUnit, controlCount, unitHp } from "../src/state.ts";
 import { cellAttr, toBoardCells } from "../src/board.ts";
 import { isAoeAttack } from "../src/combat.ts";
 import { describeChange } from "../src/config-schema.ts";
+import { lanternAmount } from "../src/lantern.ts";
+import { turnsOnMove } from "../src/kyonshi.ts";
 import type { AttackPreview, InheritPreview } from "../src/preview.ts";
 import type { FlowEvent } from "../src/flow.ts";
 import type { ControlHold, Facing, GameEvent, PlayerId, Pos, Unit } from "../src/types.ts";
@@ -103,7 +105,7 @@ const winHow = (winType: string | null, loser: string): string =>
     : winType === "life"
       ? `${loser}の生命が0`
       : winType === "deck_out"
-        ? "山札切れの判定"
+        ? "2回目の山札切れ"
         : winType === "turn_limit"
           ? "ラウンド上限の判定"
           : "決着";
@@ -168,6 +170,9 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
       const from = x.from ?? note?.from;
       const to = x.to ?? note?.to;
       const turned = to !== undefined && from !== to && e.text.includes("回転");
+      // 灯籠の精: the owner chose the ally, so the line says whose light it was
+      // 僵尸公主 (10/3): its owner chose the facing - 「先手: 僵尸公主が移動 → 右へ90度(下向き)」
+      if (lanternAmount(ctx, e.source) !== undefined || turnsOnMove(ctx, e.source)) return { text: `★ ${seat(e.player)}: ${e.text}`, cls: "fx" };
       return { text: `★ ${e.text}${turned ? ` → ${FACING_LABEL[to]}向き` : ""}`, cls: "fx" };
     }
     case "attack": {
@@ -249,10 +254,12 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
     case "cards":
       return { text: `◇ カード変更: ${e.changes.map((c) => `${cardName(ctx, c.cardId)}の${c.label} ${c.from}→${c.to}`).join(" / ")}`, cls: "cfg" };
     case "gameEnd": {
+      // deck_out: each side's 占拠, the winner's first (「占拠 4 対 3」)
+      const occ = e.winType === "deck_out" && e.occ !== undefined ? `・${occVersus(e.occ, e.winner)}` : "";
       const who =
         e.winner === null
-          ? `引き分け(${winHow(e.winType, "両者")})`
-          : `${seat(e.winner)}の勝ち(${winHow(e.winType, seat(e.winner === 0 ? 1 : 0))})`;
+          ? `引き分け(${winHow(e.winType, "両者")}${occ})`
+          : `${seat(e.winner)}の勝ち(${winHow(e.winType, seat(e.winner === 0 ? 1 : 0))}${occ})`;
       return { text: `◆ 決着 (R${e.round}): ${who}`, cls: "wr" };
     }
     default:
@@ -319,9 +326,20 @@ export const inheritSummaryLines = (ctx: Ctx, pv: InheritPreview): string[] => [
   `<span class="muted">元の式神は墓地へ(撃破ではないので${ctx.cfg.lifeValueEnabled ? "生命は減らない" : "霊力価は誰も得ない"})</span>`,
 ];
 
-/** Result words for a finished board ("制圧勝ち"); null while undecided (and on resign, which has no winType). */
-export const resultHow = (winType: string | null, winner: PlayerId | null, names: Names): string | null => {
+/** 「占拠 4 対 3」: the winner's 占拠 first (先手's on a draw). */
+export const occVersus = (occ: readonly [number, number], winner: PlayerId | null): string =>
+  winner === 1 ? `占拠 ${occ[1]} 対 ${occ[0]}` : `占拠 ${occ[0]} 対 ${occ[1]}`;
+
+/**
+ * Result words for a finished board ("制圧勝ち"); null while undecided (and on
+ * resign, which has no winType). deck_out with `occ` (each side's 占拠 at the
+ * end) says the whole result: 「2回目の山札切れ — 占拠 4 対 3 で先手の勝ち」.
+ */
+export const resultHow = (winType: string | null, winner: PlayerId | null, names: Names, occ?: readonly [number, number]): string | null => {
   if (winType === null) return null;
+  if (winType === "deck_out" && occ !== undefined) {
+    return `${winHow(winType, "")} — ${occVersus(occ, winner)} で${winner === null ? "引き分け" : `${names[winner]}の勝ち`}`;
+  }
   if (winner === null) return `引き分け(${winHow(winType, "両者")})`;
   if (winType === "control") return "制圧勝ち";
   if (winType === "life") return `生命勝ち(${names[winner === 0 ? 1 : 0]}の生命が0)`;

@@ -251,7 +251,7 @@ const phaseText = (msg: StateMessage, names: Names): string => {
   if (ph === undefined) return "";
   if (ph.kind === "mulligan") return "マリガン";
   if (ph.kind === "over") return "対局終了";
-  const what = ph.kind === "discard" ? "手札整理" : ph.kind === "tansu" ? "古箪笥の選択" : ph.kind === "counterOrder" ? "反撃の順番を選択" : "行動中";
+  const what = ph.kind === "discard" ? "手札整理" : ph.kind === "tansu" ? "古箪笥の選択" : ph.kind === "counterOrder" ? "反撃の順番を選択" : ph.kind === "lantern" ? "灯籠の精の灯を託す相手を選択" : ph.kind === "kyonshi" ? "僵尸公主の向きを選択" : "行動中";
   return msg.you.seat === ph.player ? what : `${names[ph.player]}が${what}`;
 };
 
@@ -276,11 +276,19 @@ const promptOf = (msg: StateMessage, names: Names): TablePrompt => {
   if (ph.kind === "counterOrder" && ph.player !== seat) {
     return { kind: "idle", text: seat === ph.attacker ? "相手が反撃の順番を選んでいます…" : `${names[ph.player]}が反撃の順番を選んでいます…` };
   }
+  if (ph.kind === "lantern" && ph.player !== seat) {
+    return { kind: "idle", text: seat === null ? `${names[ph.player]}が灯籠の精の灯を託す相手を選んでいます…` : "相手が灯籠の精の灯を託す相手を選んでいます…" };
+  }
+  if (ph.kind === "kyonshi" && ph.player !== seat) {
+    return { kind: "idle", text: seat === null ? `${names[ph.player]}が僵尸公主の向きを選んでいます…` : "相手が僵尸公主の向きを選んでいます…" };
+  }
   if (seat === null || ph.player !== seat) {
     const what = ph.kind === "discard" ? "手札整理中" : ph.kind === "tansu" ? "古箪笥の選択中" : "手番です";
     return { kind: "idle", text: `${names[ph.player]}の${what}…` };
   }
   if (ph.kind === "counterOrder") return { kind: "counterOrder", attackerUid: ph.action.uid, uids: ph.uids, outcomes: ph.outcomes };
+  if (ph.kind === "lantern") return { kind: "lantern", ask: ph.ask, actorUid: ph.actorUid, step: ph.step };
+  if (ph.kind === "kyonshi") return { kind: "kyonshi", ask: ph.ask, actorUid: ph.actorUid };
   if (ph.kind === "tansu") return { kind: "tansu", uids: ph.uids };
   if (ph.kind === "discard") return { kind: "discard" };
   return { kind: "main", legal: g.legal ?? [], commands: g.commands ?? {} };

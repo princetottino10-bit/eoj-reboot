@@ -15,6 +15,16 @@
 //   9/22 案A, src/counter-order.ts) -> counterOrder (the defending seat) ->
 //   the attack resolves in that order -> main (the attacker again)
 //
+//   main / counterOrder: an attack or reigu that destroys a 灯籠の精 with two
+//   or more allies left (src/lantern.ts, 2026-10-03) -> lantern (that
+//   lantern's OWNER, often the seat not on turn), once per such lantern in
+//   resolution order -> the action resolves with every pick -> main
+//
+//   main / counterOrder / lantern: an attack after which a 10/3 僵尸公主 (ac13)
+//   moves onto the cell it cleared (src/kyonshi.ts) -> kyonshi (its OWNER: the
+//   attacker's seat for its own attack, the defending seat for its counter)
+//   keeps the facing or turns 90° -> the action resolves -> main
+//
 // Shared by the local play UI (with an AI seat) and the online server.
 // Pure: no node builtins. Every accepted input is recorded, so a flow can be
 // replayed from (config, pack, seed, inputs).
@@ -26,9 +36,14 @@ import { recheckControl } from "./combat.ts";
 import { counterOrderChoice } from "./counter-order.ts";
 import type { AttackAction } from "./counter-order.ts";
 import { clearExpiredHidden } from "./effects.ts";
+import { nextLanternAsk } from "./lantern-choice.ts";
+import type { LanternAsk } from "./lantern.ts";
+import { applyInPlaceWithChoices, nextKyonshiAsk } from "./kyonshi-choice.ts";
+import { isKyonshiTurn } from "./kyonshi.ts";
+import type { KyonshiAsk, KyonshiTurn } from "./kyonshi.ts";
 import type { TansuChoice } from "./effects.ts";
 import { applyCardChange, applyRuleChange } from "./rule-change.ts";
-import { applyActionInPlace, isLegal } from "./rules.ts";
+import { isLegal } from "./rules.ts";
 import { cloneState, createGame, opponent } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import {
@@ -51,6 +66,10 @@ export type FlowInput =
   | { type: "tansu"; answers: TansuAnswer[] }
   /** 案A: the countering seat's order for the attack waiting in the counterOrder phase (every counterer's uid once). */
   | { type: "counterOrder"; order: number[] }
+  /** 灯籠の精: the owner's ally (uid) for the lantern waiting in the lantern phase. */
+  | { type: "lantern"; uid: number }
+  /** 僵尸公主 (10/3): the owner's facing after the move waiting in the kyonshi phase (0 keep, -1 left 90°, 1 right 90°). */
+  | { type: "kyonshi"; turn: KyonshiTurn }
   | { type: "resign" }
   /** Rule variables changed mid-match (already agreed on). Any phase but "over". */
   | { type: "config"; patch: ConfigPatch }
@@ -66,6 +85,18 @@ export type FlowPhase =
    * countering seat) has put `uids` (the counterers, engine order) in order.
    */
   | { kind: "counterOrder"; player: PlayerId; attacker: PlayerId; action: AttackAction; uids: number[] }
+  /**
+   * 灯籠の精: `actor`'s `action` (counter order included) destroys a lantern of
+   * `player`; it resolves once `player` has chosen the ally for `ask` (and any
+   * later ask). `picks`: the answers to the asks before this one.
+   */
+  | { kind: "lantern"; player: PlayerId; actor: PlayerId; action: Action; picks: number[]; ask: LanternAsk }
+  /**
+   * 僵尸公主 (10/3): `actor`'s `action` moves a 僵尸公主 of `player`, who keeps
+   * its facing or turns it 90° (`ask`). `picks`: every 灯籠の精 answer of the
+   * action; `turns`: the answers to the facing asks before this one.
+   */
+  | { kind: "kyonshi"; player: PlayerId; actor: PlayerId; action: Action; picks: number[]; turns: KyonshiTurn[]; ask: KyonshiAsk }
   | { kind: "discard"; player: PlayerId }
   | { kind: "over" };
 
@@ -287,8 +318,48 @@ const submitAction = (f: Flow, seat: PlayerId, action: Action): SubmitResult => 
     f.phase = { kind: "discard", player: seat };
     return { ok: true };
   }
-  engine(f, (ev) => applyActionInPlace(f.ctx, f.state, action, ev));
+  resolveAction(f, seat, action, [], []);
+  return { ok: true };
+};
+
+/**
+ * Resolves `actor`'s action with the 灯籠の精 picks and 僵尸公主 turns so far, or
+ * parks in the lantern / kyonshi phase when an owner still owes one (every
+ * lantern choice of an action comes before its facing choices:
+ * src/kyonshi-choice.ts). Win / control checks run with the resolution, so
+ * after every answer is in.
+ */
+const resolveAction = (f: Flow, actor: PlayerId, action: Action, picks: number[], turns: KyonshiTurn[]): void => {
+  const ask = nextLanternAsk(f.ctx, f.state, action, picks);
+  if (ask !== null) {
+    f.phase = { kind: "lantern", player: ask.owner, actor, action, picks: picks.slice(), ask };
+    return;
+  }
+  const turn = nextKyonshiAsk(f.ctx, f.state, action, picks, turns);
+  if (turn !== null) {
+    f.phase = { kind: "kyonshi", player: turn.owner, actor, action, picks: picks.slice(), turns: turns.slice(), ask: turn };
+    return;
+  }
+  f.phase = { kind: "main", player: actor };
+  engine(f, (ev) => applyInPlaceWithChoices(f.ctx, f.state, action, picks, turns, ev));
   finishIfEnded(f);
+};
+
+const submitLantern = (f: Flow, seat: PlayerId, uid: number): SubmitResult => {
+  const ph = f.phase;
+  if (ph.kind !== "lantern") return fail("phase", "灯籠の精の灯を託す相手を選ぶ場面ではありません");
+  if (ph.player !== seat) return fail("forbidden", "灯籠の精の灯は相手が選びます");
+  if (!ph.ask.options.some((o) => o.uid === uid)) return fail("illegal", "灯を託せる味方ではありません");
+  resolveAction(f, ph.actor, ph.action, [...ph.picks, uid], []);
+  return { ok: true };
+};
+
+const submitKyonshi = (f: Flow, seat: PlayerId, turn: KyonshiTurn): SubmitResult => {
+  const ph = f.phase;
+  if (ph.kind !== "kyonshi") return fail("phase", "僵尸公主の向きを選ぶ場面ではありません");
+  if (ph.player !== seat) return fail("forbidden", "僵尸公主の向きは持ち主が選びます");
+  if (!isKyonshiTurn(turn)) return fail("illegal", "向きは「そのまま」「左へ90度」「右へ90度」のどれかです");
+  resolveAction(f, ph.actor, ph.action, ph.picks, [...ph.turns, turn]);
   return { ok: true };
 };
 
@@ -301,10 +372,8 @@ const submitCounterOrder = (f: Flow, seat: PlayerId, order: number[]): SubmitRes
   const action: AttackAction = { ...ph.action, counterOrder: order.slice() };
   if (!isLegal(f.ctx, f.state, action)) return fail("illegal", "その順番では反撃を解決できません");
   const cards = order.map((uid) => f.state.units.find((u) => u.uid === uid)?.cardId ?? "");
-  f.phase = { kind: "main", player: ph.attacker };
   pushLog(f, "all", { t: "counterOrder", player: seat, round: f.state.round, order: order.slice(), cards });
-  engine(f, (ev) => applyActionInPlace(f.ctx, f.state, action, ev));
-  finishIfEnded(f);
+  resolveAction(f, ph.attacker, action, [], []);
   return { ok: true };
 };
 
@@ -333,10 +402,25 @@ const submitResign = (f: Flow, seat: PlayerId): SubmitResult => {
 
 /** A change while an attack waits for its counter order could change who counters: it waits until the order is in. */
 const COUNTER_ORDER_WAIT = "反撃の順番を選んでいる間はルール・カードを変えられません(選び終わってから)";
+/** The same for a 灯籠の精 choice: the candidates and the gains were worked out under the rules in force. */
+const LANTERN_WAIT = "灯籠の精の灯を託す相手を選んでいる間はルール・カードを変えられません(選び終わってから)";
+
+/** And for a 僵尸公主 facing choice. */
+const KYONSHI_WAIT = "僵尸公主の向きを選んでいる間はルール・カードを変えられません(選び終わってから)";
+
+const choiceOpen = (f: Flow): SubmitResult | null =>
+  f.phase.kind === "counterOrder"
+    ? fail("phase", COUNTER_ORDER_WAIT)
+    : f.phase.kind === "lantern"
+      ? fail("phase", LANTERN_WAIT)
+      : f.phase.kind === "kyonshi"
+        ? fail("phase", KYONSHI_WAIT)
+        : null;
 
 const submitConfig = (f: Flow, seat: PlayerId, patch: ConfigPatch): SubmitResult => {
   if (f.phase.kind === "over") return fail("phase", "試合は終了しています");
-  if (f.phase.kind === "counterOrder") return fail("phase", COUNTER_ORDER_WAIT);
+  const open = choiceOpen(f);
+  if (open !== null) return open;
   const parsed = parseConfigPatch(patch, { midGame: true });
   if (!parsed.ok) return fail("illegal", parsed.error);
   const { ctx, changes } = applyRuleChange(f.ctx, f.state, parsed.value);
@@ -351,7 +435,8 @@ const submitConfig = (f: Flow, seat: PlayerId, patch: ConfigPatch): SubmitResult
 
 const submitCards = (f: Flow, seat: PlayerId, edits: CardOverrides): SubmitResult => {
   if (f.phase.kind === "over") return fail("phase", "試合は終了しています");
-  if (f.phase.kind === "counterOrder") return fail("phase", COUNTER_ORDER_WAIT);
+  const open = choiceOpen(f);
+  if (open !== null) return open;
   const parsed = parseCardOverrides(edits, f.ctx.pack);
   if (!parsed.ok) return fail("illegal", parsed.error);
   const { ctx, changes } = applyCardChange(f.ctx, f.state, parsed.value);
@@ -379,6 +464,12 @@ export const submit = (f: Flow, seat: PlayerId, input: FlowInput): SubmitResult 
       break;
     case "counterOrder":
       r = submitCounterOrder(f, seat, input.order);
+      break;
+    case "lantern":
+      r = submitLantern(f, seat, input.uid);
+      break;
+    case "kyonshi":
+      r = submitKyonshi(f, seat, input.turn);
       break;
     case "discard":
       r = submitDiscard(f, seat, input.indices);

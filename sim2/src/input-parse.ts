@@ -98,7 +98,7 @@ export const parseAction = (v: unknown): Parsed<Action> => {
 };
 
 /**
- * A flow input: action / mulligan / discard / tansu / resign always; the
+ * A flow input: action / mulligan / discard / tansu / counterOrder / lantern / kyonshi / resign always; the
  * mid-match "config" and "cards" inputs only with `changes` (the online server
  * never takes them from a browser: they come from an agreed proposal).
  * Returns null for any other type, so the caller can parse its own inputs.
@@ -131,6 +131,12 @@ export const parseFlowInput = (v: unknown, opts: { changes: boolean }): Parsed<F
       if (order === null || order.length > MAX_COUNTERERS) return bad("order が不正です");
       return { ok: true, value: { type: "counterOrder", order } };
     }
+    case "lantern":
+      if (!isInt(v.uid, 0, MAX_UID)) return bad("uid が不正です");
+      return { ok: true, value: { type: "lantern", uid: v.uid } };
+    case "kyonshi":
+      if (v.turn !== 0 && v.turn !== 1 && v.turn !== -1) return bad("turn が不正です(0 / -1 / 1)");
+      return { ok: true, value: { type: "kyonshi", turn: v.turn } };
     case "resign":
       return { ok: true, value: { type: "resign" } };
     case "config": {
