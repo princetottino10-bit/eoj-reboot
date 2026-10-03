@@ -9,7 +9,7 @@ import { join } from "node:path";
 import type { CardPack } from "../src/cards.ts";
 import { diffPatch } from "../src/config-schema.ts";
 import type { Flow } from "../src/flow.ts";
-import { csvLine, SEAT_WORD, stepCells, stepHeaders, summarizeMatch } from "../src/match-summary.ts";
+import { csvLine, durationText, SEAT_WORD, stepCells, stepHeaders, summarizeMatch } from "../src/match-summary.ts";
 import type { EndKind, MatchSummary } from "../src/match-summary.ts";
 import { isPlayablePack, isRulePresetId, presetConfig, RULE_PRESETS } from "../src/presets.ts";
 import { matchingSettingPreset, SETTING_PRESETS, settingsLabel } from "../src/setting-presets.ts";
@@ -199,7 +199,14 @@ const when = (iso: string | null): string => {
   return new Date(t + 9 * 3600_000).toISOString().slice(0, 16).replace("T", " ");
 };
 
-const COLUMNS = ["終了日時(日本時間)", "対局番号", "ルール", "基準ルール", "パック", "調整案", "設定ハッシュ", "状態", "決着ラウンド", "決着の手番", "手番数", "決着の仕方", "勝者", "先手の結果"];
+/** 「23分10秒」 from start to end; empty for an unfinished or undated record. */
+const spanOf = (from: string | null, to: string | null): string => {
+  const a = from === null ? NaN : Date.parse(from);
+  const b = to === null ? NaN : Date.parse(to);
+  return Number.isFinite(a) && Number.isFinite(b) && b >= a ? durationText(b - a) : "";
+};
+
+const COLUMNS = ["終了日時(日本時間)", "対局番号", "ルール", "基準ルール", "パック", "調整案", "設定ハッシュ", "状態", "決着ラウンド", "決着の手番", "手番数", "対戦時間", "決着の仕方", "勝者", "先手の結果"];
 
 const rowCells = (r: RecordRow, steps: readonly number[]): (string | number | null)[] => {
   const s = r.summary;
@@ -215,6 +222,7 @@ const rowCells = (r: RecordRow, steps: readonly number[]): (string | number | nu
     s.round,
     SEAT_WORD[s.turnPlayer],
     s.turns,
+    spanOf(r.startedAt, r.endedAt),
     s.endLabel,
     s.winner === null ? (s.finished ? "引き分け" : "") : SEAT_WORD[s.winner],
     s.first === null ? "" : FIRST_WORD[s.first],

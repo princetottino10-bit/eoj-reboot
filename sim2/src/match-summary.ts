@@ -28,6 +28,76 @@ export type MatchSummary = {
   steps: number[];
   /** stepRounds[p][i]: the round p's chips first reached steps[i] at a turn end; null = never. */
   stepRounds: [(number | null)[], (number | null)[]];
+  /** What each side did over the match (both public: every count is on the log). */
+  sides: [SideStats, SideStats];
+};
+
+/** One side's match in numbers (the result panel's second table). */
+export type SideStats = {
+  summons: number;
+  attacks: number;
+  /** Enemy shikigami this side destroyed. */
+  kills: number;
+  /** Own shikigami lost (destroyed by anyone, itself included). */
+  lost: number;
+  /** Damage dealt to enemy shikigami (attacks and counters). */
+  damage: number;
+  /** The most cells held at any of this side's turn ends. */
+  maxOcc: number;
+  /** 霊力 paid: summons, attacks, rotations, reigu. */
+  manaSpent: number;
+  /** Times this side entered the control state (制圧中). */
+  reaches: number;
+};
+
+const emptySide = (): SideStats => ({ summons: 0, attacks: 0, kills: 0, lost: 0, damage: 0, maxOcc: 0, manaSpent: 0, reaches: 0 });
+
+/** Counts SideStats off the events; counters are credited to the side whose units countered. */
+export const sideStatsOf = (events: readonly (GameEvent | FlowEvent)[]): [SideStats, SideStats] => {
+  const out: [SideStats, SideStats] = [emptySide(), emptySide()];
+  for (const e of events) {
+    switch (e.t) {
+      case "summon":
+        out[e.player].summons += 1;
+        out[e.player].manaSpent += e.cost;
+        break;
+      case "attack": {
+        out[e.player].attacks += 1;
+        out[e.player].manaSpent += e.cost;
+        for (const h of e.hits) if (!h.ally && h.owner !== e.player) out[e.player].damage += Math.max(0, h.dmg);
+        // the counters land on the attacker, which belongs to e.player
+        out[e.player === 0 ? 1 : 0].damage += Math.max(0, e.counterTotal);
+        break;
+      }
+      case "rotate":
+      case "reigu":
+        out[e.player].manaSpent += e.cost;
+        break;
+      case "destroy":
+        out[e.owner].lost += 1;
+        if (e.killer !== undefined && e.killer !== null && e.killer !== e.owner) out[e.killer].kills += 1;
+        break;
+      case "turnEnd":
+        out[e.player].maxOcc = Math.max(out[e.player].maxOcc, e.occupied);
+        break;
+      case "control":
+        if (e.change === "gain") out[e.player].reaches += 1;
+        break;
+      default:
+        break;
+    }
+  }
+  return out;
+};
+
+/** 「12分34秒」 / 「1時間3分」 / 「45秒」. */
+export const durationText = (ms: number): string => {
+  const sec = Math.max(0, Math.round(ms / 1000));
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  if (h > 0) return `${h}時間${m}分`;
+  return m > 0 ? `${m}分${String(s).padStart(2, "0")}秒` : `${s}秒`;
 };
 
 export type SummaryInput = {
@@ -100,6 +170,7 @@ export const summarizeMatch = (m: SummaryInput): MatchSummary => {
     first: !finished ? null : winner === null ? "draw" : winner === 0 ? "win" : "lose",
     steps,
     stepRounds,
+    sides: sideStatsOf(m.events),
   };
 };
 
@@ -126,10 +197,11 @@ export const stepCell = (s: MatchSummary, p: PlayerId, i: number): string => ste
  * One line to paste into a sheet:
  * 「ルール: 10/3テスト案+5体目で即勝ち | 第7ラウンド 後手の手番で決着(13手番) | 制圧勝利 先手 | 4枚到達 先手 第3ラウンド/後手 第4ラウンド | 5枚 先手 第5ラウンド/後手 —」
  */
-export const summaryLine = (s: MatchSummary, rules: string): string =>
+export const summaryLine = (s: MatchSummary, rules: string, durationMs?: number | null): string =>
   [
     `ルール: ${rules}`,
     `第${s.round}ラウンド ${SEAT_WORD[s.turnPlayer]}の手番で${s.finished ? "決着" : "中断"}(${s.turns}手番)`,
+    ...(durationMs === undefined || durationMs === null ? [] : [`対戦時間 ${durationText(durationMs)}`]),
     resultText(s),
     ...stepsText(s),
   ].join(" | ");
@@ -150,7 +222,7 @@ export const stepHeaders = (steps: readonly number[]): string[] =>
   steps.flatMap((n) => [`先手${n}枚`, `後手${n}枚`]);
 
 /** The step cells for `steps` (a summary with other steps leaves the missing ones empty). */
-export const stepCells = (s: MatchSummary, steps: readonly number[]): (number | null)[] =>
+export const stepCells = (s: Pick<MatchSummary, "steps" | "stepRounds">, steps: readonly number[]): (number | null)[] =>
   steps.flatMap((n) => {
     const i = s.steps.indexOf(n);
     return i < 0 ? [null, null] : [s.stepRounds[0][i], s.stepRounds[1][i]];

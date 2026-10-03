@@ -83,6 +83,8 @@ export type TableModel = {
   prompt: TablePrompt;
   /** The full visible log so far. */
   log: LogItem[];
+  /** When the match started and ended (ms since epoch; endedAt null while it runs), for the result's 対戦時間. */
+  time?: { startedAt: number; endedAt: number | null };
   /** Card number overrides of this match, and the printed cards they replace. */
   cardMods: CardOverrides;
   printed: (cardId: string) => CardDef | undefined;
@@ -1014,7 +1016,9 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     if (el.resultHow.textContent !== howText) el.resultHow.textContent = howText;
     el.resultHow.hidden = howText === "";
     // redrawn only when it changes, so 「コピーしました」 stays until the next result
-    const stats = resultStatsHtml(summaryOfView(m.log, m.board, m.ctx.cfg), m.rules ?? "—");
+    const t = m.time;
+    const duration = t === undefined || t.endedAt === null ? null : t.endedAt - t.startedAt;
+    const stats = resultStatsHtml(summaryOfView(m.log, m.board, m.ctx.cfg), m.rules ?? "—", howText, duration);
     if (el.resultStats.dataset.html !== stats) {
       el.resultStats.innerHTML = stats;
       el.resultStats.dataset.html = stats;

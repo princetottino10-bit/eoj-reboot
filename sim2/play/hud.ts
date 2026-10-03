@@ -144,6 +144,15 @@ export const openHandHtml = (ctx: Ctx, cards: readonly string[], owner: string):
 /** mulligan: both seats choose at once, so no one's turn is named. */
 export type TurnInfo = { phaseText: string; mulligan?: boolean };
 
+/** Beside the 先/後 seal a seat-word name says it twice (「後 後手(あなた)の番」): keep only 「あなた」 then. */
+const turnName = (name: string, p: PlayerId): string => {
+  const word = p === 0 ? "先手" : "後手";
+  if (!name.startsWith(word)) return name;
+  const rest = name.slice(word.length);
+  // a bare 「後手」 leaves 「[後]の番」, the same as a phone shows
+  return rest === "(あなた)" ? "あなた" : rest === "" ? "" : name;
+};
+
 export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInfo): string => {
   const p = board.turnPlayer;
   // a finished match has no control state to watch: the result says how it ended
@@ -152,7 +161,7 @@ export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInf
     ? "対局終了"
     : info.mulligan === true
       ? "マリガン(両者)"
-      : `<span class="turn-seal">${SEAT_SEAL[p]}</span><span><span class="turn-name">${esc(names[p])}</span>の番</span>`;
+      : `<span class="turn-seal">${SEAT_SEAL[p]}</span><span><span class="turn-name${turnName(names[p], p) === "あなた" ? " is-you" : ""}">${esc(turnName(names[p], p))}</span>の番</span>`;
   const how = board.ended ? resultHow(board.winType, board.winner, names, endOcc(ctx, board), endCold(ctx, board)) : null;
   const result =
     board.winner === null || (board.winType === "deck_out" && how !== null)
@@ -166,7 +175,7 @@ export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInf
     <span class="turn-round">第${board.round}ラウンド</span>
     <span class="turn-who">${who}</span>
     ${phase === "" ? "" : `<span class="turn-phase${phaseText === "行動中" ? " is-plain" : ""}">${phase}</span>`}
-    ${holders.map((h) => `<span class="turn-ctl o${h}" title="${esc(names[h])} ${controlLabel(ctx)}(占拠${occupiedOf(ctx, board, h)})"><span class="turn-ctl-who">${esc(names[h])} </span>${controlLabel(ctx)}<span class="turn-ctl-occ">(占拠${occupiedOf(ctx, board, h)})</span></span>`).join("")}
+    ${holders.map((h) => `<span class="turn-ctl o${h}" title="${esc(names[h])} ${controlLabel(ctx)}(占拠${occupiedOf(ctx, board, h)})"><span class="turn-ctl-who">${esc(turnName(names[h], h) || names[h])} </span>${controlLabel(ctx)}<span class="turn-ctl-occ">(占拠${occupiedOf(ctx, board, h)})</span></span>`).join("")}
   </div>`;
 };
 
@@ -254,7 +263,10 @@ export const recapOf = (
     .slice(theirs + 1, mine)
     .flatMap((it) => {
       const line = describeEvent(ctx, names, it.event);
-      return line === null ? [] : [line.text.startsWith(prefix) ? line.text.slice(prefix.length) : line.text];
+      // the moves themselves: no indented consequence lines (撃破 → 霊力+1), no ★ effect notes, no costs
+      if (line === null || /^[　 ]|^★/.test(line.text)) return [];
+      const text = line.text.startsWith(prefix) ? line.text.slice(prefix.length) : line.text;
+      return [text.replace(/\s*\(霊力[-−+]\d+\)/g, "")];
     });
   return lines.length === 0 ? null : { seq: items[mine].seq, lines };
 };

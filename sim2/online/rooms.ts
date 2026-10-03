@@ -369,7 +369,7 @@ export const stateMessage = (room: Room, seat: PlayerId | null, role: Role, curs
   const msg: StateMessage = {
     room: roomView(room),
     you: { role, seat },
-    game: gameView({ flow: m.flow, matchNo: m.no, rule: m.settings.rule, pack: m.settings.pack, printed: packFor(m.settings.pack) }, seat),
+    game: gameView({ flow: m.flow, matchNo: m.no, rule: m.settings.rule, pack: m.settings.pack, printed: packFor(m.settings.pack), startedAt: m.startedAt, endedAt: m.endedAt }, seat),
     log: logView(m.flow.log, seat, from),
     logReset: reset,
   };

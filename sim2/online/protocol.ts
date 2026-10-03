@@ -98,6 +98,8 @@ export type GameView = {
   legal: LegalEntry[] | null;
   /** Command menu of that seat's units (availability and reasons), same audience as `legal`. */
   commands: UnitCommands | null;
+  /** When the match started and ended (ISO; endedAt null while it runs). Absent from older servers. */
+  time?: { startedAt: string; endedAt: string | null };
 };
 
 export type SeatPref = "first" | "second" | "random";

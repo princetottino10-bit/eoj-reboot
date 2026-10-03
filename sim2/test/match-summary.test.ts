@@ -6,7 +6,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { csvCell, summarizeMatch, summaryLine } from "../src/match-summary.ts";
+import { csvCell, durationText, sideStatsOf, summarizeMatch, summaryLine } from "../src/match-summary.ts";
 import type { SummaryInput } from "../src/match-summary.ts";
 import { settingPresetSettings, settingsLabel } from "../src/setting-presets.ts";
 import { settingsHash } from "../src/settings.ts";
@@ -197,7 +197,7 @@ test("/records and /records.csv: newest first, filterable by ruleset, no names /
   assert.ok(all !== null && all.type.startsWith("text/csv") && all.download === "records.csv");
   const lines = all.body.replace(/^﻿/, "").trimEnd().split("\r\n");
   assert.equal(lines.length, 4, "header + 3 games");
-  assert.ok(lines[0].startsWith("終了日時(日本時間),対局番号,ルール,基準ルール,パック,調整案,設定ハッシュ,状態,決着ラウンド,決着の手番,手番数,決着の仕方,勝者,先手の結果"));
+  assert.ok(lines[0].startsWith("終了日時(日本時間),対局番号,ルール,基準ルール,パック,調整案,設定ハッシュ,状態,決着ラウンド,決着の手番,手番数,対戦時間,決着の仕方,勝者,先手の結果"));
   assert.ok(lines[0].includes("先手4枚,後手4枚"), lines[0]);
   const filtered = recordsResponse("/records.csv", new URLSearchParams({ rules: "10/3テスト案+5体目で即勝ち" }), dir, printedPack);
   assert.ok(filtered !== null);
@@ -258,4 +258,23 @@ test("AI table history: once per match, newest first, at most 50, validated, CSV
   assert.ok(csv[1].includes(",2,,3,,"), csv[1]);
   const html = historyHtml([entry("c")]);
   assert.ok(html.includes("最近の結果") && html.includes("CSVで保存"));
+});
+
+test("result numbers: each side's summons, attacks, kills, losses, damage, best 占拠, 霊力 spent, 制圧中; the match time", () => {
+  const ev = [
+    { t: "summon", player: 0, uid: 1, cardId: "a", pos: { x: 0, y: 0 }, facing: 0, cost: 4, taiji: false, baseCost: 4 },
+    { t: "summon", player: 1, uid: 2, cardId: "b", pos: { x: 0, y: 1 }, facing: 2, cost: 5, taiji: false, baseCost: 5 },
+    { t: "attack", player: 0, uid: 1, cardId: "a", aoe: false, cost: 3, hits: [{ uid: 2, cardId: "b", owner: 1, blind: false, dmg: 4, destroyed: true, ally: false }], counterTotal: 2, counterCount: 1, attackerDestroyed: false, variant: "normal" },
+    { t: "destroy", owner: 1, uid: 2, cardId: "b", lifeLoss: 0, manaGain: 1, killer: 0 },
+    { t: "rotate", player: 1, uid: 9, cost: 1, cardId: "c", from: 0, to: 1 },
+    { t: "turnEnd", player: 0, round: 1, occupied: 3, chips: 1, chipGained: 1, reach: false, discarded: 0, drawn: 0, boardHp: 5, manaLeft: 0 },
+    { t: "turnEnd", player: 0, round: 2, occupied: 2, chips: 2, chipGained: 1, reach: false, discarded: 0, drawn: 0, boardHp: 5, manaLeft: 0 },
+    { t: "control", player: 0, change: "gain", need: 5, hold: "next_turn_end" },
+  ] as unknown as GameEvent[];
+  const [a, b] = sideStatsOf(ev);
+  assert.deepEqual(a, { summons: 1, attacks: 1, kills: 1, lost: 0, damage: 4, maxOcc: 3, manaSpent: 7, reaches: 1 });
+  assert.deepEqual(b, { summons: 1, attacks: 0, kills: 0, lost: 1, damage: 2, maxOcc: 0, manaSpent: 6, reaches: 0 });
+  assert.equal(durationText(45_000), "45秒");
+  assert.equal(durationText(754_000), "12分34秒");
+  assert.equal(durationText(3_780_000), "1時間3分");
 });

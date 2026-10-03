@@ -103,7 +103,16 @@ export const phaseView = (f: Flow): PhaseView => {
 };
 
 /** `printed` is the pack as loaded: `cards` in the view is what differs from it right now. */
-export type ViewSource = { flow: Flow; matchNo: number; rule: RulePresetId; pack: string; printed?: CardPack };
+export type ViewSource = {
+  flow: Flow;
+  matchNo: number;
+  rule: RulePresetId;
+  pack: string;
+  printed?: CardPack;
+  /** When the match started / ended (ISO), for the result's 対戦時間. */
+  startedAt?: string;
+  endedAt?: string | null;
+};
 
 export const gameView = (m: ViewSource, viewer: PlayerId | null): GameView => {
   const f = m.flow;
@@ -122,6 +131,7 @@ export const gameView = (m: ViewSource, viewer: PlayerId | null): GameView => {
     phase: phaseView(f),
     legal,
     commands: legal === null ? null : commandsFor(f.ctx, f.state, legal.map((e) => e.action)),
+    ...(m.startedAt === undefined ? {} : { time: { startedAt: m.startedAt, endedAt: m.endedAt ?? null } }),
   };
 };
 

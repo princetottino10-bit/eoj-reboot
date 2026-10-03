@@ -98,6 +98,9 @@ type Game = {
   error: string;
   /** Inputs already in storage; -1 = not stored yet, "over" = the finished match was forgotten. */
   saved: number | "over";
+  /** For the result's 対戦時間: when this page started the match (null for one resumed after a reload) and saw it end. */
+  startedAt: number | null;
+  endedAt: number | null;
 };
 
 let G: Game | null = null;
@@ -186,8 +189,10 @@ const refresh = (): void => {
   const log: LogItem[] = f.log
     .filter((e) => e.audience === "all" || e.audience === g.human)
     .map((e) => ({ seq: e.seq, event: e.event }));
+  if (f.phase.kind === "over" && g.endedAt === null) g.endedAt = Date.now();
   const model: TableModel = {
     key: `local-${g.id}`,
+    ...(g.startedAt === null ? {} : { time: { startedAt: g.startedAt, endedAt: g.endedAt } }),
     ctx: f.ctx,
     board: boardOf(f.state),
     viewer: g.human,
@@ -523,6 +528,9 @@ const play = (start: Start, flow: Flow, printed: CardPack): void => {
     busy: false,
     error: "",
     saved: -1,
+    // a match resumed from storage began before this page: its length is not known
+    startedAt: flow.inputs.length === 0 ? Date.now() : null,
+    endedAt: null,
   };
   G = g;
   waiting = null;

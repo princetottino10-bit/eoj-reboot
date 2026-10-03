@@ -411,6 +411,7 @@ const renderGame = async (msg: StateMessage): Promise<void> => {
     names,
     prompt: promptOf(msg, names),
     log,
+    ...(g.time === undefined ? {} : { time: { startedAt: Date.parse(g.time.startedAt), endedAt: g.time.endedAt === null ? null : Date.parse(g.time.endedAt) } }),
     cardMods: g.cards,
     printed: (id) => printed.byId.get(id),
     phaseText: phaseText(msg, names),
