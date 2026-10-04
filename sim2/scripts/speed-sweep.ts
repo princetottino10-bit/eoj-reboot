@@ -63,6 +63,34 @@ export const VARIANTS: readonly Variant[] = [
   { id: "noMulligan", label: "マリガンなし", cfg: { mulligan: false } },
 ];
 
+const FREE = { freeSummonAttack: "optional", freeSummonAttackInherit: true } as const;
+const COLD5 = { instantWinCells: 5, instantWinTiming: "immediate", instantWinCount: "units" } as const;
+
+/** 召喚した手番の攻撃はコストなし を軸に: 速さと先後の釣り合いを戻す組み合わせ (2026-10-04). */
+export const FREE_ATK_COMBOS: readonly Variant[] = [
+  { id: "base", label: "10/3テスト案(基準)" },
+  { id: "cold5", label: "5体目で即勝ち(参考)", cfg: { ...COLD5 } },
+  { id: "free", label: "召喚攻撃無料", cfg: { ...FREE } },
+  { id: "freeNoInh", label: "召喚攻撃無料(継承召喚は除く)", cfg: { ...FREE, freeSummonAttackInherit: false } },
+  { id: "freeCold5", label: "召喚攻撃無料+5体目で即勝ち", cfg: { ...FREE, ...COLD5 } },
+  { id: "freeCtl4", label: "召喚攻撃無料+制圧4マス", cfg: { ...FREE, controlWin: 4 } },
+  { id: "freeAtkUp", label: "召喚攻撃無料+攻撃コスト+1", cfg: { ...FREE, attackCostDelta: 1 } },
+  { id: "freeAtkUpCold5", label: "召喚攻撃無料+攻撃コスト+1+5体目で即勝ち", cfg: { ...FREE, attackCostDelta: 1, ...COLD5 } },
+  { id: "freeMana67", label: "召喚攻撃無料+初期霊力 6/7", cfg: { ...FREE, startMana: [6, 7] } },
+  { id: "freeMana67Cold5", label: "召喚攻撃無料+初期霊力 6/7+5体目で即勝ち", cfg: { ...FREE, startMana: [6, 7], ...COLD5 } },
+  { id: "freeMana78Cold5", label: "召喚攻撃無料+初期霊力 7/8+5体目で即勝ち", cfg: { ...FREE, startMana: [7, 8], ...COLD5 } },
+  { id: "freeNoInhCold5", label: "召喚攻撃無料(継承除く)+5体目で即勝ち", cfg: { ...FREE, freeSummonAttackInherit: false, ...COLD5 } },
+  { id: "freeInc7Cold5", label: "召喚攻撃無料+収入7+5体目で即勝ち", cfg: { ...FREE, baseIncome: 7, ...COLD5 } },
+  { id: "freeAttr3Cold5", label: "召喚攻撃無料+属性±3+5体目で即勝ち", cfg: { ...FREE, attrBonus: 3, ...COLD5 } },
+];
+
+const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS };
+const SET_NAME = (() => {
+  const i = process.argv.indexOf("--set");
+  return i === -1 ? "single" : (process.argv[i + 1] ?? "single");
+})();
+const V: readonly Variant[] = SETS[SET_NAME] ?? VARIANTS;
+
 /** The AIs: depth (速い / 深い / 強い) x style (陣取り / 攻め / 均衡). */
 export const AIS: readonly { id: string; label: string; kind: "greedy" | "beam" | "strong"; style: string }[] = [
   { id: "greedy-terr", label: "速い・陣取り", kind: "greedy", style: "territorial" },
@@ -77,7 +105,7 @@ export const AIS: readonly { id: string; label: string; kind: "greedy" | "beam" 
 type Game = { seed: number; round: number; winner: 0 | 1 | null; end: string; kills: number };
 
 const runJob = (vi: number, ai: number, from: number, to: number): Game[] => {
-  const v = VARIANTS[vi];
+  const v = V[vi];
   const a = AIS[ai];
   const printed = loadPack(packPath("adopted-1003"));
   const pack = v.cards === undefined ? printed : applyCardOverrides(printed, v.cards(printed));
@@ -182,7 +210,7 @@ const verdict = (cells: Cell[]): "faster" | "slower" | "split" | "none" => {
 const VERDICT_TEXT = { faster: "速くなる(全AI一致)", slower: "遅くなる(全AI一致)", split: "AIで向きが割れる", none: "はっきりした差なし" } as const;
 
 const reportHtml = (res: Cell[][], games: number, seconds: number): string => {
-  const rows = VARIANTS.map((v, vi) => ({ v, cells: res[vi] })).slice(1);
+  const rows = V.map((v, vi) => ({ v, cells: res[vi] })).slice(1);
   const avgAbs = (cells: Cell[]): number => mean(cells.map((c) => Math.abs(c.delta!.d)));
   rows.sort((a, b) => avgAbs(b.cells) - avgAbs(a.cells));
   const maxD = Math.max(0.5, ...rows.flatMap((r) => r.cells.map((c) => Math.max(Math.abs(c.delta!.lo), Math.abs(c.delta!.hi)))));
@@ -211,7 +239,7 @@ td.ai{min-width:150px}.bar{position:relative;display:inline-block;width:110px;he
 .v-faster{color:var(--fast);font-weight:700}.v-slower{color:var(--slow);font-weight:700}.v-split{color:var(--gold);font-weight:700}.v-none{color:var(--dim)}
 .fw{font-size:12px;color:var(--dim)}
 </style></head><body>
-<h1>決着の速さの感度(10/3テスト案から1つずつ動かす)</h1>
+<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
 <p class="note">各案・各AIで${games}局ずつ。どの案も同じ乱数の種(同じ配り)で対局させ、基準との差を局ごとに取っています。数字は決着ラウンドの平均の差(マイナス=速く決着)。点がうすいのは95%の幅が0をまたぐ(差があると言い切れない)もの。全部のAIで同じ向きに言い切れた変数だけ「一致」と書きます。計算 ${Math.round(seconds / 60)}分。</p>
 <h2>基準(10/3テスト案)</h2>
 <div class="wrap"><table><thead><tr><th>AI</th><th>決着ラウンド 中央値</th><th>遅い1割</th><th>第10ラウンド超</th><th>先手勝率</th><th>引き分け</th><th>撃破/局</th><th>決着の仕方</th></tr></thead><tbody>
@@ -221,10 +249,10 @@ ${AIS.map((a, ai) => {
 }).join("")}
 </tbody></table></div>
 <h2>効きの大きい順</h2>
-<div class="wrap"><table><thead><tr><th>変えたもの</th><th>判定</th>${AIS.map((a) => `<th>${esc(a.label)}</th>`).join("")}<th>先手勝率の変化(AIごと)</th></tr></thead><tbody>
+<div class="wrap"><table><thead><tr><th>変えたもの</th><th>判定</th>${AIS.map((a) => `<th>${esc(a.label)}</th>`).join("")}<th>先手勝率(AIごと)</th></tr></thead><tbody>
 ${rows.map(({ v, cells }) => {
   const vd = verdict(cells);
-  return `<tr><td>${esc(v.label)}</td><td class="v-${vd}">${VERDICT_TEXT[vd]}</td>${cells.map((c) => `<td class="ai">${bar(c)}</td>`).join("")}<td class="fw">${cells.map((c) => sgn((c.firstWinDelta ?? 0) * 100, 0)).join(" / ")}ポイント</td></tr>`;
+  return `<tr><td>${esc(v.label)}</td><td class="v-${vd}">${VERDICT_TEXT[vd]}</td>${cells.map((c) => `<td class="ai">${bar(c)}</td>`).join("")}<td class="fw">${cells.map((c) => pct(c.firstWin)).join(" / ")}<br>(基準から ${cells.map((c) => sgn((c.firstWinDelta ?? 0) * 100, 0)).join(" / ")})</td></tr>`;
 }).join("")}
 </tbody></table></div>
 <p class="note">読み方: 「速くなる(全AI一致)」はAIの癖に左右されにくい結果。「AIで向きが割れる」はAIの打ち方しだいで逆の結果になったもので、人のテストで確かめる必要があります。先手勝率の変化が大きいものは、速くなっても先後の釣り合いを崩します。</p>
@@ -242,7 +270,7 @@ const argOf = (k: string, d: string): string => {
 
 const runChild = (args: string[]): Promise<Game[]> =>
   new Promise((ok, fail) => {
-    const p = spawn(process.execPath, ["--experimental-strip-types", "--no-warnings", fileURLToPath(import.meta.url), ...args], { stdio: ["ignore", "pipe", "inherit"] });
+    const p = spawn(process.execPath, ["--experimental-strip-types", "--no-warnings", fileURLToPath(import.meta.url), ...args, "--set", SET_NAME], { stdio: ["ignore", "pipe", "inherit"] });
     let out = "";
     p.stdout.on("data", (b: Buffer) => (out += b.toString()));
     p.on("close", (code) => (code === 0 ? ok(JSON.parse(out) as Game[]) : fail(new Error(`job ${args.join(" ")} exited ${code}`))));
@@ -250,15 +278,15 @@ const runChild = (args: string[]): Promise<Game[]> =>
 
 const main = async (): Promise<void> => {
   const games = Number(argOf("--games", "1200"));
-  const outDir = resolve(argOf("--out", join(HERE, "..", "out", "speed-sweep")));
+  const outDir = resolve(argOf("--out", join(HERE, "..", "out", SET_NAME === "single" ? "speed-sweep" : `speed-sweep-${SET_NAME}`)));
   const chunk = 300;
   const jobs: { vi: number; ai: number; from: number; to: number }[] = [];
-  for (let vi = 0; vi < VARIANTS.length; vi++)
+  for (let vi = 0; vi < V.length; vi++)
     for (let ai = 0; ai < AIS.length; ai++)
       for (let from = SEED0; from < SEED0 + games; from += chunk) jobs.push({ vi, ai, from, to: Math.min(SEED0 + games, from + chunk) });
   // the slow ones first, so the pool does not end on one long job
   jobs.sort((a, b) => (AIS[b.ai].kind === "strong" ? 1 : 0) - (AIS[a.ai].kind === "strong" ? 1 : 0));
-  const got: Game[][][] = VARIANTS.map(() => AIS.map(() => []));
+  const got: Game[][][] = V.map(() => AIS.map(() => []));
   const started = Date.now();
   let next = 0;
   let done = 0;
@@ -278,7 +306,7 @@ const main = async (): Promise<void> => {
   const res: Cell[][] = got.map((row, vi) => row.map((gs, ai) => cellOf(gs, vi === 0 ? null : got[0][ai])));
   const seconds = (Date.now() - started) / 1000;
   mkdirSync(outDir, { recursive: true });
-  writeFileSync(join(outDir, "results.json"), JSON.stringify({ games, seed: SEED0, variants: VARIANTS.map(({ id, label, cfg }) => ({ id, label, cfg })), ais: AIS, cells: res }, null, 1));
+  writeFileSync(join(outDir, "results.json"), JSON.stringify({ games, seed: SEED0, variants: V.map(({ id, label, cfg }) => ({ id, label, cfg })), ais: AIS, cells: res }, null, 1));
   writeFileSync(join(outDir, "report.html"), reportHtml(res, games, seconds));
   process.stderr.write(`wrote ${outDir} in ${Math.round(seconds)}s\n`);
 };
