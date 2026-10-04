@@ -84,7 +84,30 @@ export const FREE_ATK_COMBOS: readonly Variant[] = [
   { id: "freeAttr3Cold5", label: "召喚攻撃無料+属性±3+5体目で即勝ち", cfg: { ...FREE, attrBonus: 3, ...COLD5 } },
 ];
 
-const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS };
+const COMBO = { ...FREE, baseIncome: 7, ...COLD5 } as const;
+const CHEAP2 = ["ac03", "ac04"];
+const CHEAP4 = ["ac01", "ac02", "ac03", "ac04"];
+const copiesOf = (ids: readonly string[], n: number): CardOverrides => Object.fromEntries(ids.map((id) => [id, { copies: n }]));
+const everyCard = (n: number) => (p: CardPack): CardOverrides => copiesOf(p.cards.map((c) => c.id), n);
+const without = (pred: (c: CardPack["cards"][number]) => boolean) => (p: CardPack): CardOverrides => copiesOf(p.cards.filter(pred).map((c) => c.id), 0);
+
+/** The deck itself as the variable: more cost-3 shikigami, and the deck's size (2026-10-04). Both on 10/3 and on the 召喚攻撃無料+収入7+5体目で即勝ち combo. */
+export const DECK_SET: readonly Variant[] = [
+  { id: "base", label: "10/3テスト案(基準・23枚)" },
+  { id: "base3x2", label: "10/3: 影鬼・鉞鬼を2枚ずつ(25枚)", cards: () => copiesOf(CHEAP2, 2) },
+  { id: "base3x4", label: "10/3: コスト3の4種を2枚ずつ(27枚)", cards: () => copiesOf(CHEAP4, 2) },
+  { id: "baseDouble", label: "10/3: 全部2枚ずつ(46枚)", cards: everyCard(2) },
+  { id: "baseNoReigu", label: "10/3: 霊具を抜く(17枚)", cards: without((c) => c.kind === "reigu") },
+  { id: "combo", label: "組み合わせ(召喚攻撃無料+収入7+5体目即勝ち・23枚)", cfg: { ...COMBO } },
+  { id: "combo3x2", label: "組み合わせ+影鬼・鉞鬼を2枚ずつ(25枚)", cfg: { ...COMBO }, cards: () => copiesOf(CHEAP2, 2) },
+  { id: "combo3x4", label: "組み合わせ+コスト3の4種を2枚ずつ(27枚)", cfg: { ...COMBO }, cards: () => copiesOf(CHEAP4, 2) },
+  { id: "combo3swap", label: "組み合わせ+コスト3を2枚ずつ・玖龍街と酒呑童子を抜く(25枚)", cfg: { ...COMBO }, cards: (p) => ({ ...copiesOf(CHEAP4, 2), ...without((c) => c.id === "ac16" || c.id === "ac17")(p) }) },
+  { id: "comboNoTop", label: "組み合わせ+コスト8以上を抜く(19枚)", cfg: { ...COMBO }, cards: without((c) => c.kind === "shikigami" && c.summonCost >= 8) },
+  { id: "comboNoReigu", label: "組み合わせ+霊具を抜く(17枚)", cfg: { ...COMBO }, cards: without((c) => c.kind === "reigu") },
+  { id: "comboDouble", label: "組み合わせ+全部2枚ずつ(46枚)", cfg: { ...COMBO }, cards: everyCard(2) },
+];
+
+const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET };
 const SET_NAME = (() => {
   const i = process.argv.indexOf("--set");
   return i === -1 ? "single" : (process.argv[i + 1] ?? "single");
@@ -239,7 +262,7 @@ td.ai{min-width:150px}.bar{position:relative;display:inline-block;width:110px;he
 .v-faster{color:var(--fast);font-weight:700}.v-slower{color:var(--slow);font-weight:700}.v-split{color:var(--gold);font-weight:700}.v-none{color:var(--dim)}
 .fw{font-size:12px;color:var(--dim)}
 </style></head><body>
-<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
+<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
 <p class="note">各案・各AIで${games}局ずつ。どの案も同じ乱数の種(同じ配り)で対局させ、基準との差を局ごとに取っています。数字は決着ラウンドの平均の差(マイナス=速く決着)。点がうすいのは95%の幅が0をまたぐ(差があると言い切れない)もの。全部のAIで同じ向きに言い切れた変数だけ「一致」と書きます。計算 ${Math.round(seconds / 60)}分。</p>
 <h2>基準(10/3テスト案)</h2>
 <div class="wrap"><table><thead><tr><th>AI</th><th>決着ラウンド 中央値</th><th>遅い1割</th><th>第10ラウンド超</th><th>先手勝率</th><th>引き分け</th><th>撃破/局</th><th>決着の仕方</th></tr></thead><tbody>
