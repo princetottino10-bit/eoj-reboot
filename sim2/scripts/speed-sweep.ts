@@ -125,7 +125,49 @@ export const LENGTH_SET: readonly Variant[] = [
   { id: "cold6", label: "6体目即勝ちだけ(参考)", cfg: { ...COLD6 } },
 ];
 
-const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET };
+const COMBO6 = { ...FREE, baseIncome: 7, ...COLD6 } as const;
+/** Area attack exactly for the shikigami costing `from` or more (the rest single target), optionally only turning heavies into area. */
+const aoeFrom = (from: number, lightSingle: boolean) => (p: CardPack): CardOverrides =>
+  Object.fromEntries(
+    p.cards
+      .filter((c) => c.kind === "shikigami" && c.attackRange.length > 0)
+      .flatMap((c): [string, { aoe: boolean }][] => (c.summonCost >= from && !c.aoe ? [[c.id, { aoe: true }]] : lightSingle && c.summonCost < from && c.aoe ? [[c.id, { aoe: false }]] : [])),
+  );
+const withCheap = (f: (p: CardPack) => CardOverrides) => (p: CardPack): CardOverrides => ({ ...f(p), ...copiesOf(CHEAP2, 2) });
+
+/** 軽いのを並べて、重いので倒す: area attacks only on the heavy cards; 5体目で即勝ち fixed (2026-10-04). */
+export const HEAVY_SET: readonly Variant[] = [
+  { id: "base", label: "10/3テスト案(基準)" },
+  { id: "cold5", label: "5体目で即勝ちだけ(参考)", cfg: { ...COLD5 } },
+  { id: "cold5aoe7only", label: "5体目即勝ち+範囲はコスト7以上だけ", cfg: { ...COLD5 }, cards: aoeFrom(7, true) },
+  { id: "combo", label: "組み合わせ(召喚攻撃無料+収入7+5体目即勝ち)", cfg: { ...COMBO } },
+  { id: "comboAoe7", label: "組み合わせ+コスト7以上を全部範囲に(僵尸公主・茨木童子)", cfg: { ...COMBO }, cards: aoeFrom(7, false) },
+  { id: "comboAoe7only", label: "組み合わせ+範囲はコスト7以上だけ(鎖鬼・一目鬼は単体に)", cfg: { ...COMBO }, cards: aoeFrom(7, true) },
+  { id: "comboAoe6only", label: "組み合わせ+範囲はコスト6以上だけ(雲外鏡・照魔鏡も範囲)", cfg: { ...COMBO }, cards: aoeFrom(6, true) },
+  { id: "comboAoe7onlyCheap", label: "組み合わせ+範囲はコスト7以上だけ+影鬼・鉞鬼2枚", cfg: { ...COMBO }, cards: withCheap(aoeFrom(7, true)) },
+  { id: "comboAoe7onlyBigHp", label: "組み合わせ+範囲はコスト7以上だけ+コスト7以上のHP+1", cfg: { ...COMBO }, cards: (p) => {
+    const a = aoeFrom(7, true)(p);
+    const h = costAtLeast(7, 1)(p);
+    return Object.fromEntries([...new Set([...Object.keys(a), ...Object.keys(h)])].map((id) => [id, { ...(a[id] ?? {}), ...(h[id] ?? {}) }]));
+  } },
+  { id: "comboAoe7onlyAtkDown", label: "組み合わせ+範囲はコスト7以上だけ+攻撃コスト−1", cfg: { ...COMBO, attackCostDelta: -1 }, cards: aoeFrom(7, true) },
+  { id: "freeCold5Aoe7only", label: "召喚攻撃無料+5体目即勝ち(収入6)+範囲はコスト7以上だけ", cfg: { ...FREE, ...COLD5 }, cards: aoeFrom(7, true) },
+];
+
+/** 5体目で即勝ち fixed: lengthen by capping summons per turn (2026-10-04). */
+export const LIMIT_SET: readonly Variant[] = [
+  { id: "base", label: "10/3テスト案(基準)" },
+  { id: "combo", label: "組み合わせ(召喚攻撃無料+収入7+5体目即勝ち)", cfg: { ...COMBO } },
+  { id: "comboL2", label: "組み合わせ+召喚は1ターン2体まで", cfg: { ...COMBO, summonLimit: 2 } },
+  { id: "comboL1", label: "組み合わせ+召喚は1ターン1体まで", cfg: { ...COMBO, summonLimit: 1 } },
+  { id: "comboL1Aoe7only", label: "組み合わせ+1ターン1体まで+範囲はコスト7以上だけ", cfg: { ...COMBO, summonLimit: 1 }, cards: aoeFrom(7, true) },
+  { id: "freeCold5L1", label: "召喚攻撃無料+5体目即勝ち(収入6)+1ターン1体まで", cfg: { ...FREE, ...COLD5, summonLimit: 1 } },
+  { id: "freeCold5L1Aoe7only", label: "召喚攻撃無料+5体目即勝ち(収入6)+1体まで+範囲はコスト7以上だけ", cfg: { ...FREE, ...COLD5, summonLimit: 1 }, cards: aoeFrom(7, true) },
+  { id: "cold5L1", label: "5体目即勝ち+1ターン1体まで(召喚攻撃は有料)", cfg: { ...COLD5, summonLimit: 1 } },
+  { id: "comboL1Mana67", label: "組み合わせ+1ターン1体まで+初期霊力6/7", cfg: { ...COMBO, summonLimit: 1, startMana: [6, 7] } },
+];
+
+const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET };
 const SET_NAME = (() => {
   const i = process.argv.indexOf("--set");
   return i === -1 ? "single" : (process.argv[i + 1] ?? "single");
@@ -280,7 +322,7 @@ td.ai{min-width:150px}.bar{position:relative;display:inline-block;width:110px;he
 .v-faster{color:var(--fast);font-weight:700}.v-slower{color:var(--slow);font-weight:700}.v-split{color:var(--gold);font-weight:700}.v-none{color:var(--dim)}
 .fw{font-size:12px;color:var(--dim)}
 </style></head><body>
-<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
+<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
 <p class="note">各案・各AIで${games}局ずつ。どの案も同じ乱数の種(同じ配り)で対局させ、基準との差を局ごとに取っています。数字は決着ラウンドの平均の差(マイナス=速く決着)。点がうすいのは95%の幅が0をまたぐ(差があると言い切れない)もの。全部のAIで同じ向きに言い切れた変数だけ「一致」と書きます。計算 ${Math.round(seconds / 60)}分。</p>
 <h2>基準(10/3テスト案)</h2>
 <div class="wrap"><table><thead><tr><th>AI</th><th>決着ラウンド 中央値</th><th>遅い1割</th><th>第10ラウンド超</th><th>先手勝率</th><th>引き分け</th><th>撃破/局</th><th>決着の仕方</th></tr></thead><tbody>
