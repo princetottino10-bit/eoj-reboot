@@ -167,7 +167,24 @@ export const LIMIT_SET: readonly Variant[] = [
   { id: "comboL1Mana67", label: "組み合わせ+1ターン1体まで+初期霊力6/7", cfg: { ...COMBO, summonLimit: 1, startMana: [6, 7] } },
 ];
 
-const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET };
+const L2 = { ...COLD5, summonLimit: 2 } as const;
+
+/** Fixed (2026-10-04): 5体目で即勝ち and at most 2 summons a turn. What else to put on top. */
+export const LIMIT2_SET: readonly Variant[] = [
+  { id: "base", label: "10/3テスト案(基準)" },
+  { id: "l2", label: "5体目即勝ち+召喚2体まで", cfg: { ...L2 } },
+  { id: "l2Free", label: "+召喚攻撃無料(収入6)", cfg: { ...L2, ...FREE } },
+  { id: "l2FreeInc7", label: "+召喚攻撃無料+収入7", cfg: { ...L2, ...FREE, baseIncome: 7 } },
+  { id: "l2FreeInc7Aoe7", label: "+召喚攻撃無料+収入7+範囲はコスト7以上だけ", cfg: { ...L2, ...FREE, baseIncome: 7 }, cards: aoeFrom(7, true) },
+  { id: "l2FreeInc7Aoe6", label: "+召喚攻撃無料+収入7+範囲はコスト6以上だけ", cfg: { ...L2, ...FREE, baseIncome: 7 }, cards: aoeFrom(6, true) },
+  { id: "l2FreeInc7Cheap", label: "+召喚攻撃無料+収入7+影鬼・鉞鬼2枚", cfg: { ...L2, ...FREE, baseIncome: 7 }, cards: () => copiesOf(CHEAP2, 2) },
+  { id: "l2FreeInc7Mana67", label: "+召喚攻撃無料+収入7+初期霊力6/7", cfg: { ...L2, ...FREE, baseIncome: 7, startMana: [6, 7] } },
+  { id: "l2FreeInc7AtkDown", label: "+召喚攻撃無料+収入7+攻撃コスト−1", cfg: { ...L2, ...FREE, baseIncome: 7, attackCostDelta: -1 } },
+  { id: "l2Aoe7", label: "+範囲はコスト7以上だけ(召喚攻撃は有料)", cfg: { ...L2 }, cards: aoeFrom(7, true) },
+  { id: "l2Mana67", label: "+初期霊力6/7(召喚攻撃は有料)", cfg: { ...L2, startMana: [6, 7] } },
+];
+
+const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET };
 const SET_NAME = (() => {
   const i = process.argv.indexOf("--set");
   return i === -1 ? "single" : (process.argv[i + 1] ?? "single");
@@ -322,7 +339,7 @@ td.ai{min-width:150px}.bar{position:relative;display:inline-block;width:110px;he
 .v-faster{color:var(--fast);font-weight:700}.v-slower{color:var(--slow);font-weight:700}.v-split{color:var(--gold);font-weight:700}.v-none{color:var(--dim)}
 .fw{font-size:12px;color:var(--dim)}
 </style></head><body>
-<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
+<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
 <p class="note">各案・各AIで${games}局ずつ。どの案も同じ乱数の種(同じ配り)で対局させ、基準との差を局ごとに取っています。数字は決着ラウンドの平均の差(マイナス=速く決着)。点がうすいのは95%の幅が0をまたぐ(差があると言い切れない)もの。全部のAIで同じ向きに言い切れた変数だけ「一致」と書きます。計算 ${Math.round(seconds / 60)}分。</p>
 <h2>基準(10/3テスト案)</h2>
 <div class="wrap"><table><thead><tr><th>AI</th><th>決着ラウンド 中央値</th><th>遅い1割</th><th>第10ラウンド超</th><th>先手勝率</th><th>引き分け</th><th>撃破/局</th><th>決着の仕方</th></tr></thead><tbody>
