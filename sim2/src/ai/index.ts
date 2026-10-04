@@ -15,6 +15,8 @@ import type { CounterOrderChooser } from "./counter-order.ts";
 import type { LanternChooser } from "../lantern-choice.ts";
 import { bestLanternPick } from "./lantern.ts";
 import type { KyonshiChooser } from "../kyonshi-choice.ts";
+import { checkAwareDiscard } from "./check-discard.ts";
+import { defaultDiscardPolicy } from "../turn.ts";
 import { bestKyonshiTurn } from "./kyonshi.ts";
 
 export const AI_KINDS = ["greedy", "beam", "strong"] as const;
@@ -58,7 +60,13 @@ export type MakeAiOptions = {
 export const makeAi = (kind: string, evalName = "territorial", opts: MakeAiOptions = {}): AiSeat => {
   if (!isAiKind(kind)) throw new Error(`unknown ai "${kind}" (expected ${AI_KINDS.join("|")})`);
   const w = (): Weights => profileWeights(evalName);
-  if (kind === "greedy") return { ...makeGreedy(w()), lantern: bestLanternPick(w()), kyonshi: bestKyonshiTurn(w()) };
-  if (kind === "beam") return { ...makeBeam({ weights: w() }), lantern: bestLanternPick(w()), kyonshi: bestKyonshiTurn(w()) };
-  return makeStrong({ ...opts.strong, weights: strongProfileWeights(evalName), seed: opts.seed ?? 0 });
+  // every kind digs for the last units when one or two short of the 5体目で即勝ち (check-discard.ts)
+  const seat = (): AiSeat =>
+    kind === "greedy"
+      ? { ...makeGreedy(w()), lantern: bestLanternPick(w()), kyonshi: bestKyonshiTurn(w()) }
+      : kind === "beam"
+        ? { ...makeBeam({ weights: w() }), lantern: bestLanternPick(w()), kyonshi: bestKyonshiTurn(w()) }
+        : makeStrong({ ...opts.strong, weights: strongProfileWeights(evalName), seed: opts.seed ?? 0 });
+  const s = seat();
+  return { ...s, discard: checkAwareDiscard(s.discard ?? defaultDiscardPolicy) };
 };

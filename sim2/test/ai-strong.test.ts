@@ -33,7 +33,8 @@ test("registry: three kinds, Japanese labels, factory and validation", () => {
   const strong = makeAi("strong", "balanced");
   assert.equal(strong.name, "strong");
   assert.ok(strong.discard !== undefined && strong.mulligan !== undefined && strong.tansu !== undefined);
-  assert.equal(makeAi("greedy").discard, undefined); // greedy keeps the engine's default policies
+  // every kind discards through the 王手を意識した整理 wrapper (check-discard.ts); greedy's base is the engine default
+  assert.equal(typeof makeAi("greedy").discard, "function");
   assert.throws(() => makeAi("nope"), /unknown ai "nope"/);
   assert.throws(() => makeAi("strong", "nope"), /unknown eval profile/);
 });
