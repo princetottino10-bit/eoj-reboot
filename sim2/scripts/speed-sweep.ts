@@ -274,8 +274,9 @@ const runJob = (vi: number, ai: number, from: number, to: number): Game[] => {
         checking = unitWin && [...alive.values()].filter((o) => o === e.player).length === ctx.cfg.instantWinCells - 2 ? e.player : null;
         if (checking !== null) checkTurns += 1;
       }
-      if (e.t === "control" && e.change === "gain") reachGains += 1;
-      if (e.t === "control" && e.change === "win") reachWins += 1;
+      // under the unit-count コールド勝ち the win events are not 制圧 conversions
+      if (!unitWin && e.t === "control" && e.change === "gain") reachGains += 1;
+      if (!unitWin && e.t === "control" && e.change === "win") reachWins += 1;
     }
     out.push({ seed, round, winner: state.winner as 0 | 1 | null, end: state.winType ?? "none", kills, checkTurns, checkWins, reachGains, reachWins });
   }
