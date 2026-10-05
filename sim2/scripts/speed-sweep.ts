@@ -244,7 +244,24 @@ export const RYU2_SET: readonly Variant[] = [
   { id: "ryuU3FreeLight1", label: "+負けている側は高コス−3+召喚攻撃無料(低コス1枚のまま)", cfg: { ...RYU, ...UNDER(3), ...FREE }, cards: aoeFrom(7, true) },
 ];
 
-const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET, team: TEAM_SET, ryu: RYU_SET, ryu2: RYU2_SET };
+/** 倒された側が霊力をもらう (2026-10-05): the kill reward goes to the side that lost the unit. */
+const VICTIM1 = { refundMode: "half", killRewardBase: "zero", killRewardBonus: 1 } as const;
+const VICTIM_CARD = { refundMode: "half", killRewardBase: "card", killRewardBonus: 0 } as const;
+const ryuLight1 = aoeFrom(7, true);
+export const VICTIM_SET: readonly Variant[] = [
+  { id: "base", label: "10/3テスト案(基準)" },
+  { id: "baseV1", label: "10/3: 倒された側が1もらう", cfg: { ...VICTIM1 } },
+  { id: "ryuBest", label: "りゅー案+負けている側は高コス−3+召喚攻撃無料(低コス2枚)", cfg: { ...RYU, ...UNDER(3), ...FREE }, cards: ryuCards },
+  { id: "ryuBestV1", label: "上+倒された側が1もらう", cfg: { ...RYU, ...UNDER(3), ...FREE, ...VICTIM1 }, cards: ryuCards },
+  { id: "ryuBestVC", label: "上+倒された側が霊力価ぶんもらう", cfg: { ...RYU, ...UNDER(3), ...FREE, ...VICTIM_CARD }, cards: ryuCards },
+  { id: "ryuBestL1", label: "りゅー案+高コス−3+召喚攻撃無料(低コス1枚)", cfg: { ...RYU, ...UNDER(3), ...FREE }, cards: ryuLight1 },
+  { id: "ryuBestL1V1", label: "上(低コス1枚)+倒された側が1もらう", cfg: { ...RYU, ...UNDER(3), ...FREE, ...VICTIM1 }, cards: ryuLight1 },
+  { id: "ryuFreeV1", label: "りゅー案+召喚攻撃無料+倒された側が1もらう(割引なし)", cfg: { ...RYU, ...FREE, ...VICTIM1 }, cards: ryuCards },
+  { id: "ryuFreeVC", label: "りゅー案+召喚攻撃無料+倒された側が霊力価(割引なし)", cfg: { ...RYU, ...FREE, ...VICTIM_CARD }, cards: ryuCards },
+  { id: "ryuV1", label: "りゅー案+倒された側が1もらう(割引・召喚攻撃無料なし)", cfg: { ...RYU, ...VICTIM1 }, cards: ryuCards },
+];
+
+const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET, team: TEAM_SET, ryu: RYU_SET, ryu2: RYU2_SET, victim: VICTIM_SET };
 const SET_NAME = (() => {
   const i = process.argv.indexOf("--set");
   return i === -1 ? "single" : (process.argv[i + 1] ?? "single");
@@ -464,7 +481,7 @@ td.ai{min-width:150px}.bar{position:relative;display:inline-block;width:110px;he
 .v-faster{color:var(--fast);font-weight:700}.v-slower{color:var(--slow);font-weight:700}.v-split{color:var(--gold);font-weight:700}.v-none{color:var(--dim)}
 .fw{font-size:12px;color:var(--dim)}
 </style></head><body>
-<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : SET_NAME === "team" ? "10/5のチームの案を並べる(10/3テスト案と比べる)" : SET_NAME === "ryu" || SET_NAME === "ryu2" ? "低コスを並べて勝つ・高コスで倒して巻き返す、を通す調整(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
+<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : SET_NAME === "team" ? "10/5のチームの案を並べる(10/3テスト案と比べる)" : SET_NAME === "ryu" || SET_NAME === "ryu2" || SET_NAME === "victim" ? "低コスを並べて勝つ・高コスで倒して巻き返す、を通す調整(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
 <p class="note">各案・各AIで${games}局ずつ。どの案も同じ乱数の種(同じ配り)で対局させ、基準との差を局ごとに取っています。数字は決着ラウンドの平均の差(マイナス=速く決着)。点がうすいのは95%の幅が0をまたぐ(差があると言い切れない)もの。全部のAIで同じ向きに言い切れた変数だけ「一致」と書きます。計算 ${Math.round(seconds / 60)}分。</p>
 <h2>基準(10/3テスト案)</h2>
 <div class="wrap"><table><thead><tr><th>AI</th><th>決着ラウンド 中央値</th><th>遅い1割</th><th>第10ラウンド超</th><th>先手勝率</th><th>引き分け</th><th>撃破/局</th><th>決着の仕方</th></tr></thead><tbody>
