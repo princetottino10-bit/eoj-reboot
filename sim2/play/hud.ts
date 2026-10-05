@@ -74,7 +74,7 @@ const deckOutHtml = (ctx: Ctx, reshuffles: number): string =>
 
 /** controlWinMode "points": 「制圧点 1/2」. Nothing under "hold". */
 const pointsHtml = (ctx: Ctx, points: number | undefined): string =>
-  ctx.cfg.controlWinMode === "points"
+  ctx.cfg.controlWinMode !== "hold"
     ? `<span class="np-stat np-pts" data-stat="points" title="制圧点(${ctx.cfg.controlPointsToWin}点で勝利)"><i>制圧点</i><b>${points ?? 0}</b><small>/${ctx.cfg.controlPointsToWin}</small></span>`
     : "";
 

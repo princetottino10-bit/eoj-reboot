@@ -262,7 +262,7 @@ ${schemaHelpText()}
     ) as HandMode,
     controlCount: pick("control-count", ["cells", "hp", "cost"] as const, base.controlCount) as ControlCount,
     controlCountThreshold: intIn(args, "control-count-threshold", 1, 20, base.controlCountThreshold),
-    controlWinMode: pick("control-win-mode", ["hold", "points"] as const, base.controlWinMode) as ControlWinMode,
+    controlWinMode: pick("control-win-mode", ["hold", "points", "hold_points"] as const, base.controlWinMode) as ControlWinMode,
     controlPointsToWin: intIn(args, "control-points-to-win", 1, 9, base.controlPointsToWin),
     incomeMode: pick("income-mode", ["ratchet", "current"] as const, base.incomeMode) as IncomeMode,
     killRewardCondition: pick(

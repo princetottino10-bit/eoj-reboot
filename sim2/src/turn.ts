@@ -314,9 +314,14 @@ const endTurnControl = (ctx: Ctx, s: GameState, p: PlayerId, occ: number, events
  * of them win at once. true = the game ended.
  */
 const endTurnPoints = (ctx: Ctx, s: GameState, p: PlayerId, occ: number, events: GameEvent[]): boolean => {
-  const ps = s.players[p];
-  ps.reach = false;
+  s.players[p].reach = false;
   if (occ < controlNeed(ctx, s)) return false;
+  return addControlPoint(ctx, s, p, occ, events);
+};
+
+/** One 制圧点 for p; true = that was the last one needed and the game ended. */
+const addControlPoint = (ctx: Ctx, s: GameState, p: PlayerId, occ: number, events: GameEvent[]): boolean => {
+  const ps = s.players[p];
   ps.controlPoints += 1;
   events.push({
     t: "effect",
@@ -360,6 +365,9 @@ export const endTurn = (
     if (endTurnPoints(ctx, s, p, occ, events)) return;
   } else if (endTurnControl(ctx, s, p, occ, events)) {
     return;
+  } else if (ctx.cfg.controlWinMode === "hold_points" && s.players[p].reach && addControlPoint(ctx, s, p, occ, events)) {
+    // 有効: handing a 制圧 over counts even when the other side breaks it
+    return;
   }
 
   // EXP-0913 incomeTiming "turn_end": control check -> income -> hand cleanup.
@@ -392,7 +400,7 @@ export const endTurn = (
     manaLeft,
     occBoth: [controlCount(ctx, s, 0), controlCount(ctx, s, 1)],
     handBoth: [s.players[0].hand.length, s.players[1].hand.length],
-    ...(ctx.cfg.controlWinMode === "points" ? { points: [s.players[0].controlPoints, s.players[1].controlPoints] as [number, number] } : {}),
+    ...(ctx.cfg.controlWinMode !== "hold" ? { points: [s.players[0].controlPoints, s.players[1].controlPoints] as [number, number] } : {}),
   });
 
   clearTurnBuffs(s); // tm16 ATK+1 lasts only the turn it was granted

@@ -186,7 +186,8 @@ export type ControlCount = "cells" | "hp" | "cost";
 /** hold = the control state + controlHold (every ruleset so far). points = at
  *  each own turn end with count >= controlWin the player gains 1 制圧点;
  *  controlPointsToWin points win at once. Points never decrease. */
-export type ControlWinMode = "hold" | "points";
+/** hold_points (2026-10-05 案): the usual hold win, and each own turn end on controlWin 占拠 (handing a 制圧 over) is also a 制圧点; controlPointsToWin of them win. */
+export type ControlWinMode = "hold" | "points" | "hold_points";
 /** ratchet = chips never decrease (every ruleset so far). current = the chip
  *  steps are judged on the count as it stands whenever income is paid, so
  *  losing cells lowers income. */

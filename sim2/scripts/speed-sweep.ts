@@ -184,7 +184,36 @@ export const LIMIT2_SET: readonly Variant[] = [
   { id: "l2Mana67", label: "+初期霊力6/7(召喚攻撃は有料)", cfg: { ...L2, startMana: [6, 7] } },
 ];
 
-const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET };
+const COST3 = ["ac01", "ac02", "ac03", "ac04"];
+const merge = (...fs: ((p: CardPack) => CardOverrides)[]) => (p: CardPack): CardOverrides => {
+  const out: CardOverrides = {};
+  for (const f of fs) for (const [id, e] of Object.entries(f(p))) out[id] = { ...(out[id] ?? {}), ...e };
+  return out;
+};
+const cost3to4 = (): CardOverrides => Object.fromEntries(COST3.map((id) => [id, { summonCost: 4 }]));
+/** 鬼の範囲を減らす: 首引の姫鬼・両面を単体に (鬼の範囲は鎖鬼・一目鬼・酒呑童子の3枚), 出番の少ない両面 HP+2・酒呑童子 HP+1. */
+const oniLessArea = (): CardOverrides => ({ ac12: { aoe: false }, ac14: { aoe: false, hp: 10 }, ac16: { hp: 12 } });
+const HOLD_POINTS3 = { controlWinMode: "hold_points", controlPointsToWin: 3 } as const;
+
+/** The 2026-10-05 team ideas, side by side (お祈り度 and the 制圧 conversion in the report). */
+export const TEAM_SET: readonly Variant[] = [
+  { id: "base", label: "10/3テスト案(基準)" },
+  { id: "cold5", label: "5体目で即勝ち", cfg: { ...COLD5 } },
+  { id: "cold5Cost4", label: "5体目即勝ち+3コスを無くす(4種を4コストに)", cfg: { ...COLD5 }, cards: cost3to4 },
+  { id: "baseCost4", label: "10/3: 3コスを無くす(4種を4コストに)", cards: cost3to4 },
+  { id: "cold5LightHeavy", label: "5体目即勝ち+低コスは単体・高コスは範囲+低コス4種を2枚ずつ", cfg: { ...COLD5 }, cards: merge(aoeFrom(7, true), () => copiesOf(COST3, 2)) },
+  { id: "comboLightHeavy", label: "上+召喚攻撃無料+収入7", cfg: { ...COMBO }, cards: merge(aoeFrom(7, true), () => copiesOf(COST3, 2)) },
+  { id: "oni", label: "10/3: 鬼の範囲を減らす(姫鬼・両面を単体に)+両面HP+2・酒呑HP+1", cards: oniLessArea },
+  { id: "oniDial", label: "上+ダイヤル", cfg: { incomeMode: "current" }, cards: oniLessArea },
+  { id: "cold5Oni", label: "5体目即勝ち+鬼の範囲を減らす", cfg: { ...COLD5 }, cards: oniLessArea },
+  { id: "dial", label: "10/3: ダイヤル", cfg: { incomeMode: "current" } },
+  { id: "valid3", label: "10/3: 制圧を渡すたびに有効、有効3回でも勝ち", cfg: { ...HOLD_POINTS3 } },
+  { id: "valid2", label: "10/3: 有効2回でも勝ち", cfg: { ...HOLD_POINTS3, controlPointsToWin: 2 } },
+  { id: "valid3Oni", label: "有効3回+鬼の範囲を減らす", cfg: { ...HOLD_POINTS3 }, cards: oniLessArea },
+  { id: "valid3Dial", label: "有効3回+ダイヤル", cfg: { ...HOLD_POINTS3, incomeMode: "current" } },
+];
+
+const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET, team: TEAM_SET };
 const SET_NAME = (() => {
   const i = process.argv.indexOf("--set");
   return i === -1 ? "single" : (process.argv[i + 1] ?? "single");
@@ -202,7 +231,12 @@ export const AIS: readonly { id: string; label: string; kind: "greedy" | "beam" 
 
 // ------------------------------------------------------------------ one game
 
-type Game = { seed: number; round: number; winner: 0 | 1 | null; end: string; kills: number };
+/**
+ * checkTurns / checkWins: own turns begun on 3 units under the unit-count コールド勝ち, and how many of them
+ * that player won before the turn passed (お祈り度: a low share = the check often fails on the draw).
+ * reachGains / reachWins: 制圧 handed over at an own turn end, and how many were then won (held or by 制圧点).
+ */
+type Game = { seed: number; round: number; winner: 0 | 1 | null; end: string; kills: number; checkTurns: number; checkWins: number; reachGains: number; reachWins: number };
 
 const runJob = (vi: number, ai: number, from: number, to: number): Game[] => {
   const v = V[vi];
@@ -216,11 +250,34 @@ const runJob = (vi: number, ai: number, from: number, to: number): Game[] => {
     const { events, state } = runGame(ctx, [mk(), mk()], seed, true);
     let round = state.round;
     let kills = 0;
+    let checkTurns = 0;
+    let checkWins = 0;
+    let reachGains = 0;
+    let reachWins = 0;
+    const alive = new Map<number, number>();
+    let checking: number | null = null;
+    const unitWin = ctx.cfg.instantWinCells > 0 && ctx.cfg.instantWinCount === "units";
     for (const e of events) {
-      if (e.t === "gameEnd") round = e.round;
-      if (e.t === "destroy") kills += 1;
+      if (e.t === "gameEnd") {
+        round = e.round;
+        if (checking !== null && e.winner === checking) checkWins += 1;
+      }
+      if (e.t === "destroy") {
+        kills += 1;
+        alive.delete(e.uid);
+      }
+      if (e.t === "summon") {
+        if (e.inheritedFrom !== undefined) alive.delete(e.inheritedFrom.uid);
+        alive.set(e.uid, e.player);
+      }
+      if (e.t === "turnStart") {
+        checking = unitWin && [...alive.values()].filter((o) => o === e.player).length === ctx.cfg.instantWinCells - 2 ? e.player : null;
+        if (checking !== null) checkTurns += 1;
+      }
+      if (e.t === "control" && e.change === "gain") reachGains += 1;
+      if (e.t === "control" && e.change === "win") reachWins += 1;
     }
-    out.push({ seed, round, winner: state.winner as 0 | 1 | null, end: state.winType ?? "none", kills });
+    out.push({ seed, round, winner: state.winner as 0 | 1 | null, end: state.winType ?? "none", kills, checkTurns, checkWins, reachGains, reachWins });
   }
   return out;
 };
@@ -263,6 +320,10 @@ type Cell = {
   draws: number;
   ends: Record<string, number>;
   kills: number;
+  /** お祈り度: of the turns begun on 3 units (5体目で即勝ち), the share won that turn; null when the rule is off. */
+  checkRate: number | null;
+  /** Of the 制圧 handed over, the share that went on to win. */
+  reachRate: number | null;
   delta: { d: number; lo: number; hi: number } | null;
   firstWinDelta: number | null;
 };
@@ -287,6 +348,14 @@ const cellOf = (gs: Game[], base: Game[] | null): Cell => {
     draws: 1 - decided.length / gs.length,
     ends,
     kills: mean(gs.map((g) => g.kills)),
+    checkRate: (() => {
+      const t = gs.reduce((n, g) => n + (g.checkTurns ?? 0), 0);
+      return t === 0 ? null : gs.reduce((n, g) => n + (g.checkWins ?? 0), 0) / t;
+    })(),
+    reachRate: (() => {
+      const t = gs.reduce((n, g) => n + (g.reachGains ?? 0), 0);
+      return t === 0 ? null : gs.reduce((n, g) => n + (g.reachWins ?? 0), 0) / t;
+    })(),
     delta: base === null ? null : pairedDelta(base.map((g) => g.round), rounds),
     firstWinDelta: baseFirst === null ? null : firstWin - baseFirst,
   };
@@ -339,7 +408,7 @@ td.ai{min-width:150px}.bar{position:relative;display:inline-block;width:110px;he
 .v-faster{color:var(--fast);font-weight:700}.v-slower{color:var(--slow);font-weight:700}.v-split{color:var(--gold);font-weight:700}.v-none{color:var(--dim)}
 .fw{font-size:12px;color:var(--dim)}
 </style></head><body>
-<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
+<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : SET_NAME === "team" ? "10/5のチームの案を並べる(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
 <p class="note">各案・各AIで${games}局ずつ。どの案も同じ乱数の種(同じ配り)で対局させ、基準との差を局ごとに取っています。数字は決着ラウンドの平均の差(マイナス=速く決着)。点がうすいのは95%の幅が0をまたぐ(差があると言い切れない)もの。全部のAIで同じ向きに言い切れた変数だけ「一致」と書きます。計算 ${Math.round(seconds / 60)}分。</p>
 <h2>基準(10/3テスト案)</h2>
 <div class="wrap"><table><thead><tr><th>AI</th><th>決着ラウンド 中央値</th><th>遅い1割</th><th>第10ラウンド超</th><th>先手勝率</th><th>引き分け</th><th>撃破/局</th><th>決着の仕方</th></tr></thead><tbody>
@@ -349,10 +418,10 @@ ${AIS.map((a, ai) => {
 }).join("")}
 </tbody></table></div>
 <h2>効きの大きい順</h2>
-<div class="wrap"><table><thead><tr><th>変えたもの</th><th>判定</th>${AIS.map((a) => `<th>${esc(a.label)}</th>`).join("")}<th>先手勝率(AIごと)</th></tr></thead><tbody>
+<div class="wrap"><table><thead><tr><th>変えたもの</th><th>判定</th>${AIS.map((a) => `<th>${esc(a.label)}</th>`).join("")}<th>先手勝率(AIごと)</th><th>3体からその番に決めた割合(AIごと)</th><th>渡した制圧が勝ちになった割合(AIごと)</th></tr></thead><tbody>
 ${rows.map(({ v, cells }) => {
   const vd = verdict(cells);
-  return `<tr><td>${esc(v.label)}</td><td class="v-${vd}">${VERDICT_TEXT[vd]}</td>${cells.map((c) => `<td class="ai">${bar(c)}</td>`).join("")}<td class="fw">${cells.map((c) => pct(c.firstWin)).join(" / ")}<br>(基準から ${cells.map((c) => sgn((c.firstWinDelta ?? 0) * 100, 0)).join(" / ")})</td></tr>`;
+  return `<tr><td>${esc(v.label)}</td><td class="v-${vd}">${VERDICT_TEXT[vd]}</td>${cells.map((c) => `<td class="ai">${bar(c)}</td>`).join("")}<td class="fw">${cells.map((c) => pct(c.firstWin)).join(" / ")}<br>(基準から ${cells.map((c) => sgn((c.firstWinDelta ?? 0) * 100, 0)).join(" / ")})</td><td class="fw">${cells.map((c) => (c.checkRate === null ? "—" : pct(c.checkRate))).join(" / ")}</td><td class="fw">${cells.map((c) => (c.reachRate === null ? "—" : pct(c.reachRate))).join(" / ")}</td></tr>`;
 }).join("")}
 </tbody></table></div>
 <p class="note">読み方: 「速くなる(全AI一致)」はAIの癖に左右されにくい結果。「AIで向きが割れる」はAIの打ち方しだいで逆の結果になったもので、人のテストで確かめる必要があります。先手勝率の変化が大きいものは、速くなっても先後の釣り合いを崩します。</p>

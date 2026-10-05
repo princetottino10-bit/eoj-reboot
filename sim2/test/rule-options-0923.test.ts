@@ -799,3 +799,51 @@ test("instantWinCells: an own turn end on that 占拠 wins at once — a big uni
   assert.equal(p.winner, 0);
   assert.equal(p.players[0].controlPoints, 0);
 });
+
+test("controlWinMode hold_points (有効): handing a 制圧 over earns a point even when it is broken; the hold win still works; the third point wins", () => {
+  const ctx = r0923({ controlWinMode: "hold_points", controlPointsToWin: 3, controlHold: "next_turn_end" });
+  const s = blankState(ctx, 0);
+  const cells: [string, number, number][] = [["ad02", 0, 0], ["ad03", 2, 0], ["ad04", 1, 0], ["ad02", 0, 2], ["ad03", 2, 2]];
+  for (const [id, x, y] of cells) place(s, id, 0, x, y, 0);
+  const ev: GameEvent[] = [];
+  // handed over: control state and 1 point
+  endTurn(ctx, s, ev);
+  assert.equal(s.players[0].reach, true);
+  assert.equal(s.players[0].controlPoints, 1);
+  // the other side breaks it: the point stays
+  startTurn(ctx, s, ev);
+  const removed = s.units.pop()!;
+  endTurn(ctx, s, ev);
+  startTurn(ctx, s, ev);
+  endTurn(ctx, s, ev);
+  assert.equal(s.players[0].reach, false);
+  assert.equal(s.players[0].controlPoints, 1, "kept after the break");
+  // handed over again: 2; broken again
+  startTurn(ctx, s, ev);
+  endTurn(ctx, s, ev);
+  startTurn(ctx, s, ev);
+  s.units.push(removed);
+  endTurn(ctx, s, ev);
+  assert.equal(s.players[0].controlPoints, 2);
+  assert.equal(s.ended, false);
+  startTurn(ctx, s, ev);
+  s.units.pop();
+  endTurn(ctx, s, ev);
+  startTurn(ctx, s, ev);
+  s.units.push(removed);
+  // the third hand-over wins at once
+  endTurn(ctx, s, ev);
+  assert.equal(s.ended, true);
+  assert.equal(s.winner, 0);
+  // and a held 制圧 still wins as usual (1 point only)
+  const h = blankState(ctx, 0);
+  for (const [id, x, y] of cells) place(h, id, 0, x, y, 0);
+  endTurn(ctx, h, []);
+  startTurn(ctx, h, []);
+  endTurn(ctx, h, []);
+  startTurn(ctx, h, []);
+  endTurn(ctx, h, []);
+  assert.equal(h.ended, true);
+  assert.equal(h.winner, 0);
+  assert.equal(h.players[0].controlPoints, 1);
+});
