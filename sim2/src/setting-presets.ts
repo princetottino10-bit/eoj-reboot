@@ -23,7 +23,7 @@ import type { PlayablePack, RulePresetId } from "./presets.ts";
 import { changedItemCount, normalizeSettings, parseSettings, settingsConfig } from "./settings.ts";
 import type { GameSettings } from "./settings.ts";
 
-export const SETTING_PRESET_IDS = ["lineUp", "adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive", "freeSummon"] as const;
+export const SETTING_PRESET_IDS = ["ryuDraft", "lineUp", "adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive", "freeSummon"] as const;
 export type SettingPresetId = (typeof SETTING_PRESET_IDS)[number];
 
 export type SettingPreset = {
@@ -231,7 +231,33 @@ const LINE_UP: SettingPreset = {
   cards: { ac06: { aoe: false }, ac09: { aoe: false }, ac13: { aoe: true }, ac15: { aoe: true } },
 };
 
+/**
+ * りゅー案(仮) (2026-10-07, speed-sweep --set barbell 「中コス抜き+軽い2枚ずつ・重い2枚ずつ」):
+ * 並べて勝つ・重いので巻き返す案 on a barbell deck - no cost 5-6 shikigami, the
+ * cost-3 ones and the cost-7+ ones twice each (28 cards), so the hand-size
+ * discard is "keep the light ones to win, or a heavy one to strike back".
+ * Five AIs: 先手 45-55%, about 60% of the kills by cost-7+ cards.
+ */
+const RYU_DRAFT: SettingPreset = {
+  id: "ryuDraft",
+  label: "りゅー案(仮)",
+  note: "並べて勝つ・重いので巻き返す案のルールに、中コストを抜いたデッキ(28枚)。召喚コスト5〜6の式神(変面・一角鬼・一目鬼・雲外鏡・照魔鏡)を抜き、コスト3の4種(灯籠の精・提灯お化け・影鬼・鉈鬼)とコスト7以上の6種(首引の姫鬼・両面・僵尸公主・茨木童子・酒呑童子・玖龍街)を2枚ずつ。ルールは、5体目で即勝ち・召喚は1ターン2体まで・範囲攻撃はコスト7以上だけ・負けている側はコスト7以上が3安い・召喚した手番の1回目の攻撃はコストなし・倒された側が霊力1。札は10/6案その2。",
+  rule: "r1006",
+  pack: "adopted-1006",
+  config: LINE_UP.config,
+  cards: {
+    ...LINE_UP.cards,
+    // light: cost 3, twice each
+    ac01: { copies: 2 }, ac02: { copies: 2 }, ac03: { copies: 2 }, ac04: { copies: 2 },
+    // no mid cost (5-6)
+    ac07: { copies: 0 }, ac08: { copies: 0 }, ac09: { aoe: false, copies: 0 }, ac10: { copies: 0 }, ac11: { copies: 0 },
+    // heavy: cost 7+, twice each
+    ac12: { copies: 2 }, ac13: { aoe: true, copies: 2 }, ac14: { copies: 2 }, ac15: { aoe: true, copies: 2 }, ac16: { copies: 2 }, ac17: { copies: 2 },
+  },
+};
+
 export const SETTING_PRESETS: Record<SettingPresetId, SettingPreset> = {
+  ryuDraft: RYU_DRAFT,
   lineUp: LINE_UP,
   adj15: ADJ15,
   adj15life: ADJ15_LIFE,
