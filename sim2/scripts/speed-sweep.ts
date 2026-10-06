@@ -287,7 +287,27 @@ export const LINEUP_SET: readonly Variant[] = [
   lineUp("free7mana58", "+召喚攻撃無料はコスト7以上だけ+先手の初期霊力5", { freeSummonAttackMinCost: 7, startMana: [5, 8] }),
 ];
 
-const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET, team: TEAM_SET, ryu: RYU_SET, ryu2: RYU2_SET, victim: VICTIM_SET, lineup: LINEUP_SET };
+/** 範囲攻撃持ちを増やす、低コスも増やす前提で (2026-10-07). Cards: area exactly from `from`, cheap ×2, optional copies. */
+const lineUpCards = (from: number, more: (p: CardPack) => CardOverrides = () => ({})) => merge(aoeFrom(from, true), () => copiesOf(COST3, 2), more);
+const copiesFrom = (lo: number, hi: number, n: number) => (p: CardPack): CardOverrides =>
+  copiesOf(p.cards.filter((c) => c.kind === "shikigami" && c.summonCost >= lo && c.summonCost <= hi).map((c) => c.id), n);
+const lu2 = (id: string, label: string, cards: (p: CardPack) => CardOverrides, cfg: Partial<Config> = {}): Variant =>
+  on1006({ id, label, cfg: { ...LINEUP_CFG, ...cfg }, cards });
+
+export const LINEUP2_SET: readonly Variant[] = [
+  on1006({ id: "base", label: "10/6案(10/3ルール+10/6案その2の札)" }),
+  lineUp("lineUp", "並べて勝つ案そのまま(低コス1枚・範囲7以上)"),
+  lu2("light2", "+低コス4種を2枚ずつ(27枚)", lineUpCards(7)),
+  lu2("area6", "+低コス2枚+範囲を6以上に(雲外鏡・照魔鏡も)", lineUpCards(6)),
+  lu2("area5", "+低コス2枚+範囲を5以上に(変面・一角鬼・一目鬼も)", lineUpCards(5)),
+  lu2("heavy2", "+低コス2枚+範囲(7以上)の札を2枚ずつ(33枚)", lineUpCards(7, copiesFrom(7, 99, 2))),
+  lu2("area6x2", "+低コス2枚+範囲を6以上に+コスト6の2種を2枚ずつ", lineUpCards(6, copiesFrom(6, 6, 2))),
+  lu2("area5mana", "+低コス2枚+範囲を5以上に+先手の初期霊力5", lineUpCards(5), { startMana: [5, 8] }),
+  lu2("heavy2mana", "+低コス2枚+範囲の札2枚ずつ+先手の初期霊力5", lineUpCards(7, copiesFrom(7, 99, 2)), { startMana: [5, 8] }),
+  lu2("area6heavy2", "+低コス2枚+範囲を6以上に+範囲の札(6以上)を2枚ずつ", lineUpCards(6, copiesFrom(6, 99, 2))),
+];
+
+const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET, team: TEAM_SET, ryu: RYU_SET, ryu2: RYU2_SET, victim: VICTIM_SET, lineup: LINEUP_SET, lineup2: LINEUP2_SET };
 const SET_NAME = (() => {
   const i = process.argv.indexOf("--set");
   return i === -1 ? "single" : (process.argv[i + 1] ?? "single");
@@ -507,7 +527,7 @@ td.ai{min-width:150px}.bar{position:relative;display:inline-block;width:110px;he
 .v-faster{color:var(--fast);font-weight:700}.v-slower{color:var(--slow);font-weight:700}.v-split{color:var(--gold);font-weight:700}.v-none{color:var(--dim)}
 .fw{font-size:12px;color:var(--dim)}
 </style></head><body>
-<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : SET_NAME === "team" ? "10/5のチームの案を並べる(10/3テスト案と比べる)" : SET_NAME === "ryu" || SET_NAME === "ryu2" || SET_NAME === "victim" || SET_NAME === "lineup" ? "低コスを並べて勝つ・高コスで倒して巻き返す、を通す調整(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
+<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : SET_NAME === "team" ? "10/5のチームの案を並べる(10/3テスト案と比べる)" : SET_NAME === "ryu" || SET_NAME === "ryu2" || SET_NAME === "victim" || SET_NAME === "lineup" || SET_NAME === "lineup2" ? "低コスを並べて勝つ・高コスで倒して巻き返す、を通す調整(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
 <p class="note">各案・各AIで${games}局ずつ。どの案も同じ乱数の種(同じ配り)で対局させ、基準との差を局ごとに取っています。数字は決着ラウンドの平均の差(マイナス=速く決着)。点がうすいのは95%の幅が0をまたぐ(差があると言い切れない)もの。全部のAIで同じ向きに言い切れた変数だけ「一致」と書きます。計算 ${Math.round(seconds / 60)}分。</p>
 <h2>基準(10/3テスト案)</h2>
 <div class="wrap"><table><thead><tr><th>AI</th><th>決着ラウンド 中央値</th><th>遅い1割</th><th>第10ラウンド超</th><th>先手勝率</th><th>引き分け</th><th>撃破/局</th><th>決着の仕方</th></tr></thead><tbody>
