@@ -7,7 +7,7 @@
 import type { FlowEvent } from "./flow.ts";
 import type { GameEvent, PlayerId, WinType } from "./types.ts";
 
-/** How a match ended. cold: a コールド勝ち (winType "control" with gameEnd.cold). */
+/** How a match ended. cold: a 即勝ち (winType "control" with gameEnd.cold). */
 export type EndKind = "control" | "cold" | "life" | "deck_out" | "turn_limit" | "resign";
 
 export type MatchSummary = {
@@ -20,7 +20,7 @@ export type MatchSummary = {
   turns: number;
   winner: PlayerId | null;
   end: EndKind | null;
-  /** 制圧勝利 / コールド勝ち / 生命勝ち / 2回目の山札切れ / ラウンド上限 / 投了 / 対局中. */
+  /** 制圧勝利 / 即勝ち / 生命勝ち / 2回目の山札切れ / ラウンド上限 / 投了 / 対局中. */
   endLabel: string;
   /** The first player's (先手's) result. */
   first: "win" | "lose" | "draw" | null;
@@ -118,7 +118,7 @@ export const SEAT_WORD: readonly [string, string] = ["先手", "後手"];
 
 const END_LABEL: Record<EndKind, string> = {
   control: "制圧勝利",
-  cold: "コールド勝ち",
+  cold: "即勝ち",
   life: "生命勝ち",
   deck_out: "2回目の山札切れ",
   turn_limit: "ラウンド上限",

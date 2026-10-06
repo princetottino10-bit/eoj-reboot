@@ -766,7 +766,7 @@ test("controlWinLate: the first reshuffle switches the line, logged once, and a 
   assert.equal(o.players[0].reach, true);
 });
 
-// ------------------------------------------------------------ コールド勝ち
+// ------------------------------------------------------------ 即勝ち
 
 test("instantWinCells: an own turn end on that 占拠 wins at once — a big unit counting 2 under controlCount hp gets there on 6 cells", () => {
   const board = (ctx: Ctx): GameState => {
@@ -784,7 +784,7 @@ test("instantWinCells: an own turn end on that 占拠 wins at once — a big uni
   assert.equal(s.ended, true);
   assert.equal(s.winner, 0);
   assert.equal(s.winType, "control");
-  assert.ok(effectTexts(ev).some((t) => t.includes("コールド勝ち") && t.includes("占拠7")));
+  assert.ok(effectTexts(ev).some((t) => t.includes("即勝ち") && t.includes("占拠7")));
   assert.ok(ev.some((e) => e.t === "gameEnd"));
   // the same board counted in cells is 6: no cold win, just the control state
   const cells = r0923({ instantWinCells: 7 });

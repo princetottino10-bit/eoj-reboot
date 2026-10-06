@@ -1,4 +1,4 @@
-// 王手を意識した手札整理: under コールド勝ち by unit count (5体目で即勝ち), a
+// 王手を意識した手札整理: under 即勝ち by unit count (5体目で即勝ち), a
 // side ending its turn one or two units short keeps the cheapest shikigami it
 // needs to finish next turn and redraws everything else. Without it the AIs
 // kept "anything affordable" and sat on a check with a 7-cost card in hand:
@@ -9,7 +9,7 @@ import type { Ctx } from "../state.ts";
 import type { DiscardChooser } from "../turn.ts";
 import type { GameState, PlayerId } from "../types.ts";
 
-/** How many more units p needs for the unit-count コールド勝ち; null when that rule is off or it is not close. */
+/** How many more units p needs for the unit-count 即勝ち; null when that rule is off or it is not close. */
 const shortBy = (ctx: Ctx, s: GameState, p: PlayerId): number | null => {
   const target = ctx.cfg.instantWinCells;
   if (target === null || ctx.cfg.instantWinCount !== "units") return null;
@@ -21,7 +21,7 @@ const shortBy = (ctx: Ctx, s: GameState, p: PlayerId): number | null => {
 };
 
 /**
- * Wraps a discard policy: close to the コールド勝ち, keep the `need` cheapest
+ * Wraps a discard policy: close to the 即勝ち, keep the `need` cheapest
  * shikigami when together they fit next turn's 霊力 (one on the 太極 when it is
  * free) and pitch the rest; otherwise the wrapped policy decides.
  */

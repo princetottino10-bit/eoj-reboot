@@ -1,4 +1,4 @@
-// 王手を意識した手札整理: one or two short of the unit-count コールド勝ち, keep the
+// 王手を意識した手札整理: one or two short of the unit-count 即勝ち, keep the
 // cheapest shikigami that finish next turn and redraw the rest.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -19,7 +19,7 @@ test("check-aware discard: at 3 units keep the two cheap shikigami that fit next
   s.players[0].hand = ["ac12", "ac03", "ac18", "ac04", "ac10"]; // 首引7, 影鬼3, 家鳴り, 鉞鬼3, 雲外鏡6
   const pitch = checkAwareDiscard(defaultDiscardPolicy)(ctx, s, 0);
   assert.deepEqual(pitch, [0, 2, 4]);
-  // without the コールド勝ち rule the base policy decides
+  // without the 即勝ち rule the base policy decides
   const plain = makeCtx(presetConfig("r1003"), AC);
   assert.deepEqual(checkAwareDiscard(defaultDiscardPolicy)(plain, s, 0), defaultDiscardPolicy(plain, s, 0));
   // far from it (1 unit): the base policy too

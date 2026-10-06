@@ -111,12 +111,12 @@ const winHow = (winType: string | null, loser: string): string =>
           : "決着";
 
 /**
- * A コールド勝ち in words: 「5体目を置いて勝ち(コールド勝ち)」 when the
- * winner's own summon reached it on units, else 「コールド勝ち(式神5体)」 /
- * 「コールド勝ち(占拠7)」.
+ * A 即勝ち in words: 「5体目を置いて勝ち(即勝ち)」 when the
+ * winner's own summon reached it on units, else 「即勝ち(式神5体)」 /
+ * 「即勝ち(占拠7)」.
  */
 export const coldWinHow = (c: ColdWin): string =>
-  c.by === "units" && c.placed === true ? `${c.count}体目を置いて勝ち(コールド勝ち)` : `コールド勝ち(${coldCountWords(c.by, c.count)})`;
+  c.by === "units" && c.placed === true ? `${c.count}体目を置いて勝ち(即勝ち)` : `即勝ち(${coldCountWords(c.by, c.count)})`;
 
 /** "右へ" / "左へ" / "反対へ" for a facing change, "" when unknown or unchanged. */
 const turnWord = (from: Facing | undefined, to: Facing | undefined): string => {
@@ -276,7 +276,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
           : e.cold !== undefined
             ? e.cold.by === "units" && e.cold.placed === true
               ? `${seat(e.winner)}が${coldWinHow(e.cold)}`
-              : `${seat(e.winner)}の勝ち(コールド勝ち・${coldCountWords(e.cold.by, e.cold.count)})`
+              : `${seat(e.winner)}の勝ち(即勝ち・${coldCountWords(e.cold.by, e.cold.count)})`
             : `${seat(e.winner)}の勝ち(${winHow(e.winType, seat(e.winner === 0 ? 1 : 0))}${occ})`;
       return { text: `◆ 決着 (第${e.round}ラウンド): ${who}`, cls: "wr" };
     }

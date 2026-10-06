@@ -101,9 +101,9 @@ EXP-0913B rule variants (defaults again reproduce the pre-EXP behaviour):
   --underdog-discount-min-cost <n>    大型割引の対象コスト (default 8)
   --underdog-by <cells|chips|both>    劣勢の判定 (default cells; both = one step per condition)
   --control-win-late <n>              終盤の制圧ライン 0-9 (default 0 = off)
-  --instant-win-cells <n>             コールド勝ち 0-18 (default 0 = off)
-  --instant-win-timing <turn_end|immediate>  コールド勝ちの判定 (default turn_end)
-  --instant-win-count <occupation|units>     コールド勝ちの数え方 (default occupation)
+  --instant-win-cells <n>             即勝ち 0-18 (default 0 = off)
+  --instant-win-timing <turn_end|immediate>  即勝ちの判定 (default turn_end)
+  --instant-win-count <occupation|units>     即勝ちの数え方 (default occupation)
   --free-summon-attack <off|optional>        召喚した手番の1回目の攻撃はコストなし (default off)
   --free-summon-attack-inherit <on|off>      継承召喚にも適用 (default off)
 `;

@@ -130,7 +130,7 @@ export const controlCount = (ctx: Ctx, s: { readonly units: readonly Unit[] }, p
   s.units.reduce((n, u) => (u.owner === p ? n + controlWeight(ctx, u) : n), 0);
 
 /**
- * What コールド勝ち counts for p under instantWinCount: 占拠 (controlCount) or
+ * What 即勝ち counts for p under instantWinCount: 占拠 (controlCount) or
  * the number of p's units on the board (hidden by マヨヒガ: not counted).
  */
 export const instantWinCountOf = (ctx: Ctx, s: { readonly units: readonly Unit[] }, p: PlayerId): number =>
@@ -138,7 +138,7 @@ export const instantWinCountOf = (ctx: Ctx, s: { readonly units: readonly Unit[]
     ? s.units.reduce((n, u) => (u.owner === p && !isHidden(u) ? n + 1 : n), 0)
     : controlCount(ctx, s, p);
 
-/** Does p stand on コールド勝ち right now (instantWinCells on)? */
+/** Does p stand on 即勝ち right now (instantWinCells on)? */
 export const meetsInstantWin = (ctx: Ctx, s: { readonly units: readonly Unit[] }, p: PlayerId): boolean =>
   ctx.cfg.instantWinCells > 0 && instantWinCountOf(ctx, s, p) >= ctx.cfg.instantWinCells;
 

@@ -49,7 +49,7 @@ const occTip = (ctx: Ctx): string =>
       : "";
 
 /**
- * The コールド勝ち a finished board ended with, read off the board (the
+ * The 即勝ち a finished board ended with, read off the board (the
  * winner still stands on instantWinCells; a plain control win never does, the
  * cold check runs first), or undefined. The log's gameEnd carries the exact one.
  */

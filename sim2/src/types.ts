@@ -203,7 +203,7 @@ export type KillRewardCondition = "always" | "behind" | "upset";
 export type UnderdogBy = "cells" | "chips" | "both";
 
 /**
- * コールド勝ちの判定 (instantWinCells). turn_end: at the side's own turn end
+ * 即勝ちの判定 (instantWinCells). turn_end: at the side's own turn end
  * (the 9/23 rule). immediate: the moment either side reaches it, checked
  * after every action has fully resolved (counters, 灯籠の精 / 僵尸公主 owner
  * choices and every effect included) and after the turn-start effects; both
@@ -212,7 +212,7 @@ export type UnderdogBy = "cells" | "chips" | "both";
 export type InstantWinTiming = "turn_end" | "immediate";
 
 /**
- * コールド勝ちの数え方. occupation: 占拠 under controlCount (a big unit may
+ * 即勝ちの数え方. occupation: 占拠 under controlCount (a big unit may
  * count 2). units: the side's units on the board, one each (hidden by
  * マヨヒガ: not counted).
  */
@@ -316,12 +316,12 @@ export type Config = {
   /** 終盤の制圧ライン: once either player has reshuffled their grave, control
    *  (gain, keep, 制圧点) needs this 占拠 instead of controlWin. 0 = off. */
   controlWinLate: number;
-  /** コールド勝ち: an own turn end on this 占拠 or more wins at once, under
+  /** 即勝ち: an own turn end on this 占拠 or more wins at once, under
    *  either controlWinMode. 0 = off. */
   instantWinCells: number;
-  /** When コールド勝ち is checked. */
+  /** When 即勝ち is checked. */
   instantWinTiming: InstantWinTiming;
-  /** What コールド勝ち counts. */
+  /** What 即勝ち counts. */
   instantWinCount: InstantWinCount;
   /** Whether a summoned unit's first attack that turn is free. */
   freeSummonAttack: FreeSummonAttack;
@@ -531,7 +531,7 @@ export type GameEvent =
   /**
    * occ / by: deck_out only - each side's 占拠 when it ended (controlCount) and
    * the seat whose grave went back for the second time.
-   * cold: a コールド勝ち (winType "control"): the winner's count, what it
+   * cold: a 即勝ち (winType "control"): the winner's count, what it
    * counted, when it was checked, and whether a summon / 継承召喚 just made it.
    */
   | {
@@ -544,7 +544,7 @@ export type GameEvent =
       cold?: ColdWin;
     };
 
-/** How a コールド勝ち was reached (the gameEnd event and the result line). */
+/** How a 即勝ち was reached (the gameEnd event and the result line). */
 export type ColdWin = { count: number; by: InstantWinCount; timing: InstantWinTiming; placed?: boolean };
 
 export type ApplyResult = { state: GameState; events: GameEvent[] };

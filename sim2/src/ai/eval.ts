@@ -94,7 +94,7 @@ export const deckOutTerm = (ctx: Ctx, s: GameState, occP: number, occO: number, 
 };
 
 /**
- * コールド勝ち (instantWinCells) for `p`, counted as instantWinCount says.
+ * 即勝ち (instantWinCells) for `p`, counted as instantWinCount says.
  * turn_end: standing on it wins at that side's turn end. immediate: reaching
  * it ends the game at once (the engine has already scored a live state that
  * did), so what is left to weigh is being one summon short with a free cell:

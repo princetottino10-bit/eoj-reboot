@@ -261,7 +261,7 @@ const replyScore = (ctx: Ctx, s: GameState, p: PlayerId, w: StrongWeights): numb
   const nextP = ctx.cfg.incomeTiming === "turn_end" ? mine.mana : Math.min(cap, mine.mana + incomeNow(ctx, s, p));
   let sc = strongEvaluate(ctx, s, p, w, p === 0 ? [nextP, nextO] : [nextO, nextP]);
   // control they would declare at this turn end, with what their unseen hand could add
-  // コールド勝ち on their turn end is a loss
+  // 即勝ち on their turn end is a loss
   if (meetsInstantWin(ctx, s, o)) sc -= w.oppControl;
   // controlWinMode "points": their last 制圧点 on this turn end is a loss
   if (ctx.cfg.controlWinMode === "points" && occO >= cw && theirs.controlPoints + 1 >= ctx.cfg.controlPointsToWin) sc -= w.oppControl;

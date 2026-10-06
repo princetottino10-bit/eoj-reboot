@@ -74,12 +74,12 @@ test("summary: deciding round and seat, turns, end, and the first round each sea
   assert.ok(html.includes('data-result-line>ルール: 10/3テスト案 | 第7ラウンド'));
 });
 
-test("summary: コールド勝ち, 投了, the round limit and an unfinished match", () => {
+test("summary: 即勝ち, 投了, the round limit and an unfinished match", () => {
   const cold = summarizeMatch(base({
     events: [{ t: "gameEnd", winner: 1, winType: "control", round: 4, cold: { count: 5, by: "units", timing: "immediate", placed: true } }],
     round: 4, turnPlayer: 1, winner: 1,
   }));
-  assert.equal(cold.endLabel, "コールド勝ち");
+  assert.equal(cold.endLabel, "即勝ち");
   assert.equal(cold.first, "lose");
   assert.equal(cold.turns, 8);
   const resign = summarizeMatch(base({ events: [{ t: "resign", player: 0, round: 3 }], round: 3, winner: 1, winType: null }));
@@ -168,7 +168,7 @@ test("online records carry the summary: rounds, deciding turn, end, ruleset labe
   assert.equal(sum.first, f.state.winner === null ? "draw" : f.state.winner === 0 ? "win" : "lose");
   assert.deepEqual(sum.steps, [...new Set(f.ctx.cfg.chipIncomeSteps)].sort((a, b) => a - b));
   assert.equal(sum.stepRounds.length, 2);
-  assert.ok(["制圧勝利", "コールド勝ち", "生命勝ち", "2回目の山札切れ", "ラウンド上限"].includes(sum.endLabel), sum.endLabel);
+  assert.ok(["制圧勝利", "即勝ち", "生命勝ち", "2回目の山札切れ", "ラウンド上限"].includes(sum.endLabel), sum.endLabel);
 });
 
 test("/records and /records.csv: newest first, filterable by ruleset, no names / room codes / tokens; old records are summarized too", () => {

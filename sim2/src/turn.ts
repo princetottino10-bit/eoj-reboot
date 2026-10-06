@@ -67,7 +67,7 @@ export const pendingTansuChoices = (ctx: Ctx, s: GameState): number[] => {
   ) {
     return [];
   }
-  // コールド勝ち (immediate) at this turn start, before the effects
+  // 即勝ち (immediate) at this turn start, before the effects
   if (checkInstantWin(ctx, cloneState(s), [])) return [];
   return tansuCandidates(ctx, s, p);
 };
@@ -355,7 +355,7 @@ export const endTurn = (
   const chipGained = nextChips(ctx, ps.chips, occ) - ps.chips;
   ps.chips += chipGained;
 
-  // コールド勝ち: before either control mode. Under "immediate" it has
+  // 即勝ち: before either control mode. Under "immediate" it has
   // normally ended the game already; this still catches a rule changed mid-turn.
   if (meetsInstantWin(ctx, s, p)) {
     coldWinNow(ctx, s, p, events, "turn_end");

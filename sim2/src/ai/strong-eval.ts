@@ -268,7 +268,7 @@ export const strongEvaluate = (
   if (occO >= cw) score -= w.reach;
   if (pp.reach && occP >= cw) score += w.holdControl;
   if (po.reach && occO >= cw) score -= w.oppControl;
-  // コールド勝ち: on it (turn_end) or one summon short of it (immediate)
+  // 即勝ち: on it (turn_end) or one summon short of it (immediate)
   score += coldTerm(ctx, s, p, w.holdControl, w.oppControl);
   if (ctx.cfg.controlWinMode === "points") {
     // a 制圧点 is banked; one short on controlWin 占拠 is the control state of this mode

@@ -170,14 +170,14 @@ const BIG_COMEBACK: SettingPreset = {
 };
 
 /**
- * 5体目で即勝ち (10/3 designer request): コールド勝ち at 5 of your own
+ * 5体目で即勝ち (10/3 designer request): 即勝ち at 5 of your own
  * units, judged the moment an action has resolved — so placing the fifth
  * wins on the spot. An overlay: it goes on top of the selected ruleset.
  */
 const COLD_FIVE: SettingPreset = {
   id: "coldFive",
   label: "5体目で即勝ち",
-  note: "今のルールに重ねる: 盤上の自分の式神が5体になった瞬間に勝ち(コールド勝ち5・判定は置いた瞬間・数え方は式神の数。マヨヒガで隠れた式神は数えない)。基準ルール・パック・カードはそのまま。",
+  note: "今のルールに重ねる: 盤上の自分の式神が5体になった瞬間に勝ち(即勝ち5・判定は置いた瞬間・数え方は式神の数。マヨヒガで隠れた式神は数えない)。基準ルール・パック・カードはそのまま。",
   rule: DEFAULT_RULE_PRESET,
   pack: RULE_PRESETS[DEFAULT_RULE_PRESET].defaultPack as PlayablePack,
   config: { instantWinCells: 5, instantWinTiming: "immediate", instantWinCount: "units" },

@@ -280,7 +280,7 @@ export const AIS: readonly { id: string; label: string; kind: "greedy" | "beam" 
 // ------------------------------------------------------------------ one game
 
 /**
- * checkTurns / checkWins: own turns begun on 3 units under the unit-count コールド勝ち, and how many of them
+ * checkTurns / checkWins: own turns begun on 3 units under the unit-count 即勝ち, and how many of them
  * that player won before the turn passed (お祈り度: a low share = the check often fails on the draw).
  * reachGains / reachWins: 制圧 handed over at an own turn end, and how many were then won (held or by 制圧点).
  */
@@ -336,7 +336,7 @@ const runJob = (vi: number, ai: number, from: number, to: number): Game[] => {
         checking = unitWin && [...alive.values()].filter((o) => o === e.player).length === ctx.cfg.instantWinCells - 2 ? e.player : null;
         if (checking !== null) checkTurns += 1;
       }
-      // under the unit-count コールド勝ち the win events are not 制圧 conversions
+      // under the unit-count 即勝ち the win events are not 制圧 conversions
       if (!unitWin && e.t === "control" && e.change === "gain") reachGains += 1;
       if (!unitWin && e.t === "control" && e.change === "win") reachWins += 1;
     }

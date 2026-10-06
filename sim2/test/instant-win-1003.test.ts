@@ -1,4 +1,4 @@
-// コールド勝ち (instantWinCells) variants of 10/3: when it is judged
+// 即勝ち (instantWinCells) variants of 10/3: when it is judged
 // (instantWinTiming turn_end / immediate) and what it counts
 // (instantWinCount occupation / units). The designer's 「5体目を置いたら即勝ち」
 // is instantWinCells 5 + immediate + units (the 「5体目で即勝ち」 bundle).
@@ -48,7 +48,7 @@ const firstSummon = (ctx: Ctx, s: GameState): Action => {
 
 // ------------------------------------------------------------- defaults
 
-test("defaults: turn_end + occupation everywhere (old URLs and presets keep today's コールド勝ち); both on the rules page in Japanese", () => {
+test("defaults: turn_end + occupation everywhere (old URLs and presets keep today's 即勝ち); both on the rules page in Japanese", () => {
   const d = defaultConfig();
   assert.equal(d.instantWinTiming, "turn_end");
   assert.equal(d.instantWinCount, "occupation");
@@ -59,7 +59,7 @@ test("defaults: turn_end + occupation everywhere (old URLs and presets keep toda
   for (const key of ["instantWinTiming", "instantWinCount"]) {
     const f = CONFIG_SCHEMA.find((x) => x.key === key);
     assert.ok(f !== undefined && f.kind === "choice" && f.group === "victory", key);
-    assert.match(f.label, /^コールド勝ちの/);
+    assert.match(f.label, /^即勝ち/);
     assert.ok(f.choices.every((c) => /[぀-ヿ一-鿿]/.test(c.label)));
   }
   const timing = CONFIG_SCHEMA.find((x) => x.key === "instantWinTiming");
@@ -79,12 +79,12 @@ test("immediate + units: the fifth summon wins on the spot, before the turn ends
   assert.equal(r.state.winType, "control");
   const e = gameEnd(r.events);
   assert.deepEqual(e.cold, { count: 5, by: "units", timing: "immediate", placed: true });
-  assert.ok(r.events.some((x) => x.t === "effect" && x.text === "先手: コールド勝ち(式神5体)"));
+  assert.ok(r.events.some((x) => x.t === "effect" && x.text === "先手: 即勝ち(式神5体)"));
   // the words the log and the result panel use
   const names: [string, string] = ["先手", "後手"];
-  assert.equal(resultHow("control", 0, names, undefined, e.cold), "5体目を置いて勝ち(コールド勝ち)");
+  assert.equal(resultHow("control", 0, names, undefined, e.cold), "5体目を置いて勝ち(即勝ち)");
   const line = describeEvent(ctx, names, e);
-  assert.ok(line !== null && line.text.includes("先手が5体目を置いて勝ち(コールド勝ち)"), line?.text);
+  assert.ok(line !== null && line.text.includes("先手が5体目を置いて勝ち(即勝ち)"), line?.text);
   // no further action is legal on an ended board through the flow; the AI sees a win
   assert.equal(meetsInstantWin(ctx, r.state, 0), true);
 });
@@ -99,7 +99,7 @@ test("turn_end (today): the same fifth summon only wins at the turn end", () => 
   endTurn(ctx, r.state, ev);
   assert.equal(r.state.winner, 0);
   assert.deepEqual(gameEnd(ev).cold, { count: 5, by: "units", timing: "turn_end" });
-  // and with コールド勝ち off nothing happens at all
+  // and with 即勝ち off nothing happens at all
   const off = sk({ instantWinTiming: "immediate", instantWinCount: "units" });
   const o = fourUnits(off);
   o.players[0].hand = ["sk03"];
@@ -121,7 +121,7 @@ test("immediate + units: 継承召喚 keeps the unit count — four stay four, n
 });
 
 test("immediate: judged after the counters — an attacker that falls to a counter is not counted", () => {
-  // a board standing on 5 (as when コールド勝ち is lowered mid-match) is judged
+  // a board standing on 5 (as when 即勝ち is lowered mid-match) is judged
   // at the next action's end, never before or inside it
   const ctx = sk(FIVE);
   const s = blankState(ctx, 10);
@@ -177,7 +177,7 @@ test("units vs occupation: a big unit (HP 11+ under controlCount hp) is 2 for �
   const ro = applyAction(occ, s, a);
   assert.equal(ro.state.winner, 0, "占拠 5");
   assert.deepEqual(gameEnd(ro.events).cold, { count: 5, by: "occupation", timing: "immediate", placed: true });
-  assert.equal(resultHow("control", 0, ["先手", "後手"], undefined, gameEnd(ro.events).cold), "コールド勝ち(占拠5)");
+  assert.equal(resultHow("control", 0, ["先手", "後手"], undefined, gameEnd(ro.events).cold), "即勝ち(占拠5)");
   const ru = applyAction(units, board(units), a);
   assert.equal(ru.state.ended, false, "4 units");
 });

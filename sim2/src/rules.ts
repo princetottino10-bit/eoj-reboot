@@ -485,7 +485,7 @@ export const legalActions = (ctx: Ctx, s: GameState): Action[] => {
 /**
  * Mutates `s`. Assumes `isLegal` already held. Occupied counts are rechecked
  * after every action (EXP-0913B 1.5; a no-op under the default controlHold),
- * and コールド勝ち under instantWinTiming "immediate" is judged once the
+ * and 即勝ち under instantWinTiming "immediate" is judged once the
  * action has fully resolved (a no-op under the default turn_end).
  */
 export const applyActionInPlace = (

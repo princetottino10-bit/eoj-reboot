@@ -300,12 +300,12 @@ export const recheckControl = (ctx: Ctx, s: GameState, events: GameEvent[]): voi
   }
 };
 
-/** 「式神5体」 / 「占拠7」: what a コールド勝ち counted. */
+/** 「式神5体」 / 「占拠7」: what a 即勝ち counted. */
 export const coldCountWords = (by: InstantWinCount, count: number): string =>
   by === "units" ? `式神${count}体` : `占拠${count}`;
 
 /**
- * コールド勝ち for p, checked at `timing`: the rule line, the control win and
+ * 即勝ち for p, checked at `timing`: the rule line, the control win and
  * the game end (winType "control", with `cold` saying how it was reached).
  * placed: the action that reached it was p's own summon / 継承召喚.
  */
@@ -320,7 +320,7 @@ export const coldWinNow = (
   const count = instantWinCountOf(ctx, s, p);
   const by = ctx.cfg.instantWinCount;
   const seat = p === 0 ? "先手" : "後手";
-  events.push({ t: "effect", player: p, source: "rule", uid: null, text: `${seat}: コールド勝ち(${coldCountWords(by, count)})` });
+  events.push({ t: "effect", player: p, source: "rule", uid: null, text: `${seat}: 即勝ち(${coldCountWords(by, count)})` });
   events.push(controlEvent(ctx, p, "win", controlNeed(ctx, s)));
   s.ended = true;
   s.winner = p;
@@ -331,7 +331,7 @@ export const coldWinNow = (
 
 /**
  * instantWinTiming "immediate": ends the game the moment a side stands on
- * コールド勝ち. Called only between resolutions - after an action has fully
+ * 即勝ち. Called only between resolutions - after an action has fully
  * resolved (counters, owner choices, effects) and after the turn-start
  * effects - never inside one. Both sides at once (an area attack, a heal that
  * lifts the other side): the turn player wins. A game already decided in the

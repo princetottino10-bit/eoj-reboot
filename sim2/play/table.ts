@@ -141,7 +141,7 @@ const SKELETON = `
 
 type SheetView = { kind: "grave"; seat: PlayerId } | { kind: "card"; cardId: string; fromSeat: PlayerId | null };
 
-/** The コールド勝ち the match ended with: the log's gameEnd says it exactly (with 「N体目を置いて」), else read off the board. */
+/** The 即勝ち the match ended with: the log's gameEnd says it exactly (with 「N体目を置いて」), else read off the board. */
 const coldOf = (m: TableModel): ColdWin | undefined => {
   for (let i = m.log.length - 1; i >= 0; i--) {
     const e = m.log[i].event;
