@@ -115,6 +115,13 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     dependsOn: { key: "freeSummonAttack", off: "off" },
   },
   {
+    key: "freeSummonAttackMinCost", group: "economy", kind: "int", min: 0, max: 15,
+    label: "コストなしになる召喚コスト", unit: "以上",
+    desc: "この召喚コスト(カードの印刷の値)以上の式神だけ、召喚した手番の1回目の攻撃がコストなし。0ならすべての式神。重い式神の巻き返し専用にしたいときに上げる",
+    midGame: true,
+    dependsOn: { key: "freeSummonAttack", off: "off" },
+  },
+  {
     key: "refundMode", group: "economy", kind: "choice",
     choices: [
       { value: "killer_half", label: "撃破した側" },

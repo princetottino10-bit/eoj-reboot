@@ -28,3 +28,14 @@ test("10/6案その2: 鎖鬼 and 首引の姫鬼 reach 2 cells, the top HP went 
   assert.deepEqual(presetConfig("r1006"), presetConfig("r1003"));
   assert.match(packLabel("adopted-1006"), /10\/6/);
 });
+
+test("召喚攻撃のコストなし、コスト7以上だけ: a cheap summon pays for its attack, a heavy one does not", async () => {
+  const { freeAttackFor } = await import("../src/rules.ts");
+  const { makeCtx } = await import("../src/state.ts");
+  const p = loadPack(packPath("adopted-1006"));
+  const ctx = makeCtx(presetConfig("r1006", { freeSummonAttack: "optional", freeSummonAttackMinCost: 7 }), p);
+  assert.equal(freeAttackFor(ctx, p.byId.get("ac03")!), false);
+  assert.equal(freeAttackFor(ctx, p.byId.get("ac15")!), true);
+  const all = makeCtx(presetConfig("r1006", { freeSummonAttack: "optional" }), p);
+  assert.equal(freeAttackFor(all, p.byId.get("ac03")!), true);
+});

@@ -280,6 +280,7 @@ ${schemaHelpText()}
     instantWinCount: pick("instant-win-count", ["occupation", "units"] as const, base.instantWinCount) as InstantWinCount,
     freeSummonAttack: pick("free-summon-attack", ["off", "optional"] as const, base.freeSummonAttack) as FreeSummonAttack,
     freeSummonAttackInherit: onOff("free-summon-attack-inherit", base.freeSummonAttackInherit),
+    freeSummonAttackMinCost: intIn(args, "free-summon-attack-min-cost", 0, 15, base.freeSummonAttackMinCost),
   };
   const printed = loadPack(packPath(packName));
   const pack: CardPack = bundle === null ? printed : settingsPack(bundle, printed);
@@ -355,6 +356,7 @@ ${schemaHelpText()}
       instantWinCount: cfg.instantWinCount,
       freeSummonAttack: cfg.freeSummonAttack,
       freeSummonAttackInherit: cfg.freeSummonAttackInherit,
+      freeSummonAttackMinCost: cfg.freeSummonAttackMinCost,
     },
     elapsedMs: Math.round(elapsedMs),
   };

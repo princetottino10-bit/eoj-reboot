@@ -50,6 +50,10 @@ import type {
  * The card's summon cost before positional discounts. EXP-0913
  * summonCostScale:"half" halves it (round up, floor 1).
  */
+/** Does this card's summon-turn attack go free? (freeSummonAttack, from the printed cost freeSummonAttackMinCost up) */
+export const freeAttackFor = (ctx: Ctx, card: CardDef): boolean =>
+  ctx.cfg.freeSummonAttack === "optional" && card.summonCost >= ctx.cfg.freeSummonAttackMinCost;
+
 export const baseSummonCost = (ctx: Ctx, card: CardDef): number =>
   ctx.cfg.summonCostScale === "half"
     ? Math.max(1, Math.ceil(card.summonCost / 2))
@@ -225,7 +229,7 @@ const applyInherit = (
     hiddenBy: null,
     atkBuff: 0,
     // the inherited 攻撃済み still blocks: the free attack only goes to one that may attack
-    ...(ctx.cfg.freeSummonAttack === "optional" && ctx.cfg.freeSummonAttackInherit && !old.attackedThisTurn
+    ...(freeAttackFor(ctx, card) && ctx.cfg.freeSummonAttackInherit && !old.attackedThisTurn
       ? { freeAttack: true as const }
       : {}),
   };
@@ -534,7 +538,7 @@ const applyActionCore = (
       summonedThisTurn: true,
       hiddenBy: null,
       atkBuff: 0,
-      ...(ctx.cfg.freeSummonAttack === "optional" ? { freeAttack: true as const } : {}),
+      ...(freeAttackFor(ctx, card) ? { freeAttack: true as const } : {}),
     };
     s.nextUid += 1;
     s.units.push(unit);

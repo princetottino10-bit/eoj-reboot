@@ -27,7 +27,7 @@ const SEED0 = 20261004;
 
 // ------------------------------------------------------------------ what to vary
 
-type Variant = { id: string; label: string; cfg?: Partial<Config>; cards?: (p: CardPack) => CardOverrides };
+type Variant = { id: string; label: string; cfg?: Partial<Config>; cards?: (p: CardPack) => CardOverrides; rule?: "r1003" | "r1006"; pack?: string };
 
 const costAtLeast = (n: number, dh: number) => (p: CardPack): CardOverrides =>
   Object.fromEntries(p.cards.filter((c) => c.kind === "shikigami" && c.summonCost >= n).map((c) => [c.id, { hp: Math.max(1, c.hp + dh) }]));
@@ -261,7 +261,33 @@ export const VICTIM_SET: readonly Variant[] = [
   { id: "ryuV1", label: "りゅー案+倒された側が1もらう(割引・召喚攻撃無料なし)", cfg: { ...RYU, ...VICTIM1 }, cards: ryuCards },
 ];
 
-const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET, team: TEAM_SET, ryu: RYU_SET, ryu2: RYU2_SET, victim: VICTIM_SET };
+/** 並べて勝つ・重いので巻き返す案 on the 10/6案その2 cards (2026-10-07): what else to tune. */
+const LINEUP_CFG = {
+  ...COLD5, summonLimit: 2, underdogDiscount: 3, underdogDiscountMinCost: 7, underdogBy: "cells",
+  ...FREE, refundMode: "half", killRewardBase: "zero", killRewardBonus: 1,
+} as const;
+const LINEUP_CARDS = (): CardOverrides => ({ ac06: { aoe: false }, ac09: { aoe: false }, ac13: { aoe: true }, ac15: { aoe: true } });
+const on1006 = (v: Omit<Variant, "rule" | "pack">): Variant => ({ ...v, rule: "r1006", pack: "adopted-1006" });
+const lineUp = (id: string, label: string, cfg: Partial<Config> = {}, extra?: (p: CardPack) => CardOverrides): Variant =>
+  on1006({ id, label, cfg: { ...LINEUP_CFG, ...cfg }, cards: extra === undefined ? LINEUP_CARDS : merge(LINEUP_CARDS, extra) });
+const ATTR_ALL_6 = (p: CardPack): CardOverrides =>
+  Object.fromEntries(p.cards.filter((c) => c.kind === "shikigami" && c.summonCost === 6 && c.attackRange.length > 0).map((c) => [c.id, { aoe: true }]));
+
+export const LINEUP_SET: readonly Variant[] = [
+  on1006({ id: "base", label: "10/6案(10/3ルール+10/6案その2の札)" }),
+  lineUp("lineUp", "並べて勝つ・重いので巻き返す案(そのまま)"),
+  lineUp("free7", "+召喚攻撃無料はコスト7以上だけ", { freeSummonAttackMinCost: 7 }),
+  lineUp("u2", "+負けている側の割引を−2に", { underdogDiscount: 2 }),
+  lineUp("victim2", "+倒された側の霊力を2に", { killRewardBonus: 2 }),
+  lineUp("cost4", "+3コスを無くす(4種を4コストに)", {}, cost3to4),
+  lineUp("mana58", "+先手の初期霊力5(6/8→5/8)", { startMana: [5, 8] }),
+  lineUp("mana69", "+後手の初期霊力9(6/8→6/9)", { startMana: [6, 9] }),
+  lineUp("aoe6", "+範囲をコスト6以上に(雲外鏡・照魔鏡も範囲)", {}, ATTR_ALL_6),
+  lineUp("free7cost4", "+召喚攻撃無料はコスト7以上だけ+3コスを無くす", { freeSummonAttackMinCost: 7 }, cost3to4),
+  lineUp("free7mana58", "+召喚攻撃無料はコスト7以上だけ+先手の初期霊力5", { freeSummonAttackMinCost: 7, startMana: [5, 8] }),
+];
+
+const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET, team: TEAM_SET, ryu: RYU_SET, ryu2: RYU2_SET, victim: VICTIM_SET, lineup: LINEUP_SET };
 const SET_NAME = (() => {
   const i = process.argv.indexOf("--set");
   return i === -1 ? "single" : (process.argv[i + 1] ?? "single");
@@ -295,9 +321,9 @@ type Game = {
 const runJob = (vi: number, ai: number, from: number, to: number): Game[] => {
   const v = V[vi];
   const a = AIS[ai];
-  const printed = loadPack(packPath("adopted-1003"));
+  const printed = loadPack(packPath(v.pack ?? "adopted-1003"));
   const pack = v.cards === undefined ? printed : applyCardOverrides(printed, v.cards(printed));
-  const ctx = makeCtx(presetConfig("r1003", v.cfg ?? {}), pack);
+  const ctx = makeCtx(presetConfig(v.rule ?? "r1003", v.cfg ?? {}), pack);
   const out: Game[] = [];
   for (let seed = from; seed < to; seed++) {
     const mk = () => makeAi(a.kind, a.style, { strong: { timeLimitMs: 60000 } });
@@ -481,7 +507,7 @@ td.ai{min-width:150px}.bar{position:relative;display:inline-block;width:110px;he
 .v-faster{color:var(--fast);font-weight:700}.v-slower{color:var(--slow);font-weight:700}.v-split{color:var(--gold);font-weight:700}.v-none{color:var(--dim)}
 .fw{font-size:12px;color:var(--dim)}
 </style></head><body>
-<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : SET_NAME === "team" ? "10/5のチームの案を並べる(10/3テスト案と比べる)" : SET_NAME === "ryu" || SET_NAME === "ryu2" || SET_NAME === "victim" ? "低コスを並べて勝つ・高コスで倒して巻き返す、を通す調整(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
+<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : SET_NAME === "team" ? "10/5のチームの案を並べる(10/3テスト案と比べる)" : SET_NAME === "ryu" || SET_NAME === "ryu2" || SET_NAME === "victim" || SET_NAME === "lineup" ? "低コスを並べて勝つ・高コスで倒して巻き返す、を通す調整(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
 <p class="note">各案・各AIで${games}局ずつ。どの案も同じ乱数の種(同じ配り)で対局させ、基準との差を局ごとに取っています。数字は決着ラウンドの平均の差(マイナス=速く決着)。点がうすいのは95%の幅が0をまたぐ(差があると言い切れない)もの。全部のAIで同じ向きに言い切れた変数だけ「一致」と書きます。計算 ${Math.round(seconds / 60)}分。</p>
 <h2>基準(10/3テスト案)</h2>
 <div class="wrap"><table><thead><tr><th>AI</th><th>決着ラウンド 中央値</th><th>遅い1割</th><th>第10ラウンド超</th><th>先手勝率</th><th>引き分け</th><th>撃破/局</th><th>決着の仕方</th></tr></thead><tbody>

@@ -327,6 +327,8 @@ export type Config = {
   freeSummonAttack: FreeSummonAttack;
   /** freeSummonAttack also for a unit placed by 継承召喚 (only while it may still attack). */
   freeSummonAttackInherit: boolean;
+  /** freeSummonAttack only for shikigami printed at this summon cost or more (0 = all). */
+  freeSummonAttackMinCost: number;
 };
 
 export const defaultConfig = (): Config => ({
@@ -389,6 +391,7 @@ export const defaultConfig = (): Config => ({
   instantWinCount: "occupation",
   freeSummonAttack: "off",
   freeSummonAttackInherit: false,
+  freeSummonAttackMinCost: 0,
 });
 
 /**
