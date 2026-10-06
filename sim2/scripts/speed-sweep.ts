@@ -307,7 +307,26 @@ export const LINEUP2_SET: readonly Variant[] = [
   lu2("area6heavy2", "+低コス2枚+範囲を6以上に+範囲の札(6以上)を2枚ずつ", lineUpCards(6, copiesFrom(6, 99, 2))),
 ];
 
-const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET, team: TEAM_SET, ryu: RYU_SET, ryu2: RYU2_SET, victim: VICTIM_SET, lineup: LINEUP_SET, lineup2: LINEUP2_SET };
+/**
+ * 中コスは空洞、軽いのと重いのを増やす (2026-10-07): the deck as a barbell, so the
+ * hand-size discard is "keep the light ones to win next turn, or a heavy one to
+ * strike back". Mid = printed cost 5-6 (変面・一角鬼・一目鬼・雲外鏡・照魔鏡).
+ */
+const barbell = (lightN: number, lightMax: number, heavyN: number, areaFrom = 7) =>
+  merge(aoeFrom(areaFrom, true), copiesFrom(5, 6, 0), copiesFrom(3, lightMax, lightN), copiesFrom(7, 99, heavyN));
+export const BARBELL_SET: readonly Variant[] = [
+  on1006({ id: "base", label: "10/6案(10/3ルール+10/6案その2の札)" }),
+  lineUp("lineUp", "並べて勝つ案そのまま(23枚)"),
+  lu2("bb_l2_h1", "中コス抜き+軽い(コスト3)2枚ずつ・重い1枚ずつ(22枚)", barbell(2, 3, 1)),
+  lu2("bb_l2_h2", "中コス抜き+軽い(コスト3)2枚ずつ・重い2枚ずつ(28枚)", barbell(2, 3, 2)),
+  lu2("bb_l2x4_h2", "中コス抜き+軽い(コスト3〜4)2枚ずつ・重い2枚ずつ(30枚)", barbell(2, 4, 2)),
+  lu2("bb_l3_h2", "中コス抜き+軽い(コスト3)3枚ずつ・重い2枚ずつ(32枚)", barbell(3, 3, 2)),
+  lu2("bb_l2_h2_mana", "中コス抜き+軽い2枚・重い2枚+先手の初期霊力5", barbell(2, 3, 2), { startMana: [5, 8] }),
+  lu2("bb_l2_h2_u2", "中コス抜き+軽い2枚・重い2枚+負けている側の割引−2", barbell(2, 3, 2), { underdogDiscount: 2 }),
+  lu2("bb_l2_h2_nofree", "中コス抜き+軽い2枚・重い2枚+召喚攻撃は有料", barbell(2, 3, 2), { freeSummonAttack: "off" }),
+];
+
+const SETS: Record<string, readonly Variant[]> = { single: VARIANTS, freeAtk: FREE_ATK_COMBOS, deck: DECK_SET, length: LENGTH_SET, heavy: HEAVY_SET, limit: LIMIT_SET, limit2: LIMIT2_SET, team: TEAM_SET, ryu: RYU_SET, ryu2: RYU2_SET, victim: VICTIM_SET, lineup: LINEUP_SET, lineup2: LINEUP2_SET, barbell: BARBELL_SET };
 const SET_NAME = (() => {
   const i = process.argv.indexOf("--set");
   return i === -1 ? "single" : (process.argv[i + 1] ?? "single");
@@ -527,7 +546,7 @@ td.ai{min-width:150px}.bar{position:relative;display:inline-block;width:110px;he
 .v-faster{color:var(--fast);font-weight:700}.v-slower{color:var(--slow);font-weight:700}.v-split{color:var(--gold);font-weight:700}.v-none{color:var(--dim)}
 .fw{font-size:12px;color:var(--dim)}
 </style></head><body>
-<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : SET_NAME === "team" ? "10/5のチームの案を並べる(10/3テスト案と比べる)" : SET_NAME === "ryu" || SET_NAME === "ryu2" || SET_NAME === "victim" || SET_NAME === "lineup" || SET_NAME === "lineup2" ? "低コスを並べて勝つ・高コスで倒して巻き返す、を通す調整(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
+<h1>${SET_NAME === "single" ? "決着の速さの感度(10/3テスト案から1つずつ動かす)" : SET_NAME === "deck" ? "デッキの構成と枚数(10/3テスト案と比べる)" : SET_NAME === "length" ? "組み合わせ案を少し長くする(10/3テスト案と比べる)" : SET_NAME === "heavy" ? "軽いのを並べて重いので倒す: 範囲攻撃を重い札に(10/3テスト案と比べる)" : SET_NAME === "limit" ? "5体目で即勝ちのまま、1ターンの召喚数で長さを調える(10/3テスト案と比べる)" : SET_NAME === "limit2" ? "5体目で即勝ち・召喚2体まで(固定)の上に何を足すか(10/3テスト案と比べる)" : SET_NAME === "team" ? "10/5のチームの案を並べる(10/3テスト案と比べる)" : SET_NAME === "ryu" || SET_NAME === "ryu2" || SET_NAME === "victim" || SET_NAME === "lineup" || SET_NAME === "lineup2" || SET_NAME === "barbell" ? "低コスを並べて勝つ・高コスで倒して巻き返す、を通す調整(10/3テスト案と比べる)" : "召喚攻撃無料を軸にした組み合わせ(10/3テスト案と比べる)"}</h1>
 <p class="note">各案・各AIで${games}局ずつ。どの案も同じ乱数の種(同じ配り)で対局させ、基準との差を局ごとに取っています。数字は決着ラウンドの平均の差(マイナス=速く決着)。点がうすいのは95%の幅が0をまたぐ(差があると言い切れない)もの。全部のAIで同じ向きに言い切れた変数だけ「一致」と書きます。計算 ${Math.round(seconds / 60)}分。</p>
 <h2>基準(10/3テスト案)</h2>
 <div class="wrap"><table><thead><tr><th>AI</th><th>決着ラウンド 中央値</th><th>遅い1割</th><th>第10ラウンド超</th><th>先手勝率</th><th>引き分け</th><th>撃破/局</th><th>決着の仕方</th></tr></thead><tbody>
