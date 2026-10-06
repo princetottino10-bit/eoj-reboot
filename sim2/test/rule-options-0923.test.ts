@@ -61,7 +61,7 @@ test("defaults: every new setting reproduces today's rules, in the engine defaul
   for (const id of RULE_PRESET_IDS) {
     const c = presetConfig(id) as unknown as Record<string, unknown>;
     // 10/3テスト案 adopts the HP count (HP 11+ = 2 cells): adopted-1003.test.ts
-    const exp = id === "r1003" ? { ...want, controlCount: "hp" } : want;
+    const exp = id === "r1003" || id === "r1006" ? { ...want, controlCount: "hp" } : want;
     for (const [k, v] of Object.entries(exp)) assert.equal(c[k], v, `${id} ${k}`);
   }
   // every one of them is on the /rules page, in Japanese

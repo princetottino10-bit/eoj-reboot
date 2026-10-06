@@ -23,7 +23,7 @@ import type { PlayablePack, RulePresetId } from "./presets.ts";
 import { changedItemCount, normalizeSettings, parseSettings, settingsConfig } from "./settings.ts";
 import type { GameSettings } from "./settings.ts";
 
-export const SETTING_PRESET_IDS = ["adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive", "freeSummon"] as const;
+export const SETTING_PRESET_IDS = ["lineUp", "adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive", "freeSummon"] as const;
 export type SettingPresetId = (typeof SETTING_PRESET_IDS)[number];
 
 export type SettingPreset = {
@@ -201,7 +201,38 @@ const FREE_SUMMON: SettingPreset = {
   overlay: true,
 };
 
+/**
+ * 並べて勝つ・重いので巻き返す (2026-10-05 designer proposal, measured with
+ * sim2/scripts/speed-sweep.ts --set victim): cheap shikigami fill the board
+ * single-target, area attacks belong to the cost-7+ ones, the side behind
+ * gets them cheaper and may strike at once, and losing a unit pays 1.
+ * Five AIs: 先手 48-55%, about half the kills by cost-7+ cards.
+ */
+const LINE_UP: SettingPreset = {
+  id: "lineUp",
+  label: "並べて勝つ・重いので巻き返す案",
+  note: "低コスを並べて勝ち、負けている側は高コスの範囲攻撃で巻き返す案。5体目で即勝ち(置いた瞬間・式神の数)、召喚は1ターン2体まで。範囲攻撃はコスト7以上だけ(僵尸公主・茨木童子を範囲に、鎖鬼・一目鬼を単体に)。占拠が相手より少ない側は、コスト7以上の召喚が3安い。召喚した手番の1回目の攻撃はコストなし(継承召喚も)。式神を倒されたら、倒された側が霊力1をもらう(倒した側はもらわない)。札は10/6案その2。",
+  rule: "r1006",
+  pack: "adopted-1006",
+  config: {
+    instantWinCells: 5,
+    instantWinTiming: "immediate",
+    instantWinCount: "units",
+    summonLimit: 2,
+    underdogDiscount: 3,
+    underdogDiscountMinCost: 7,
+    underdogBy: "cells",
+    freeSummonAttack: "optional",
+    freeSummonAttackInherit: true,
+    refundMode: "half",
+    killRewardBase: "zero",
+    killRewardBonus: 1,
+  },
+  cards: { ac06: { aoe: false }, ac09: { aoe: false }, ac13: { aoe: true }, ac15: { aoe: true } },
+};
+
 export const SETTING_PRESETS: Record<SettingPresetId, SettingPreset> = {
+  lineUp: LINE_UP,
   adj15: ADJ15,
   adj15life: ADJ15_LIFE,
   incomeNow: INCOME_NOW,
