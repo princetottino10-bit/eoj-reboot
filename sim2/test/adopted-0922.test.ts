@@ -224,13 +224,15 @@ test("ad01 灯籠の精: on death +2 HP to a surviving ally (no answer given: th
   const ib = place(s, "ad15", 0, 0, 0, 0); // 茨木童子 ATK5, range (0,2) (1,2) (0,1) (1,1)
   const toro = place(s, "ad01", 1, 0, 2, 2); // HP4 corner
   const ryomen = place(s, "ad14", 1, 2, 2, 2); // cost 7, damaged 3
-  const cheap = place(s, "ad03", 1, 2, 0, 0); // cost 3, damaged 1
-  unitByUid(s, ryomen)!.damage = 3;
-  unitByUid(s, cheap)!.damage = 1;
+  const cheap = place(s, "ad03", 1, 2, 0, 0); // cost 3, printed HP 3
+  unitByUid(s, ryomen)!.damage = 3; // HP 5: gains the full +2
+  // No per-unit max: a heal goes past the printed HP up to the board limit
+  // (15 under r0923). cheap sits at HP 14, so it would gain only 1.
+  unitByUid(s, cheap)!.damage = 3 - (ctx.cfg.maxHp - 1);
   const r = applyAction(ctx, s, { kind: "attack", uid: ib, targetUid: toro });
   assert.equal(unitByUid(r.state, toro), undefined);
   assert.equal(unitByUid(r.state, ryomen)!.damage, 1);
-  assert.equal(unitByUid(r.state, cheap)!.damage, 1);
+  assert.equal(unitHp(ctx, unitByUid(r.state, cheap)!), ctx.cfg.maxHp - 1, "untouched");
   assert.ok(effects(r.events).some((t) => t.includes("灯籠の精") && t.includes("HP+2")));
 });
 
@@ -327,7 +329,7 @@ test("案A: no choice is asked when every order gives the same board; jutsu unit
   assert.deepEqual(counterersOf(jutsu, s, act), []);
 });
 
-test("ad15 茨木童子【再生】: 1 more mana, HP+1 after the exchange (counters included), capped at its max", () => {
+test("ad15 茨木童子【再生】: 1 more mana, HP+1 after the exchange (counters included), up to the board's HP limit", () => {
   const ctx = r0923();
   const s = blankState(ctx, 10);
   const ib = place(s, "ad15", 0, 0, 0, 0); // HP 9, range (0,2) (1,2) (0,1) (1,1)

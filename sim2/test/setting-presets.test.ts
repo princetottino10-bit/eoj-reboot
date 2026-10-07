@@ -145,7 +145,7 @@ test("調整案1.5倍: every rule value and every card number is the 9/15 sheet'
   }
   // the badge count: 4 rule variables + 50 card numbers that really differ
   const diff = settingsDiff(s);
-  assert.equal(diff.rules.length, 4, "初期霊力・毎ターン収入・属性ボーナス・最大HP");
+  assert.equal(diff.rules.length, 4, "初期霊力・毎ターン収入・属性ボーナス・HPの上限");
   assert.equal(diff.cards, 50);
   assert.equal(changedItemCount(s), 54);
   assert.deepEqual(

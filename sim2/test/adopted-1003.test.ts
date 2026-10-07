@@ -129,9 +129,7 @@ test("r1003 = 10/3テスト案: the numbers, and it is the default for new rooms
   // everything else is r0923
   const base = presetConfig("r0923");
   assert.equal(base.deckOutMode, "none");
-  assert.equal(cfg.healCap, "board");
-  assert.equal(base.healCap, "unit");
-  const same = { ...cfg, chipIncomeSteps: base.chipIncomeSteps, taijiDiscount: base.taijiDiscount, maxHp: base.maxHp, healCap: base.healCap, controlCount: base.controlCount, deckOutMode: base.deckOutMode };
+  const same = { ...cfg, chipIncomeSteps: base.chipIncomeSteps, taijiDiscount: base.taijiDiscount, maxHp: base.maxHp, controlCount: base.controlCount, deckOutMode: base.deckOutMode };
   assert.deepEqual(same, base);
   assert.equal(RULE_PRESETS.r1003.label, "10/3テスト案");
   assert.equal(RULE_PRESETS.r1003.defaultPack, "adopted-1003");
@@ -206,8 +204,8 @@ test("占拠: a unit at HP 11 or more counts 2, and damage below 11 makes it 1",
 
 // ------------------------------------------------------------ the effects
 
-test("ac07 変面 (10/3): the heal on an ally restores the full ATK, capped at the target's max; the 9/22 card keeps ceil(ATK/2)", () => {
-  const ctx = r1003({ healCap: "unit" }); // the per-unit cap is an option since 10/7 (test/rules-1007)
+test("ac07 変面 (10/3): the heal on an ally restores the full ATK, past the card's HP (no per-unit max); the 9/22 card keeps ceil(ATK/2)", () => {
+  const ctx = r1003();
   const build = (c: Ctx, hen: string, ally: string, damage: number): { s: GameState; h: number; a: number } => {
     const s = blankState(c, 10);
     const h = place(s, hen, 0, 1, 0, 0); // ATK 3, range front-left / front-right: (0,1) (2,1)
@@ -221,9 +219,9 @@ test("ac07 変面 (10/3): the heal on an ally restores the full ATK, capped at t
   const r = applyAction(ctx, b.s, { kind: "attack", uid: b.h, targetUid: b.a, variant: "heal" });
   assert.equal(hpOf(ctx, r.state, b.a), 1 + 3, "ATK 3 in full");
   assert.equal(r.state.players[0].mana, 10 - 3, "the attack cost");
-  // capped at the target's max (5)
+  // no per-unit max: 4 + 3 goes past the card's 5
   const c = build(ctx, "ac07", "ac02", 1); // HP 4
-  assert.equal(hpOf(ctx, applyAction(ctx, c.s, { kind: "attack", uid: c.h, targetUid: c.a, variant: "heal" }).state, c.a), 5);
+  assert.equal(hpOf(ctx, applyAction(ctx, c.s, { kind: "attack", uid: c.h, targetUid: c.a, variant: "heal" }).state, c.a), 7);
   // the 9/22 変面 under r0923 still heals ceil(3/2) = 2
   const old = makeCtx(presetConfig("r0923"), AD);
   const o = build(old, "ad07", "ad02", 4);
@@ -238,7 +236,7 @@ test("ac07 変面 (10/3): the heal on an ally restores the full ATK, capped at t
 });
 
 test("ac15 茨木童子【再生】: HP+1 on every attack, free, before the counter (it survives a counter it would not have)", () => {
-  const ctx = r1003({ healCap: "unit" }); // the per-unit cap is an option since 10/7 (test/rules-1007)
+  const ctx = r1003();
   const s = blankState(ctx);
   const ibaraki = place(s, "ac15", 0, 0, 0, 0); // empty cell, HP 9; reaches (0,2) with its -2
   const ikkaku = place(s, "ac08", 1, 0, 2, 2); // 一角鬼 HP 8 facing south: counters (0,0) with its -2, ATK 2
@@ -251,13 +249,13 @@ test("ac15 茨木童子【再生】: HP+1 on every attack, free, before the coun
   assert.equal(hpOf(ctx, r.state, ibaraki), 1, "2 + 1 (再生) - 2 (counter)");
   const order = r.events.map((e) => (e.t === "effect" && e.text.includes("再生") ? "regen" : e.t === "attack" ? "attack" : e.t)).filter((t) => t === "regen" || t === "attack");
   assert.deepEqual(order, ["regen", "attack"]);
-  // at full HP it stays at its max
+  // at full HP it still grows (no per-unit max)
   const s2 = blankState(ctx);
   const ib2 = place(s2, "ac15", 0, 0, 0, 0);
   const ik2 = place(s2, "ac08", 1, 0, 2, 2);
   const r2 = applyAction(ctx, s2, { kind: "attack", uid: ib2, targetUid: ik2 });
-  assert.equal(hpOf(ctx, r2.state, ib2), 7, "9, capped, then the counter 2");
-  assert.ok(texts(r2.events).includes("【再生】HPは最大のまま"));
+  assert.equal(hpOf(ctx, r2.state, ib2), 8, "9 + 1, then the counter 2");
+  assert.ok(texts(r2.events).includes("【再生】HP+1(反撃の前)"));
   // effects off: no regen, the counter kills it
   const off = makeCtx(presetConfig("r1003", { effects: false }), AC);
   const s3 = blankState(off);
@@ -305,8 +303,8 @@ test("ac17 玖龍街: its attack takes no blind bonus and no counter; it proxy-r
   assert.ok(rotateCommandLocked(old, so, 1));
 });
 
-test("琵琶牧々 (tm20): every own unit HP+2, capped at its max", () => {
-  const ctx = r1003({ healCap: "unit" }); // the per-unit cap is an option since 10/7 (test/rules-1007)
+test("琵琶牧々 (tm20): every own unit HP+2, past the card's HP", () => {
+  const ctx = r1003();
   const s = blankState(ctx);
   s.players[0].hand = ["ac20"];
   const a = place(s, "ac08", 0, 0, 0, 0); // HP 8
@@ -318,7 +316,7 @@ test("琵琶牧々 (tm20): every own unit HP+2, capped at its max", () => {
   const r = applyAction(ctx, s, { kind: "reigu", handIndex: 0, targetUid: null, facing: null });
   assert.equal(r.state.players[0].mana, 20 - 6);
   assert.equal(hpOf(ctx, r.state, a), 5);
-  assert.equal(hpOf(ctx, r.state, b), 3);
+  assert.equal(hpOf(ctx, r.state, b), 4, "2 + 2: past the card's 3");
   assert.equal(hpOf(ctx, r.state, e), 5, "the enemy is untouched");
 });
 

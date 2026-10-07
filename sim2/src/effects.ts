@@ -300,7 +300,7 @@ export const variantExtraCost = (ctx: Ctx, u: Unit, variant: AttackVariant): num
 
 /**
  * ac15 茨木童子【再生】 (10/3): HP+1 on every attack (summon-attack included, no
- * extra mana), after the hits and before the counters; capped at healCeiling.
+ * extra mana), after the hits and before the counters; capped at the board's HP limit.
  * No-op for any other card and for the heal variant.
  */
 export const onAttackBeforeCounters = (ctx: Ctx, attacker: Unit, variant: AttackVariant, events: GameEvent[]): void => {
@@ -310,7 +310,7 @@ export const onAttackBeforeCounters = (ctx: Ctx, attacker: Unit, variant: Attack
   const before = unitHp(ctx, attacker);
   healUnit(ctx, attacker, amount);
   const gained = unitHp(ctx, attacker) - before;
-  log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? `【再生】HP+${gained}(反撃の前)` : "【再生】HPは最大のまま");
+  log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? `【再生】HP+${gained}(反撃の前)` : `【再生】HPは上限(${ctx.cfg.maxHp})のまま`);
 };
 
 /** ac17 玖龍街 (10/3): this unit's attacks ignore blind spots and counter ranges. */
@@ -366,7 +366,7 @@ export const onAfterAttack = (
     const before = unitHp(ctx, attacker);
     healUnit(ctx, attacker, 1);
     const gained = unitHp(ctx, attacker) - before;
-    log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? "【再生】HP+1" : "【再生】HPは最大のまま");
+    log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? "【再生】HP+1" : `【再生】HPは上限(${ctx.cfg.maxHp})のまま`);
   }
 };
 

@@ -218,17 +218,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   },
   {
     key: "maxHp", group: "board", kind: "int", min: 1, max: 20,
-    label: "最大HP", desc: "盤上のHPの上限(属性ボーナスを含む)。回復もここで切り捨て", midGame: true,
-  },
-  {
-    key: "healCap", group: "board", kind: "choice",
-    choices: [
-      { value: "board", label: "盤上の上限まで" },
-      { value: "unit", label: "その式神のHPまで" },
-    ],
-    label: "回復の上限",
-    desc: "盤上の上限まで: 回復は最大HP(盤上の上限)まで伸びる。式神ごとの最大HPはない。その式神のHPまで: 印刷のHP(属性の増減込み)より上には回復しない",
-    midGame: true,
+    label: "HPの上限", desc: "盤上のHPの上限(属性ボーナスを含む)。回復はカードのHPを超えてここまで伸び、超えた分は切り捨て。式神ごとの最大HPはない", midGame: true,
   },
   // -------------------------------------------------------------- action
   {

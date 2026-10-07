@@ -58,7 +58,9 @@ type Scene = { opts: FlowOptions; ids: Ids; action: () => Action };
 
 /**
  * 茨木童子 (seat 0) strikes seat 1's 灯籠の精 (HP 4, ATK 5 kills it). Seat 1
- * keeps 両面 (3 damage) and 影鬼 (1 damage): two candidates.
+ * keeps 両面 (3 damage: gains the full +2) and 影鬼 one below the board's HP
+ * limit cfg.maxHp (no per-unit max: it was healed past its printed HP 3, and
+ * gains only +1 more): two candidates.
  */
 const strikeScene = (tweak: (s: GameState, ids: Ids, ctx: Ctx) => void = () => {}): Scene => {
   const ids: Ids = {};
@@ -70,7 +72,7 @@ const strikeScene = (tweak: (s: GameState, ids: Ids, ctx: Ctx) => void = () => {
       ids.ryomen = place(s, "ad14", 1, 2, 2, 2);
       ids.cheap = place(s, "ad03", 1, 2, 0, 0);
       unitByUid(s, ids.ryomen)!.damage = 3;
-      unitByUid(s, ids.cheap)!.damage = 1;
+      setHp(ctx, s, ids.cheap, ctx.cfg.maxHp - 1);
       s.players[0].mana = 10;
       tweak(s, ids, ctx);
     },
@@ -86,7 +88,7 @@ const flowOf2 = (ctx: Ctx, sc: Scene): Flow => {
 
 // ------------------------------------------------------------------ engine
 
-test("engine: the owner's pick is healed (capped at max HP); a full ally may be picked and gains 0; no pick = the default", () => {
+test("engine: the owner's pick is healed (up to the board's HP limit); an ally at the limit may be picked and gains 0; no pick = the default", () => {
   const ctx = r0923();
   const sc = strikeScene();
   const s = createFlow(ctx, 11, sc.opts).state;
@@ -97,17 +99,17 @@ test("engine: the owner's pick is healed (capped at max HP); a full ally may be 
   assert.equal(asks[0].owner, 1);
   assert.equal(asks[0].amount, 2);
   assert.deepEqual(asks[0].options.map((o) => [o.uid, o.gain]), [[ids.ryomen, 2], [ids.cheap, 1]]);
-  // 両面 +2, 影鬼 +1 only (capped at its max)
+  // 両面 +2, 影鬼 +1 only (stops at cfg.maxHp)
   const toRyomen = withLanternPicks([ids.ryomen], () => applyAction(ctx, s, a)).result.state;
   assert.equal(hpOf(ctx, toRyomen, ids.ryomen), hpOf(ctx, s, ids.ryomen) + 2);
   assert.equal(hpOf(ctx, toRyomen, ids.cheap), hpOf(ctx, s, ids.cheap));
   const toCheap = withLanternPicks([ids.cheap], () => applyAction(ctx, s, a));
-  assert.equal(hpOf(ctx, toCheap.result.state, ids.cheap), unitMaxHp(ctx, unitByUid(s, ids.cheap)!));
+  assert.equal(hpOf(ctx, toCheap.result.state, ids.cheap), ctx.cfg.maxHp);
   assert.ok(toCheap.result.events.some((e) => e.t === "effect" && e.text === "灯籠の精の灯 → 影鬼 HP+1"));
-  // a full-HP pick is allowed and heals nothing
-  const full = createFlow(ctx, 11, strikeScene((st, i) => (unitByUid(st, i.ryomen)!.damage = 0)).opts).state;
+  // a pick already at the board's HP limit is allowed and heals nothing
+  const full = createFlow(ctx, 11, strikeScene((st, i, c) => setHp(c, st, i.ryomen, c.cfg.maxHp)).opts).state;
   const toFull = withLanternPicks([ids.ryomen], () => applyAction(ctx, full, a)).result;
-  assert.equal(unitByUid(toFull.state, ids.ryomen)!.damage, 0);
+  assert.equal(hpOf(ctx, toFull.state, ids.ryomen), ctx.cfg.maxHp);
   assert.ok(toFull.events.some((e) => e.t === "effect" && e.text === "灯籠の精の灯 → 両面 HP+0"));
   // no answer (headless): the most HP gained
   assert.equal(defaultLanternPick(ctx, s, asks[0]), ids.ryomen);
@@ -125,7 +127,7 @@ test("engine: one candidate is healed without asking; a hidden ally (マヨヒ�
   assert.deepEqual(lanternAsks(ctx, s, a, []), []);
   const r = applyAction(ctx, s, a);
   assert.equal(hpOf(ctx, r.state, sc.ids.ryomen), hpOf(ctx, s, sc.ids.ryomen) + 2);
-  assert.equal(unitByUid(r.state, sc.ids.cheap)!.damage, 1);
+  assert.equal(hpOf(ctx, r.state, sc.ids.cheap), hpOf(ctx, s, sc.ids.cheap));
   // alone on the board: no heal, no line
   const alone = strikeScene((st, ids) => (st.units = st.units.filter((u) => u.uid === ids.ib || u.uid === ids.toro)));
   const s2 = createFlow(ctx, 11, alone.opts).state;
@@ -147,18 +149,18 @@ test("engine: an area attack that destroys two lanterns and an ally asks twice, 
   const keepB = place(s, "ad04", 1, 2, 0, 0);
   for (const u of [t1, t2, dying]) setHp(ctx, s, u, 1);
   unitByUid(s, keepA)!.damage = 4;
-  unitByUid(s, keepB)!.damage = 2;
+  setHp(ctx, s, keepB, ctx.cfg.maxHp - 2); // two below the board's HP limit
   const a: Action = { kind: "attack", uid: shuten, targetUid: null };
   const asks = lanternAsks(ctx, s, a, []);
   assert.deepEqual(asks.map((k) => k.lanternUid), [t1, t2], "board order");
   for (const k of asks) assert.deepEqual(k.options.map((o) => o.uid), [keepA, keepB], "the other lantern and 影鬼 die in the same sweep");
   // both lights to the same ally, or one each
   const same = withLanternPicks([keepB, keepB], () => applyAction(ctx, s, a)).result.state;
-  assert.equal(unitByUid(same, keepB)!.damage, 0, "+2 then +0 (capped)");
+  assert.equal(hpOf(ctx, same, keepB), ctx.cfg.maxHp, "+2 then +0 (at cfg.maxHp)");
   assert.equal(unitByUid(same, keepA)!.damage, 4);
   const split = withLanternPicks([keepA, keepB], () => applyAction(ctx, s, a)).result.state;
   assert.equal(unitByUid(split, keepA)!.damage, 2);
-  assert.equal(unitByUid(split, keepB)!.damage, 0);
+  assert.equal(hpOf(ctx, split, keepB), ctx.cfg.maxHp);
   // the chooser loop asks once per lantern
   const seen: LanternAsk[] = [];
   const picks = resolveLanternPicks(ctx, s, a, () => (_c, _s, _a, _p, ask) => {
@@ -186,7 +188,7 @@ test("engine: a reigu that destroys a lantern asks its owner too", () => {
   assert.deepEqual(asks[0].options.map((o) => o.uid), [a1, a2]);
   const r = withLanternPicks([a2], () => applyAction(ctx, s, a)).result.state;
   assert.equal(unitByUid(r, toro), undefined);
-  assert.equal(unitByUid(r, a2)!.damage, 0);
+  assert.equal(hpOf(ctx, r, a2), hpOf(ctx, s, a2) + 2, "+2, past its printed HP (no per-unit max)");
 });
 
 // -------------------------------------------------------------------- flow
@@ -214,7 +216,7 @@ test("flow: the lantern's OWNER (not the seat on turn) answers; the action waits
   assert.ok(submit(f, 1, { type: "lantern", uid: sc.ids.cheap }).ok);
   assert.deepEqual(f.phase, { kind: "main", player: 0 });
   assert.equal(unitByUid(f.state, sc.ids.toro), undefined);
-  assert.equal(unitByUid(f.state, sc.ids.cheap)!.damage, 0);
+  assert.equal(hpOf(ctx, f.state, sc.ids.cheap), ctx.cfg.maxHp);
   assert.equal(unitByUid(f.state, sc.ids.ryomen)!.damage, 3);
   assert.deepEqual(lanternLines(f), ["灯籠の精の灯 → 影鬼 HP+1"]);
   assert.deepEqual(f.inputs.slice(-2), [
@@ -285,8 +287,8 @@ test("flow: counter order first, then the lantern choice, both by the countering
 test("AI: every kind answers the lantern choice with a candidate (never stalls) and prefers an ally that gains HP", () => {
   const ctx = r0923();
   for (const kind of AI_KINDS) {
-    // 両面 full (gains 0), 影鬼 damaged (gains 1)
-    const sc = strikeScene((s, ids) => (unitByUid(s, ids.ryomen)!.damage = 0));
+    // 両面 at the board's HP limit (gains 0), 影鬼 one below it (gains 1)
+    const sc = strikeScene((s, ids, c) => setHp(c, s, ids.ryomen, c.cfg.maxHp));
     const f = flowOf2(ctx, sc);
     submit(f, 0, { type: "action", action: sc.action() });
     const ai = makeAi(kind, "territorial", { seed: 3 });
@@ -334,7 +336,7 @@ test("runner: the lantern owner's chooser is asked (the seat not on turn), and t
   };
   playMainPhase(ctx, s, [attacker, owner], []);
   assert.equal(asked, 1);
-  assert.equal(unitByUid(s, sc.ids.cheap)!.damage, 0);
+  assert.equal(hpOf(ctx, s, sc.ids.cheap), ctx.cfg.maxHp);
   assert.equal(plans, 2, "planned again after the owner's choice");
 });
 
@@ -371,9 +373,9 @@ test("online: the owner gets the lantern prompt, the attacker sees who is choosi
 
 // --------------------------------------------------------------------- UI
 
-test("the prompt names the lantern, lists the allies with their gain (full ones say +0), and the board shows +N on each", () => {
+test("the prompt names the lantern, lists the allies with their gain (ones at the HP limit say +0), and the board shows +N on each", () => {
   const ctx = r0923();
-  const sc = strikeScene((s, ids) => (unitByUid(s, ids.ryomen)!.damage = 0));
+  const sc = strikeScene((s, ids, c) => setHp(c, s, ids.ryomen, c.cfg.maxHp));
   const f = flowOf2(ctx, sc);
   submit(f, 0, { type: "action", action: sc.action() });
   const ph = phaseOf(f);

@@ -239,8 +239,11 @@ const attackPv = (ctx: Ctx, s: GameState, pick: (a: Action) => boolean): { actio
 test("B5: the heal-attack preview and event report the HP actually restored", () => {
   const ctx = ctxOf("r0914");
   const isHeal = (a: Action): boolean => a.kind === "attack" && a.variant === "heal";
-  // sk06 ATK 2 heals sk04 (max HP 2 at (0,2)): missing 1, full, over-healed (HP 4)
-  for (const [damage, healed] of [[1, 1], [0, 0], [-2, 0]] as [number, number][]) {
+  // sk06 ATK 2 heals sk04 (printed HP 2 at (0,2)) by 2. No per-unit max: the heal
+  // goes past the printed HP and stops only at the board limit cfg.maxHp.
+  // HP 1, HP 2 (printed), one below the limit, at the limit.
+  const cap = ctx.cfg.maxHp;
+  for (const [damage, healed] of [[1, 2], [0, 2], [2 - (cap - 1), 1], [2 - cap, 0]] as [number, number][]) {
     const s = blankState(ctx, 10);
     place(s, "sk06", 0, 0, 1, 0);
     const ally = place(s, "sk04", 0, 0, 2, 0);

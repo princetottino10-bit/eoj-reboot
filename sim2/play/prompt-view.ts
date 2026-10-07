@@ -105,10 +105,10 @@ const lanternBar = (vm: PromptVM, p: Extract<PromptKind, { kind: "lantern" }>): 
     return u !== undefined && unitHp(vm.ctx, u) !== o.hp;
   });
   if (hit) notes.push(`HPは${actor === undefined ? "この霊具" : "この攻撃"}のダメージを受けた後の値です`);
-  if (ask.options.some((o) => o.gain === 0)) notes.push("満タンの味方も選べますが、HPは増えません");
+  if (ask.options.some((o) => o.gain === 0)) notes.push("HPが上限の味方も選べますが、HPは増えません");
   return bar(
     "confirm lantern",
-    `<b>${lamp}の灯</b>: ${cause}${lamp}が撃破されます。灯を託す味方を1体選んでください(HP+${ask.amount}・最大HPまで)`,
+    `<b>${lamp}の灯</b>: ${cause}${lamp}が撃破されます。灯を託す味方を1体選んでください(HP+${ask.amount}・上限${vm.ctx.cfg.maxHp}まで)`,
     notes,
     buttons,
     vm.flash,

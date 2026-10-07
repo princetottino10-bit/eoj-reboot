@@ -118,14 +118,23 @@ test("tm06: heal-attack restores ATK to an ally, costs the attack, draws no coun
   assert.ok(!isLegal(ctx, r.state, act), "the one attack is spent");
 });
 
-test("tm06: healing never exceeds the effective max, and other cards cannot do it", () => {
+test("tm06: healing goes past the printed HP up to the board's HP limit, and other cards cannot do it", () => {
   const ctx = on();
   const s = blankState(ctx, 20);
   const healer = place(s, "tm06", 0, 0, 0, 0);
   const ally = place(s, "tm05", 0, 0, 1, 0);
   unitByUid(s, ally)!.damage = 1;
   const r = applyAction(ctx, s, { kind: "attack", uid: healer, targetUid: ally, variant: "heal" });
-  assert.equal(unitByUid(r.state, ally)!.damage, 0);
+  assert.equal(unitByUid(r.state, ally)!.damage, -1, "+2: one past its printed HP (no per-unit max)");
+
+  // one below cfg.maxHp: the heal stops at the limit
+  const s1 = blankState(ctx, 20);
+  const healer1 = place(s1, "tm06", 0, 0, 0, 0);
+  const ally1 = place(s1, "tm05", 0, 0, 1, 0);
+  const u1 = unitByUid(s1, ally1)!;
+  u1.damage = unitMaxHp(ctx, u1) - (ctx.cfg.maxHp - 1);
+  const r1 = applyAction(ctx, s1, { kind: "attack", uid: healer1, targetUid: ally1, variant: "heal" });
+  assert.equal(unitHp(ctx, unitByUid(r1.state, ally1)!), ctx.cfg.maxHp, "stops at cfg.maxHp");
 
   const s2 = blankState(ctx, 20);
   const other = place(s2, "tm03", 0, 0, 0, 0);
@@ -408,7 +417,7 @@ test("tm19: hiding a friendly unit heals it; a lethal 1 damage runs normal destr
 });
 
 // --- tm20 琵琶牧々 -----------------------------------------------------
-test("tm20: +2 HP across the caster's board, capped at each effective max", () => {
+test("tm20: +2 HP across the caster's board, past the printed HP (no per-unit max)", () => {
   const ctx = on();
   const s = blankState(ctx, 20);
   const a = place(s, "tm05", 0, 0, 0, 0);
@@ -421,19 +430,19 @@ test("tm20: +2 HP across the caster's board, capped at each effective max", () =
 
   const r = applyAction(ctx, s, { kind: "reigu", handIndex: 0, targetUid: null, facing: null });
   assert.equal(unitByUid(r.state, a)!.damage, 1, "healed 2");
-  assert.equal(unitByUid(r.state, b)!.damage, 0, "capped at full");
+  assert.equal(unitByUid(r.state, b)!.damage, -1, "healed 2, one past its printed HP");
   assert.equal(unitByUid(r.state, foe)!.damage, 3, "the enemy is untouched");
   assert.equal(r.state.players[0].mana, 17, "cost 3");
 });
 
 // --- tm21 鬼の酒 -------------------------------------------------------
-test("tm21: sets current HP to exactly 7, allowed past the effective max", () => {
+test("tm21: sets current HP to exactly 7, allowed past its printed HP", () => {
   const ctx = on();
   const s = blankState(ctx, 20);
   const u = place(s, "tm05", 0, 0, 0, 0); // hp3 on a corner -> effMax 3
   s.players[0].hand = ["tm21"];
   const r = applyAction(ctx, s, { kind: "reigu", handIndex: 0, targetUid: u, facing: null });
-  assert.equal(unitHp(ctx, unitByUid(r.state, u)!), 7, "over its effective max of 3");
+  assert.equal(unitHp(ctx, unitByUid(r.state, u)!), 7, "over its printed HP of 3");
 
   // a unit already at 7+ is not a legal target
   assert.ok(
@@ -442,14 +451,25 @@ test("tm21: sets current HP to exactly 7, allowed past the effective max", () =>
   );
 });
 
-test("tm21: a later heal does not drag an over-healed unit back down", () => {
+test("tm21: a later heal adds on top of 7 up to the board's HP limit, never drags it back down", () => {
   const ctx = on();
+  assert.ok(ctx.cfg.maxHp >= 9);
   const s = blankState(ctx, 20);
   const u = place(s, "tm05", 0, 0, 0, 0);
   s.players[0].hand = ["tm21", "tm20"];
   const r = applyAction(ctx, s, { kind: "reigu", handIndex: 0, targetUid: u, facing: null });
   const r2 = applyAction(ctx, r.state, { kind: "reigu", handIndex: 0, targetUid: null, facing: null });
-  assert.equal(unitHp(ctx, unitByUid(r2.state, u)!), 7, "still 7, not clamped to 3");
+  assert.equal(unitHp(ctx, unitByUid(r2.state, u)!), 9, "7 + 2, not clamped to its printed 3");
+
+  // with the board limit below 7, the later heal adds nothing and leaves it at 7
+  const low = on({ maxHp: 6 });
+  const t = blankState(low, 20);
+  const v = place(t, "tm05", 0, 0, 0, 0);
+  t.players[0].hand = ["tm21", "tm20"];
+  const q = applyAction(low, t, { kind: "reigu", handIndex: 0, targetUid: v, facing: null });
+  assert.equal(unitHp(low, unitByUid(q.state, v)!), 7);
+  const q2 = applyAction(low, q.state, { kind: "reigu", handIndex: 0, targetUid: null, facing: null });
+  assert.equal(unitHp(low, unitByUid(q2.state, v)!), 7, "still 7, not dragged down to the limit 6");
 });
 
 // --- tm22 閻魔獄卒棒 ---------------------------------------------------

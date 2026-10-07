@@ -149,7 +149,7 @@ test("the 早見表 reads every number from the r1003 preset", () => {
   assert.match(text("太極"), /召喚コスト−2 \(1より下がらない\)/);
   assert.match(text("属性"), /HP\+2.*HP−2/);
   assert.match(text("死角"), /ダメージ\+2/);
-  assert.match(text("最大HP"), /19まで/);
+  assert.match(text("HPの上限"), /19まで/);
   assert.match(text("占拠"), /HP11以上の式神は2マス分/);
   assert.match(text("勝ち"), /5マス分を占拠していれば制圧。次の自分のターン終了時まで保てば勝ち/);
   assert.match(text("生命"), /生命価なし/);
@@ -158,7 +158,7 @@ test("the 早見表 reads every number from the r1003 preset", () => {
   // the numbers follow the config, not the text
   const other = quickRules(presetConfig("r1003", { maxHp: 15, startMana: [5, 7], controlCountThreshold: 12 }), 23);
   const t2 = (label: string): string => other.find((r) => r.label === label)?.text ?? "";
-  assert.match(t2("最大HP"), /15まで/);
+  assert.match(t2("HPの上限"), /15まで/);
   assert.match(t2("初期霊力"), /先手5・後手7/);
   assert.match(t2("占拠"), /HP12以上/);
   // the page

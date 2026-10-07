@@ -33,7 +33,7 @@ export type LanternOption = {
   /** HP now (the same resolution may already have damaged it). */
   hp: number;
   maxHp: number;
-  /** HP it would really gain: capped at its effective max HP (0 when full). */
+  /** HP it would really gain: up to the board's HP limit (cfg.maxHp) (0 when full). */
   gain: number;
 };
 

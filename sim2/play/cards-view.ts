@@ -266,7 +266,7 @@ const statsHtml = (card: CardDef, opts: CardFaceOpts): string => {
   const hp = opts.hp;
   const hpNow = hp === undefined ? card.hp : hp.now;
   const tone = hp === undefined ? "" : hp.now < hp.max ? " hurt" : hp.now > hp.max ? " over" : "";
-  const hpTip = hp === undefined ? `HP ${card.hp}` : `HP ${hp.now}/${hp.max}`;
+  const hpTip = `HP ${hp === undefined ? card.hp : hp.now}`;
   return `<span class="fu-stats"><span class="fu-hp gem${hm.cls}" title="${hpTip}${hm.tip}">${sr("HP")}${mark("hp")}${num(hpNow, tone)}</span><span class="fu-atk gem${am.cls}" title="ATK ${card.atk}${am.tip}">${sr("ATK")}${mark("atk")}${num(card.atk)}</span></span>`;
 };
 

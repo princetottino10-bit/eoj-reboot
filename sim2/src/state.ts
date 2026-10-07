@@ -204,11 +204,11 @@ export const boardHpTotal = (ctx: Ctx, s: GameState, p: PlayerId): number =>
   );
 
 /**
- * The HP healing stops at: the unit's effective max under healCap "unit", the
- * board's maxHp under "board" (the paper rule: no per-unit max, 盤上HP上限 only).
+ * The HP healing stops at: the board's maxHp. The game has no per-unit max HP
+ * (10/7): a heal lifts a unit past its card's HP. unitMaxHp is only the HP it
+ * arrives with (card HP with the attribute bonus), what damage counts down from.
  */
-export const healCeiling = (ctx: Ctx, u: Unit): number =>
-  ctx.cfg.healCap === "board" ? ctx.cfg.maxHp : unitMaxHp(ctx, u);
+export const healCeiling = (ctx: Ctx, _u: Unit): number => ctx.cfg.maxHp;
 
 /** What healing `u` by `amount` really adds now (0 when it is at or over the ceiling). */
 export const healGain = (ctx: Ctx, u: Unit, amount: number): number =>

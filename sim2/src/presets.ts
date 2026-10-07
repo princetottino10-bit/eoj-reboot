@@ -108,8 +108,6 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
       attrBonus: 2,
       blindBonus: 2,
       maxHp: 19,
-      // the paper rule: no per-unit max HP, heals stop only at the board's 19
-      healCap: "board",
       lifeValueEnabled: false,
       refundMode: "killer_half",
       killRewardBase: "card",

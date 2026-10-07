@@ -1,5 +1,5 @@
 // 10/7 mock-test reports: 継承召喚 took the 太極 discount a second time, heals
-// stopped at a per-unit max HP the paper rule does not have, and the mulligan
+// stopped at a per-unit max HP the game never had, and the mulligan
 // can now send the cards to the grave.
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -30,20 +30,21 @@ test("継承召喚 onto the 太極 pays the printed cost: 霊力6, 影鬼 on 太
   assert.equal(isLegal(old, a, inherit), true);
 });
 
-test("回復の上限: 10/6案 heals past the card's HP up to 19; the unit cap is still an option", () => {
-  const board = makeCtx(presetConfig("r1006"), PACK);
-  const s = blankState(board);
+test("no per-unit max HP: heals go past the card's HP, up to the board's 19", () => {
+  const ctx = makeCtx(presetConfig("r1006"), PACK);
+  const s = blankState(ctx);
   place(s, "ac03", 0, 0, 0, 0);
   const u = s.units[0];
   u.damage = 1;
-  healUnit(board, u, 3);
-  assert.equal(unitHp(board, u), unitMaxHp(board, u) + 2);
-  healUnit(board, u, 40);
-  assert.equal(unitHp(board, u), 19);
-  const unit = makeCtx(presetConfig("r1006", { healCap: "unit" }), PACK);
-  u.damage = 1;
-  healUnit(unit, u, 3);
-  assert.equal(unitHp(unit, u), unitMaxHp(unit, u));
+  healUnit(ctx, u, 3);
+  assert.equal(unitHp(ctx, u), unitMaxHp(ctx, u) + 2);
+  healUnit(ctx, u, 40);
+  assert.equal(unitHp(ctx, u), 19);
+  const old = makeCtx(presetConfig("r0923"), loadPack(packPath("adopted-0922")));
+  const s2 = blankState(old);
+  place(s2, "ad03", 0, 0, 0, 0);
+  healUnit(old, s2.units[0], 3);
+  assert.equal(unitHp(old, s2.units[0]), unitMaxHp(old, s2.units[0]) + 3);
 });
 
 test("マリガン: 捨て札にする puts the cards in the grave and draws from the deck", () => {

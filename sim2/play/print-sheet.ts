@@ -170,7 +170,7 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
     { label: "太極", text: taiji },
     { label: "属性", text: attr },
     { label: "死角", text: `死角からの物理攻撃はダメージ+${cfg.blindBonus}。` },
-    { label: "最大HP", text: cfg.healCap === "board" ? `盤上のHPは${cfg.maxHp}まで。回復はカードのHPを超えて${cfg.maxHp}まで伸びる (式神ごとの最大HPはない)。` : `${cfg.maxHp} (属性・効果で増えても${cfg.maxHp}まで)。回復はその式神のHPまで。` },
+    { label: "HPの上限", text: `盤上のHPは${cfg.maxHp}まで。回復はカードのHPを超えて${cfg.maxHp}まで伸びる。`},
     { label: "回転", text: `回転命令は霊力${cfg.rotateCost}で90度。` },
     { label: "範囲攻撃", text: aoe },
     { label: "反撃", text: counter },

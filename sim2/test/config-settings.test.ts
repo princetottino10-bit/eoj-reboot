@@ -140,7 +140,7 @@ test("mid-match change: max HP down cuts current HP, up keeps it, never destroys
   assert.equal(unitHp(harsher.ctx, s.units.find((u) => u.uid === hurt)!), 5, "no attribute (陽 on empty) -> unchanged");
   assert.equal(big, s.units[0].uid);
   assert.equal(ctx.cfg.maxHp, 10, "the old Config object is untouched");
-  assert.deepEqual(up.changes.map(describeChange), ["最大HP 6→12"]);
+  assert.deepEqual(up.changes.map(describeChange), ["HPの上限 6→12"]);
 });
 
 test("UI-V2 test 5: a match with mid-match rule changes replays to the same result", () => {

@@ -176,7 +176,6 @@ export type ControlHold = "next_turn_start" | "next_turn_end";
  *  replace_discarded = discard then draw exactly as many as were discarded. */
 export type HandMode = "refill_to_5" | "replace_discarded";
 export type MulliganTo = "deck" | "grave";
-export type HealCap = "unit" | "board";
 
 // ------------------------------------------------- 9/23 optional rule settings
 
@@ -287,8 +286,6 @@ export type Config = {
   mulligan: boolean;
   /** Where the mulligan sends the cards: shuffled back into the deck, or the grave. */
   mulliganTo: MulliganTo;
-  /** Healing stops at the unit's own max HP ("unit") or only at maxHp ("board"). */
-  healCap: HealCap;
   controlHold: ControlHold;
   handMode: HandMode;
 
@@ -379,7 +376,6 @@ export const defaultConfig = (): Config => ({
   inheritTaiji: false,
   mulligan: false,
   mulliganTo: "deck",
-  healCap: "unit",
   controlHold: "next_turn_start",
   handMode: "refill_to_5",
   // Destruction mana as every ruleset so far pays it: half the cost, rounded down.
