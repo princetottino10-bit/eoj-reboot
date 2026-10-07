@@ -204,12 +204,22 @@ export const boardHpTotal = (ctx: Ctx, s: GameState, p: PlayerId): number =>
   );
 
 /**
- * Restores `amount` HP, never past the unit's effective max - but never pushes
- * an already over-healed unit (tm21 Oni-no-Sake) back down either.
+ * The HP healing stops at: the unit's effective max under healCap "unit", the
+ * board's maxHp under "board" (the paper rule: no per-unit max, 盤上HP上限 only).
  */
-export const healUnit = (u: Unit, amount: number): void => {
-  const floor = Math.min(0, u.damage);
-  u.damage = Math.max(floor, u.damage - amount);
+export const healCeiling = (ctx: Ctx, u: Unit): number =>
+  ctx.cfg.healCap === "board" ? ctx.cfg.maxHp : unitMaxHp(ctx, u);
+
+/** What healing `u` by `amount` really adds now (0 when it is at or over the ceiling). */
+export const healGain = (ctx: Ctx, u: Unit, amount: number): number =>
+  Math.max(0, Math.min(amount, healCeiling(ctx, u) - unitHp(ctx, u)));
+
+/**
+ * Restores `amount` HP up to healCeiling - but never pushes an already
+ * over-healed unit (tm21 Oni-no-Sake) back down either.
+ */
+export const healUnit = (ctx: Ctx, u: Unit, amount: number): void => {
+  u.damage -= healGain(ctx, u, amount);
 };
 
 /** Adds mana up to `cap`. Returns what was actually gained (events report that, not the nominal amount). */

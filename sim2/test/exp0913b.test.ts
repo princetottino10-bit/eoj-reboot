@@ -284,7 +284,7 @@ test("IN2 inherit: strictly pricier, attribute match (none matches both ways), H
 });
 
 test("IN3 inherit: taiji discount applies, summonLimit counts it, works on a full board", () => {
-  const ctx = sk({ inheritSummon: true, summonLimit: 1 });
+  const ctx = sk({ inheritSummon: true, inheritTaiji: true, summonLimit: 1 });
   const s = blankState(ctx, 10);
   s.players[0].hand = ["sk16", "sk02"];
   const cells: [number, number][] = [[0, 0], [1, 0], [2, 0], [0, 1], [2, 1], [0, 2], [1, 2], [2, 2]];

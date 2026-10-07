@@ -441,7 +441,7 @@ export const resolveAttack = (
     const ally = unitByUid(s, targetUid);
     if (ally === undefined) throw new Error(`resolveAttack: no target ${targetUid}`);
     const hpBefore = unitHp(ctx, ally);
-    healUnit(ally, healAttackAmount(ctx, s, attacker));
+    healUnit(ctx, ally, healAttackAmount(ctx, s, attacker));
     // what was really restored: the effective max (or an over-heal) can cut it
     const healed = unitHp(ctx, ally) - hpBefore;
     events.push({

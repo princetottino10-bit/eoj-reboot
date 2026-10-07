@@ -121,7 +121,7 @@ test("F7: destruction mana and the inherit refund are reported after the mana ca
   assert.ok(d2 !== undefined && d2.t === "destroy" && d2.manaGain === 3);
 
   // inherit 変面 (3) -> 雲外鏡 (4) on taiji with a big discount: pay 1, refund 2, room for 1
-  const ictx = r0914(SK, { taijiDiscount: 5 });
+  const ictx = r0914(SK, { taijiDiscount: 5, inheritTaiji: true });
   const is = blankState(ictx, 15);
   is.players[0].hand = ["sk10"];
   const old = place(is, "sk06", 0, 1, 1, 0);

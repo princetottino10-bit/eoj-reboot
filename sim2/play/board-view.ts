@@ -115,7 +115,7 @@ const cellHtml = (vm: BoardVM, pos: Pos): string => {
   const who =
     u === undefined
       ? "空きマス"
-      : `${vm.names[u.owner]}の駒 ${cardOfUnit(vm.ctx, u).nameJa}(HP ${Math.max(0, unitHp(vm.ctx, u))}/${unitMaxHp(vm.ctx, u)}・${FACING_LABEL[u.facing]}向き)`;
+      : `${vm.names[u.owner]}の駒 ${cardOfUnit(vm.ctx, u).nameJa}(HP ${Math.max(0, unitHp(vm.ctx, u))}${vm.ctx.cfg.healCap === "board" ? "" : `/${unitMaxHp(vm.ctx, u)}`}・${FACING_LABEL[u.facing]}向き)`;
   const markText =
     mark === "summon" ? " / 召喚できる" : mark === "inherit" ? " / 継承召喚できる" : mark === "target" ? " / 対象にできる" : mark === "heal" ? " / 回復できる" : mark === "proxy" ? " / 回せる" : mark === "move" ? " / ここへ動かされる" : "";
   const rangeText = `${vm.range?.attack.has(k) ? " / 攻撃範囲" : ""}${vm.range?.counter?.has(k) ? " / 反撃範囲" : ""}${vm.range?.blind.has(k) ? " / 死角" : ""}${vm.range?.gap.has(k) ? " / 隙位置" : ""}`;

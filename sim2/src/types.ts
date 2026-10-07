@@ -175,6 +175,8 @@ export type ControlHold = "next_turn_start" | "next_turn_end";
 /** EXP-0913B. refill_to_5 = discard then draw up to handRefill.
  *  replace_discarded = discard then draw exactly as many as were discarded. */
 export type HandMode = "refill_to_5" | "replace_discarded";
+export type MulliganTo = "deck" | "grave";
+export type HealCap = "unit" | "board";
 
 // ------------------------------------------------- 9/23 optional rule settings
 
@@ -279,8 +281,14 @@ export type Config = {
   /** Replace an own unit with a strictly pricier shikigami (same attribute,
    *  or either side attribute "none"). */
   inheritSummon: boolean;
+  /** 継承召喚 onto the 太極 also takes the 太極 discount (off: printed cost there too). */
+  inheritTaiji: boolean;
   /** One mulligan each before the first turn (AI: return summonCost >= 5). */
   mulligan: boolean;
+  /** Where the mulligan sends the cards: shuffled back into the deck, or the grave. */
+  mulliganTo: MulliganTo;
+  /** Healing stops at the unit's own max HP ("unit") or only at maxHp ("board"). */
+  healCap: HealCap;
   controlHold: ControlHold;
   handMode: HandMode;
 
@@ -368,7 +376,10 @@ export const defaultConfig = (): Config => ({
   incomeTiming: "turn_start",
   // EXP-0913B defaults: likewise the pre-EXP behaviour.
   inheritSummon: false,
+  inheritTaiji: false,
   mulligan: false,
+  mulliganTo: "deck",
+  healCap: "unit",
   controlHold: "next_turn_start",
   handMode: "refill_to_5",
   // Destruction mana as every ruleset so far pays it: half the cost, rounded down.

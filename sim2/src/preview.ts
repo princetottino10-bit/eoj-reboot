@@ -7,7 +7,7 @@ import { cardOf } from "./cards.ts";
 import { counterOrderChoice } from "./counter-order.ts";
 import { armDamage, clubDamage, forwardEnemy, fxOf, reiguTargeting, summonHpOverwrite } from "./effects.ts";
 import { applyAction, legalActions } from "./rules.ts";
-import { inheritRefund, summonCostAt, summonCostFor } from "./rules.ts";
+import { inheritCostAt, inheritCostFor, inheritRefund, summonCostAt, summonCostFor } from "./rules.ts";
 import { unitByUid, unitHp, unitMaxHp } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import type { Action, AttackVariant, GameEvent, GameState, PlayerId, Pos } from "./types.ts";
@@ -233,9 +233,9 @@ export const previewInherit = (ctx: Ctx, s: GameState, a: Action): InheritPrevie
     kind: "inherit",
     fromCardId: old.cardId,
     toCardId: cardId,
-    cost: summonCostFor(ctx, s, s.turnPlayer, card, old.pos),
-    ...(summonCostAt(ctx, card, old.pos) > summonCostFor(ctx, s, s.turnPlayer, card, old.pos)
-      ? { underdogDiscount: summonCostAt(ctx, card, old.pos) - summonCostFor(ctx, s, s.turnPlayer, card, old.pos) }
+    cost: inheritCostFor(ctx, s, s.turnPlayer, card, old.pos),
+    ...(inheritCostAt(ctx, card, old.pos) > inheritCostFor(ctx, s, s.turnPlayer, card, old.pos)
+      ? { underdogDiscount: inheritCostAt(ctx, card, old.pos) - inheritCostFor(ctx, s, s.turnPlayer, card, old.pos) }
       : {}),
     // after the mana cap, as the event reports it
     refund: ev.inheritedFrom?.refund ?? inheritRefund(cardOf(ctx.pack, old.cardId)),

@@ -29,7 +29,7 @@
 // to every own unit) is tm20 unchanged.
 import { inBoard, posEq, rotateRel, toBoardCells } from "./board.ts";
 import { cardOf, effectKeyOf } from "./cards.ts";
-import { healUnit, isHidden, unitAt, unitHp, unitMaxHp, visibleUnitAt } from "./state.ts";
+import { healGain, healUnit, isHidden, unitAt, unitHp, unitMaxHp, visibleUnitAt } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import { chooseLanternTarget, lanternAmount } from "./lantern.ts";
 import type { AttackVariant, GameEvent, GameState, PlayerId, Pos, ReiguMode, Unit } from "./types.ts";
@@ -300,7 +300,7 @@ export const variantExtraCost = (ctx: Ctx, u: Unit, variant: AttackVariant): num
 
 /**
  * ac15 茨木童子【再生】 (10/3): HP+1 on every attack (summon-attack included, no
- * extra mana), after the hits and before the counters; capped at its max.
+ * extra mana), after the hits and before the counters; capped at healCeiling.
  * No-op for any other card and for the heal variant.
  */
 export const onAttackBeforeCounters = (ctx: Ctx, attacker: Unit, variant: AttackVariant, events: GameEvent[]): void => {
@@ -308,7 +308,7 @@ export const onAttackBeforeCounters = (ctx: Ctx, attacker: Unit, variant: Attack
   const amount = param(FREE_REGEN, fxOf(ctx, attacker.cardId));
   if (amount === undefined) return;
   const before = unitHp(ctx, attacker);
-  healUnit(attacker, amount);
+  healUnit(ctx, attacker, amount);
   const gained = unitHp(ctx, attacker) - before;
   log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? `【再生】HP+${gained}(反撃の前)` : "【再生】HPは最大のまま");
 };
@@ -354,8 +354,8 @@ export const onAfterAttack = (
 
   // tm15 Ibaraki-Doji: regenerates on a RE-attack only, never a summon-attack.
   if (fxOf(ctx, attacker.cardId) === "tm15" && !wasSummonAttack && variant !== "heal" && alive()) {
-    if (unitHp(ctx, attacker) < unitMaxHp(ctx, attacker)) {
-      healUnit(attacker, 1);
+    if (healGain(ctx, attacker, 1) > 0) {
+      healUnit(ctx, attacker, 1);
       log(events, attacker.owner, attacker.cardId, attacker.uid, "再生: HP+1");
     }
   }
@@ -364,7 +364,7 @@ export const onAfterAttack = (
   // exchange (counters included) is over, if it survived; capped at its max.
   if (variant === "regen" && alive()) {
     const before = unitHp(ctx, attacker);
-    healUnit(attacker, 1);
+    healUnit(ctx, attacker, 1);
     const gained = unitHp(ctx, attacker) - before;
     log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? "【再生】HP+1" : "【再生】HPは最大のまま");
   }
@@ -409,7 +409,7 @@ export const onUnitDestroyed = (
   const target = chooseLanternTarget(ctx, s, u, amount);
   if (target === null) return;
   const before = unitHp(ctx, target);
-  healUnit(target, amount);
+  healUnit(ctx, target, amount);
   const gained = unitHp(ctx, target) - before;
   const lamp = cardOf(ctx.pack, u.cardId).nameJa;
   log(events, u.owner, u.cardId, target.uid, `${lamp}の灯 → ${cardOf(ctx.pack, target.cardId).nameJa} HP+${gained}`);
@@ -696,7 +696,7 @@ export const applyReigu = (
       target.hiddenBy = p;
       const friendly = target.owner === p;
       if (friendly) {
-        healUnit(target, 1);
+        healUnit(ctx, target, 1);
         log(events, p, cardId, target.uid, `マヨヒガ: 味方 ${nameOf(target)} を隠す (HP+1)`);
       } else {
         target.damage += 1;
@@ -710,7 +710,7 @@ export const applyReigu = (
       const amount = HEAL_ALL_AMOUNT[fx];
       for (const u of s.units) {
         if (u.owner !== p || isHidden(u)) continue;
-        healUnit(u, amount);
+        healUnit(ctx, u, amount);
       }
       log(events, p, cardId, null, `琵琶牧々: 自軍全体にHP+${amount}`);
       return;

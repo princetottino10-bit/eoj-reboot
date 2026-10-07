@@ -87,6 +87,21 @@ export const summonCostFor = (ctx: Ctx, s: UnderdogView, p: PlayerId, card: Card
   return off === 0 ? cost : Math.max(1, cost - off);
 };
 
+/**
+ * What p pays to inherit-summon `card` onto `pos`: like summonCostFor, but the
+ * 太極 discount only when inheritTaiji is on. The replaced unit already took the
+ * 太極 discount when it was summoned there; taking it again on the inherit was
+ * the double 太極 bonus of the 10/7 test (影鬼 1 on 太極, then 茨木 at 6).
+ */
+export const inheritCostAt = (ctx: Ctx, card: CardDef, pos: Pos): number =>
+  ctx.cfg.inheritTaiji ? summonCostAt(ctx, card, pos) : baseSummonCost(ctx, card);
+
+export const inheritCostFor = (ctx: Ctx, s: UnderdogView, p: PlayerId, card: CardDef, pos: Pos): number => {
+  const cost = inheritCostAt(ctx, card, pos);
+  const off = underdogSummonDiscount(ctx, s, p, card);
+  return off === 0 ? cost : Math.max(1, cost - off);
+};
+
 // attackCostOf lives in combat.ts (combat must not import rules.ts); it is
 // re-exported here so the cost helpers stay findable together.
 export { attackCostOf } from "./combat.ts";
@@ -165,7 +180,7 @@ const inheritAttrOk = (a: CardDef, b: CardDef): boolean =>
 /**
  * Can `card` (from the turn player's hand) be inherit-summoned onto `target`?
  * Strictly higher printed summon cost, compatible attribute, the inherited
- * damage must leave it alive, the full cost (taiji discount applies) must be
+ * damage must leave it alive, the full cost (inheritCostFor) must be
  * payable BEFORE the ceil(old/2) refund comes back, and the summon counts
  * against summonLimit. Hidden (Mayohiga) units cannot be chosen.
  */
@@ -179,7 +194,7 @@ export const canInherit = (ctx: Ctx, s: GameState, card: CardDef, target: Unit):
   if (!inheritAttrOk(card, old)) return false;
   const maxHp = effMaxHp(card.hp, target.pos, card.attribute, ctx.cfg.attrBonus, ctx.cfg.maxHp);
   if (maxHp - target.damage <= 0) return false;
-  return s.players[s.turnPlayer].mana >= summonCostFor(ctx, s, s.turnPlayer, card, target.pos);
+  return s.players[s.turnPlayer].mana >= inheritCostFor(ctx, s, s.turnPlayer, card, target.pos);
 };
 
 /** The log line of a 劣勢時の大型割引 (a rule line, right after the summon it discounted). */
@@ -207,8 +222,8 @@ const applyInherit = (
   const old = unitByUid(s, a.targetUid);
   if (old === undefined) throw new Error(`inherit: no unit ${a.targetUid}`);
   const oldCard = cardOf(ctx.pack, old.cardId);
-  const cost = summonCostFor(ctx, s, p, card, old.pos);
-  const discount = summonCostAt(ctx, card, old.pos) - cost;
+  const cost = inheritCostFor(ctx, s, p, card, old.pos);
+  const discount = inheritCostAt(ctx, card, old.pos) - cost;
   ps.mana -= cost;
   // the event carries what the mana cap let through
   const refund = gainMana(ps, inheritRefund(oldCard), ctx.cfg.manaCap);

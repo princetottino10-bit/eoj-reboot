@@ -200,7 +200,7 @@ const unitStatus = (ctx: Ctx, u: Unit, names: Names, turnPlayer: PlayerId): stri
   const note = gapNote(ctx, u);
   return `<div class="dt-status o${u.owner}">
     <span>${esc(names[u.owner])}</span>
-    <span><i>HP</i><b>${Math.max(0, unitHp(ctx, u))}</b>/${unitMaxHp(ctx, u)}</span>
+    <span><i>HP</i><b>${Math.max(0, unitHp(ctx, u))}</b>${ctx.cfg.healCap === "board" ? "" : `/${unitMaxHp(ctx, u)}`}</span>
     <span><i>向き</i>${FACING_LABEL[u.facing]}</span>
     ${flags.length > 0 ? `<span class="dt-flags">${flags.join(" / ")}</span>` : ""}
     ${note === "" ? "" : `<span class="dt-note">${esc(note)}</span>`}

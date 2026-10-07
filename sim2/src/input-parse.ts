@@ -55,7 +55,8 @@ export const parseAction = (v: unknown): Parsed<Action> => {
       if (!isInt(v.uid, 0, MAX_UID) || t === undefined) return bad("attack の形式が不正です");
       const variant = v.variant === undefined ? "normal" : v.variant;
       if (typeof variant !== "string" || !(ATTACK_VARIANTS as readonly string[]).includes(variant)) return bad("attack.variant が不正です");
-      const attack: Extract<Action, { kind: "attack" }> = { kind: "attack", uid: v.uid, targetUid: t, variant: variant as AttackVariant };
+      // an absent variant stays absent (the engine reads it as normal), so a stored record round-trips unchanged
+      const attack: Extract<Action, { kind: "attack" }> = { kind: "attack", uid: v.uid, targetUid: t, ...(v.variant === undefined ? {} : { variant: variant as AttackVariant }) };
       if (v.counterOrder !== undefined) {
         const order = intList(v.counterOrder, MAX_UID);
         if (order === null || order.length > MAX_COUNTERERS) return bad("attack.counterOrder が不正です");

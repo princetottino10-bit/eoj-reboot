@@ -223,9 +223,13 @@ export const performMulligan = (
     const returned = ps.hand.filter((_, i) => back.has(i));
     ps.hand = ps.hand.filter((_, i) => !back.has(i));
     if (returned.length > 0) {
-      const [shuffled, rng] = shuffle([...ps.deck, ...returned], s.rngState);
-      s.rngState = rng;
-      ps.deck = shuffled;
+      if (ctx.cfg.mulliganTo === "grave") {
+        ps.grave.push(...returned);
+      } else {
+        const [shuffled, rng] = shuffle([...ps.deck, ...returned], s.rngState);
+        s.rngState = rng;
+        ps.deck = shuffled;
+      }
       drawN(ctx, s, p, returned.length, events);
     }
     events.push({ t: "mulligan", player: p, returned: returned.length });

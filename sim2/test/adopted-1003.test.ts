@@ -129,7 +129,9 @@ test("r1003 = 10/3テスト案: the numbers, and it is the default for new rooms
   // everything else is r0923
   const base = presetConfig("r0923");
   assert.equal(base.deckOutMode, "none");
-  const same = { ...cfg, chipIncomeSteps: base.chipIncomeSteps, taijiDiscount: base.taijiDiscount, maxHp: base.maxHp, controlCount: base.controlCount, deckOutMode: base.deckOutMode };
+  assert.equal(cfg.healCap, "board");
+  assert.equal(base.healCap, "unit");
+  const same = { ...cfg, chipIncomeSteps: base.chipIncomeSteps, taijiDiscount: base.taijiDiscount, maxHp: base.maxHp, healCap: base.healCap, controlCount: base.controlCount, deckOutMode: base.deckOutMode };
   assert.deepEqual(same, base);
   assert.equal(RULE_PRESETS.r1003.label, "10/3テスト案");
   assert.equal(RULE_PRESETS.r1003.defaultPack, "adopted-1003");
@@ -205,7 +207,7 @@ test("占拠: a unit at HP 11 or more counts 2, and damage below 11 makes it 1",
 // ------------------------------------------------------------ the effects
 
 test("ac07 変面 (10/3): the heal on an ally restores the full ATK, capped at the target's max; the 9/22 card keeps ceil(ATK/2)", () => {
-  const ctx = r1003();
+  const ctx = r1003({ healCap: "unit" }); // the per-unit cap is an option since 10/7 (test/rules-1007)
   const build = (c: Ctx, hen: string, ally: string, damage: number): { s: GameState; h: number; a: number } => {
     const s = blankState(c, 10);
     const h = place(s, hen, 0, 1, 0, 0); // ATK 3, range front-left / front-right: (0,1) (2,1)
@@ -236,7 +238,7 @@ test("ac07 変面 (10/3): the heal on an ally restores the full ATK, capped at t
 });
 
 test("ac15 茨木童子【再生】: HP+1 on every attack, free, before the counter (it survives a counter it would not have)", () => {
-  const ctx = r1003();
+  const ctx = r1003({ healCap: "unit" }); // the per-unit cap is an option since 10/7 (test/rules-1007)
   const s = blankState(ctx);
   const ibaraki = place(s, "ac15", 0, 0, 0, 0); // empty cell, HP 9; reaches (0,2) with its -2
   const ikkaku = place(s, "ac08", 1, 0, 2, 2); // 一角鬼 HP 8 facing south: counters (0,0) with its -2, ATK 2
@@ -304,7 +306,7 @@ test("ac17 玖龍街: its attack takes no blind bonus and no counter; it proxy-r
 });
 
 test("琵琶牧々 (tm20): every own unit HP+2, capped at its max", () => {
-  const ctx = r1003();
+  const ctx = r1003({ healCap: "unit" }); // the per-unit cap is an option since 10/7 (test/rules-1007)
   const s = blankState(ctx);
   s.players[0].hand = ["ac20"];
   const a = place(s, "ac08", 0, 0, 0, 0); // HP 8

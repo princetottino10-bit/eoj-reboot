@@ -218,7 +218,17 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   },
   {
     key: "maxHp", group: "board", kind: "int", min: 1, max: 20,
-    label: "最大HP", desc: "属性ボーナスを含めたHPの上限", midGame: true,
+    label: "最大HP", desc: "盤上のHPの上限(属性ボーナスを含む)。回復もここで切り捨て", midGame: true,
+  },
+  {
+    key: "healCap", group: "board", kind: "choice",
+    choices: [
+      { value: "board", label: "盤上の上限まで" },
+      { value: "unit", label: "その式神のHPまで" },
+    ],
+    label: "回復の上限",
+    desc: "盤上の上限まで: 回復は最大HP(盤上の上限)まで伸びる。式神ごとの最大HPはない。その式神のHPまで: 印刷のHP(属性の増減込み)より上には回復しない",
+    midGame: true,
   },
   // -------------------------------------------------------------- action
   {
@@ -392,12 +402,30 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   },
   {
     key: "mulligan", group: "hand", kind: "bool",
-    label: "マリガン", desc: "対戦開始前に一度だけ、手札を山札に戻して引き直せる", midGame: false,
+    label: "マリガン", desc: "対戦開始前に一度だけ、選んだ手札を手放して同じ枚数を引き直せる", midGame: false,
+  },
+  {
+    key: "mulliganTo", group: "hand", kind: "choice",
+    choices: [
+      { value: "deck", label: "山札に戻す" },
+      { value: "grave", label: "捨て札にする" },
+    ],
+    label: "マリガンで手放した札",
+    desc: "山札に戻す: 戻して切り直してから引く。捨て札にする: 捨て札に置いてから引く(山札は減る)",
+    midGame: false,
+    dependsOn: { key: "mulligan", off: false },
   },
   // ------------------------------------------------------------- special
   {
     key: "inheritSummon", group: "special", kind: "bool",
     label: "継承召喚", desc: "自分の式神を、より召喚コストの高い式神に置き換えて召喚できる", midGame: true,
+  },
+  {
+    key: "inheritTaiji", group: "special", kind: "bool",
+    label: "太極への継承召喚も太極割引", words: ["する", "しない"],
+    desc: "しない: 太極の上の式神を継承召喚で置き換えるときは、カードの召喚コストを払う(置き換えられる式神がもう太極割引で出ているため)。する: 太極割引をもう一度使う",
+    midGame: true,
+    dependsOn: { key: "inheritSummon", off: false },
   },
   {
     key: "moveOnKill", group: "rare", kind: "bool",

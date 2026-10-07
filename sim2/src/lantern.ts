@@ -15,7 +15,7 @@
 // resolves the action with every pick; the runner and the AIs do the same
 // through their choosers. Pure: no node builtins.
 import { cardOf, effectKeyOf } from "./cards.ts";
-import { controlWeight, isHidden, unitHp, unitMaxHp } from "./state.ts";
+import { controlWeight, healGain, isHidden, unitHp, unitMaxHp } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import type { GameState, PlayerId, Unit } from "./types.ts";
 
@@ -47,8 +47,8 @@ export type LanternAsk = {
   options: LanternOption[];
 };
 
-/** What healing `u` by `amount` really adds (healUnit never lifts HP above the effective max). */
-export const lanternGain = (ctx: Ctx, u: Unit, amount: number): number => Math.max(0, Math.min(amount, u.damage));
+/** What healing `u` by `amount` really adds (healUnit stops at healCeiling). */
+export const lanternGain = (ctx: Ctx, u: Unit, amount: number): number => healGain(ctx, u, amount);
 
 /** The allies the destroyed `lantern` may heal, as the board stands now. */
 export const lanternOptions = (ctx: Ctx, s: GameState, lantern: Unit, amount: number): LanternOption[] =>

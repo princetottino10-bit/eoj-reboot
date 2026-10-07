@@ -163,14 +163,14 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
     cfg.aoeMode === "off"
       ? "範囲攻撃はなし (すべて単体)。"
       : `${cfg.aoeMode === "no_ff" ? "範囲攻撃は敵だけに当たる。" : cfg.jutsuAoeSparesAllies ? "物理の範囲攻撃は範囲内の味方にも当たる。術式の範囲攻撃は敵だけに当たる。" : "範囲攻撃は範囲内の味方にも当たる。"}`;
-  const hand = `手札${cfg.handRefill}枚で始める${cfg.mulligan ? " (開始前に一度だけ引き直せる)" : ""}。ターン終了時、好きなだけ捨ててから${refill}。山札は${deckSize}枚 (各1枚)、尽きたら捨て札を切り直す。`;
+  const hand = `手札${cfg.handRefill}枚で始める${cfg.mulligan ? (cfg.mulliganTo === "grave" ? " (開始前に一度だけ、選んだ札を捨て札にして引き直せる)" : " (開始前に一度だけ、選んだ札を山札に戻して引き直せる)") : ""}。ターン終了時、好きなだけ捨ててから${refill}。山札は${deckSize}枚 (各1枚)、尽きたら捨て札を切り直す。`;
   const rows: QuickRow[] = [
     { label: "初期霊力", text: `先手${first}・後手${second}。霊力は${cfg.manaCap}まで貯まる。` },
     { label: "収入", text: `${timing}に${cfg.baseIncome}。${steps}${ratchet}` },
     { label: "太極", text: taiji },
     { label: "属性", text: attr },
     { label: "死角", text: `死角からの物理攻撃はダメージ+${cfg.blindBonus}。` },
-    { label: "最大HP", text: `${cfg.maxHp} (属性・効果で増えても${cfg.maxHp}まで)。` },
+    { label: "最大HP", text: cfg.healCap === "board" ? `盤上のHPは${cfg.maxHp}まで。回復はカードのHPを超えて${cfg.maxHp}まで伸びる (式神ごとの最大HPはない)。` : `${cfg.maxHp} (属性・効果で増えても${cfg.maxHp}まで)。回復はその式神のHPまで。` },
     { label: "回転", text: `回転命令は霊力${cfg.rotateCost}で90度。` },
     { label: "範囲攻撃", text: aoe },
     { label: "反撃", text: counter },
@@ -180,7 +180,7 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
     { label: "生命", text: cfg.lifeValueEnabled ? `生命${cfg.startLife}。撃破された式神の生命価だけ減り、0で負け。` : "生命価なし (生命の増減・生命での勝ち負けはない)。" },
     { label: "手札", text: hand },
   ];
-  if (cfg.inheritSummon) rows.push({ label: "継承召喚", text: "自分の式神を、より召喚コストの高い式神に置き換えて召喚できる (位置と向きを引き継ぐ)。" });
+  if (cfg.inheritSummon) rows.push({ label: "継承召喚", text: `自分の式神を、より召喚コストの高い式神に置き換えて召喚できる (位置と向きを引き継ぐ)。${cfg.inheritTaiji ? "" : "太極の上での継承召喚に太極割引はない。"}` });
   if (cfg.freeSummonAttack === "optional") {
     rows.push({
       label: "召喚攻撃",
