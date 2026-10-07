@@ -145,15 +145,15 @@ test("r1003 = 10/3テスト案: the numbers, and it is the default for new rooms
   assert.equal(summonCostAt(ctx, AC.byId.get("ac17")!, taiji), 8);
   assert.equal(summonCostAt(ctx, AC.byId.get("ac17")!, { x: 0, y: 0 }), 10);
   // the defaults
-  // 10/6案 (the 10/3 rule numbers on the 10/6 sheet's cards) is the default since 10/7
-  assert.equal(DEFAULT_RULE_PRESET, "r1006");
-  assert.equal(RULE_PRESET_IDS[0], "r1006");
+  // 10/7決定 (10/6案 with the dial, chips 4/5 and 太極−1) is the default since the 10/7 test
+  assert.equal(DEFAULT_RULE_PRESET, "r1007");
+  assert.equal(RULE_PRESET_IDS[0], "r1007");
   assert.equal(PLAYABLE_PACKS[0], "adopted-1006");
   assert.deepEqual(presetConfig("r1006"), presetConfig("r1003"));
   const d = defaultSettings();
-  assert.equal(d.rule, "r1006");
+  assert.equal(d.rule, "r1007");
   assert.equal(d.pack, "adopted-1006");
-  assert.deepEqual(settingsConfig(d), cfg);
+  assert.deepEqual(settingsConfig(d), { ...cfg, incomeMode: "current", chipIncomeSteps: [4, 5], taijiDiscount: 1 });
   // the preset table does not move through a returned config
   cfg.chipIncomeSteps.push(9);
   assert.deepEqual(RULE_PRESETS.r1003.overrides.chipIncomeSteps, [4, 5, 5]);
@@ -170,7 +170,7 @@ test("an old share URL naming r0923 still opens r0923 with its own pack and numb
   // and a 10/3 URL round-trips
   const now = decodeSettings(encodeSettings(defaultSettings()), () => AC);
   assert.ok(now.ok);
-  assert.equal(now.value.rule, "r1006");
+  assert.equal(now.value.rule, "r1007");
 });
 
 test("the ratchet accepts a repeated step (4,5,5) and says it as income", () => {

@@ -412,7 +412,7 @@ test("deck-out: a level 占拠 is a draw; a hidden unit (マヨヒガ) counts 0;
 
 test("deck-out: the r1003 default only; the other presets keep none; the settings and the 早見表 say it in Japanese", () => {
   assert.equal(presetConfig("r1003").deckOutMode, "second");
-  for (const id of RULE_PRESET_IDS) if (id !== "r1003" && id !== "r1006") assert.equal(presetConfig(id).deckOutMode, "none", id);
+  for (const id of RULE_PRESET_IDS) if (id !== "r1003" && id !== "r1006" && id !== "r1007") assert.equal(presetConfig(id).deckOutMode, "none", id);
   const field = CONFIG_SCHEMA.find((f) => f.key === "deckOutMode");
   assert.ok(field !== undefined && field.kind === "choice");
   assert.equal(field.label, "山札切れでの終了");

@@ -23,7 +23,7 @@ test("10/6案その2: 鎖鬼 and 首引の姫鬼 reach 2 cells, the top HP went 
   const p1 = loadPack(packPath("adopted-1006a"));
   assert.equal(p1.cards.find((c) => c.nameJa === "鎖鬼")!.attackRange.length, 3);
   assert.equal(loadPack(packPath("adopted-1004")).cards.length, 23);
-  assert.equal(DEFAULT_RULE_PRESET, "r1006");
+  assert.equal(DEFAULT_RULE_PRESET, "r1007");
   assert.equal(RULE_PRESETS.r1006.defaultPack, "adopted-1006");
   assert.deepEqual(presetConfig("r1006"), presetConfig("r1003"));
   assert.match(packLabel("adopted-1006"), /10\/6/);
@@ -40,7 +40,7 @@ test("召喚攻撃のコストなし、コスト7以上だけ: a cheap summon pa
   assert.equal(freeAttackFor(all, p.byId.get("ac03")!), true);
 });
 
-test("りゅー案(仮): 28 cards, no cost 5-6, light and heavy twice; the default stays 10/6案", async () => {
+test("りゅー案(仮): 28 cards, no cost 5-6, light and heavy twice; the default is not changed by it", async () => {
   const { settingPresetSettings } = await import("../src/setting-presets.ts");
   const { settingsPack } = await import("../src/settings.ts");
   const printed = loadPack(packPath("adopted-1006"));
@@ -50,5 +50,5 @@ test("りゅー案(仮): 28 cards, no cost 5-6, light and heavy twice; the defau
   const cost = (id: string) => pack.byId.get(id)!.summonCost;
   assert.ok(pack.deckList.every((id) => pack.byId.get(id)!.kind !== "shikigami" || cost(id) < 5 || cost(id) > 6));
   assert.equal(pack.deckList.filter((id) => id === "ac17").length, 2);
-  assert.equal(DEFAULT_RULE_PRESET, "r1006");
+  assert.equal(DEFAULT_RULE_PRESET, "r1007");
 });

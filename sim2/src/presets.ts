@@ -27,7 +27,7 @@
 import { defaultConfig } from "./types.ts";
 import type { Config } from "./types.ts";
 
-export const RULE_PRESET_IDS = ["r1006", "r1003", "r0923", "r0914", "r0913", "r0828"] as const;
+export const RULE_PRESET_IDS = ["r1007", "r1006", "r1003", "r0923", "r0914", "r0913", "r0828"] as const;
 export type RulePresetId = (typeof RULE_PRESET_IDS)[number];
 
 /**
@@ -35,7 +35,7 @@ export type RulePresetId = (typeof RULE_PRESET_IDS)[number];
  * ones are hardly ever called up). The others stay defined: old records,
  * shared URLs, the 調整案 built on them and the tests still name them.
  */
-export const OFFERED_RULE_IDS: readonly RulePresetId[] = ["r1006", "r1003", "r0923"];
+export const OFFERED_RULE_IDS: readonly RulePresetId[] = ["r1007", "r1006", "r1003"];
 
 export type RulePreset = {
   id: RulePresetId;
@@ -81,9 +81,17 @@ export const R0923_CHIP_STEPS: readonly number[] = [3, 4];
 export const R1003_CHIP_STEPS: readonly number[] = [4, 5, 5];
 
 /** The preset new games, rooms and the settings page start from. */
-export const DEFAULT_RULE_PRESET: RulePresetId = "r1006";
+export const DEFAULT_RULE_PRESET: RulePresetId = "r1007";
 
 export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
+  r1007: {
+    id: "r1007",
+    label: "10/7決定",
+    experiment: "",
+    defaultPack: "adopted-1006",
+    note: "10/7決定ルール: 10/6案から3つ変えたもの。収入はダイヤル(今の占拠で上下する)、収入が増える占拠チップは4枚で+1・5枚で+2、太極の軽減は1(下限1)。ほかは10/6案と同じ(初期霊力 先手6・後手8、毎ターン収入6、属性±2、死角+2、HPの上限19、HP11以上は占拠2マス分、制圧5で相手の番を耐えたら次の自分の番の始めに勝ち、2回目の山札切れで終了)。札は10/6案その2。",
+    overrides: {} as Partial<Config>,
+  },
   r1006: {
     id: "r1006",
     label: "10/6案",
@@ -184,6 +192,7 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
 };
 // 10/6案 plays the 10/3 rule numbers (only the cards changed)
 RULE_PRESETS.r1006.overrides = RULE_PRESETS.r1003.overrides;
+RULE_PRESETS.r1007.overrides = { ...RULE_PRESETS.r1003.overrides, incomeMode: "current", chipIncomeSteps: [4, 5], taijiDiscount: 1 };
 
 /** Packs selectable from the play UI and the online lobby. */
 export const PLAYABLE_PACKS = ["adopted-1006", "adopted-1006a", "adopted-1004", "adopted-1003", "adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const;

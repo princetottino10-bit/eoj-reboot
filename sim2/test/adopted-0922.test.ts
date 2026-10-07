@@ -173,7 +173,7 @@ test("r0923 = 採用ルール 9/22, still selectable next to the 10/3 default (o
   const d = defaultSettings("r0923");
   assert.equal(d.pack, "adopted-0922");
   assert.deepEqual(settingsConfig(d), cfg);
-  assert.equal(RULE_PRESET_IDS[0], "r1006");
+  assert.equal(RULE_PRESET_IDS[0], "r1007");
   for (const id of ["r0923", "r0914", "r0913", "r0828"] as const) assert.ok(RULE_PRESET_IDS.includes(id));
   for (const p of ["adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const) assert.ok(PLAYABLE_PACKS.includes(p));
   // the older presets did not move

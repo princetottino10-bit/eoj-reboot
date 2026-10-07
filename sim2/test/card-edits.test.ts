@@ -25,7 +25,7 @@ test("9/14ルール = 9/13 rules with chip steps 3/4/5 (the default until 採用
   assert.deepEqual(now.chipIncomeSteps, [3, 4, 5]);
   assert.deepEqual({ ...now, chipIncomeSteps: old.chipIncomeSteps }, old);
   // 10/3テスト案 is the default since 10/3 (pinned in adopted-1003.test.ts)
-  assert.equal(defaultSettings().rule, "r1006");
+  assert.equal(defaultSettings().rule, "r1007");
   const ctx = makeCtx(now, SK);
   assert.deepEqual([2, 3, 4, 5, 6].map((chips) => incomeFor(ctx, chips) - now.baseIncome), [0, 1, 2, 3, 3]);
   // the preset table is not reachable through a returned config
