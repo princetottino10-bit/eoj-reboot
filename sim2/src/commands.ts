@@ -4,7 +4,6 @@
 // rules; the reasons only explain. Runs where the engine runs (the online
 // server, or the local play page), never as a second rules copy.
 // Pure: no node builtins.
-import { turnFacing } from "./board.ts";
 import { canAttack, cardOf } from "./cards.ts";
 import { alliesInRange, attackCostFor, enemiesInRange, hasFreeSummonAttack, isAoeAttack } from "./combat.ts";
 import { canUseVariant, fxOf, isProxyRotator, rotateCommandLocked } from "./effects.ts";
@@ -13,7 +12,7 @@ import { isHidden } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import type { Action, AttackVariant, GameState, PlayerId, Unit } from "./types.ts";
 
-export type CommandId = "attack" | "konshin" | "regen" | "drink" | "heal" | "rotateLeft" | "rotateRight" | "proxyRotate";
+export type CommandId = "attack" | "konshin" | "regen" | "drink" | "heal" | "rotate" | "proxyRotate";
 
 export type CommandInfo = {
   id: CommandId;
@@ -37,8 +36,7 @@ const LABEL: Record<CommandId, string> = {
   regen: "再生",
   drink: "飲酒",
   heal: "回復",
-  rotateLeft: "回転(左)",
-  rotateRight: "回転(右)",
+  rotate: "回転",
   proxyRotate: "代理回転",
 };
 
@@ -97,11 +95,8 @@ export const unitCommands = (ctx: Ctx, s: GameState, u: Unit, legal: Action[]): 
     push(id, attackCostFor(ctx, u, variant), enabled, () => attackReason(ctx, s, u, variant), variant === "heal" ? false : area, free);
   }
   const rotCost = rotateCostOf(ctx, u);
-  for (const [id, dir] of [["rotateLeft", -1], ["rotateRight", 1]] as [CommandId, 1 | -1][]) {
-    const facing = turnFacing(u.facing, dir);
-    const enabled = mine.some((a) => a.kind === "rotate" && a.facing === facing);
-    push(id, rotCost, enabled, () => rotateReason(ctx, s, u, false));
-  }
+  // one 回転: the facing is picked on the board's arrows (the ones it cannot turn to are greyed)
+  push("rotate", rotCost, mine.some((a) => a.kind === "rotate"), () => rotateReason(ctx, s, u, false));
   if (isProxyRotator(ctx, u)) {
     push("proxyRotate", rotCost, mine.some((a) => a.kind === "proxyRotate"), () => rotateReason(ctx, s, u, true));
   }

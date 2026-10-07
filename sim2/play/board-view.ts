@@ -72,8 +72,7 @@ const GLYPH: Record<CommandId, string> = {
   regen: "再",
   drink: "酒",
   heal: "癒",
-  rotateLeft: "左",
-  rotateRight: "右",
+  rotate: "回",
   proxyRotate: "代",
 };
 
@@ -85,8 +84,7 @@ const ANGLE: Record<CommandId, number> = {
   regen: 52,
   drink: 52,
   heal: -52,
-  rotateLeft: -104,
-  rotateRight: 104,
+  rotate: -104,
   proxyRotate: 180,
 };
 

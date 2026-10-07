@@ -736,7 +736,8 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .fc-2 .fc-arrow { transform: rotate(180deg); }
 .fc-3 { left: -14px; top: calc(50% - 21px); }
 .fc-3 .fc-arrow { transform: rotate(270deg); }
-.fc-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.fc-btn:disabled { opacity: 0.4; filter: grayscale(1); cursor: not-allowed; }
+.fc-btn:disabled:hover { transform: none; }
 /* touch: the first tap shows that facing (ghost turned, its ranges on the board); the second tap commits */
 .fc.pre-0 .fc-ghost, .fc.fc-turn.pre-0 .fc-ghost { --r: 0deg; opacity: 0.92; }
 .fc.pre-1 .fc-ghost, .fc.fc-turn.pre-1 .fc-ghost { --r: 90deg; opacity: 0.92; }

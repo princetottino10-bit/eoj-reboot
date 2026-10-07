@@ -22,7 +22,7 @@ const matches = (id: CommandId, uid: number, a: Action, facing: number): boolean
     const v = a.variant ?? "normal";
     return (id === "attack" && v === "normal") || (id === "konshin" && v === "konshin") || (id === "heal" && v === "heal");
   }
-  if (a.kind === "rotate") return (id === "rotateLeft" && a.facing === (facing + 3) % 4) || (id === "rotateRight" && a.facing === (facing + 1) % 4);
+  if (a.kind === "rotate") return id === "rotate";
   return a.kind === "proxyRotate" && id === "proxyRotate";
 };
 
@@ -56,7 +56,7 @@ test("commands: enabled exactly when a matching legal action exists, with a reas
   }
   assert.ok(checked > 200, `checked ${checked}`);
   assert.ok([...seen].some((k) => k.startsWith("attack:霊力が足りない")), "mana shortfall reason appears");
-  assert.ok([...seen].some((k) => k === "rotateLeft:回転済み" || k === "rotateLeft:攻撃済み(このターンは行動終了)"));
+  assert.ok([...seen].some((k) => k === "rotate:回転済み" || k === "rotate:攻撃済み(このターンは行動終了)"));
 });
 
 test("commands: Kuryugai lock, konshin / heal / proxy entries and their reasons", () => {
@@ -68,10 +68,10 @@ test("commands: Kuryugai lock, konshin / heal / proxy entries and their reasons"
   place(s, "tm17", 1, 1, 2, 2); // enemy 玖龍街 locks our rotate commands
   const menu = commandsFor(ctx, s);
   const ids = (uid: number) => (menu[String(uid)] ?? []).map((c) => c.id);
-  assert.deepEqual(ids(kubi), ["attack", "konshin", "rotateLeft", "rotateRight"]);
-  assert.deepEqual(ids(meoto), ["attack", "heal", "rotateLeft", "rotateRight"]);
-  assert.deepEqual(ids(kuryu), ["attack", "rotateLeft", "rotateRight", "proxyRotate"]);
-  const rot = (menu[String(kubi)] ?? []).find((c) => c.id === "rotateLeft");
+  assert.deepEqual(ids(kubi), ["attack", "konshin", "rotate"]);
+  assert.deepEqual(ids(meoto), ["attack", "heal", "rotate"]);
+  assert.deepEqual(ids(kuryu), ["attack", "rotate", "proxyRotate"]);
+  const rot = (menu[String(kubi)] ?? []).find((c) => c.id === "rotate");
   assert.equal(rot?.enabled, false);
   assert.equal(rot?.reason, "玖龍街により回転不可");
   const proxy = (menu[String(kuryu)] ?? []).find((c) => c.id === "proxyRotate");

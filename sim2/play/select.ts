@@ -27,6 +27,8 @@ export type Sel =
   /** An attack variant is armed: pick a target, then confirm. */
   | { kind: "aim"; uid: number; mode: AttackVariant; targetUid: number | null; area: boolean; summonAttack: boolean }
   | { kind: "proxy"; uid: number; targetUid: number | null }
+  /** 回転 of an own unit: pick the facing on the board's arrows. */
+  | { kind: "turn"; uid: number }
   /**
    * A reigu from the hand: pick its target, then (adopted 9/22) 茨木の左腕's
    * 【拳】/【握】 (`mode`) or 閻魔獄卒棒's enemy (`victimUid`), then confirm.
@@ -253,6 +255,8 @@ export const selStillValid = (sel: Sel, board: BoardView, hand: string[] | null,
       return attackEntries(legal, sel.uid, sel.mode).length > 0;
     case "proxy":
       return unitEntries(legal, sel.uid, "proxyRotate").length > 0;
+    case "turn":
+      return unitEntries(legal, sel.uid, "rotate").length > 0;
     default:
       return hand !== null && sel.handIndex < hand.length;
   }

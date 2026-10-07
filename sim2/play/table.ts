@@ -435,10 +435,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       return setSel({ kind: "aim", uid: s.uid, mode, targetUid: null, area, summonAttack });
     }
     if (info.id === "proxyRotate") return setSel({ kind: "proxy", uid: s.uid, targetUid: null });
-    const u = unitById(m.board, s.uid);
-    if (u === undefined) return;
-    const facing = ((u.facing + (info.id === "rotateLeft" ? 3 : 1)) % 4) as Facing;
-    sendAction(unitEntries(lg, s.uid, "rotate").find((e) => e.action.kind === "rotate" && e.action.facing === facing));
+    if (info.id === "rotate") return setSel({ kind: "turn", uid: s.uid });
   };
 
   const onHand = (i: number): void => {
@@ -489,6 +486,9 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     if (s.kind === "place") return sendAction(summonFacings(legal(), handOf(), s.handIndex, s.pos).find((o) => o.facing === f)?.entry);
     if (s.kind === "reigu" && s.targetUid !== null) {
       return sendAction(reiguEntriesFor(s.handIndex, s.targetUid).find((e) => e.action.kind === "reigu" && e.action.facing === f));
+    }
+    if (s.kind === "turn") {
+      return sendAction(unitEntries(legal(), s.uid, "rotate").find((e) => e.action.kind === "rotate" && e.action.facing === f));
     }
     if (s.kind === "proxy" && s.targetUid !== null) {
       return sendAction(unitEntries(legal(), s.uid, "proxyRotate").find((e) => e.action.kind === "proxyRotate" && e.action.targetUid === s.targetUid && e.action.facing === f));
@@ -726,7 +726,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
   const focusNow = (): Focus => {
     if (hover !== null) return hover;
     const s = sel;
-    if (s.kind === "unit" || s.kind === "aim" || s.kind === "proxy") return { kind: "unit", uid: s.uid };
+    if (s.kind === "unit" || s.kind === "aim" || s.kind === "proxy" || s.kind === "turn") return { kind: "unit", uid: s.uid };
     if ((s.kind === "hand" || s.kind === "place" || s.kind === "inherit" || s.kind === "reigu") && model?.hand) {
       return { kind: "card", cardId: model.hand[s.handIndex] ?? "" };
     }
@@ -757,22 +757,29 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const lg = legal();
     const hand = handOf();
     const s = sel;
-    const shownUid = s.kind === "unit" || s.kind === "aim" || s.kind === "proxy" ? s.uid : null;
+    const shownUid = s.kind === "unit" || s.kind === "aim" || s.kind === "proxy" || s.kind === "turn" ? s.uid : null;
     const shown = shownUid === null ? undefined : unitById(m.board, shownUid);
     const main = m.prompt.kind === "main";
     const own = shown !== undefined && shown.owner === m.viewer;
     const aimed = aimedEntry(lg, s);
-    const turning = main && (s.kind === "reigu" || s.kind === "proxy") && s.targetUid !== null ? unitById(m.board, s.targetUid) : undefined;
+    const turning =
+      main && s.kind === "turn"
+        ? unitById(m.board, s.uid)
+        : main && (s.kind === "reigu" || s.kind === "proxy") && s.targetUid !== null
+          ? unitById(m.board, s.targetUid)
+          : undefined;
     const turnEntries =
       turning === undefined
         ? []
-        : s.kind === "reigu"
+        : s.kind === "turn"
+          ? unitEntries(lg, s.uid, "rotate")
+          : s.kind === "reigu"
           ? reiguEntriesFor(s.handIndex, turning.uid).filter((e) => e.action.kind === "reigu" && e.action.facing !== null)
           : s.kind === "proxy"
             ? unitEntries(lg, s.uid, "proxyRotate").filter((e) => e.action.kind === "proxyRotate" && e.action.targetUid === turning.uid)
             : [];
     const facingOf = (e: LegalEntry): number | null =>
-      e.action.kind === "reigu" || e.action.kind === "proxyRotate" ? e.action.facing : null;
+      e.action.kind === "reigu" || e.action.kind === "proxyRotate" || e.action.kind === "rotate" ? e.action.facing : null;
     const reiguCard = s.kind === "reigu" ? hand[s.handIndex] : undefined;
     const forecast =
       main && s.kind === "reigu" && s.targetUid !== null && reiguCard !== undefined && turnEntries.length === 0

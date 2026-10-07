@@ -348,6 +348,10 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       const t = unitById(vm.board, s.targetUid);
       return bar("pick", `代理回転: <b>${t === undefined ? "" : esc(cardName(vm.ctx, t.cardId))}</b>の向きを盤上の矢印で選ぶ`, [], [btn("retarget", "対象を選び直す", "btn-quiet"), cancel], f);
     }
+    case "turn": {
+      const t = unitById(vm.board, s.uid);
+      return bar("pick", `回転: <b>${t === undefined ? "" : esc(cardName(vm.ctx, t.cardId))}</b>の向きを盤上の矢印で選ぶ(回せない向きは灰色)`, [], [cancel], f);
+    }
     case "reigu": {
       const card = cardOf(vm.ctx.pack, vm.hand[s.handIndex]);
       const entries = handEntries(legal, vm.hand, s.handIndex, "reigu");
