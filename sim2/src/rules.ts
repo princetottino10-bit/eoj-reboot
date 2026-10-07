@@ -279,6 +279,10 @@ const handCardAt = (hand: string[], i: number): string | undefined => (Number.is
 
 export const isLegal = (ctx: Ctx, s: GameState, a: Action): boolean => {
   if (s.ended) return false;
+  if (s.forcedAttackUid !== null && s.forcedAttackUid !== undefined) {
+    const forced = forcedAttacks(allLegalActions(ctx, s), s.forcedAttackUid);
+    if (forced.length > 0 && !(a.kind === "attack" && a.uid === s.forcedAttackUid && a.variant !== "heal")) return false;
+  }
   const p = s.turnPlayer;
   const ps = s.players[p];
   if (a.kind === "pass") return true;
@@ -380,7 +384,17 @@ const counterOrderOk = (
 const STRIKE_VARIANTS: readonly AttackVariant[] = ["konshin", "regen", "drink"];
 
 /** All legal atomic actions for the turn player. `pass` is always last. */
+/** summonAttackForced: the attacks the obliged unit may make (heal excluded); [] = no obligation now. */
+const forcedAttacks = (all: Action[], uid: number | null | undefined): Action[] =>
+  uid === null || uid === undefined ? [] : all.filter((a) => a.kind === "attack" && a.uid === uid && a.variant !== "heal");
+
 export const legalActions = (ctx: Ctx, s: GameState): Action[] => {
+  const all = allLegalActions(ctx, s);
+  const forced = forcedAttacks(all, s.forcedAttackUid);
+  return forced.length > 0 ? forced : all;
+};
+
+const allLegalActions = (ctx: Ctx, s: GameState): Action[] => {
   const out: Action[] = [];
   if (s.ended) return [{ kind: "pass" }];
   const p = s.turnPlayer;
@@ -514,6 +528,10 @@ export const applyActionInPlace = (
   events: GameEvent[],
 ): void => {
   applyActionCore(ctx, s, a, events);
+  // summonAttackForced: the fresh unit owes its attack; any other action settles the obligation
+  const fresh = a.kind === "summon" || a.kind === "inherit" ? s.nextUid - 1 : null;
+  s.forcedAttackUid =
+    ctx.cfg.summonAttackForced && fresh !== null && !s.ended && forcedAttacks(allLegalActions(ctx, s), fresh).length > 0 ? fresh : null;
   recheckControl(ctx, s, events);
   checkInstantWin(ctx, s, events, a.kind === "summon" || a.kind === "inherit");
 };

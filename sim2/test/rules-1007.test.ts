@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { loadPack, packPath } from "../src/pack-io.ts";
 import { presetConfig } from "../src/presets.ts";
-import { applyAction, isLegal } from "../src/rules.ts";
+import { applyAction, isLegal, legalActions } from "../src/rules.ts";
 import { healUnit, makeCtx, unitHp, unitMaxHp } from "../src/state.ts";
 import { performMulligan } from "../src/turn.ts";
 import { blankState, place } from "./helpers.ts";
@@ -99,4 +99,29 @@ test("3点先取: a turn end on 占拠5 scores 1, on 6 scores 3 and wins", async
   const six = run(6);
   assert.equal(six.players[0].controlPoints, 3);
   assert.equal(six.winner, 0);
+});
+
+test("召喚したら必ず攻撃: a fresh unit with an enemy in range must attack before anything else", () => {
+  const ctx = makeCtx(presetConfig("r1006", { summonAttackForced: true, freeSummonAttack: "optional" }), PACK);
+  const s = blankState(ctx, 20);
+  s.players[0].hand = ["ac03", "ac01"];
+  const foe = place(s, "ac02", 1, 1, 2, 2);
+  // 影鬼 below the foe, facing it
+  const a = applyAction(ctx, s, { kind: "summon", handIndex: 0, pos: { x: 1, y: 1 }, facing: 0 }).state;
+  const fresh = a.units.find((u) => u.cardId === "ac03")!;
+  if (a.forcedAttackUid === fresh.uid) {
+    const legal = legalActions(ctx, a);
+    assert.ok(legal.length > 0 && legal.every((x) => x.kind === "attack" && x.uid === fresh.uid));
+    assert.equal(isLegal(ctx, a, { kind: "pass" }), false);
+    const after = applyAction(ctx, a, legal[0]!).state;
+    assert.equal(after.forcedAttackUid, null);
+    assert.ok(legalActions(ctx, after).some((x) => x.kind === "pass"));
+  } else {
+    assert.fail(`影鬼 should reach ${foe}`);
+  }
+  // off: nothing is forced
+  const off = makeCtx(presetConfig("r1006"), PACK);
+  const b = applyAction(off, s, { kind: "summon", handIndex: 0, pos: { x: 1, y: 1 }, facing: 0 }).state;
+  assert.equal(b.forcedAttackUid ?? null, null);
+  assert.ok(legalActions(off, b).some((x) => x.kind === "pass"));
 });

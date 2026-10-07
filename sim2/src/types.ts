@@ -132,6 +132,11 @@ export type GameState = {
   ended: boolean;
   /** EXP-0913 summonLimit: summons the turn player has made this turn. */
   summonsThisTurn: number;
+  /**
+   * summonAttackForced: the unit just summoned that must attack before anything
+   * else happens this turn (null / absent = no such obligation).
+   */
+  forcedAttackUid?: number | null;
 };
 
 export type ChipMode = "one_per_turn" | "catch_up";
@@ -337,6 +342,8 @@ export type Config = {
   freeSummonAttackInherit: boolean;
   /** freeSummonAttack only for shikigami printed at this summon cost or more (0 = all). */
   freeSummonAttackMinCost: number;
+  /** A unit summoned (or inherit-summoned) with an enemy in range that it can pay to hit must attack at once. */
+  summonAttackForced: boolean;
 };
 
 export const defaultConfig = (): Config => ({
@@ -404,6 +411,7 @@ export const defaultConfig = (): Config => ({
   freeSummonAttack: "off",
   freeSummonAttackInherit: false,
   freeSummonAttackMinCost: 0,
+  summonAttackForced: false,
 });
 
 /**

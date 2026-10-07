@@ -1043,9 +1043,13 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const normals = attackEntries(lg, fresh.uid, "normal");
     if (normals.length === 0 && attackEntries(lg, fresh.uid, "konshin").length === 0) return;
     const single = normals.some((e) => e.action.kind === "attack" && e.action.targetUid !== null);
+    // 召喚したら必ず攻撃: nothing but this unit's attack is legal (no pass), so an area attack goes straight to its confirm
+    const forced = !lg.some((e) => e.action.kind === "pass");
     sel = single
       ? { kind: "aim", uid: fresh.uid, mode: "normal", targetUid: null, area: false, summonAttack: true }
-      : { kind: "unit", uid: fresh.uid, summonAttack: true };
+      : forced
+        ? { kind: "aim", uid: fresh.uid, mode: "normal", targetUid: null, area: true, summonAttack: true }
+        : { kind: "unit", uid: fresh.uid, summonAttack: true };
   };
 
   const present = (m: TableModel, fresh: LogItem[]): void => {

@@ -122,6 +122,12 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     dependsOn: { key: "freeSummonAttack", off: "off" },
   },
   {
+    key: "summonAttackForced", group: "economy", kind: "bool",
+    label: "召喚したら必ず攻撃", words: ["する", "しない"],
+    desc: "する: 式神を召喚(継承召喚も)したとき、攻撃範囲に敵がいて攻撃の霊力が払えるなら、その式神はすぐに攻撃する(ほかの行動の前に。単体攻撃で敵が複数なら相手は選べる)。攻撃のコストは「召喚した手番の攻撃」の設定どおり",
+    midGame: true,
+  },
+  {
     key: "refundMode", group: "economy", kind: "choice",
     choices: [
       { value: "killer_half", label: "撃破した側" },

@@ -47,6 +47,7 @@ export const cloneState = (s: GameState): GameState => ({
   winType: s.winType,
   ended: s.ended,
   summonsThisTurn: s.summonsThisTurn,
+  forcedAttackUid: s.forcedAttackUid ?? null,
 });
 
 export const createGame = (ctx: Ctx, seed: number): GameState => {
