@@ -34,7 +34,7 @@ const texts = (events: GameEvent[]): string[] => events.flatMap((e) => (e.t === 
 
 // ----------------------------------------------------------------- the pack
 
-/** The 10/3 sheet: id, name, 召, 攻, HP, ATK, 霊力価, 陰陽, 範囲?, 間合い, 反撃間合い, 隙, effect key. */
+/** The 10/3 sheet: id, name, 召, 攻, HP, ATK, 霊力価, 陰陽, 範囲?, 間合い, 反撃間合い, 旧・隙, effect key. */
 const SHEET: [string, string, number, number, number, number, number, string, boolean, string, string, string, string | undefined][] = [
   ["ac01", "灯籠の精", 3, 0, 4, 0, 1, "yang", false, "", "", "8", "ad01"],
   ["ac02", "提灯お化け", 3, 2, 3, 2, 1, "yin", false, "2", "2", "8", "tm02"],

@@ -128,8 +128,8 @@ export const describeRange = (range: readonly Pos[], blind: readonly Pos[], gap:
   [
     `攻撃範囲: ${cellsWord(range)}`,
     ...(counter === undefined ? [] : [`反撃範囲: ${cellsWord(counter)}`]),
-    `死角: ${cellsWord(blind)}`,
-    ...(gap === null ? [] : [`隙: ${cellWord(gap)}`]),
+    `隙: ${cellsWord(blind)}`,
+    ...(gap === null ? [] : [`旧・隙: ${cellWord(gap)}`]),
   ].join(" / ");
 
 /**
@@ -154,7 +154,7 @@ const CELL = 10;
  * counter range = sage (a full-cell square for area attackers, an inscribed
  * circle for single), attack = vermilion at 50% of the cell (square = area,
  * circle = single), blind spot = khaki full cell, the piece = ink with a white
- * forward triangle. The system has no gap (隙) mark yet: an amber ring stands
+ * forward triangle. The system has no gap (旧・隙) mark yet: an amber ring stands
  * in for it (provisional). 3x3 when everything is adjacent, 5x5 when something
  * reaches two cells (the unused outer ring then shrinks to dots so the core
  * reads first). The diagram is always printed forward = up; on the board the

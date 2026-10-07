@@ -101,7 +101,7 @@ test("the sheets: true-size lg faces of the table, the 10/3 numbers, crop marks 
   const face = (id: string): string => html.split(`data-card="${id}"`)[1].split('class="pr-slot"')[0];
   assert.match(face("ac16"), /title="HP 11"/, "酒呑童子 HP 11");
   assert.match(face("ac07"), /この式神のATK分だけ対象のHP\+/, "変面 heals the full ATK");
-  assert.match(face("ac15"), /攻撃範囲: 前2・前・右前 \/ 反撃範囲: 前2・前・右前 \/ 死角: 右"/, "茨木童子 attack -223 / counter -223 / blind 6");
+  assert.match(face("ac15"), /攻撃範囲: 前2・前・右前 \/ 反撃範囲: 前2・前・右前 \/ 隙: 右"/, "茨木童子 attack -223 / counter -223 / blind 6");
   assert.match(face("ac23"), /鬼の酒/);
   assert.match(face("ac23"), /O-012/);
   // art where the kit has it
@@ -148,7 +148,7 @@ test("the 早見表 reads every number from the r1003 preset", () => {
   assert.match(text("収入"), /減らない/);
   assert.match(text("太極"), /召喚コスト−2 \(1より下がらない\)/);
   assert.match(text("属性"), /HP\+2.*HP−2/);
-  assert.match(text("死角"), /ダメージ\+2/);
+  assert.match(text("隙"), /ダメージ\+2/);
   assert.match(text("HPの上限"), /19まで/);
   assert.match(text("占拠"), /HP11以上の式神は2マス分/);
   assert.match(text("勝ち"), /5マス分を占拠していれば制圧。次の自分のターン開始時にまだ5マス分あれば勝ち/);

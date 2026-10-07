@@ -160,7 +160,7 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
       : `撃破報酬: ${choiceLabel("refundMode", cfg.refundMode)}が${choiceLabel("killRewardBase", cfg.killRewardBase)}。`;
   const counter =
     cfg.counterMode === "all" && cfg.counterResolve === "chosen"
-      ? "物理攻撃を受けて残った敵のうち、反撃範囲に攻撃者がいる物理の式神が全員反撃する。順番は反撃する側が選んで1体ずつ、攻撃者が倒れたら残りはしない。死角から受けたとき・術式の攻撃には反撃しない。"
+      ? "物理攻撃を受けて残った敵のうち、反撃範囲に攻撃者がいる物理の式神が全員反撃する。順番は反撃する側が選んで1体ずつ、攻撃者が倒れたら残りはしない。隙から受けたとき・術式の攻撃には反撃しない。"
       : `${choiceLabel("counterMode", cfg.counterMode)}、${choiceLabel("counterResolve", cfg.counterResolve)}。`;
   const refill = cfg.handMode === "replace_discarded" ? "捨てた枚数だけ引く" : `${cfg.handRefill}枚まで引く`;
   const aoe =
@@ -173,7 +173,7 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
     { label: "収入", text: `${timing}に${cfg.baseIncome}。${steps}${ratchet}` },
     { label: "太極", text: taiji },
     { label: "属性", text: attr },
-    { label: "死角", text: `死角からの物理攻撃はダメージ+${cfg.blindBonus}。` },
+    { label: "隙", text: `隙からの物理攻撃はダメージ+${cfg.blindBonus}。` },
     { label: "HPの上限", text: `盤上のHPは${cfg.maxHp}まで。回復はカードのHPを超えて${cfg.maxHp}まで伸びる。`},
     { label: "回転", text: `回転命令は霊力${cfg.rotateCost}で90度。` },
     { label: "範囲攻撃", text: aoe },
@@ -210,7 +210,7 @@ const legendHtml = (): string => {
     item(mark("atk"), "ATK"),
     item(flames(1, "pr-flame"), "霊力価 (撃破したときに得る霊力)"),
     item(`${mark("phys")}${mark("jutsu")}`, "物理・術式 / 単体・範囲"),
-    item(sample, "間合いの図 (上が正面): 黒▲=自分、朱=攻撃 (○単体・□範囲)、緑=反撃、茶=死角"),
+    item(sample, "間合いの図 (上が正面): 黒▲=自分、朱=攻撃 (○単体・□範囲)、緑=反撃、茶=隙"),
   ].join("")}</ul>`;
 };
 

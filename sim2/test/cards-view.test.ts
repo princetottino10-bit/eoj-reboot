@@ -41,13 +41,13 @@ test("range diagram: 3x3 for adjacent ranges, 5x5 when something reaches two cel
 test("range diagram is described in words for the tooltip, with the facing on the board", () => {
   assert.equal(
     describeRange([{ x: -1, y: 1 }, { x: 0, y: 2 }], [{ x: 0, y: -1 }], { x: -1, y: 1 }),
-    "攻撃範囲: 左前・前2 / 死角: 後 / 隙: 左前",
+    "攻撃範囲: 左前・前2 / 隙: 後 / 旧・隙: 左前",
   );
   assert.equal(
     describeRange([{ x: -1, y: 1 }, { x: 0, y: 2 }], [{ x: 0, y: -1 }], null, [{ x: 0, y: 1 }]),
-    "攻撃範囲: 左前・前2 / 反撃範囲: 前 / 死角: 後",
+    "攻撃範囲: 左前・前2 / 反撃範囲: 前 / 隙: 後",
   );
-  assert.match(rangeSvg([{ x: 0, y: 1 }], [], null, 2), /aria-label="攻撃範囲: 前 \/ 死角: なし\(いまの向き: 下\)"/);
+  assert.match(rangeSvg([{ x: 0, y: 1 }], [], null, 2), /aria-label="攻撃範囲: 前 \/ 隙: なし\(いまの向き: 下\)"/);
 });
 
 test("every shikigami card shows its range at all three sizes; reigu cards have none", () => {

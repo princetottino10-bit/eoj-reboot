@@ -220,7 +220,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   },
   {
     key: "blindBonus", group: "board", kind: "int", min: 0, max: 5,
-    label: "死角ボーナス", desc: "死角からの物理攻撃に加わるダメージ", midGame: true,
+    label: "隙ボーナス", desc: "隙からの物理攻撃に加わるダメージ", midGame: true,
   },
   {
     key: "maxHp", group: "board", kind: "int", min: 1, max: 20,
@@ -241,9 +241,9 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     choices: [
       { value: "all", label: "反撃範囲内の全員" },
       { value: "single", label: "1体だけ" },
-      { value: "gap", label: "隙位置の敵だけ" },
+      { value: "gap", label: "旧・隙位置の敵だけ" },
     ],
-    label: "反撃方式", desc: "攻撃を受けた式神のうち、どれが反撃するか(gap: 範囲攻撃は隙位置だけが反撃できる)", midGame: true,
+    label: "反撃方式", desc: "攻撃を受けた式神のうち、どれが反撃するか(gap: 範囲攻撃は旧・隙位置だけが反撃できる)", midGame: true,
   },
   {
     key: "counterResolve", group: "combat", kind: "choice",

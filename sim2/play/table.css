@@ -311,7 +311,7 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
   box-shadow: 0 0 3cqw oklch(78% 0.14 72 / 0.55);
 }
 .cell-gap::after {
-  content: "隙"; position: absolute; right: -9cqw; bottom: -9cqh; padding: 0 1.8cqw; border-radius: 1cqw;
+  content: "旧・隙"; position: absolute; right: -9cqw; bottom: -9cqh; padding: 0 1.8cqw; border-radius: 1cqw;
   background: var(--sym-amber); color: var(--ink); font-family: var(--font-mincho); font-weight: 800; font-size: max(10px, 9cqw); line-height: 1.3;
 }
 .cell.mk-summon::after { inset: 0; border-radius: 0.5cqw; box-shadow: inset 0 0 0 1.4cqw oklch(88% 0.1 88 / 0.95), inset 0 0 16cqw oklch(80% 0.12 85 / 0.55); animation: glow-breathe 1.8s ease-in-out infinite; }

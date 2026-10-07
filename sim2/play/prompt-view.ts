@@ -170,9 +170,9 @@ const bar = (kind: string, hint: string, lines: string[], buttons: string[], fla
 /** Keyboard hints; hidden on touch screens and narrow layouts (table.css). */
 const kbd = (text: string): string => `<span class="kbd-hint">${text}</span>`;
 
-/** The board's range colours, the same as the card diagram (隙 = the provisional amber ring). */
+/** The board's range colours, the same as the card diagram (旧・隙 = the provisional amber ring). */
 const LEGEND =
-  '<span class="legend"><i class="lg lg-attack"></i>攻撃範囲 <i class="lg lg-counter"></i>反撃範囲 <i class="lg lg-blind"></i>死角 <i class="lg lg-gap"></i>隙</span>';
+  '<span class="legend"><i class="lg lg-attack"></i>攻撃範囲 <i class="lg lg-counter"></i>反撃範囲 <i class="lg lg-blind"></i>隙 <i class="lg lg-gap"></i>旧・隙</span>';
 
 const unitHint = (vm: PromptVM, uid: number, own: boolean): string => {
   const u = unitById(vm.board, uid);
@@ -199,7 +199,7 @@ const reiguLines = (vm: PromptVM, fc: ReiguForecast): string[] => {
       lines.push(`${nm(fc.target.uid)}の正面 → <b>${nm(fc.victim.uid)}</b>(${owner(fc.victim.owner)})に <b>${fc.dmg}ダメージ</b>(HP ${fc.before}→${fc.after})`);
       if (fc.ally) lines.push('<b class="warn">味方への攻撃です</b>');
       if (fc.destroyed) lines.push(`<b class="warn">撃破</b>${fc.lifeLoss > 0 ? `(${owner(fc.victim.owner)}の生命−${fc.lifeLoss})` : ""}`);
-      lines.push('<span class="muted">反撃・死角なし</span>');
+      lines.push('<span class="muted">反撃・隙なし</span>');
       break;
     case "setHp":
       lines.push(`<b>${nm(fc.target.uid)}</b>のHP ${fc.before}→<b>${fc.after}</b>`);
@@ -239,7 +239,7 @@ export const reiguPreviewLines = (vm: PromptVM, pv: ReiguPreview): string[] => {
     if (pv.lifeLoss[p] > 0) lines.push(`${owner(p)}の生命−${pv.lifeLoss[p]}`);
   }
   if (pv.ends !== null) lines.push(`<b class="warn">これで決着: ${pv.ends.winner === null ? "引き分け" : `${owner(pv.ends.winner)}の勝ち`}</b>`);
-  lines.push('<span class="muted">反撃・死角なし</span>');
+  lines.push('<span class="muted">反撃・隙なし</span>');
   return lines;
 };
 
@@ -256,7 +256,7 @@ const armBar = (vm: PromptVM, legal: LegalEntry[], s: Extract<Sel, { kind: "reig
   if ((s.mode ?? null) === null) {
     const lines = REIGU_MODES.map((m) => {
       const pv = previewOf(m);
-      const bits = pv === null ? [] : reiguPreviewLines(vm, pv).filter((l) => !l.includes("反撃・死角なし"));
+      const bits = pv === null ? [] : reiguPreviewLines(vm, pv).filter((l) => !l.includes("反撃・隙なし"));
       return `【${REIGU_MODE_LABEL[m]}】${m === "ken" ? "1マス遠ざける" : "1マス近づける"}: ${bits.join(" / ")}${pv !== null && pv.moves.length === 0 && pv.hits.every((h) => !h.destroyed) ? ' <span class="muted">(空きがないので動かない)</span>' : ""}`;
     });
     const buttons = REIGU_MODES.map((m) => btn("rmode", `【${REIGU_MODE_LABEL[m]}】`, m === "ken" ? "btn-gold" : "btn-red", `data-mode="${m}"`));
@@ -276,7 +276,7 @@ const clubBar = (vm: PromptVM, legal: LegalEntry[], s: Extract<Sel, { kind: "rei
   const t = s.targetUid === null ? undefined : unitById(vm.board, s.targetUid);
   const tName = t === undefined ? "" : esc(cardName(vm.ctx, t.cardId));
   if ((s.victimUid ?? null) === null) {
-    return bar("pick", `<b>${esc(card.nameJa)}</b>: <b>${tName}</b>の隣(死角以外)の敵を盤上で選ぶ`, [], [retarget, cancel], f);
+    return bar("pick", `<b>${esc(card.nameJa)}</b>: <b>${tName}</b>の隣(隙以外)の敵を盤上で選ぶ`, [], [retarget, cancel], f);
   }
   const e = reiguEntry(legal, vm.hand, s);
   const lines = e?.preview?.kind === "reigu" ? reiguPreviewLines(vm, e.preview) : [];

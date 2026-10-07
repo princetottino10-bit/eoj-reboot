@@ -86,7 +86,7 @@ test("words: an attack says who struck whom for how much, 撃破, the counter an
     hits: [hit(a, "ac15", 4, { blind: true, destroyed: true }), hit(9, "ac03", 2, { ally: true })],
     counterTotal: 3, counterCount: 2, attackerDestroyed: true, variant: "konshin",
   }]);
-  assert.deepEqual(texts(area), ["先手: 鉞鬼の渾身の攻撃(霊力−3) → 茨木童子に4ダメージ(死角)(撃破)・影鬼(味方)に2ダメージ / 反撃で3ダメージ(2体)、鉞鬼は撃破された"]);
+  assert.deepEqual(texts(area), ["先手: 鉞鬼の渾身の攻撃(霊力−3) → 茨木童子に4ダメージ(隙)(撃破)・影鬼(味方)に2ダメージ / 反撃で3ダメージ(2体)、鉞鬼は撃破された"]);
   const heal = say(ctx, s, [{ t: "attack", player: 1, uid: a, cardId: "ac15", aoe: false, cost: 1, hits: [hit(v, "ac04", -2)], counterTotal: 0, counterCount: 0, attackerDestroyed: false, variant: "heal" }]);
   assert.deepEqual(texts(heal), ["後手: 茨木童子が味方の鉞鬼を2回復(霊力−1)"]);
   const miss = say(ctx, s, [{ t: "attack", player: 0, uid: v, cardId: "ac04", aoe: true, cost: 0, hits: [], counterTotal: 0, counterCount: 0, attackerDestroyed: false, variant: "normal" }]);

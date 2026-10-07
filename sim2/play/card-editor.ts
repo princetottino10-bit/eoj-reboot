@@ -53,13 +53,13 @@ export const initialCardUi = (printed: CardPack): CardUi => ({
 
 const TOOLS: readonly { id: RangeTool; label: string }[] = [
   { id: "attack", label: "攻撃" },
-  { id: "blind", label: "死角" },
-  { id: "gap", label: "隙" },
+  { id: "blind", label: "隙" },
+  { id: "gap", label: "旧・隙" },
   { id: "counter", label: "反撃" },
   { id: "erase", label: "消す" },
 ];
 
-const CELL_WORD: Record<string, string> = { self: "自分", gap: "攻撃範囲・隙", attack: "攻撃範囲", blind: "死角", empty: "なし" };
+const CELL_WORD: Record<string, string> = { self: "自分", gap: "攻撃範囲・旧・隙", attack: "攻撃範囲", blind: "隙", empty: "なし" };
 
 const dis = (b: boolean): string => (b ? "disabled" : "");
 
@@ -131,7 +131,7 @@ const bulkHtml = (w: CardWork, ui: CardUi): string => {
     ${filters}
     <div class="ce-bulk-stats">${stats}</div>
     <div class="ce-bulk-foot">
-      <button type="button" class="btn btn-quiet" data-bulk="copyShape" ${dis(!canCopy)}>「${esc(focus?.nameJa ?? "")}」の攻撃範囲・死角・隙を選んだカードにコピー</button>
+      <button type="button" class="btn btn-quiet" data-bulk="copyShape" ${dis(!canCopy)}>「${esc(focus?.nameJa ?? "")}」の攻撃範囲・隙・反撃範囲を選んだカードにコピー</button>
       <button type="button" class="btn btn-quiet" data-bulk="reset" ${dis(off)}>選んだカードを印刷どおりに戻す</button>
     </div>
   </div>`;
@@ -177,15 +177,17 @@ const editorHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
   if (!canEditShape(base)) {
     return `<div class="ce-editor">${head}<div class="ce-body">${preview}<p class="muted ce-note">霊具は使用コスト(表の「召」)だけ変えられます。</p></div></div>`;
   }
-  const tools = TOOLS.map(
+  // 旧・隙 only matters under the old counter mode (反撃方式「旧・隙位置の敵だけ」)
+  const oldGap = w.cfg.counterMode === "gap";
+  const tools = TOOLS.filter((t) => t.id !== "gap" || oldGap).map(
     (t) => `<button type="button" class="ce-tool ce-tool-${t.id}${ui.tool === t.id ? " on" : ""}" data-tool="${t.id}" aria-pressed="${ui.tool === t.id}" ${dis(w.locked || (t.id === "gap" && !card.aoe))}>${esc(t.label)}</button>`,
   ).join("");
   const gap = card.gapCell ?? null;
   const text = `<dl class="ce-text">
     <dt>攻撃範囲</dt><dd>${esc(cellsText(card.attackRange))}</dd>
-    <dt>死角</dt><dd>${esc(cellsText(card.blindSpots))}</dd>
+    <dt>隙</dt><dd>${esc(cellsText(card.blindSpots))}</dd>
     <dt>反撃範囲</dt><dd>${esc(card.counterRange.length === 0 ? "なし" : cellsText(card.counterRange))}</dd>
-    <dt>隙</dt><dd>${card.aoe ? esc(gap === null ? "なし" : cellWord(gap)) : "単体攻撃は攻撃範囲全体"}</dd>
+    ${oldGap ? `<dt>旧・隙</dt><dd>${card.aoe ? esc(gap === null ? "なし" : cellWord(gap)) : "単体攻撃は攻撃範囲全体"}</dd>` : ""}
   </dl>`;
   const shape = `<div class="ce-shape">
     <div class="ce-tools" role="group" aria-label="塗るもの">${tools}</div>
@@ -353,7 +355,7 @@ export const cardClick = (t: HTMLElement, form: HTMLFormElement, w: CardWork, ui
     }
     case "copyShape": {
       const r = copyShape(w.printed, cards, ui.focus, picked);
-      return { cards: r.cards, notice: `${r.changed}枚に攻撃範囲・死角・隙をコピーしました` };
+      return { cards: r.cards, notice: `${r.changed}枚に攻撃範囲・隙・反撃範囲をコピーしました` };
     }
     case "reset":
       return { cards: resetCards(cards, picked), notice: `${picked.length}枚を印刷どおりに戻しました` };

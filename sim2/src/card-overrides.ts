@@ -57,9 +57,9 @@ export const SHAPE_LABELS: Record<CardShapeKey, string> = {
   attackType: "攻撃の種類",
   aoe: "範囲/単体",
   attackRange: "攻撃範囲",
-  blindSpots: "死角",
+  blindSpots: "隙",
   counterRange: "反撃範囲",
-  gapCell: "隙",
+  gapCell: "旧・隙",
 };
 
 export const ATTR_LABELS: Record<Attr, string> = { yin: "陰", yang: "陽", none: "空" };
@@ -152,8 +152,8 @@ const effective = <K extends keyof CardEdit & keyof CardDef>(card: CardDef, edit
 /** Relations between range, blind spots and gap, on the card as it will be played. */
 const checkShape = (name: string, range: readonly Pos[], blind: readonly Pos[], gap: Pos | null, aoe: boolean): string | null => {
   const keys = new Set(range.map(posKey));
-  if (blind.some((c) => keys.has(posKey(c)))) return `${name}: 攻撃範囲と死角が同じマスにあります`;
-  if (gap !== null && aoe && !keys.has(posKey(gap))) return `${name}: 隙は攻撃範囲のマスに置いてください`;
+  if (blind.some((c) => keys.has(posKey(c)))) return `${name}: 攻撃範囲と隙が同じマスにあります`;
+  if (gap !== null && aoe && !keys.has(posKey(gap))) return `${name}: 旧・隙は攻撃範囲のマスに置いてください`;
   return null;
 };
 
@@ -177,12 +177,12 @@ const parseShape = (key: string, v: unknown, name: string, edit: CardEdit): stri
         return null;
       }
       const c = parseCell(v);
-      if (c === null) return `${name} の隙のマスが不正です`;
+      if (c === null) return `${name} の旧・隙のマスが不正です`;
       edit.gapCell = c;
       return null;
     }
     default: {
-      const label = key === "attackRange" ? "攻撃範囲" : key === "counterRange" ? "反撃範囲" : "死角";
+      const label = key === "attackRange" ? "攻撃範囲" : key === "counterRange" ? "反撃範囲" : "隙";
       const cells = parseCellList(v, `${name} の${label}`);
       if (!cells.ok) return cells.error;
       if (key === "attackRange") edit.attackRange = cells.value;

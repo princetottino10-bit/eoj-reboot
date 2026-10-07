@@ -83,8 +83,8 @@ export const gapNote = (ctx: Ctx, u: Unit): string => {
   const card = cardOfUnit(ctx, u);
   if (card.atk <= 0 || card.attackRange.length === 0) return "";
   if (card.attackType !== "phys") return "術式: 反撃を受けない";
-  if (!isAoeAttack(ctx, card)) return "単体攻撃: 範囲全体が隙(対象の反撃範囲に入っていれば反撃される)";
-  return (card.gapCell ?? null) === null ? "範囲攻撃・隙なし: 反撃を受けない" : "範囲攻撃: 琥珀色の枠=隙位置(ここにいる敵だけが反撃できる)";
+  if (!isAoeAttack(ctx, card)) return "単体攻撃: 範囲全体が旧・隙(対象の反撃範囲に入っていれば反撃される)";
+  return (card.gapCell ?? null) === null ? "範囲攻撃・旧・隙なし: 反撃を受けない" : "範囲攻撃: 琥珀色の枠=旧・隙位置(ここにいる敵だけが反撃できる)";
 };
 
 // ------------------------------------------------------------------- log
@@ -197,7 +197,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
         };
       }
       const hits = e.hits
-        .map((h) => `${name(h.cardId)}に${h.dmg}${h.blind ? "【死角】" : ""}${h.ally ? "(味方)" : ""}${h.destroyed ? "→撃破" : ""}`)
+        .map((h) => `${name(h.cardId)}に${h.dmg}${h.blind ? "【隙】" : ""}${h.ally ? "(味方)" : ""}${h.destroyed ? "→撃破" : ""}`)
         .join(" / ");
       const counter = e.counterTotal > 0 ? ` ⇔ 反撃${e.counterTotal}${e.counterCount > 1 ? `(${e.counterCount}体)` : ""}` : "";
       const dead = e.attackerDestroyed ? " → 攻撃側撃破" : "";
@@ -304,7 +304,7 @@ export const attackSummaryLines = (ctx: Ctx, board: BoardView, names: Names, uid
     return lines;
   }
   for (const h of pv.hits) {
-    const tags = `${h.blind ? "【死角】" : ""}${h.ally ? "【味方】" : ""}`;
+    const tags = `${h.blind ? "【隙】" : ""}${h.ally ? "【味方】" : ""}`;
     lines.push(
       `${esc(cardName(ctx, h.cardId))} <b>−${h.dmg}</b>${tags}(HP ${hpNow(ctx, board, h.uid)}→${h.hpAfter})${
         h.destroyed ? ' <b class="warn">撃破</b>' : ""

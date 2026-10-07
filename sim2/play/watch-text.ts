@@ -68,7 +68,7 @@ const attackLine = (e: Extract<GameEvent, { t: "attack" }>, seat: string, name: 
   const single = e.hits.length === 1;
   const hits = e.hits.map((h) => {
     const tags = `${h.ally ? "(味方)" : ""}`;
-    const blind = h.blind ? "(死角)" : "";
+    const blind = h.blind ? "(隙)" : "";
     const dead = h.destroyed ? (single ? "、撃破" : "(撃破)") : "";
     return `${name(h.cardId)}${tags}に${h.dmg}ダメージ${blind}${dead}`;
   });

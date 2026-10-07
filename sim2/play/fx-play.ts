@@ -266,7 +266,7 @@ const attack = (c: Ctx, e: Extract<GameEvent, { t: "attack" }>, destroyed: numbe
       const flash = temp(c, "fx-flash", r, "", t + 800);
       flash.style.opacity = "0";
       run(c, flash, [{ opacity: 0, transform: "scale(0.4)" }, { opacity: 1, transform: "scale(1)", offset: 0.35 }, { opacity: 0, transform: "scale(1.5)" }], t + 120, 520, "ease-out");
-      word(c, "死角", r, "fx-gold", t + 200, 800);
+      word(c, "隙", r, "fx-gold", t + 200, 800);
       beat = Math.max(beat, t + 600);
     }
   }
