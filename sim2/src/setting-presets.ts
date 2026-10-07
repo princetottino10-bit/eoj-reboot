@@ -23,7 +23,7 @@ import type { PlayablePack, RulePresetId } from "./presets.ts";
 import { changedItemCount, normalizeSettings, parseSettings, settingsConfig } from "./settings.ts";
 import type { GameSettings } from "./settings.ts";
 
-export const SETTING_PRESET_IDS = ["ryuDraft", "lineUp", "adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive", "freeSummon"] as const;
+export const SETTING_PRESET_IDS = ["mock1007", "ryuDraft", "lineUp", "adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive", "freeSummon"] as const;
 export type SettingPresetId = (typeof SETTING_PRESET_IDS)[number];
 
 export type SettingPreset = {
@@ -256,7 +256,19 @@ const RYU_DRAFT: SettingPreset = {
   },
 };
 
+/** The 10/7 mock test's pick: 10/6案 with the dial, chips 4/5 and 太極−1. */
+const MOCK_1007: SettingPreset = {
+  id: "mock1007",
+  label: "10/7モック案",
+  note: "10/7のモックテストで「いい感じ」だった設定。10/6案(札は10/6案その2)から3つだけ変える: 収入はダイヤル(今の占拠で上下する)、収入が増える占拠チップは4枚で+1・5枚で+2、太極の軽減は1。",
+  rule: "r1006",
+  pack: "adopted-1006",
+  config: { incomeMode: "current", chipIncomeSteps: [4, 5], taijiDiscount: 1 },
+  cards: {},
+};
+
 export const SETTING_PRESETS: Record<SettingPresetId, SettingPreset> = {
+  mock1007: MOCK_1007,
   ryuDraft: RYU_DRAFT,
   lineUp: LINE_UP,
   adj15: ADJ15,

@@ -66,3 +66,14 @@ test("マリガン: 捨て札にする puts the cards in the grave and draws fro
     }
   }
 });
+
+test("10/7モック案: 10/6案 with the dial, chips 4/5 and 太極−1, three changes from the base", async () => {
+  const { settingPresetSettings } = await import("../src/setting-presets.ts");
+  const { settingsConfig, settingsDiff } = await import("../src/settings.ts");
+  const s = settingPresetSettings("mock1007", PACK);
+  const cfg = settingsConfig(s);
+  assert.equal(cfg.incomeMode, "current");
+  assert.deepEqual(cfg.chipIncomeSteps, [4, 5]);
+  assert.equal(cfg.taijiDiscount, 1);
+  assert.equal(settingsDiff(s).rules.length, 3);
+});
