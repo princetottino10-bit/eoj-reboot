@@ -66,7 +66,7 @@ export type ConfigField =
 export const CONFIG_SCHEMA: readonly ConfigField[] = [
   // ------------------------------------------------------------- economy
   {
-    key: "incomeMode", group: "economy", kind: "choice",
+    key: "incomeMode", group: "rare", kind: "choice",
     choices: [
       { value: "ratchet", label: "ラチェット(チップは減らない)" },
       { value: "current", label: "ダイヤル(今の占拠で上下する)" },
@@ -82,16 +82,16 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   {
     key: "chipIncomeSteps", group: "economy", kind: "intList", min: 1, max: 9, maxLength: 6,
     label: "収入が増える占拠チップ数",
-    desc: "チップ(ターン終了時の占拠数まで増え、減らない)がこの枚数に達するたびに毎ターン収入+1。同じ枚数を2つ並べるとその枚数で+2。例 3,4,5 → 3枚で+1・4枚で+2・5枚で+3 / 4,5,5 → 4枚で+1・5枚で+3",
+    desc: "占拠チップ(ダイヤルなら収入を受け取る時点の占拠数、ラチェットならこれまでの最大の占拠数)がこの枚数に達するたびに毎ターン収入+1。同じ枚数を2つ並べるとその枚数で+2。例 3,4,5 → 3枚で+1・4枚で+2・5枚で+3 / 4,5,5 → 4枚で+1・5枚で+3",
     midGame: true,
   },
   {
-    key: "chipMode", group: "economy", kind: "choice",
+    key: "chipMode", group: "rare", kind: "choice",
     choices: [
       { value: "catch_up", label: "占拠数まで追いつく" },
       { value: "one_per_turn", label: "1ターンに1枚まで" },
     ],
-    label: "チップの増え方", desc: "ターン終了時、占拠数がチップ枚数を上回っているときの増え方", midGame: true,
+    label: "チップの増え方", desc: "ラチェットのとき、ターン終了時に占拠数がチップ枚数を上回っているときの増え方(ダイヤルでは使わない)", midGame: true,
   },
   {
     key: "attackCostDelta", group: "economy", kind: "int", min: -5, max: 5,
