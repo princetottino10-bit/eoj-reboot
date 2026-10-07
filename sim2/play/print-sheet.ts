@@ -147,9 +147,13 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
       : cfg.controlCount === "cost"
         ? `召喚コスト${cfg.controlCountThreshold}以上の式神は2マス分と数える。`
         : "";
-  const hold = cfg.controlHold === "next_turn_end"
+  const keep = cfg.controlHold === "next_turn_end"
     ? `自分のターン終了時に${cfg.controlWin}マス分を占拠していれば制圧。次の自分のターン終了時まで保てば勝ち (途中で下回れば解ける)。`
     : `自分のターン終了時に${cfg.controlWin}マス分を占拠していれば制圧。次の自分のターン開始時にまだ${cfg.controlWin}マス分あれば勝ち。`;
+  const big = cfg.controlBigCells > 0 ? `、${cfg.controlBigCells}マス分以上なら${cfg.controlBigPoints}点` : "";
+  const points = `自分のターン終了時に${cfg.controlWin}マス分以上を占拠していれば制圧点1点${big} (減らない)。${cfg.controlPointsToWin}点先取で勝ち。`;
+  const hold =
+    cfg.controlWinMode === "points" ? points : cfg.controlWinMode === "hold_points" ? `${keep}また、${points}` : keep;
   const reward =
     cfg.killRewardBase === "card"
       ? `${cfg.refundMode === "killer_half" ? "撃破した側" : "撃破された側"}が、撃破された式神の霊力価 (青い炎の数) だけ霊力を得る。`

@@ -77,3 +77,26 @@ test("10/7モック案: 10/6案 with the dial, chips 4/5 and 太極−1, three c
   assert.equal(cfg.taijiDiscount, 1);
   assert.equal(settingsDiff(s).rules.length, 3);
 });
+
+test("3点先取: a turn end on 占拠5 scores 1, on 6 scores 3 and wins", async () => {
+  const { endTurn } = await import("../src/turn.ts");
+  const { settingPresetSettings } = await import("../src/setting-presets.ts");
+  const { settingsConfig } = await import("../src/settings.ts");
+  const cfg = { ...settingsConfig(settingPresetSettings("points3", PACK)), controlCount: "cells" as const };
+  const ctx = makeCtx(cfg, PACK);
+  const run = (n: number) => {
+    const s = blankState(ctx);
+    const cells: [number, number][] = [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]];
+    for (const [x, y] of cells.slice(0, n)) place(s, "ac03", 0, x, y, 0);
+    s.players[0].deck = Array(20).fill("ac01");
+    endTurn(ctx, s, [], () => []);
+    return s;
+  };
+  assert.equal(run(4).players[0].controlPoints, 0);
+  const five = run(5);
+  assert.equal(five.players[0].controlPoints, 1);
+  assert.equal(five.ended, false);
+  const six = run(6);
+  assert.equal(six.players[0].controlPoints, 3);
+  assert.equal(six.winner, 0);
+});

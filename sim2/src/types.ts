@@ -305,6 +305,9 @@ export type Config = {
   controlWinMode: ControlWinMode;
   /** controlWinMode "points": 制圧点 needed to win. */
   controlPointsToWin: number;
+  /** 制圧点: a turn end on at least this 占拠 scores controlBigPoints instead of 1 (0 = no such step). */
+  controlBigCells: number;
+  controlBigPoints: number;
   /** 収入の決め方. */
   incomeMode: IncomeMode;
   /** 撃破報酬の条件 (applies when the reward goes to the destroyer, refundMode killer_half). */
@@ -386,6 +389,8 @@ export const defaultConfig = (): Config => ({
   controlCountThreshold: 11,
   controlWinMode: "hold",
   controlPointsToWin: 2,
+  controlBigCells: 0,
+  controlBigPoints: 3,
   incomeMode: "ratchet",
   killRewardCondition: "always",
   underdogIncome: 0,

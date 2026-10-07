@@ -332,6 +332,20 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     dependsOn: { key: "controlWinMode", off: "hold" },
   },
   {
+    key: "controlBigCells", group: "victory", kind: "int", min: 0, max: 9,
+    label: "大きく点が入る占拠", unit: "以上",
+    desc: "制圧点が入るとき、占拠がこの数以上なら1点ではなく「大きく入る点」が入る(例: 6なら占拠5で1点・6で3点)。0でなし",
+    midGame: true,
+    dependsOn: { key: "controlWinMode", off: "hold" },
+  },
+  {
+    key: "controlBigPoints", group: "victory", kind: "int", min: 1, max: 9,
+    label: "大きく入る点", unit: "点",
+    desc: "占拠が「大きく点が入る占拠」以上のときに入る制圧点",
+    midGame: true,
+    dependsOn: { key: "controlBigCells", off: 0 },
+  },
+  {
     key: "controlCount", group: "victory", kind: "choice",
     choices: [
       { value: "cells", label: "1体で1マス" },

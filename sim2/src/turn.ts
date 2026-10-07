@@ -323,16 +323,21 @@ const endTurnPoints = (ctx: Ctx, s: GameState, p: PlayerId, occ: number, events:
   return addControlPoint(ctx, s, p, occ, events);
 };
 
-/** One 制圧点 for p; true = that was the last one needed and the game ended. */
+/** 制圧点 a turn end on `occ` scores: controlBigPoints from controlBigCells up, else 1. */
+export const controlPointsFor = (ctx: Ctx, occ: number): number =>
+  ctx.cfg.controlBigCells > 0 && occ >= ctx.cfg.controlBigCells ? ctx.cfg.controlBigPoints : 1;
+
+/** 制圧点 for p (controlPointsFor); true = that reached controlPointsToWin and the game ended. */
 const addControlPoint = (ctx: Ctx, s: GameState, p: PlayerId, occ: number, events: GameEvent[]): boolean => {
   const ps = s.players[p];
-  ps.controlPoints += 1;
+  const gain = controlPointsFor(ctx, occ);
+  ps.controlPoints += gain;
   events.push({
     t: "effect",
     player: p,
     source: "rule",
     uid: null,
-    text: `${seatWord(p)}: 制圧点 +1(計${ps.controlPoints}/${ctx.cfg.controlPointsToWin}点・占拠${occ})`,
+    text: `${seatWord(p)}: 制圧点 +${gain}(計${ps.controlPoints}/${ctx.cfg.controlPointsToWin}点・占拠${occ})`,
   });
   if (ps.controlPoints < ctx.cfg.controlPointsToWin) return false;
   controlWinNow(ctx, s, p, events);

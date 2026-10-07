@@ -23,7 +23,7 @@ import type { PlayablePack, RulePresetId } from "./presets.ts";
 import { changedItemCount, normalizeSettings, parseSettings, settingsConfig } from "./settings.ts";
 import type { GameSettings } from "./settings.ts";
 
-export const SETTING_PRESET_IDS = ["mock1007", "ryuDraft", "lineUp", "adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive", "freeSummon"] as const;
+export const SETTING_PRESET_IDS = ["points3", "mock1007", "ryuDraft", "lineUp", "adj15", "adj15life", "incomeNow", "comeback", "bigComeback", "coldFive", "freeSummon"] as const;
 export type SettingPresetId = (typeof SETTING_PRESET_IDS)[number];
 
 export type SettingPreset = {
@@ -267,7 +267,19 @@ const MOCK_1007: SettingPreset = {
   cards: {},
 };
 
+/** 10/7: 3点先取 on top of the 10/7 mock pick. */
+const POINTS_3: SettingPreset = {
+  id: "points3",
+  label: "10/7モック案+3点先取",
+  note: "10/7モック案に、制圧点の3点先取を足したもの。自分のターン終了時に占拠5以上で1点、6以上で3点(減らない)。3点で勝ち(占拠6で終えればその場で勝ち)。制圧を維持して勝つルールは使わない。",
+  rule: "r1006",
+  pack: "adopted-1006",
+  config: { ...MOCK_1007.config, controlWinMode: "points", controlPointsToWin: 3, controlBigCells: 6, controlBigPoints: 3 },
+  cards: {},
+};
+
 export const SETTING_PRESETS: Record<SettingPresetId, SettingPreset> = {
+  points3: POINTS_3,
   mock1007: MOCK_1007,
   ryuDraft: RYU_DRAFT,
   lineUp: LINE_UP,
