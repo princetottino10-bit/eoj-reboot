@@ -456,6 +456,17 @@ let restartingUntil = 0;
 let streamAbort: AbortController | null = null;
 const restartStream = (): void => streamAbort?.abort();
 
+/**
+ * The server sends a ping every 20s, so a stream silent for this long is dead
+ * even if the browser has not noticed (a phone that changed network or slept):
+ * it is dropped and opened again instead of waiting forever.
+ */
+const STREAM_SILENT_MS = 45_000;
+/** When the stream last delivered anything (state or ping). */
+let lastByteAt = 0;
+/** Cuts the reconnect wait short (the page came back to the front). */
+let wakeWait: (() => void) | null = null;
+
 const readStream = async (t: string, onLive: () => void): Promise<"retry" | "reauth" | "gone"> => {
   let res: Response;
   streamRefusal = "";
@@ -477,10 +488,15 @@ const readStream = async (t: string, onLive: () => void): Promise<"retry" | "rea
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buf = "";
+  lastByteAt = Date.now();
+  const watchdog = setInterval(() => {
+    if (Date.now() - lastByteAt > STREAM_SILENT_MS) abort.abort();
+  }, 5000);
   try {
     for (;;) {
       const { value, done } = await reader.read();
       if (done) return "retry";
+      lastByteAt = Date.now();
       buf += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
       let idx = buf.indexOf("\n\n");
       while (idx !== -1) {
@@ -503,6 +519,8 @@ const readStream = async (t: string, onLive: () => void): Promise<"retry" | "rea
     }
   } catch {
     return "retry";
+  } finally {
+    clearInterval(watchdog);
   }
 };
 
@@ -540,7 +558,14 @@ const run = async (): Promise<void> => {
   let delay = FIRST_DELAY;
   const wait = async (why: string): Promise<void> => {
     setConn(`${why} — ${Math.round(delay / 1000)}秒後に再接続します`, true);
-    await new Promise((r) => setTimeout(r, delay));
+    await new Promise<void>((r) => {
+      const timer = setTimeout(r, delay);
+      wakeWait = () => {
+        clearTimeout(timer);
+        r();
+      };
+    });
+    wakeWait = null;
     delay = Math.min(10_000, delay * 2);
   };
   while (!stopped) {
@@ -591,7 +616,20 @@ window.addEventListener("pagehide", () => {
 });
 // back from the settings page, a page kept in the back-forward cache has its stream stopped: start over
 window.addEventListener("pageshow", (ev) => {
-  if (ev.persisted) location.reload();
+  if (ev.persisted || (stopped && $("gone").hidden)) location.reload();
+});
+// back in front (a phone unlocked, another app left): a stream that went quiet while
+// hidden is reopened now, and a reconnect wait in progress is cut short
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  // a pagehide stopped the reconnecting but the page lived on (a phone browser can do that): start over
+  if (stopped && $("gone").hidden) {
+    location.reload();
+    return;
+  }
+  if (stopped) return;
+  if (wakeWait !== null) wakeWait();
+  else if (Date.now() - lastByteAt > 25_000) restartStream();
 });
 
 void run();
