@@ -312,6 +312,25 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     ],
     label: "制圧の保持判定", desc: "どちらも即勝ちではなく、相手の番を耐えたら勝ち。違うのは確かめる時期だけ: 次の自分の番の終わりにまだ足りていれば勝ち(番の途中で減っても終わりまでに戻せばよい)/ 次の自分の番の始めにまだ足りていれば勝ち。相手に崩されたらどちらも制圧は切れる", midGame: true,
   },
+  // not mid-match: points earned under one mode mean nothing under the other
+  {
+    key: "controlWinMode", group: "victory", kind: "choice",
+    choices: [
+      { value: "hold", label: "制圧を維持して勝つ" },
+      { value: "points", label: "制圧点をためて勝つ" },
+      { value: "hold_points", label: "維持で勝ち+有効〇回でも勝ち" },
+    ],
+    label: "制圧の勝ち方(有効〇回)",
+    desc: "制圧点: 自分のターン終了時に占拠が「制圧に必要なマス数」以上なら制圧点+1(減らない)。「勝ちに必要な制圧点」に達したらその場で勝ち。制圧点だけの方は制圧の保持判定を使わない。「維持で勝ち+有効〇回」は、いつもの制圧(戻ってきたら勝ち)に加えて、制圧を相手に渡すたびに1点(有効)、決めた点数でも勝ち",
+    midGame: false,
+  },
+  {
+    key: "controlPointsToWin", group: "victory", kind: "int", min: 1, max: 9,
+    label: "勝ちに必要な制圧点(有効の回数)", unit: "回",
+    desc: "制圧の勝ち方が「制圧点をためて勝つ」か「維持で勝ち+有効〇回でも勝ち」のとき、この回数に達したらその場で勝ち",
+    midGame: true,
+    dependsOn: { key: "controlWinMode", off: "hold" },
+  },
   {
     key: "controlCount", group: "victory", kind: "choice",
     choices: [
@@ -328,22 +347,6 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     label: "2マス分になる基準",
     desc: "制圧の数え方が「HP」「召喚コスト」のとき、この値以上の式神を2マス分に数える(検討中の値: HPなら11、召喚コストなら8)",
     midGame: true,
-  },
-  // not mid-match: points earned under one mode mean nothing under the other
-  {
-    key: "controlWinMode", group: "victory", kind: "choice",
-    choices: [
-      { value: "hold", label: "制圧を維持して勝つ" },
-      { value: "points", label: "制圧点をためて勝つ" },
-      { value: "hold_points", label: "維持で勝ち+制圧点(有効)でも勝ち" },
-    ],
-    label: "制圧の勝ち方",
-    desc: "制圧点: 自分のターン終了時に占拠が「制圧に必要なマス数」以上なら制圧点+1(減らない)。「勝ちに必要な制圧点」に達したらその場で勝ち。制圧点だけの方は制圧の保持判定を使わない。「維持で勝ち+制圧点」は、いつもの制圧(戻ってきたら勝ち)に加えて、制圧を相手に渡すたびに1点(有効)、決めた点数でも勝ち",
-    midGame: false,
-  },
-  {
-    key: "controlPointsToWin", group: "victory", kind: "int", min: 1, max: 9,
-    label: "勝ちに必要な制圧点", desc: "制圧の勝ち方が「制圧点」のとき、この点数に達したら勝ち", midGame: true,
   },
   {
     key: "controlWinLate", group: "rare", kind: "int", min: 0, max: 9,
