@@ -228,12 +228,18 @@ const oddsHtml = (w: CardWork, cards: CardOverrides): string => {
   </div>`;
 };
 
+/** デッキ合計: the deck's size as the 枚数 column stands, split into shikigami and reigu. */
+const deckTotalHtml = (w: CardWork, cards: CardOverrides): string => {
+  const shape = deckShape(applyCardOverrides(w.printed, cards));
+  return `<span class="ce-deck-total" title="枚数の列の合計">デッキ <b>${shape.size}</b>枚<small>(式神${shape.shikigami}・霊具${shape.size - shape.shikigami})</small></span>`;
+};
+
 /** The whole カード section; hidden (but still in the form) when another section is shown. */
 export const cardSectionHtml = (w: CardWork, ui: CardUi, shown: boolean): string => {
   const cards = normalizeCardOverrides(w.printed, w.cards);
   const count = cardChangeCount(cards);
   return `<section class="sp-group sp-cards" data-group="cards" ${shown ? "" : "hidden"}>
-    <div class="sp-ghead"><h3 class="sp-gname">カード(数値・攻撃範囲)</h3>${count > 0 ? `<span class="sp-count">${count}か所変更</span>` : ""}${
+    <div class="sp-ghead"><h3 class="sp-gname">カード(数値・攻撃範囲)</h3>${deckTotalHtml(w, cards)}${count > 0 ? `<span class="sp-count">${count}か所変更</span>` : ""}${
       w.locked ? '<span class="sp-lock">変更できません</span>' : ""
     }<button type="button" class="btn btn-quiet sp-reset" data-reset="cards" ${dis(count === 0 || w.locked)}>カードを戻す</button></div>
     ${oddsHtml(w, cards)}
