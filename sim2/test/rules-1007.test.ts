@@ -125,3 +125,21 @@ test("召喚したら必ず攻撃: a fresh unit with an enemy in range must atta
   assert.equal(b.forcedAttackUid ?? null, null);
   assert.ok(legalActions(off, b).some((x) => x.kind === "pass"));
 });
+
+test("反撃範囲 can be edited: painted on its own layer, kept through attack edits, and round-trips the settings code", async () => {
+  const { paintCell } = await import("../src/card-edits.ts");
+  const { applyCardOverrides } = await import("../src/card-overrides.ts");
+  const { decodeSettings, encodeSettings } = await import("../src/settings.ts");
+  const card = PACK.cards.find((c) => c.kind === "shikigami" && c.counterRange.length > 0)!;
+  const cell = card.counterRange[0]!;
+  let ov = paintCell(PACK, {}, card.id, "counter", cell);
+  let edited = applyCardOverrides(PACK, ov).byId.get(card.id)!;
+  assert.ok(!edited.counterRange.some((c) => c.x === cell.x && c.y === cell.y), "the counter cell is gone");
+  ov = paintCell(PACK, ov, card.id, "attack", { x: 2, y: 2 });
+  edited = applyCardOverrides(PACK, ov).byId.get(card.id)!;
+  assert.ok(!edited.counterRange.some((c) => c.x === 2 && c.y === 2), "an attack edit no longer moves an edited counter range");
+  const s = { rule: "r1006", pack: "adopted-1006", config: {}, cards: ov } as const;
+  const back = decodeSettings(encodeSettings(s as never), () => PACK);
+  assert.ok(back.ok);
+  if (back.ok) assert.deepEqual(back.value.cards[card.id]?.counterRange, ov[card.id]?.counterRange);
+});

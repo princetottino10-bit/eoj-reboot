@@ -41,13 +41,15 @@ export type CardEdit = Partial<Record<CardStatKey, number>> & {
   aoe?: boolean;
   attackRange?: Pos[];
   blindSpots?: Pos[];
+  /** 反撃範囲. Once set it no longer follows attack-range edits. */
+  counterRange?: Pos[];
   /** The area attack's gap cell; null = none. */
   gapCell?: Pos | null;
 };
 
 export type CardOverrides = Record<string, CardEdit>;
 
-export type CardShapeKey = "attribute" | "attackType" | "aoe" | "attackRange" | "blindSpots" | "gapCell";
+export type CardShapeKey = "attribute" | "attackType" | "aoe" | "attackRange" | "blindSpots" | "counterRange" | "gapCell";
 export type CardFieldKey = CardStatKey | CardShapeKey;
 
 export const SHAPE_LABELS: Record<CardShapeKey, string> = {
@@ -56,6 +58,7 @@ export const SHAPE_LABELS: Record<CardShapeKey, string> = {
   aoe: "範囲/単体",
   attackRange: "攻撃範囲",
   blindSpots: "死角",
+  counterRange: "反撃範囲",
   gapCell: "隙",
 };
 
@@ -179,10 +182,11 @@ const parseShape = (key: string, v: unknown, name: string, edit: CardEdit): stri
       return null;
     }
     default: {
-      const label = key === "attackRange" ? "攻撃範囲" : "死角";
+      const label = key === "attackRange" ? "攻撃範囲" : key === "counterRange" ? "反撃範囲" : "死角";
       const cells = parseCellList(v, `${name} の${label}`);
       if (!cells.ok) return cells.error;
       if (key === "attackRange") edit.attackRange = cells.value;
+      else if (key === "counterRange") edit.counterRange = cells.value;
       else edit.blindSpots = cells.value;
       return null;
     }
@@ -246,7 +250,7 @@ export const parseCardOverrides = (raw: unknown, pack: CardPack | null): Parsed<
 // ------------------------------------------------------------- normalizing
 
 const fieldEquals = (card: CardDef, key: CardFieldKey, v: unknown): boolean => {
-  if (key === "attackRange" || key === "blindSpots") return sameCells(card[key], v as Pos[]);
+  if (key === "attackRange" || key === "blindSpots" || key === "counterRange") return sameCells(card[key], v as Pos[]);
   if (key === "gapCell") return samePos(card.gapCell, v as Pos | null);
   return card[key] === v;
 };
@@ -258,6 +262,7 @@ const FIELD_ORDER: readonly CardFieldKey[] = [
   "aoe",
   "attackRange",
   "blindSpots",
+  "counterRange",
   "gapCell",
 ];
 
@@ -292,6 +297,8 @@ export const overridesBetween = (from: CardPack, to: CardPack): CardOverrides =>
     const kept: Record<string, unknown> = {};
     for (const key of FIELD_ORDER) {
       const v = key === "gapCell" ? (b.gapCell ?? null) : b[key];
+      // a counter range that only followed an attack-range edit is not an edit of its own
+      if (key === "counterRange" && b.counterFollowsAttack === true && sameCells(b.counterRange, b.attackRange)) continue;
       if (!fieldEquals(a, key, v)) kept[key] = copyField(v);
     }
     if (Object.keys(kept).length > 0) out[a.id] = kept as CardEdit;
@@ -326,6 +333,10 @@ export const editedCard = (card: CardDef, edit: CardEdit | undefined): CardDef =
   if (edit.attackRange !== undefined) {
     next.attackRange = sortCells(edit.attackRange);
     if (next.counterFollowsAttack === true) next.counterRange = next.attackRange.map((c) => ({ ...c }));
+  }
+  if (edit.counterRange !== undefined) {
+    next.counterRange = sortCells(edit.counterRange);
+    next.counterFollowsAttack = false;
   }
   if (edit.gapCell !== undefined) next.gapCell = edit.gapCell === null ? null : { ...edit.gapCell };
   return next;
@@ -373,6 +384,7 @@ export const formatCardField = (key: CardFieldKey, v: unknown): string => {
       return v === true ? "範囲" : "単体";
     case "attackRange":
     case "blindSpots":
+    case "counterRange":
       return cellsText(v as Pos[]);
     case "gapCell":
       return v === null || v === undefined ? "なし" : cellWord(v as Pos);

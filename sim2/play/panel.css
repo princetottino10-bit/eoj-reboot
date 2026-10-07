@@ -193,6 +193,9 @@
 .ce-cell.ce-attack { background: linear-gradient(var(--sym-verm), var(--sym-verm)) center / 50% 50% no-repeat, var(--washi-hi); }
 .ce-cell.ce-gap { background: linear-gradient(var(--sym-verm), var(--sym-verm)) center / 50% 50% no-repeat, var(--washi-hi); box-shadow: inset 0 0 0 3px var(--washi-hi), inset 0 0 0 5.5px var(--sym-amber); }
 .ce-cell.ce-blind { background: var(--sym-khaki); color: oklch(30% 0.02 60); }
+.ce-cell.ce-ctr { box-shadow: inset 0 0 0 3px var(--sym-sage); }
+.ce-cell.ce-gap.ce-ctr { box-shadow: inset 0 0 0 3px var(--sym-sage), inset 0 0 0 5.5px var(--sym-amber); }
+.ce-tool-counter.on { background: var(--sym-sage); }
 .ce-cell.ce-self { background: var(--sym-ink); border-color: var(--gold); color: var(--washi-hi); cursor: default; font-size: 14px; }
 .ce-cell:disabled { cursor: not-allowed; }
 .ce-hint { margin: 0; font-size: 11px; color: var(--text-dim); }

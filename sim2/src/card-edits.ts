@@ -7,7 +7,7 @@ import type { CardEdit, CardOverrides, CardStatKey } from "./card-overrides.ts";
 import type { CardPack } from "./cards.ts";
 import type { Attr, CardDef, CardKind, Pos } from "./types.ts";
 
-export type RangeTool = "attack" | "blind" | "gap" | "erase";
+export type RangeTool = "attack" | "blind" | "gap" | "counter" | "erase";
 
 const withEdit = (cards: CardOverrides, id: string, patch: CardEdit): CardOverrides => ({
   ...cards,
@@ -31,6 +31,11 @@ export const paintCell = (printed: CardPack, cards: CardOverrides, id: string, t
   let blind = card.blindSpots.slice();
   let gap = card.gapCell ?? null;
   const isGap = gap !== null && gap.x === p.x && gap.y === p.y;
+  // 反撃: its own layer, toggled on its own (a cell may be attack and counter at once)
+  if (tool === "counter") {
+    const counter = has(card.counterRange, p) ? without(card.counterRange, p) : [...card.counterRange, p];
+    return withEdit(cards, id, { counterRange: sortCells(counter) });
+  }
   switch (tool) {
     case "attack":
       if (has(range, p)) {
@@ -59,10 +64,14 @@ export const paintCell = (printed: CardPack, cards: CardOverrides, id: string, t
         gap = { x: p.x, y: p.y };
       }
       break;
-    default:
+    default: {
       range = without(range, p);
       blind = without(blind, p);
       if (isGap) gap = null;
+      // 消す empties the cell of everything, the counter layer included
+      const counter = has(card.counterRange, p) ? { counterRange: sortCells(without(card.counterRange, p)) } : {};
+      return withEdit(cards, id, { attackRange: sortCells(range), blindSpots: sortCells(blind), gapCell: gap, ...counter });
+    }
   }
   return withEdit(cards, id, { attackRange: sortCells(range), blindSpots: sortCells(blind), gapCell: gap });
 };
@@ -130,6 +139,7 @@ export const copyShape = (printed: CardPack, cards: CardOverrides, fromId: strin
     next = withEdit(next, id, {
       attackRange: sortCells(src.attackRange),
       blindSpots: sortCells(src.blindSpots),
+      counterRange: sortCells(src.counterRange),
       gapCell: src.gapCell === undefined || src.gapCell === null ? null : { ...src.gapCell },
       aoe: src.aoe,
     });

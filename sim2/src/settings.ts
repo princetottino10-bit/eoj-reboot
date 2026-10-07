@@ -103,7 +103,7 @@ const unpackCells = (text: unknown): unknown => {
   for (let i = 0; i < text.length; i += 2) out.push({ x: COORD.indexOf(text[i]) - 2, y: COORD.indexOf(text[i + 1]) - 2 });
   return out;
 };
-const CELL_FIELDS = ["attackRange", "blindSpots"] as const;
+const CELL_FIELDS = ["attackRange", "blindSpots", "counterRange"] as const;
 
 const compactCards = (ov: CardOverrides): Record<string, Record<string, unknown>> =>
   Object.fromEntries(

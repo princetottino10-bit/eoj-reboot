@@ -55,6 +55,7 @@ const TOOLS: readonly { id: RangeTool; label: string }[] = [
   { id: "attack", label: "攻撃" },
   { id: "blind", label: "死角" },
   { id: "gap", label: "隙" },
+  { id: "counter", label: "反撃" },
   { id: "erase", label: "消す" },
 ];
 
@@ -80,7 +81,7 @@ const tableHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
     .map((base) => {
       const card = editedCard(base, cards[base.id]);
       const edits = editableStats(base);
-      const shapeMod = ["attribute", "attackType", "aoe", "attackRange", "blindSpots", "gapCell"].some((k) => cards[base.id]?.[k as keyof CardEdit] !== undefined);
+      const shapeMod = ["attribute", "attackType", "aoe", "attackRange", "blindSpots", "counterRange", "gapCell"].some((k) => cards[base.id]?.[k as keyof CardEdit] !== undefined);
       const cells = CARD_STATS.map((s) => {
         if (!edits.includes(s.key)) return `<td class="na">—</td>`;
         const v = card[s.key];
@@ -149,13 +150,14 @@ const gridHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
   for (let y = RANGE_REACH; y >= -RANGE_REACH; y--) {
     for (let x = -RANGE_REACH; x <= RANGE_REACH; x++) {
       const st = cellState(card, { x, y });
+      const ctr = card.counterRange.some((c) => c.x === x && c.y === y);
       const outer = Math.abs(x) === RANGE_REACH || Math.abs(y) === RANGE_REACH;
       if (st === "self") {
         buttons.push(`<span class="ce-cell ce-self" aria-label="自分(上が前)">▲</span>`);
         continue;
       }
       buttons.push(
-        `<button type="button" class="ce-cell ce-${st}${outer ? " ce-outer" : ""}" data-cell="${x},${y}" ${dis(w.locked)} aria-label="${esc(cellWord({ x, y }))}: ${CELL_WORD[st]}">${st === "blind" ? "×" : ""}</button>`,
+        `<button type="button" class="ce-cell ce-${st}${ctr ? " ce-ctr" : ""}${outer ? " ce-outer" : ""}" data-cell="${x},${y}" ${dis(w.locked)} aria-label="${esc(cellWord({ x, y }))}: ${CELL_WORD[st]}${ctr ? "・反撃範囲" : ""}">${st === "blind" ? "×" : ""}</button>`,
       );
     }
   }
@@ -182,12 +184,13 @@ const editorHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
   const text = `<dl class="ce-text">
     <dt>攻撃範囲</dt><dd>${esc(cellsText(card.attackRange))}</dd>
     <dt>死角</dt><dd>${esc(cellsText(card.blindSpots))}</dd>
+    <dt>反撃範囲</dt><dd>${esc(card.counterRange.length === 0 ? "なし" : cellsText(card.counterRange))}</dd>
     <dt>隙</dt><dd>${card.aoe ? esc(gap === null ? "なし" : cellWord(gap)) : "単体攻撃は攻撃範囲全体"}</dd>
   </dl>`;
   const shape = `<div class="ce-shape">
     <div class="ce-tools" role="group" aria-label="塗るもの">${tools}</div>
     ${gridHtml(w, ui, cards)}
-    <p class="ce-hint">上が前。道具を選んでマスを押す(もう一度押すと外れる)</p>
+    <p class="ce-hint">上が前。道具を選んでマスを押す(もう一度押すと外れる)。緑の枠が反撃範囲(「反撃」で付け外し)</p>
     ${text}
     <div class="ce-rows">
       <div><span>範囲/単体</span>${segHtml("aoe", String(card.aoe), [{ v: "true", label: "範囲" }, { v: "false", label: "単体" }], w.locked)}</div>
