@@ -150,6 +150,7 @@ button.rules-badge { cursor: pointer; }
 .btn-violet { background: linear-gradient(170deg, oklch(66% 0.14 305), oklch(50% 0.13 305)); color: oklch(97% 0.01 85); border-color: var(--violet); font-weight: 700; }
 .btn-quiet { background: transparent; border-color: oklch(60% 0.02 260 / 0.45); color: var(--text-dim); }
 .btn-quiet:hover:not(:disabled) { color: var(--text); }
+.btn-auto[aria-pressed="true"] { color: var(--ink); background: var(--gold); border-color: var(--gold-hi); font-weight: 700; }
 .btn-end {
   font-family: var(--font-mincho); font-weight: 800; font-size: 19px; letter-spacing: 0.2em; padding: 14px 26px 14px 30px;
   background: radial-gradient(120% 140% at 50% 0%, oklch(30% 0.04 60), var(--board));

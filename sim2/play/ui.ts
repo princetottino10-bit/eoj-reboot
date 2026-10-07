@@ -48,7 +48,7 @@ import {
   writeStoredGame,
 } from "./ai-store.ts";
 import type { AiKind, AiSetup, LoadedGame, StoredAiGame, Stores } from "./ai-store.ts";
-import { decideAiMove, freshMemo, isPacedMove, playAiMove } from "./ai-seat.ts";
+import { aiOwes, decideAiMove, freshMemo, isPacedMove, playAiMove } from "./ai-seat.ts";
 import type { AiMemo } from "./ai-seat.ts";
 import { boardOf } from "./board-snapshot.ts";
 import { createTable } from "./table.ts";
@@ -90,6 +90,9 @@ type Game = {
   ai: AiSeat;
   /** The AI seat's plan for its turn (play/ai-seat.ts). */
   memo: AiMemo;
+  /** AUTO: the AI that plays the human seat while AUTO is on, and its plan. */
+  autoAi: AiSeat;
+  autoMemo: AiMemo;
   aiLabel: string;
   /** The starting settings with the cards in force (mid-game changes included), for the badge and the table. */
   settings: GameSettings;
@@ -104,6 +107,8 @@ type Game = {
 };
 
 let G: Game | null = null;
+/** AUTO: the human seat is played by an AI too (kept across matches on this page). */
+let autoOn = false;
 let gameCounter = 0;
 const PACKS = new Map<string, CardPack>();
 const stores: Stores = { session: storageOr(() => sessionStorage), local: storageOr(() => localStorage) };
@@ -133,8 +138,16 @@ const table = createTable(tableEl, {
 });
 
 table.slots.header.innerHTML = `<div class="brand"><span class="brand-mark" aria-hidden="true">符</span><span class="brand-name">陰陽符陣<small>(仮)</small></span><span class="brand-sub">対 AI</span></div>`;
-table.slots.tools.innerHTML = `<div class="tools"><button type="button" class="rules-badge" id="rulesBadge" title="基準からの変更点">設定を選んで対局開始</button><a class="btn btn-quiet" id="changeRules" href="${rulesHref({ for: "ai-game" })}" hidden>ルール・カードを変える</a><button type="button" class="btn btn-quiet" id="newGame">新しい対局</button></div>`;
+table.slots.tools.innerHTML = `<div class="tools"><button type="button" class="rules-badge" id="rulesBadge" title="基準からの変更点">設定を選んで対局開始</button><a class="btn btn-quiet" id="changeRules" href="${rulesHref({ for: "ai-game" })}" hidden>ルール・カードを変える</a><button type="button" class="btn btn-quiet btn-auto" id="autoPlay" aria-pressed="false" title="あなたの席もAIに指させる">AUTO</button><button type="button" class="btn btn-quiet" id="newGame">新しい対局</button></div>`;
 $("newGame").addEventListener("click", () => void openSetup());
+$("autoPlay").addEventListener("click", () => {
+  autoOn = !autoOn;
+  $("autoPlay").setAttribute("aria-pressed", String(autoOn));
+  $("autoPlay").textContent = autoOn ? "AUTO 中" : "AUTO";
+  if (G === null) return;
+  refresh();
+  void pump(G);
+});
 $("rulesBadge").addEventListener("click", () => showDiff());
 
 // --------------------------------------------------------------- model
@@ -198,7 +211,7 @@ const refresh = (): void => {
     viewer: g.human,
     hand: f.state.players[g.human].hand.slice(),
     names,
-    prompt: promptOf(g),
+    prompt: autoOn && aiOwes(f, g.human) ? { kind: "idle", text: "AUTO: あなたの席もAIが指しています(もう一度押すと止まります)" } : promptOf(g),
     log,
     cardMods: g.settings.cards,
     printed: (id) => g.printed.byId.get(id),
@@ -272,7 +285,8 @@ const onHumanInput = (input: FlowInput): void => {
 /**
  * Plays every input the AI seat owes (play/ai-seat.ts decides each one, the
  * same driver the spectate page uses), with a short delay before each
- * main-phase action and the discard.
+ * main-phase action and the discard. Under AUTO the human seat is played the
+ * same way by its own AI; switching AUTO off stops it before its next input.
  */
 const pump = async (g: Game): Promise<void> => {
   if (g.busy) return;
@@ -281,13 +295,17 @@ const pump = async (g: Game): Promise<void> => {
   try {
     for (;;) {
       if (G !== g) return;
-      const move = decideAiMove(g.flow, aiSeat, g.ai, g.memo);
+      const theirs = decideAiMove(g.flow, aiSeat, g.ai, g.memo);
+      const mine = theirs === null && autoOn ? decideAiMove(g.flow, g.human, g.autoAi, g.autoMemo) : null;
+      const move = theirs ?? mine;
       if (move === null) return;
+      const seat = theirs !== null ? aiSeat : g.human;
       if (isPacedMove(move)) {
         await sleep(AI_DELAY_MS);
         if (G !== g) return;
+        if (seat === g.human && !autoOn) continue;
       }
-      const r = playAiMove(g.flow, aiSeat, move, g.memo);
+      const r = playAiMove(g.flow, seat, move, seat === aiSeat ? g.memo : g.autoMemo);
       if (!r.ok) {
         g.error = `AIの手が受け付けられませんでした: ${r.error}`;
         refresh();
@@ -522,6 +540,8 @@ const play = (start: Start, flow: Flow, printed: CardPack): void => {
     human: start.human,
     ai,
     memo: freshMemo(),
+    autoAi: makeAi(start.ai, start.evalName, { seed: start.seed + 1 }),
+    autoMemo: freshMemo(),
     aiLabel: label,
     settings: { ...start.settings, cards: overridesBetween(printed, flow.ctx.pack) },
     printed,
