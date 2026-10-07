@@ -151,7 +151,7 @@ test("the 早見表 reads every number from the r1003 preset", () => {
   assert.match(text("死角"), /ダメージ\+2/);
   assert.match(text("HPの上限"), /19まで/);
   assert.match(text("占拠"), /HP11以上の式神は2マス分/);
-  assert.match(text("勝ち"), /5マス分を占拠していれば制圧。次の自分のターン終了時まで保てば勝ち/);
+  assert.match(text("勝ち"), /5マス分を占拠していれば制圧。次の自分のターン開始時にまだ5マス分あれば勝ち/);
   assert.match(text("生命"), /生命価なし/);
   assert.match(text("手札"), /山札は23枚/);
   assert.match(text("効果"), /各カードの文面/);

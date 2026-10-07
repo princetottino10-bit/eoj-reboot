@@ -126,10 +126,12 @@ test("r1003 = 10/3テスト案: the numbers, and it is the default for new rooms
   assert.equal(cfg.controlWin, 5);
   // the paper rule (10/3): the 2nd 山札切れ ends the game; the 9/22 preset keeps none
   assert.equal(cfg.deckOutMode, "second");
+  // 10/7: a kept 制圧 wins at the start of the next own turn
+  assert.equal(cfg.controlHold, "next_turn_start");
   // everything else is r0923
   const base = presetConfig("r0923");
   assert.equal(base.deckOutMode, "none");
-  const same = { ...cfg, chipIncomeSteps: base.chipIncomeSteps, taijiDiscount: base.taijiDiscount, maxHp: base.maxHp, controlCount: base.controlCount, deckOutMode: base.deckOutMode };
+  const same = { ...cfg, chipIncomeSteps: base.chipIncomeSteps, taijiDiscount: base.taijiDiscount, maxHp: base.maxHp, controlCount: base.controlCount, controlHold: base.controlHold, deckOutMode: base.deckOutMode };
   assert.deepEqual(same, base);
   assert.equal(RULE_PRESETS.r1003.label, "10/3テスト案");
   assert.equal(RULE_PRESETS.r1003.defaultPack, "adopted-1003");

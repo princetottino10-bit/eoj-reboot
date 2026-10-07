@@ -117,6 +117,8 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
       controlCount: "hp",
       controlCountThreshold: 11,
       controlWin: 5,
+      // 10/7: a 制圧 kept through the opponent's turn wins at the start of your next turn
+      controlHold: "next_turn_start",
       // the paper rule the team plays (10/3): the 2nd 山札切れ ends the game, more 占拠 wins
       deckOutMode: "second",
     },
