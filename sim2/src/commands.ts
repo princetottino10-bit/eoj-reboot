@@ -54,8 +54,8 @@ const attackReason = (ctx: Ctx, s: GameState, u: Unit, variant: AttackVariant): 
   if (!canAttack(card)) return "攻撃手段がない";
   if (u.attackedThisTurn) return "攻撃済み";
   if (mana < cost) return short(cost, mana);
-  if (variant === "heal") return alliesInRange(ctx, s, u).length === 0 ? "範囲内に味方がいない" : "今は使えない";
-  return enemiesInRange(ctx, s, u).length === 0 ? "範囲内に敵がいない" : "今は使えない";
+  if (variant === "heal") return alliesInRange(ctx, s, u).length === 0 ? "間合に味方がいない" : "今は使えない";
+  return enemiesInRange(ctx, s, u).length === 0 ? "間合に敵がいない" : "今は使えない";
 };
 
 const rotateReason = (ctx: Ctx, s: GameState, u: Unit, proxy: boolean): string => {
@@ -79,7 +79,7 @@ export const unitCommands = (ctx: Ctx, s: GameState, u: Unit, legal: Action[]): 
   const out: CommandInfo[] = [];
   const push = (id: CommandId, cost: number, enabled: boolean, reason: () => string, area = false, free = false): void => {
     // 「攻撃(召喚攻撃・コスト0)」; a paid variant still pays its extra: 「飲酒(召喚攻撃・攻撃コスト0)」
-    const label = !free ? LABEL[id] : `${LABEL[id]}(召喚攻撃・${cost === 0 ? "コスト0" : "攻撃コスト0"})`;
+    const label = !free ? LABEL[id] : `${LABEL[id]}(召喚攻撃・${cost === 0 ? "消費霊力0" : "攻☆0"})`;
     out.push({ id, label, cost, enabled, reason: enabled ? null : (hidden ?? reason()), area, ...(free ? { free: true as const } : {}) });
   };
   const area = isAoeAttack(ctx, card);

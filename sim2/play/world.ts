@@ -88,7 +88,7 @@ const renderCaption = (info: CardInfo): void => {
   set(".wc-name", info.name);
   set(".wc-clan", info.clan);
   set(".wc-effect", info.effect);
-  set(".wc-stats", `召喚コスト ${info.cost} ・ 攻 ${info.atk} ・ 命 ${info.hp}`);
+  set(".wc-stats", `召☆${info.cost} ・ 攻撃 ${info.atk} ・ 耐久 ${info.hp}`);
   set(".wc-board", info.board ?? "");
   caption.dataset.clan = info.clan.startsWith("酒呑") ? "shuten" : "kuryu";
   caption.hidden = false;

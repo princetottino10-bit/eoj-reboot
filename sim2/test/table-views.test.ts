@@ -52,7 +52,7 @@ test("a targeted reigu waits for confirmation: the prompt shows the forecast, a 
   assert.match(html, /btn-red/);
   assert.match(html, /味方への攻撃です/);
   assert.match(html, /3ダメージ/);
-  assert.match(html, /HP 2→0/);
+  assert.match(html, /耐久 2→0/);
   assert.match(html, /data-act="retarget"/);
 });
 
@@ -89,7 +89,7 @@ test("acted marks show only on the turn player's pieces; a piece prints no name 
   assert.match(myTurn, /class="pc o1 f2 /);
   assert.doesNotMatch(myTurn, /class="num hurt"/);
   u.damage = 2;
-  assert.match(pieceHtml(ctx, u, { control: false, turnPlayer: 0 }), /title="HP \d+"[^>]*>.*<b class="num hurt">\d+<\/b>/);
+  assert.match(pieceHtml(ctx, u, { control: false, turnPlayer: 0 }), /title="耐久 \d+"[^>]*>.*<b class="num hurt">\d+<\/b>/);
 });
 
 test("turn panel: both seats during the mulligan, the result once over (no doubled 対局終了), life never below 0", () => {

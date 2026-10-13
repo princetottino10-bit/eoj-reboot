@@ -61,7 +61,7 @@ export const unitById = (board: BoardView, uid: number): Unit | undefined =>
 
 /** What the control flag means under a controlHold (default: the one in force). */
 export const controlLabel = (ctx: Ctx, hold: ControlHold = ctx.cfg.controlHold): string =>
-  hold === "next_turn_end" ? "制圧中" : "制圧リーチ";
+  hold === "next_turn_end" ? "制圧中" : "制圧チェック";
 
 /**
  * EXP-0913B counterMode "gap": the board cell of an AREA attacker's gap - the
@@ -82,8 +82,8 @@ export const gapNote = (ctx: Ctx, u: Unit): string => {
   if (ctx.cfg.counterMode !== "gap") return "";
   const card = cardOfUnit(ctx, u);
   if (card.atk <= 0 || card.attackRange.length === 0) return "";
-  if (card.attackType !== "phys") return "術式: 反撃を受けない";
-  if (!isAoeAttack(ctx, card)) return "単体攻撃: 範囲全体が旧・隙(対象の反撃範囲に入っていれば反撃される)";
+  if (card.attackType !== "phys") return "【術式】: 反撃を受けない";
+  if (!isAoeAttack(ctx, card)) return "単体攻撃: 間合全体が旧・隙(対象の反撃間合に入っていれば反撃される)";
   return (card.gapCell ?? null) === null ? "範囲攻撃・旧・隙なし: 反撃を受けない" : "範囲攻撃: 琥珀色の枠=旧・隙位置(ここにいる敵だけが反撃できる)";
 };
 
@@ -252,7 +252,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
     case "reshuffle":
       return { text: `${seat(e.player)}: 墓地を山札に戻してシャッフル(${e.count}回目)`, cls: "" };
     case "turnEnd": {
-      const bits = [`占拠${e.occupied}`];
+      const bits = [`制圧数${e.occupied}`];
       if (e.chipGained > 0) bits.push(`チップ+${e.chipGained}(計${e.chips})`);
       else if (e.chipGained < 0) bits.push(`チップ−${-e.chipGained}(計${e.chips})`);
       if (e.discarded > 0) bits.push(`${e.discarded}枚捨てて${e.drawn}枚補充`);
@@ -299,14 +299,14 @@ export const attackSummaryLines = (ctx: Ctx, board: BoardView, names: Names, uid
   const lines: string[] = [];
   if (pv.heal) {
     for (const h of pv.hits) {
-      lines.push(`${esc(cardName(ctx, h.cardId))} を回復 +${-h.dmg}(HP ${hpNow(ctx, board, h.uid)} → ${h.hpAfter})`);
+      lines.push(`${esc(cardName(ctx, h.cardId))} を回復 +${-h.dmg}(耐久 ${hpNow(ctx, board, h.uid)} → ${h.hpAfter})`);
     }
     return lines;
   }
   for (const h of pv.hits) {
     const tags = `${h.blind ? "【隙】" : ""}${h.ally ? "【味方】" : ""}`;
     lines.push(
-      `${esc(cardName(ctx, h.cardId))} <b>−${h.dmg}</b>${tags}(HP ${hpNow(ctx, board, h.uid)}→${h.hpAfter})${
+      `${esc(cardName(ctx, h.cardId))} <b>−${h.dmg}</b>${tags}(耐久 ${hpNow(ctx, board, h.uid)}→${h.hpAfter})${
         h.destroyed ? ' <b class="warn">撃破</b>' : ""
       }`,
     );
@@ -315,14 +315,14 @@ export const attackSummaryLines = (ctx: Ctx, board: BoardView, names: Names, uid
   const who = pv.counterOrderOpen === true ? "・順番は相手が選ぶ" : "";
   lines.push(pv.counterTotal > 0 ? `<b class="warn">反撃 −${pv.counterTotal}</b>(${pv.counterCount}体${who})` : "反撃なし");
   if (pv.attackerHpAfter !== pv.attackerHpBefore || pv.attackerDestroyed) {
-    lines.push(`${esc(aName)} HP ${pv.attackerHpBefore}→${pv.attackerHpAfter}${pv.attackerDestroyed ? ' <b class="warn">撃破される</b>' : ""}`);
+    lines.push(`${esc(aName)} 耐久 ${pv.attackerHpBefore}→${pv.attackerHpAfter}${pv.attackerDestroyed ? ' <b class="warn">撃破される</b>' : ""}`);
   }
   if (pv.movedTo !== null) lines.push(`撃破したマス(${cellName(pv.movedTo)})へ移動`);
   for (const m of pv.moves ?? []) {
     if (m.uid !== uid) lines.push(`${esc(cardName(ctx, m.cardId))}が${cellName(m.to)}へ移動(反撃で撃破)`);
   }
-  if (pv.variant === "regen") lines.push("【再生】攻撃後HP+1(霊力+1込み)");
-  if (pv.variant === "drink") lines.push("【飲酒】ATK+1(霊力+2込み)");
+  if (pv.variant === "regen") lines.push("【再生】攻撃後耐久+1(霊力+1込み)");
+  if (pv.variant === "drink") lines.push("【飲酒】攻撃力+1(霊力+2込み)");
   for (const p of [0, 1] as PlayerId[]) {
     if (pv.manaGain[p] > 0) {
       const card = ctx.cfg.killRewardBase === "card";
@@ -340,13 +340,13 @@ export const attackSummaryLines = (ctx: Ctx, board: BoardView, names: Names, uid
 export const inheritSummaryLines = (ctx: Ctx, pv: InheritPreview): string[] => [
   `${esc(cardName(ctx, pv.fromCardId))} → <b>${esc(cardName(ctx, pv.toCardId))}</b>(位置と向きを引き継ぐ)`,
   `支払い <b>${pv.cost}</b>${(pv.underdogDiscount ?? 0) > 0 ? `(本来${pv.cost + (pv.underdogDiscount ?? 0)}・劣勢割引 −${pv.underdogDiscount})` : ""} / 回収 <b>+${pv.refund}</b> → 霊力 ${pv.manaBefore} → <b>${pv.manaAfter}</b>`,
-  `継承後のHP <b>${pv.hpAfter}</b>/${pv.maxHpAfter}${pv.carriedDamage > 0 ? `(ダメージ${pv.carriedDamage}を引き継ぎ)` : ""}`,
+  `継承後の耐久 <b>${pv.hpAfter}</b>/${pv.maxHpAfter}${pv.carriedDamage > 0 ? `(ダメージ${pv.carriedDamage}を引き継ぎ)` : ""}`,
   `<span class="muted">元の式神は墓地へ(撃破ではないので${ctx.cfg.lifeValueEnabled ? "生命は減らない" : "霊力価は誰も得ない"})</span>`,
 ];
 
 /** 「占拠 4 対 3」: the winner's 占拠 first (先手's on a draw). */
 export const occVersus = (occ: readonly [number, number], winner: PlayerId | null): string =>
-  winner === 1 ? `占拠 ${occ[1]} 対 ${occ[0]}` : `占拠 ${occ[0]} 対 ${occ[1]}`;
+  winner === 1 ? `制圧数 ${occ[1]} 対 ${occ[0]}` : `制圧数 ${occ[0]} 対 ${occ[1]}`;
 
 /**
  * Result words for a finished board ("制圧勝利"); null while undecided (and on

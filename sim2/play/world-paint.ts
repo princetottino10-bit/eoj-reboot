@@ -333,9 +333,9 @@ export const cardFaceCanvas = (img: HTMLImageElement | null, p: CardPaint): HTML
   g.textAlign = "right";
   g.font = `800 30px ${GOTHIC}`;
   g.fillStyle = PAL.verm;
-  g.fillText(`攻${p.atk}`, CARD_W - ax - 96, ny + 132);
+  g.fillText(`攻撃${p.atk}`, CARD_W - ax - 118, ny + 132);
   g.fillStyle = PAL.indigo;
-  g.fillText(`命${p.hp}`, CARD_W - ax - 4, ny + 132);
+  g.fillText(`耐久${p.hp}`, CARD_W - ax - 4, ny + 132);
   g.strokeStyle = PAL.sumi;
   g.lineWidth = 8;
   g.strokeRect(4, 4, CARD_W - 8, CARD_H - 8);

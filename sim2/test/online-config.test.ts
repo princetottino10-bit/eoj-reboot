@@ -225,7 +225,7 @@ test("mid-match card change: consent first, then units in play take the new card
     assert.deepEqual(v.game?.cards, { sk03: { atk: 4, attackRange: [{ x: 0, y: 2 }] } });
     const line = v.log.find((l) => l.event.t === "cards");
     assert.ok(line !== undefined && line.event.t === "cards");
-    assert.deepEqual(line.event.changes.map((c) => `${c.label} ${c.from}→${c.to}`), ["ATK 2→4", "攻撃範囲 前(2)→前2(-2)"]);
+    assert.deepEqual(line.event.changes.map((c) => `${c.label} ${c.from}→${c.to}`), ["攻撃力 2→4", "間合 前(2)→前2(-2)"]);
   }
   assert.deepEqual(f.inputs.slice(-2).map((x) => x.input.type), ["config", "cards"], "one recorded input each, rules first");
   // a later proposal is judged against the cards now in play: asking for the same again changes nothing

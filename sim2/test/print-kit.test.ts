@@ -132,7 +132,7 @@ test("every adopted card carries the print kit's number, in the kit's order", ()
   for (const c of AD.cards) {
     assert.ok(c.printId !== undefined && PRINT_ID.test(c.printId), c.id);
     // T = 玖龍街一門 (付喪神), O = 酒呑一門 (鬼)
-    assert.equal(c.printId.startsWith("T-"), c.clan === "玖龍街一門", `${c.id} ${c.printId} ${c.clan}`);
+    assert.equal(c.printId.startsWith("T-"), c.clan === "玖龍一門", `${c.id} ${c.printId} ${c.clan}`);
   }
   // each clan is numbered 001..011 without gaps
   for (const prefix of ["T", "O"]) {

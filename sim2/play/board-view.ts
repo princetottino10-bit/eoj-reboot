@@ -113,10 +113,10 @@ const cellHtml = (vm: BoardVM, pos: Pos): string => {
   const who =
     u === undefined
       ? "空きマス"
-      : `${vm.names[u.owner]}の駒 ${cardOfUnit(vm.ctx, u).nameJa}(HP ${Math.max(0, unitHp(vm.ctx, u))}・${FACING_LABEL[u.facing]}向き)`;
+      : `${vm.names[u.owner]}の駒 ${cardOfUnit(vm.ctx, u).nameJa}(耐久 ${Math.max(0, unitHp(vm.ctx, u))}・${FACING_LABEL[u.facing]}向き)`;
   const markText =
     mark === "summon" ? " / 召喚できる" : mark === "inherit" ? " / 継承召喚できる" : mark === "target" ? " / 対象にできる" : mark === "heal" ? " / 回復できる" : mark === "proxy" ? " / 回せる" : mark === "move" ? " / ここへ動かされる" : "";
-  const rangeText = `${vm.range?.attack.has(k) ? " / 攻撃範囲" : ""}${vm.range?.counter?.has(k) ? " / 反撃範囲" : ""}${vm.range?.blind.has(k) ? " / 隙" : ""}${vm.range?.gap.has(k) ? " / 旧・隙位置" : ""}`;
+  const rangeText = `${vm.range?.attack.has(k) ? " / 間合" : ""}${vm.range?.counter?.has(k) ? " / 反撃間合" : ""}${vm.range?.blind.has(k) ? " / 隙" : ""}${vm.range?.gap.has(k) ? " / 旧・隙位置" : ""}`;
   const piece =
     u === undefined ? "" : pieceHtml(vm.ctx, u, { ...vm.look, control: ctl.includes(u.owner), turnPlayer: vm.board.turnPlayer });
   return `<button type="button" class="${cls.join(" ")}" data-act="cell" data-x="${pos.x}" data-y="${pos.y}" style="${gridPlace(pos)}"
@@ -173,7 +173,7 @@ const predictionHtml = (vm: BoardVM): string => {
     const badge = h.heal
       ? `<span class="pv-num heal">+${-h.dmg}</span>`
       : `<span class="pv-num">−${h.dmg}</span>${h.blind ? '<span class="pv-tag blind">隙</span>' : ""}${h.ally ? '<span class="pv-tag ally">味方</span>' : ""}`;
-    out.push(`<div class="pv${h.destroyed ? " is-kill" : ""}" style="${gridPlace(u.pos)}">${badge}<span class="pv-after">HP ${h.hpAfter}</span>${
+    out.push(`<div class="pv${h.destroyed ? " is-kill" : ""}" style="${gridPlace(u.pos)}">${badge}<span class="pv-after">耐久 ${h.hpAfter}</span>${
       h.destroyed ? '<span class="pv-stamp">撃破</span>' : ""
     }</div>`);
   }

@@ -272,7 +272,7 @@ tr.cut td { color: var(--dim); }
 </style></head>
 <body>
 <h1>対局の記録</h1>
-<p class="note">オンライン対局の新しい順(最大300局)。ラウンド数・決着の仕方・占拠チップが収入段階に届いたラウンドを、ルールごとに比べられます。席は先手・後手だけを表示します。</p>
+<p class="note">オンライン対局の新しい順(最大300局)。ラウンド数・決着の仕方・制圧チップが収入段階に届いたラウンドを、ルールごとに比べられます。席は先手・後手だけを表示します。</p>
 <form method="get" action="/records"><label>ルール <select name="rules">${options}</select></label><button type="submit">絞り込む</button><a class="btn" href="${esc(csvHref)}" download>CSV をダウンロード</a></form>
 ${rows.length === 0 ? "<p>まだ記録がありません。</p>" : `<div class="wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`}
 </body></html>

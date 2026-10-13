@@ -106,7 +106,7 @@ test("print numbers and art carry over from adopted-0922; 鬼の酒 has O-012 an
   }
   // effect text for every card with an effect, none for the plain ones
   for (const c of AC.cards) assert.equal((EFFECT_TEXT[c.id] ?? "") !== "", c.effect !== undefined, c.id);
-  assert.match(EFFECT_TEXT.ac20, /HP\+2/);
+  assert.match(EFFECT_TEXT.ac20, /耐久\+2/);
 });
 
 // ----------------------------------------------------------- the preset
@@ -232,7 +232,7 @@ test("ac07 変面 (10/3): the heal on an ally restores the full ATK, past the ca
   const off = makeCtx(presetConfig("r1003", { effects: false }), AC);
   assert.ok(!canUseVariant(off, unitByUid(build(off, "ac07", "ac02", 4).s, 1)!, "heal"));
   // the card says so
-  assert.match(EFFECT_TEXT.ac07, /この式神のATK分だけ対象のHP\+/);
+  assert.match(EFFECT_TEXT.ac07, /この式神の攻撃力分だけ対象の耐久\+/);
   assert.doesNotMatch(EFFECT_TEXT.ac07, /1\/2/);
   assert.match(EFFECT_TEXT.ad07, /1\/2\(切り上げ\)/);
 });
@@ -257,7 +257,7 @@ test("ac15 茨木童子【再生】: HP+1 on every attack, free, before the coun
   const ik2 = place(s2, "ac08", 1, 0, 2, 2);
   const r2 = applyAction(ctx, s2, { kind: "attack", uid: ib2, targetUid: ik2 });
   assert.equal(hpOf(ctx, r2.state, ib2), 8, "9 + 1, then the counter 2");
-  assert.ok(texts(r2.events).includes("【再生】HP+1(反撃の前)"));
+  assert.ok(texts(r2.events).includes("【再生】耐久+1(反撃の前)"));
   // effects off: no regen, the counter kills it
   const off = makeCtx(presetConfig("r1003", { effects: false }), AC);
   const s3 = blankState(off);

@@ -531,6 +531,8 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .fu-md .fu-rblock { right: 0.7em; top: calc(var(--pad) + var(--art) - 4.75em); gap: 0.15em; }
 .fu-md .fu-type { padding: 0.12em; }
 .fu-md .fu-type .mk { width: 1em; height: 1em; }
+/* a plain (non-術式) attack has no mark since the 2026-10-13 glossary: the plate only holds its place */
+.fu-md .fu-type.is-plain { visibility: hidden; }
 .fu-md .fu-type-w { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .fu-md .fu-range { width: 3.3em; padding: 0.12em; }
 .fu-md .fu-range.g5 { width: 3.6em; }

@@ -12,7 +12,7 @@ export type ConfigGroupId = "economy" | "mana" | "board" | "action" | "combat" |
 export const CONFIG_GROUPS: readonly { id: ConfigGroupId; label: string }[] = [
   { id: "economy", label: "霊力の出入り(主要)" },
   { id: "mana", label: "霊力" },
-  { id: "board", label: "盤" },
+  { id: "board", label: "九宮盤" },
   { id: "action", label: "行動" },
   { id: "combat", label: "戦闘" },
   { id: "victory", label: "勝敗" },
@@ -69,10 +69,10 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     key: "incomeMode", group: "rare", kind: "choice",
     choices: [
       { value: "ratchet", label: "ラチェット(チップは減らない)" },
-      { value: "current", label: "ダイヤル(今の占拠で上下する)" },
+      { value: "current", label: "ダイヤル(今の制圧数で上下する)" },
     ],
     label: "収入の決め方(ラチェット / ダイヤル)",
-    desc: "ラチェット: 一度届いたチップの段は下がらない。ダイヤル: 収入を受け取る時点の占拠数(制圧の数え方に従う)がチップになり、それで収入の段階が決まる。占拠を失うと収入も下がる(チップの増え方は使わない)",
+    desc: "ラチェット: 一度届いたチップの段は下がらない。ダイヤル: 収入を受け取る時点の制圧数(制圧力の数え方に従う)がチップになり、それで収入の段階が決まる。制圧を失うと収入も下がる(チップの増え方は使わない)",
     midGame: true,
   },
   {
@@ -81,50 +81,50 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   },
   {
     key: "chipIncomeSteps", group: "economy", kind: "intList", min: 1, max: 9, maxLength: 6,
-    label: "収入が増える占拠チップ数",
-    desc: "占拠チップ(ダイヤルなら収入を受け取る時点の占拠数、ラチェットならこれまでの最大の占拠数)がこの枚数に達するたびに毎ターン収入+1。同じ枚数を2つ並べるとその枚数で+2。例 3,4,5 → 3枚で+1・4枚で+2・5枚で+3 / 4,5,5 → 4枚で+1・5枚で+3",
+    label: "収入が増える制圧チップ数",
+    desc: "制圧チップ(ダイヤルなら収入を受け取る時点の制圧数、ラチェットならこれまでの最大の制圧数)がこの枚数に達するたびに毎ターン収入+1。同じ枚数を2つ並べるとその枚数で+2。例 3,4,5 → 3枚で+1・4枚で+2・5枚で+3 / 4,5,5 → 4枚で+1・5枚で+3",
     midGame: true,
   },
   {
     key: "chipMode", group: "rare", kind: "choice",
     choices: [
-      { value: "catch_up", label: "占拠数まで追いつく" },
+      { value: "catch_up", label: "制圧数まで追いつく" },
       { value: "one_per_turn", label: "1ターンに1枚まで" },
     ],
-    label: "チップの増え方", desc: "ラチェットのとき、ターン終了時に占拠数がチップ枚数を上回っているときの増え方(ダイヤルでは使わない)", midGame: true,
+    label: "チップの増え方", desc: "ラチェットのとき、ターン終了時に制圧数がチップ枚数を上回っているときの増え方(ダイヤルでは使わない)", midGame: true,
   },
   {
     key: "attackCostDelta", group: "economy", kind: "int", min: -5, max: 5,
-    label: "攻撃コストの増減", desc: "全カードの攻撃コストに足す値(攻撃コストは1より下がらない)。カードごとの値は「カード」で変える", midGame: true,
+    label: "攻撃霊力の増減", desc: "全カードの攻撃霊力に足す値(攻撃霊力は1より下がらない)。カードごとの値は「カード」で変える", midGame: true,
   },
   {
     key: "freeSummonAttack", group: "economy", kind: "choice",
     choices: [
-      { value: "off", label: "毎回コストを払う" },
-      { value: "optional", label: "1回目はコストなし" },
+      { value: "off", label: "毎回霊力を払う" },
+      { value: "optional", label: "1回目は消費霊力なし" },
     ],
     label: "召喚した手番の攻撃",
-    desc: "1回目はコストなし: 式神を召喚した手番に、その式神の1回目の攻撃は攻撃コストを払わない(攻撃するかは自由)。2回目以降・次の手番からは払う。【飲酒】などの追加の霊力は払う",
+    desc: "1回目は消費霊力なし: 式神を召喚した手番に、その式神の1回目の攻撃は攻撃霊力を払わない(攻撃するかは自由)。2回目以降・次の手番からは払う。【飲酒】などの追加の霊力は払う",
     midGame: true,
   },
   {
     key: "freeSummonAttackInherit", group: "economy", kind: "bool",
     label: "継承召喚にも適用", words: ["する", "しない"],
-    desc: "する: 継承召喚で置いた式神も、その手番の1回目の攻撃は攻撃コストなし。置き換えた式神がこの手番にもう攻撃していたら、これまでどおり攻撃できない",
+    desc: "する: 継承召喚で置いた式神も、その手番の1回目の攻撃は攻撃霊力なし。置き換えた式神がこの手番にもう攻撃していたら、これまでどおり攻撃できない",
     midGame: true,
     dependsOn: { key: "freeSummonAttack", off: "off" },
   },
   {
     key: "freeSummonAttackMinCost", group: "economy", kind: "int", min: 0, max: 15,
-    label: "コストなしになる召喚コスト", unit: "以上",
-    desc: "この召喚コスト(カードの印刷の値)以上の式神だけ、召喚した手番の1回目の攻撃がコストなし。0ならすべての式神。重い式神の巻き返し専用にしたいときに上げる",
+    label: "消費霊力なしになる召喚霊力", unit: "以上",
+    desc: "この召喚霊力(カードの印刷の値)以上の式神だけ、召喚した手番の1回目の攻撃が消費霊力なし。0ならすべての式神。重い式神の巻き返し専用にしたいときに上げる",
     midGame: true,
     dependsOn: { key: "freeSummonAttack", off: "off" },
   },
   {
     key: "summonAttackForced", group: "economy", kind: "bool",
     label: "召喚したら必ず攻撃", words: ["する", "しない"],
-    desc: "する: 式神を召喚(継承召喚も)したとき、攻撃範囲に敵がいて攻撃の霊力が払えるなら、その式神はすぐに攻撃する(ほかの行動の前に。単体攻撃で敵が複数なら相手は選べる)。攻撃のコストは「召喚した手番の攻撃」の設定どおり",
+    desc: "する: 式神を召喚(継承召喚も)したとき、間合に敵がいて攻撃の霊力が払えるなら、その式神はすぐに攻撃する(ほかの行動の前に。単体攻撃で敵が複数なら相手は選べる)。攻撃の消費霊力は「召喚した手番の攻撃」の設定どおり",
     midGame: true,
   },
   {
@@ -145,7 +145,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
       { value: "zero", label: "なし(0)" },
       { value: "card", label: "カードの霊力価" },
     ],
-    label: "撃破報酬の額", desc: "撃破された式神の召喚コスト(または「カードの霊力価」)から決まる、受け取る霊力", midGame: true,
+    label: "撃破報酬の額", desc: "撃破された式神の召喚霊力(または「カードの霊力価」)から決まる、受け取る霊力", midGame: true,
   },
   {
     key: "killRewardBonus", group: "economy", kind: "int", min: -5, max: 5,
@@ -155,36 +155,36 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     key: "killRewardCondition", group: "economy", kind: "choice",
     choices: [
       { value: "always", label: "いつでも" },
-      { value: "behind", label: "占拠が相手以下のときだけ" },
+      { value: "behind", label: "制圧数が相手以下のときだけ" },
       { value: "upset", label: "格上撃破ボーナスあり" },
     ],
     label: "撃破報酬の条件",
-    desc: "撃破した側が受け取る報酬の条件(撃破報酬を受け取る側が「撃破した側」のときだけ効く)。占拠が相手以下のときだけ: 撃破の瞬間に撃破した側の占拠が相手より多ければ誰も得ない(「劣勢の判定」がチップならチップで比べる)。格上撃破ボーナス: 報酬に(撃破された式神の召喚コスト−撃破した式神の召喚コスト)÷2(切り捨て)を足す(霊具は使用コスト、反撃は反撃した式神で数える)",
+    desc: "撃破した側が受け取る報酬の条件(撃破報酬を受け取る側が「撃破した側」のときだけ効く)。制圧数が相手以下のときだけ: 撃破の瞬間に撃破した側の制圧数が相手より多ければ誰も得ない(「劣勢の判定」がチップならチップで比べる)。格上撃破ボーナス: 報酬に(撃破された式神の召喚霊力−撃破した式神の召喚霊力)÷2(切り捨て)を足す(霊具は使用霊力、反撃は反撃した式神で数える)",
     midGame: true,
   },
   {
     key: "underdogDiscount", group: "economy", kind: "int", min: 0, max: 3,
     label: "劣勢時の大型割引",
-    desc: "劣勢(「劣勢の判定」による)のとき、「大型割引の対象コスト」以上の式神の召喚(継承召喚を含む)をこの値だけ安くする。「占拠・チップそれぞれ」では1段ごとに引く(太極の軽減と重なり、1より下がらない。0でなし)",
+    desc: "劣勢(「劣勢の判定」による)のとき、「大型割引の対象の召喚霊力」以上の式神の召喚(継承召喚を含む)をこの値だけ安くする。「制圧数・チップそれぞれ」では1段ごとに引く(太極の軽減と重なり、1より下がらない。0でなし)",
     midGame: true,
   },
   {
     key: "underdogDiscountMinCost", group: "economy", kind: "int", min: 1, max: 20,
-    label: "大型割引の対象コスト", desc: "劣勢時の大型割引の対象になる式神の、カードの召喚コストの下限", midGame: true,
+    label: "大型割引の対象の召喚霊力", desc: "劣勢時の大型割引の対象になる式神の、カードの召喚霊力の下限", midGame: true,
   },
   {
     key: "underdogIncome", group: "economy", kind: "int", min: 0, max: 3,
-    label: "劣勢ボーナス", desc: "収入を受け取るとき、劣勢(「劣勢の判定」による)なら収入にこの値を足す。「占拠・チップそれぞれ」では1段ごとに足す(0でなし)", midGame: true,
+    label: "劣勢ボーナス", desc: "収入を受け取るとき、劣勢(「劣勢の判定」による)なら収入にこの値を足す。「制圧数・チップそれぞれ」では1段ごとに足す(0でなし)", midGame: true,
   },
   {
     key: "underdogBy", group: "economy", kind: "choice",
     choices: [
-      { value: "cells", label: "占拠数" },
+      { value: "cells", label: "制圧数" },
       { value: "chips", label: "チップ(ラチェット)" },
-      { value: "both", label: "占拠・チップそれぞれ" },
+      { value: "both", label: "制圧数・チップそれぞれ" },
     ],
     label: "劣勢の判定",
-    desc: "劣勢ボーナス・劣勢時の大型割引・撃破報酬の「占拠が相手以下のときだけ」が使う「劣勢」の決め方。占拠数: その時点の占拠数(制圧の数え方に従う)が相手より少ない。チップ: チップ(減らないラチェット)が相手より少ない(自分のターン中には変わらない)。占拠・チップそれぞれ: 占拠数で負けていれば1段、チップで負けていればさらに1段(撃破報酬はどちらか一方で相手以下なら受け取る)",
+    desc: "劣勢ボーナス・劣勢時の大型割引・撃破報酬の「制圧数が相手以下のときだけ」が使う「劣勢」の決め方。制圧数: その時点の制圧数(制圧力の数え方に従う)が相手より少ない。チップ: チップ(減らないラチェット)が相手より少ない(自分のターン中には変わらない)。制圧数・チップそれぞれ: 制圧数で負けていれば1段、チップで負けていればさらに1段(撃破報酬はどちらか一方で相手以下なら受け取る)",
     midGame: true,
   },
   // ---------------------------------------------------------------- mana
@@ -208,28 +208,28 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   // --------------------------------------------------------------- board
   {
     key: "taijiDiscount", group: "board", kind: "int", min: 0, max: 10,
-    label: "太極の軽減", desc: "太極のマスに召喚するときの召喚コストの割引", midGame: true,
+    label: "太極の軽減", desc: "太極のマスに召喚するときの召喚霊力の割引", midGame: true,
   },
   {
     key: "taijiFloor", group: "board", kind: "int", min: 0, max: 10,
-    label: "太極の下限", desc: "太極で割り引いても召喚コストはこの値より下がらない", midGame: true,
+    label: "太極の下限", desc: "太極で割り引いても召喚霊力はこの値より下がらない", midGame: true,
   },
   {
     key: "attrBonus", group: "board", kind: "int", min: 0, max: 5,
-    label: "属性ボーナス", desc: "同じ属性のマスでHP+この値、反対の属性のマスでHP−この値", midGame: true,
+    label: "属性ボーナス", desc: "同じ属性のマスで耐久+この値、反対の属性のマスで耐久−この値", midGame: true,
   },
   {
     key: "blindBonus", group: "board", kind: "int", min: 0, max: 5,
-    label: "隙ボーナス", desc: "隙からの物理攻撃に加わるダメージ", midGame: true,
+    label: "隙ボーナス", desc: "隙からの攻撃(【術式】を除く)に加わるダメージ", midGame: true,
   },
   {
     key: "maxHp", group: "board", kind: "int", min: 1, max: 20,
-    label: "HPの上限", desc: "盤上のHPの上限(属性ボーナスを含む)。回復はカードのHPを超えてここまで伸び、超えた分は切り捨て。式神ごとの最大HPはない", midGame: true,
+    label: "耐久の上限", desc: "盤上の耐久の上限(属性ボーナスを含む)。回復はカードの耐久を超えてここまで伸び、超えた分は切り捨て。式神ごとの最大耐久はない", midGame: true,
   },
   // -------------------------------------------------------------- action
   {
     key: "rotateCost", group: "rare", kind: "int", min: 0, max: 5,
-    label: "回転コスト", desc: "回転命令1回に払う霊力", midGame: true,
+    label: "回転霊力", desc: "回転命令1回に払う霊力", midGame: true,
   },
   {
     key: "summonLimit", group: "action", kind: "optInt", min: 1, max: 5, nullLabel: "なし",
@@ -239,7 +239,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   {
     key: "counterMode", group: "combat", kind: "choice",
     choices: [
-      { value: "all", label: "反撃範囲内の全員" },
+      { value: "all", label: "反撃間合内の全員" },
       { value: "single", label: "1体だけ" },
       { value: "gap", label: "旧・隙位置の敵だけ" },
     ],
@@ -252,7 +252,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
       { value: "sum", label: "まとめて同時に" },
     ],
     label: "複数の反撃の解決",
-    desc: "1体ずつ: 反撃は反撃側が選んだ順に1体ずつ当たり、攻撃側が撃破されたら残りは反撃しない(術式の式神は反撃しない)。まとめて: 合計を一度に受ける",
+    desc: "1体ずつ: 反撃は反撃側が選んだ順に1体ずつ当たり、攻撃側が撃破されたら残りは反撃しない(【術式】の式神は反撃しない)。まとめて: 合計を一度に受ける",
     midGame: true,
   },
   {
@@ -266,8 +266,8 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   },
   {
     key: "jutsuAoeSparesAllies", group: "combat", kind: "bool",
-    label: "術式の範囲攻撃は味方に当たらない",
-    desc: "オンにすると術式・範囲の攻撃は範囲内の敵だけに当たる(物理・範囲は「範囲攻撃の味方巻き込み」に従う)",
+    label: "【術式】の範囲攻撃は味方に当たらない",
+    desc: "オンにすると【術式】の範囲攻撃は範囲内の敵だけに当たる(ほかの範囲攻撃は「範囲攻撃の味方巻き込み」に従う)",
     midGame: true,
   },
   {
@@ -276,7 +276,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
       { value: "full", label: "通常" },
       { value: "half", label: "半額" },
     ],
-    label: "召喚コスト半額", desc: "召喚コストを半分(切り上げ・下限1)にする", midGame: true,
+    label: "召喚霊力半額", desc: "召喚霊力を半分(切り上げ・下限1)にする", midGame: true,
   },
   // ------------------------------------------------------------- victory
   // 即勝ち first: it is what 「5体目で即勝ち」 means, and the 制圧 settings below never win on the spot
@@ -299,16 +299,16 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   {
     key: "instantWinCount", group: "victory", kind: "choice",
     choices: [
-      { value: "occupation", label: "占拠(制圧の数え方に従う)" },
+      { value: "occupation", label: "制圧数(制圧力の数え方に従う)" },
       { value: "units", label: "式神の数" },
     ],
     label: "即勝ちの数え方",
-    desc: "占拠: 制圧の数え方に従う(HPが基準以上なら2マス分など)。式神の数: 盤上の自分の式神1体を1と数える(マヨヒガで隠れた式神は数えない)。「5体目を置いたら勝ち」にするには、即勝ち5・置いた瞬間・式神の数",
+    desc: "制圧数: 制圧力の数え方に従う(耐久が基準以上なら制圧力2など)。式神の数: 盤上の自分の式神1体を1と数える(マヨヒガで隠れた式神は数えない)。「5体目を置いたら勝ち」にするには、即勝ち5・置いた瞬間・式神の数",
     midGame: true,
   },
   {
     key: "controlWin", group: "victory", kind: "int", min: 1, max: 9,
-    label: "制圧に必要なマス数", desc: "この数のマスを占拠した状態で相手に番を渡し、相手の番を耐えたら制圧勝利(その場では勝たない。その場で勝つのは上の「即勝ち」)", midGame: true,
+    label: "制圧に必要なマス数", desc: "この数のマスを制圧した状態で相手に番を渡し、相手の番を耐えたら制圧勝利(その場では勝たない。その場で勝つのは上の「即勝ち」)", midGame: true,
   },
   {
     key: "controlHold", group: "victory", kind: "choice",
@@ -327,7 +327,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
       { value: "hold_points", label: "維持で勝ち+有効〇回でも勝ち" },
     ],
     label: "制圧の勝ち方(有効〇回)",
-    desc: "制圧点: 自分のターン終了時に占拠が「制圧に必要なマス数」以上なら制圧点+1(減らない)。「勝ちに必要な制圧点」に達したらその場で勝ち。制圧点だけの方は制圧の保持判定を使わない。「維持で勝ち+有効〇回」は、いつもの制圧(戻ってきたら勝ち)に加えて、制圧を相手に渡すたびに1点(有効)、決めた点数でも勝ち",
+    desc: "制圧点: 自分のターン終了時に制圧数が「制圧に必要なマス数」以上なら制圧点+1(減らない)。「勝ちに必要な制圧点」に達したらその場で勝ち。制圧点だけの方は制圧の保持判定を使わない。「維持で勝ち+有効〇回」は、いつもの制圧(戻ってきたら勝ち)に加えて、制圧を相手に渡すたびに1点(有効)、決めた点数でも勝ち",
     midGame: false,
   },
   {
@@ -339,39 +339,39 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   },
   {
     key: "controlBigCells", group: "victory", kind: "int", min: 0, max: 9,
-    label: "大きく点が入る占拠", unit: "以上",
-    desc: "制圧点が入るとき、占拠がこの数以上なら1点ではなく「大きく入る点」が入る(例: 6なら占拠5で1点・6で3点)。0でなし",
+    label: "大きく点が入る制圧数", unit: "以上",
+    desc: "制圧点が入るとき、制圧数がこの数以上なら1点ではなく「大きく入る点」が入る(例: 6なら制圧数5で1点・6で3点)。0でなし",
     midGame: true,
     dependsOn: { key: "controlWinMode", off: "hold" },
   },
   {
     key: "controlBigPoints", group: "victory", kind: "int", min: 1, max: 9,
     label: "大きく入る点", unit: "点",
-    desc: "占拠が「大きく点が入る占拠」以上のときに入る制圧点",
+    desc: "制圧数が「大きく点が入る制圧数」以上のときに入る制圧点",
     midGame: true,
     dependsOn: { key: "controlBigCells", off: 0 },
   },
   {
     key: "controlCount", group: "victory", kind: "choice",
     choices: [
-      { value: "cells", label: "1体で1マス" },
-      { value: "hp", label: "HPが基準以上なら2マス分" },
-      { value: "cost", label: "召喚コストが基準以上なら2マス分" },
+      { value: "cells", label: "1体で制圧力1" },
+      { value: "hp", label: "耐久が基準以上なら制圧力2" },
+      { value: "cost", label: "召喚霊力が基準以上なら制圧力2" },
     ],
-    label: "制圧の数え方",
-    desc: "占拠の数え方。制圧・占拠チップ(収入)・デッキ切れ判定・表示の占拠数のすべてに使う。HP: 今のHP(ダメージで基準を下回れば1マスに戻る)。召喚コスト: カードの召喚コスト。マヨヒガで隠れた式神は0",
+    label: "制圧力の数え方",
+    desc: "制圧力の数え方。制圧・制圧チップ(収入)・デッキ切れ判定・表示の制圧数のすべてに使う。耐久: 今の耐久(ダメージで基準を下回れば制圧力1に戻る)。召喚霊力: カードの召喚霊力。マヨヒガで隠れた式神は0",
     midGame: true,
   },
   {
     key: "controlCountThreshold", group: "victory", kind: "int", min: 1, max: 20,
-    label: "2マス分になる基準",
-    desc: "制圧の数え方が「HP」「召喚コスト」のとき、この値以上の式神を2マス分に数える(検討中の値: HPなら11、召喚コストなら8)",
+    label: "制圧力2になる基準",
+    desc: "制圧力の数え方が「耐久」「召喚霊力」のとき、この値以上の式神を制圧力2と数える(検討中の値: 耐久なら11、召喚霊力なら8)",
     midGame: true,
   },
   {
     key: "controlWinLate", group: "rare", kind: "int", min: 0, max: 9,
     label: "終盤の制圧ライン",
-    desc: "どちらかが初めて墓地を山札に戻した後は、制圧(成立・維持・制圧点)に必要なマス数をこの値にする(制圧の数え方に従う)。切り替わった時点で制圧中の側も判定し直す。0でなし",
+    desc: "どちらかが初めて墓地を山札に戻した後は、制圧(成立・維持・制圧点)に必要なマス数をこの値にする(制圧力の数え方に従う)。切り替わった時点で制圧中の側も判定し直す。0でなし",
     midGame: true,
   },
   {
@@ -389,7 +389,7 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
       { value: "second", label: "2回目の山札切れで終了" },
     ],
     label: "山札切れでの終了",
-    desc: "どちらかのプレイヤーが2回目の山札切れ(墓地を山札に戻すのが2回目)を起こしたら、その補充が終わったところでゲーム終了。占拠(制圧と同じ数え方)の多い方の勝ち、同じなら引き分け",
+    desc: "どちらかのプレイヤーが2回目の山札切れ(墓地を山札に戻すのが2回目)を起こしたら、その補充が終わったところでゲーム終了。制圧数の多い方の勝ち、同じなら引き分け",
     midGame: true,
   },
   {
@@ -421,22 +421,22 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     key: "mulliganTo", group: "hand", kind: "choice",
     choices: [
       { value: "deck", label: "山札に戻す" },
-      { value: "grave", label: "捨て札にする" },
+      { value: "grave", label: "墓地にする" },
     ],
     label: "マリガンで手放した札",
-    desc: "山札に戻す: 戻して切り直してから引く。捨て札にする: 捨て札に置いてから引く(山札は減る)",
+    desc: "山札に戻す: 戻して切り直してから引く。墓地にする: 墓地に置いてから引く(山札は減る)",
     midGame: false,
     dependsOn: { key: "mulligan", off: false },
   },
   // ------------------------------------------------------------- special
   {
     key: "inheritSummon", group: "special", kind: "bool",
-    label: "継承召喚", desc: "自分の式神を、より召喚コストの高い式神に置き換えて召喚できる", midGame: true,
+    label: "継承召喚", desc: "自分の式神を、より召喚霊力の高い式神に置き換えて召喚できる", midGame: true,
   },
   {
     key: "inheritTaiji", group: "special", kind: "bool",
     label: "太極への継承召喚も太極割引", words: ["する", "しない"],
-    desc: "しない: 太極の上の式神を継承召喚で置き換えるときは、カードの召喚コストを払う(置き換えられる式神がもう太極割引で出ているため)。する: 太極割引をもう一度使う",
+    desc: "しない: 太極の上の式神を継承召喚で置き換えるときは、カードの召喚霊力を払う(置き換えられる式神がもう太極割引で出ているため)。する: 太極割引をもう一度使う",
     midGame: true,
     dependsOn: { key: "inheritSummon", off: false },
   },

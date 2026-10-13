@@ -233,7 +233,7 @@ export const openSettingsPanel = async (host: HTMLElement, opts: PanelOptions): 
       }</button>`;
     return `<nav class="sp-nav" aria-label="設定の区分">${CONFIG_GROUPS.map((g) => tab(g.id, g.label, groupChangeCount(g.id))).join("")}${tab(
       "cards",
-      "カード(数値・攻撃範囲)",
+      "カード(数値・間合)",
       cardSectionCount(cardWork()),
     )}</nav>`;
   };

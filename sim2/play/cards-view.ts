@@ -38,9 +38,12 @@ export const ATTR_MARK: Record<string, string> = { yin: "陰", yang: "陽", none
  */
 const CLAN_MOTIF: Record<string, string> = {
   酒呑: "wave",
-  玖龍街: "lattice",
+  玖龍: "lattice",
   // the adopted 9/22 pack names its clans in full
   酒呑一門: "wave",
+  玖龍一門: "lattice",
+  // packs saved before the 2026-10-13 glossary still say 玖龍街
+  玖龍街: "lattice",
   玖龍街一門: "lattice",
   九尾: "hemp",
   龍: "scale",
@@ -126,8 +129,8 @@ const cellsWord = (cells: readonly Pos[]): string =>
 /** The diagram in words, for the tooltip and screen readers. `counter` omitted = not described. */
 export const describeRange = (range: readonly Pos[], blind: readonly Pos[], gap: Pos | null, counter?: readonly Pos[]): string =>
   [
-    `攻撃範囲: ${cellsWord(range)}`,
-    ...(counter === undefined ? [] : [`反撃範囲: ${cellsWord(counter)}`]),
+    `間合: ${cellsWord(range)}`,
+    ...(counter === undefined ? [] : [`反撃間合: ${cellsWord(counter)}`]),
     `隙: ${cellsWord(blind)}`,
     ...(gap === null ? [] : [`旧・隙: ${cellWord(gap)}`]),
   ].join(" / ");
@@ -240,7 +243,7 @@ const num = (v: number, cls = ""): string => `<b class="num${cls}">${v}</b>`;
 
 const costHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => {
   const reigu = card.kind === "reigu";
-  const word = reigu ? "使用コスト" : "召喚コスト";
+  const word = reigu ? "使用霊力" : "召喚霊力";
   const m = modOf(card, ["summonCost"], opts);
   const now = opts.costNow !== undefined && opts.costNow !== card.summonCost ? opts.costNow : null;
   const main = now === null
@@ -250,7 +253,7 @@ const costHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => {
   const a = modOf(card, ["attackCost"], opts);
   // the rule's rotate cost for this card (爪鬼 turns for free); rotateIsFree reads only the card of the unit
   const rot = rotateIsFree(ctx, { cardId: card.id } as Unit) ? 0 : ctx.cfg.rotateCost;
-  return `<span class="fu-cost">${main}<span class="fu-c fu-c-atk${a.cls}" title="攻撃コスト ${card.attackCost}${a.tip}">${sr("攻撃コスト")}${mark("mana")}${num(card.attackCost)}</span><span class="fu-c fu-c-rot" title="回転コスト ${rot}">${sr("回転コスト")}${mark("mana")}${num(rot)}</span></span>`;
+  return `<span class="fu-cost">${main}<span class="fu-c fu-c-atk${a.cls}" title="攻撃霊力 ${card.attackCost}${a.tip}">${sr("攻撃霊力")}${mark("mana")}${num(card.attackCost)}</span><span class="fu-c fu-c-rot" title="回転霊力 ${rot}">${sr("回転霊力")}${mark("mana")}${num(rot)}</span></span>`;
 };
 
 const attrHtml = (card: CardDef, opts: CardFaceOpts): string => {
@@ -266,13 +269,13 @@ const statsHtml = (card: CardDef, opts: CardFaceOpts): string => {
   const hp = opts.hp;
   const hpNow = hp === undefined ? card.hp : hp.now;
   const tone = hp === undefined ? "" : hp.now < hp.max ? " hurt" : hp.now > hp.max ? " over" : "";
-  const hpTip = `HP ${hp === undefined ? card.hp : hp.now}`;
-  return `<span class="fu-stats"><span class="fu-hp gem${hm.cls}" title="${hpTip}${hm.tip}">${sr("HP")}${mark("hp")}${num(hpNow, tone)}</span><span class="fu-atk gem${am.cls}" title="ATK ${card.atk}${am.tip}">${sr("ATK")}${mark("atk")}${num(card.atk)}</span></span>`;
+  const hpTip = `耐久 ${hp === undefined ? card.hp : hp.now}`;
+  return `<span class="fu-stats"><span class="fu-hp gem${hm.cls}" title="${hpTip}${hm.tip}">${sr("耐久")}${mark("hp")}${num(hpNow, tone)}</span><span class="fu-atk gem${am.cls}" title="攻撃力 ${card.atk}${am.tip}">${sr("攻撃力")}${mark("atk")}${num(card.atk)}</span></span>`;
 };
 
-/** 物理・範囲 / 術式・単体 / 術式・攻撃なし. */
+/** 範囲 / 術式・単体 / 術式・攻撃なし. Since the 2026-10-13 glossary a plain attack goes unnamed (no 物理). */
 const typeWord = (ctx: Ctx, card: CardDef): string =>
-  `${card.attackType === "jutsu" ? "術式" : "物理"}・${card.atk <= 0 || card.attackRange.length === 0 ? "攻撃なし" : isAoeAttack(ctx, card) ? "範囲" : "単体"}`;
+  `${card.attackType === "jutsu" ? "術式・" : ""}${card.atk <= 0 || card.attackRange.length === 0 ? "攻撃なし" : isAoeAttack(ctx, card) ? "範囲" : "単体"}`;
 
 const rangeBlockHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => {
   const aoe = isAoeAttack(ctx, card);
@@ -282,7 +285,12 @@ const rangeBlockHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => 
   if (opts.size === "sm") return `<span class="fu-rblock${rm.cls}">${svg}</span>`;
   const tm = modOf(card, ["attackType", "aoe"], opts);
   const word = typeWord(ctx, card);
-  return `<span class="fu-rblock${rm.cls}"><span class="fu-type${tm.cls}" title="${word}${tm.tip}">${mark(card.attackType === "jutsu" ? "jutsu" : "phys")}<span class="fu-type-w">${word}</span></span>${svg}</span>`;
+  // only 術式 carries a mark; the hand card keeps a plain plate's place, unseen, so the range does not shift
+  const plain = card.attackType !== "jutsu";
+  const md = opts.size === "md";
+  const icon = !plain ? mark("jutsu") : md ? mark("phys") : "";
+  const hide = plain && md ? ' aria-hidden="true"' : "";
+  return `<span class="fu-rblock${rm.cls}"><span class="fu-type${plain ? " is-plain" : ""}${tm.cls}" title="${word}${tm.tip}"${hide}>${icon}<span class="fu-type-w">${word}</span></span>${svg}</span>`;
 };
 
 const textHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => {
@@ -367,9 +375,9 @@ export const pieceHtml = (
   const flag = !current ? "" : u.attackedThisTurn ? "攻" : u.rotatedThisTurn ? "回" : "";
   const flagTip = u.attackedThisTurn ? "このターン攻撃済み" : "このターン回転済み";
   const cls = ["pc", `o${u.owner}`, `f${u.facing}`, spent ? "is-spent" : "", isHidden(u) ? "is-hidden" : "", opts.control ? "is-ctl" : ""].join(" ");
-  const buff = u.atkBuff > 0 ? `<span class="pc-buff" title="このターンATK+${u.atkBuff}">ATK+${u.atkBuff}</span>` : "";
+  const buff = u.atkBuff > 0 ? `<span class="pc-buff" title="このターン攻撃力+${u.atkBuff}">攻撃力+${u.atkBuff}</span>` : "";
   // freeSummonAttack: the summon-turn attack that costs no attack cost is still there
-  const free = current && hasFreeSummonAttack(ctx, u) ? '<span class="pc-free" title="召喚攻撃はコスト0(このターンの1回目の攻撃)">0</span>' : "";
+  const free = current && hasFreeSummonAttack(ctx, u) ? '<span class="pc-free" title="召喚攻撃は消費霊力0(このターンの1回目の攻撃)">0</span>' : "";
   return `<div class="${cls}" data-uid="${u.uid}">
     <div class="pc-dir f${u.facing}" aria-hidden="true"><i class="pc-arrow"></i></div>
     <div class="pc-body">${cardFaceHtml(ctx, card.id, { size: "sm", mods: opts.mods, printed: opts.printed, facing: u.facing, hp: { now: hp, max } })}${mark("cube", "pc-cube")}</div>

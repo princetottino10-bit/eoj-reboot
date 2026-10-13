@@ -90,21 +90,21 @@ EXP-0913B rule variants (defaults again reproduce the pre-EXP behaviour):
   --bundle <id>                a built-in 調整案 (${SETTING_PRESET_IDS.join(" | ")}): its base
                                preset, pack and card numbers, then its rule values. Replaces
                                --preset and --pack; the flags below still override it.
-  --control-count <cells|hp|cost>     制圧の数え方 (default cells)
-  --control-count-threshold <n>       2マス分になる基準 (default 11; hp 11 / cost 8 discussed)
+  --control-count <cells|hp|cost>     制圧力の数え方 (default cells)
+  --control-count-threshold <n>       制圧力2になる基準 (default 11; hp 11 / cost 8 discussed)
   --control-win-mode <hold|points>    制圧の勝ち方 (default hold)
   --control-points-to-win <n>         勝ちに必要な制圧点 (default 2)
   --income-mode <ratchet|current>     収入の決め方 (default ratchet)
   --kill-reward-condition <always|behind|upset>  撃破報酬の条件 (default always)
   --underdog-income <n>               劣勢ボーナス 0-3 (default 0)
   --underdog-discount <n>             劣勢時の大型割引 0-3 (default 0)
-  --underdog-discount-min-cost <n>    大型割引の対象コスト (default 8)
+  --underdog-discount-min-cost <n>    大型割引の対象の召喚霊力 (default 8)
   --underdog-by <cells|chips|both>    劣勢の判定 (default cells; both = one step per condition)
   --control-win-late <n>              終盤の制圧ライン 0-9 (default 0 = off)
   --instant-win-cells <n>             即勝ち 0-18 (default 0 = off)
   --instant-win-timing <turn_end|immediate>  即勝ちの判定 (default turn_end)
   --instant-win-count <occupation|units>     即勝ちの数え方 (default occupation)
-  --free-summon-attack <off|optional>        召喚した手番の1回目の攻撃はコストなし (default off)
+  --free-summon-attack <off|optional>        召喚した手番の1回目の攻撃は消費霊力なし (default off)
   --free-summon-attack-inherit <on|off>      継承召喚にも適用 (default off)
 `;
 

@@ -680,7 +680,7 @@ test("underdogBy: 劣勢ボーナス stacks per condition under both, and killRe
   const ev: GameEvent[] = [];
   endTurn(ctx, s, ev);
   assert.equal(s.players[0].mana, 8);
-  assert.ok(effectTexts(ev).some((t) => t.includes("劣勢ボーナス +2") && t.includes("占拠 0 対 1") && t.includes("チップ 2 対 3")), effectTexts(ev).join(" / "));
+  assert.ok(effectTexts(ev).some((t) => t.includes("劣勢ボーナス +2") && t.includes("制圧数 0 対 1") && t.includes("チップ 2 対 3")), effectTexts(ev).join(" / "));
 
   // P1 is ahead on 占拠 (3 against 1) but not on chips: paid under chips, not under cells
   const kill = (by: Config["underdogBy"]): number => {
@@ -786,7 +786,7 @@ test("instantWinCells: an own turn end on that 占拠 wins at once — a big uni
   assert.equal(s.ended, true);
   assert.equal(s.winner, 0);
   assert.equal(s.winType, "control");
-  assert.ok(effectTexts(ev).some((t) => t.includes("即勝ち") && t.includes("占拠7")));
+  assert.ok(effectTexts(ev).some((t) => t.includes("即勝ち") && t.includes("制圧数7")));
   assert.ok(ev.some((e) => e.t === "gameEnd"));
   // the same board counted in cells is 6: no cold win, just the control state
   const cells = r0923({ instantWinCells: 7 });

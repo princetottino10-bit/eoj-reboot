@@ -282,7 +282,7 @@ test("9/23 bundles: 今の占拠で収入(開始時) / 逆転しやすく / 大�
     assert.deepEqual(s.cards, {}, "no card numbers");
     return Object.fromEntries(settingsDiff(s).rules.map((c) => [c.key, c.to]));
   };
-  assert.equal(SETTING_PRESETS.incomeNow.label, "調整案: 今の占拠で収入(開始時)");
+  assert.equal(SETTING_PRESETS.incomeNow.label, "調整案: 今の制圧数で収入(開始時)");
   assert.deepEqual(rulesOf("incomeNow"), { incomeTiming: "turn_start", incomeMode: "current" });
   assert.equal(SETTING_PRESETS.comeback.label, "調整案: 逆転しやすく");
   assert.deepEqual(rulesOf("comeback"), {

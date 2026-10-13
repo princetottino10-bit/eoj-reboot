@@ -116,7 +116,7 @@ export const parsePack = (raw: unknown): Map<string, CardInfo> => {
       cost: c.summonCost ?? 0,
       atk: c.atk ?? 0,
       hp: c.hp ?? 0,
-      effect: fx ?? "特別な効果はない。攻撃と体力で勝負する式神",
+      effect: fx ?? "特別な効果はない。攻撃と耐久で勝負する式神",
       attr: c.attribute === "yang" || c.attribute === "yin" ? c.attribute : "none",
       art: c.art?.card ?? null,
     });
@@ -298,7 +298,7 @@ export const buildCards = async (pack: Map<string, CardInfo>, q: Quality, boardY
     badge.raycast = () => undefined;
     cell.add(badge);
     root.add(cell);
-    const pieceInfo: CardInfo = { ...info, board: `盤上: 命 ${u.hp} ・ ${FACING_WORD[u.facing]}向き ・ ${u.owner === 0 ? "先手" : "後手"}の駒` };
+    const pieceInfo: CardInfo = { ...info, board: `盤上: 耐久 ${u.hp} ・ ${FACING_WORD[u.facing]}向き ・ ${u.owner === 0 ? "先手" : "後手"}の駒` };
     const { mesh, holder } = makeCard(pieceInfo);
     const p: Vec3 = [cx, boardY + 0.04 + (CARD_H * PIECE) / 2, cz];
     holder.position.set(p[0], p[1], p[2]);

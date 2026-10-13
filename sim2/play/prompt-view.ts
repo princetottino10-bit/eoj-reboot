@@ -95,7 +95,7 @@ const lanternBar = (vm: PromptVM, p: Extract<PromptKind, { kind: "lantern" }>): 
   const buttons = ask.options.map((o) => {
     const u = unitById(vm.board, o.uid);
     const where = u === undefined ? "" : `<span class="muted">(${esc(cellName(u.pos))})</span>`;
-    const gain = o.gain > 0 ? `HP ${o.hp}→${o.hp + o.gain} <b>+${o.gain}</b>` : `HP ${o.hp} 満タン(+0)`;
+    const gain = o.gain > 0 ? `耐久 ${o.hp}→${o.hp + o.gain} <b>+${o.gain}</b>` : `耐久 ${o.hp} 満タン(+0)`;
     return btn("lantern", `${esc(cardName(vm.ctx, o.cardId))}${where} ${gain}`, o.gain > 0 ? "btn-gold" : "btn-quiet", `data-uid="${o.uid}"`);
   });
   const notes: string[] = [];
@@ -104,11 +104,11 @@ const lanternBar = (vm: PromptVM, p: Extract<PromptKind, { kind: "lantern" }>): 
     const u = unitById(vm.board, o.uid);
     return u !== undefined && unitHp(vm.ctx, u) !== o.hp;
   });
-  if (hit) notes.push(`HPは${actor === undefined ? "この霊具" : "この攻撃"}のダメージを受けた後の値です`);
-  if (ask.options.some((o) => o.gain === 0)) notes.push("HPが上限の味方も選べますが、HPは増えません");
+  if (hit) notes.push(`耐久は${actor === undefined ? "この霊具" : "この攻撃"}のダメージを受けた後の値です`);
+  if (ask.options.some((o) => o.gain === 0)) notes.push("耐久が上限の味方も選べますが、耐久は増えません");
   return bar(
     "confirm lantern",
-    `<b>${lamp}の灯</b>: ${cause}${lamp}が撃破されます。灯を託す味方を1体選んでください(HP+${ask.amount}・上限${vm.ctx.cfg.maxHp}まで)`,
+    `<b>${lamp}の灯</b>: ${cause}${lamp}が撃破されます。灯を託す味方を1体選んでください(耐久+${ask.amount}・上限${vm.ctx.cfg.maxHp}まで)`,
     notes,
     buttons,
     vm.flash,
@@ -142,11 +142,11 @@ const kyonshiBar = (vm: PromptVM, p: Extract<PromptKind, { kind: "kyonshi" }>): 
   // the 10/3 range (all four diagonals) covers the same cells every way: then one note instead of three
   const same = ask.options.every((o) => o.targets.join() === ask.options[0].targets.join());
   const buttons = ask.options.map((o) => {
-    const label = `<b>${kyonshiTurnWord(o.turn)}</b>(${FACING_WORD[o.facing]}向き)${same ? "" : ` 攻撃範囲: ${reachOf(o.targets)}`}`;
+    const label = `<b>${kyonshiTurnWord(o.turn)}</b>(${FACING_WORD[o.facing]}向き)${same ? "" : ` 間合: ${reachOf(o.targets)}`}`;
     return btn("kyonshi", label, o.turn === 0 ? "btn-quiet" : "btn-gold", `data-turn="${o.turn}"`);
   });
   const notes = ["反対向き(180度)にはできません"];
-  if (same) notes.push(`どの向きでも攻撃範囲に入る敵は同じです(${reachOf(ask.options[0].targets)})`);
+  if (same) notes.push(`どの向きでも間合に入る敵は同じです(${reachOf(ask.options[0].targets)})`);
   return bar(
     "confirm kyonshi",
     `<b>${me}の向き</b>: ${cause}、${esc(cellName(ask.to))}へ移動します。向きを90度変えられます(盤上の矢印でも選べます)`,
@@ -172,7 +172,7 @@ const kbd = (text: string): string => `<span class="kbd-hint">${text}</span>`;
 
 /** The board's range colours, the same as the card diagram (旧・隙 = the provisional amber ring). */
 const LEGEND =
-  '<span class="legend"><i class="lg lg-attack"></i>攻撃範囲 <i class="lg lg-counter"></i>反撃範囲 <i class="lg lg-blind"></i>隙 <i class="lg lg-gap"></i>旧・隙</span>';
+  '<span class="legend"><i class="lg lg-attack"></i>間合 <i class="lg lg-counter"></i>反撃間合 <i class="lg lg-blind"></i>隙 <i class="lg lg-gap"></i>旧・隙</span>';
 
 const unitHint = (vm: PromptVM, uid: number, own: boolean): string => {
   const u = unitById(vm.board, uid);
@@ -196,22 +196,22 @@ const reiguLines = (vm: PromptVM, fc: ReiguForecast): string[] => {
         lines.push(`<b class="warn">${nm(fc.target.uid)}の正面にユニットがいない</b>`);
         break;
       }
-      lines.push(`${nm(fc.target.uid)}の正面 → <b>${nm(fc.victim.uid)}</b>(${owner(fc.victim.owner)})に <b>${fc.dmg}ダメージ</b>(HP ${fc.before}→${fc.after})`);
+      lines.push(`${nm(fc.target.uid)}の正面 → <b>${nm(fc.victim.uid)}</b>(${owner(fc.victim.owner)})に <b>${fc.dmg}ダメージ</b>(耐久 ${fc.before}→${fc.after})`);
       if (fc.ally) lines.push('<b class="warn">味方への攻撃です</b>');
       if (fc.destroyed) lines.push(`<b class="warn">撃破</b>${fc.lifeLoss > 0 ? `(${owner(fc.victim.owner)}の生命−${fc.lifeLoss})` : ""}`);
       lines.push('<span class="muted">反撃・隙なし</span>');
       break;
     case "setHp":
-      lines.push(`<b>${nm(fc.target.uid)}</b>のHP ${fc.before}→<b>${fc.after}</b>`);
+      lines.push(`<b>${nm(fc.target.uid)}</b>の耐久 ${fc.before}→<b>${fc.after}</b>`);
       break;
     case "hide":
-      lines.push(`${fc.friendly ? "味方" : "敵"} <b>${nm(fc.target.uid)}</b>を隠す(HP ${fc.before}→${fc.after})${fc.destroyed ? ' <b class="warn">撃破</b>' : ""}`);
-      lines.push('<span class="muted">使用者の次のターン開始まで対象外・占拠に数えない</span>');
+      lines.push(`${fc.friendly ? "味方" : "敵"} <b>${nm(fc.target.uid)}</b>を隠す(耐久 ${fc.before}→${fc.after})${fc.destroyed ? ' <b class="warn">撃破</b>' : ""}`);
+      lines.push('<span class="muted">使用者の次のターン開始まで対象外・制圧に数えない</span>');
       break;
     default:
       lines.push(`対象: <b>${nm(fc.target.uid)}</b>`);
   }
-  if (fc.buffed) lines.push(`${nm(fc.target.uid)}: 霊具を受けてこのターンATK+1`);
+  if (fc.buffed) lines.push(`${nm(fc.target.uid)}: 霊具を受けてこのターン攻撃力+1`);
   return lines;
 };
 
@@ -224,7 +224,7 @@ export const reiguPreviewLines = (vm: PromptVM, pv: ReiguPreview): string[] => {
     // pushed onto another attribute: the HP change is the damage plus the new cell's attribute
     const attr = moved !== undefined && h.hpBefore - h.dmg !== h.hpAfter ? "・移動先の属性込み" : "";
     lines.push(
-      `<b>${esc(cardName(vm.ctx, h.cardId))}</b>(${owner(h.owner)}) <b>−${h.dmg}</b>(HP ${h.hpBefore}→${h.hpAfter}${attr})${h.destroyed ? ' <b class="warn">撃破</b>' : ""}${
+      `<b>${esc(cardName(vm.ctx, h.cardId))}</b>(${owner(h.owner)}) <b>−${h.dmg}</b>(耐久 ${h.hpBefore}→${h.hpAfter}${attr})${h.destroyed ? ' <b class="warn">撃破</b>' : ""}${
         moved === undefined ? "" : ` → ${esc(cellName(moved.to))}へ移動`
       }`,
     );
@@ -405,9 +405,9 @@ export const promptHtml = (vm: PromptVM): string => {
       const uid = p.uids[vm.tansuIndex];
       const u = uid === undefined ? undefined : unitById(vm.board, uid);
       const name = u === undefined ? "古箪笥" : cardName(vm.ctx, u.cardId);
-      return bar("tansu", `【${esc(name)}】ターン開始の効果: HPを1減らして何を得るか`, [], [
-        btn("tansu", "HP−1 → 霊力+1", "btn-gold", 'data-choice="mana"'),
-        btn("tansu", "HP−1 → 1枚引く", "", 'data-choice="draw"'),
+      return bar("tansu", `【${esc(name)}】ターン開始の効果: 耐久を1減らして何を得るか`, [], [
+        btn("tansu", "耐久−1 → 霊力+1", "btn-gold", 'data-choice="mana"'),
+        btn("tansu", "耐久−1 → 1枚引く", "", 'data-choice="draw"'),
         btn("tansu", "使わない", "btn-quiet", 'data-choice="skip"'),
       ], vm.flash);
     }

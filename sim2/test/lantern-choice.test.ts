@@ -105,12 +105,12 @@ test("engine: the owner's pick is healed (up to the board's HP limit); an ally a
   assert.equal(hpOf(ctx, toRyomen, ids.cheap), hpOf(ctx, s, ids.cheap));
   const toCheap = withLanternPicks([ids.cheap], () => applyAction(ctx, s, a));
   assert.equal(hpOf(ctx, toCheap.result.state, ids.cheap), ctx.cfg.maxHp);
-  assert.ok(toCheap.result.events.some((e) => e.t === "effect" && e.text === "灯籠の精の灯 → 影鬼 HP+1"));
+  assert.ok(toCheap.result.events.some((e) => e.t === "effect" && e.text === "灯籠の精の灯 → 影鬼 耐久+1"));
   // a pick already at the board's HP limit is allowed and heals nothing
   const full = createFlow(ctx, 11, strikeScene((st, i, c) => setHp(c, st, i.ryomen, c.cfg.maxHp)).opts).state;
   const toFull = withLanternPicks([ids.ryomen], () => applyAction(ctx, full, a)).result;
   assert.equal(hpOf(ctx, toFull.state, ids.ryomen), ctx.cfg.maxHp);
-  assert.ok(toFull.events.some((e) => e.t === "effect" && e.text === "灯籠の精の灯 → 両面 HP+0"));
+  assert.ok(toFull.events.some((e) => e.t === "effect" && e.text === "灯籠の精の灯 → 両面 耐久+0"));
   // no answer (headless): the most HP gained
   assert.equal(defaultLanternPick(ctx, s, asks[0]), ids.ryomen);
   assert.equal(hpOf(ctx, applyAction(ctx, s, a).state, ids.ryomen), hpOf(ctx, s, ids.ryomen) + 2);
@@ -218,7 +218,7 @@ test("flow: the lantern's OWNER (not the seat on turn) answers; the action waits
   assert.equal(unitByUid(f.state, sc.ids.toro), undefined);
   assert.equal(hpOf(ctx, f.state, sc.ids.cheap), ctx.cfg.maxHp);
   assert.equal(unitByUid(f.state, sc.ids.ryomen)!.damage, 3);
-  assert.deepEqual(lanternLines(f), ["灯籠の精の灯 → 影鬼 HP+1"]);
+  assert.deepEqual(lanternLines(f), ["灯籠の精の灯 → 影鬼 耐久+1"]);
   assert.deepEqual(f.inputs.slice(-2), [
     { seat: 0, input: { type: "action", action: sc.action() } },
     { seat: 1, input: { type: "lantern", uid: sc.ids.cheap } },
@@ -244,7 +244,7 @@ test("flow: with one candidate nobody is asked; the stored input parser keeps th
   const f = flowOf2(ctx, sc);
   assert.ok(submit(f, 0, { type: "action", action: sc.action() }).ok);
   assert.deepEqual(f.phase, { kind: "main", player: 0 });
-  assert.deepEqual(lanternLines(f), ["灯籠の精の灯 → 両面 HP+2"]);
+  assert.deepEqual(lanternLines(f), ["灯籠の精の灯 → 両面 耐久+2"]);
   const parsed = parseFlowInput({ type: "lantern", uid: 7, extra: 1 }, { changes: false });
   assert.deepEqual(parsed, { ok: true, value: { type: "lantern", uid: 7 } });
   assert.equal(parseFlowInput({ type: "lantern", uid: -1 }, { changes: false })?.ok, false);
@@ -365,7 +365,7 @@ test("online: the owner gets the lantern prompt, the attacker sees who is choosi
   assert.equal(send(s, s.tokens[1], { type: "lantern", uid: sc.ids.ryomen }).status, 200);
   const after = view(s, s.tokens[0]);
   assert.equal(after.game?.phase.kind, "main");
-  assert.ok(after.log.some((l) => l.event.t === "effect" && l.event.text === "灯籠の精の灯 → 両面 HP+2"));
+  assert.ok(after.log.some((l) => l.event.t === "effect" && l.event.text === "灯籠の精の灯 → 両面 耐久+2"));
   const f = flowOf(s);
   const again = replayFlow(f.ctx, f.seed, f.inputs, strikeScene().opts);
   assert.deepEqual(again.state, f.state);
@@ -395,7 +395,7 @@ test("the prompt names the lantern, lists the allies with their gain (ones at th
     flash: "",
   });
   assert.match(html, /灯籠の精の灯/);
-  assert.match(html, /茨木童子の攻撃で灯籠の精が撃破されます。灯を託す味方を1体選んでください\(HP\+2/);
+  assert.match(html, /茨木童子の攻撃で灯籠の精が撃破されます。灯を託す味方を1体選んでください\(耐久\+2/);
   assert.match(html, new RegExp(`data-act="lantern"[^>]*data-uid="${sc.ids.cheap}"|data-uid="${sc.ids.cheap}"`));
   assert.match(html, /影鬼.*<b>\+1<\/b>/);
   assert.match(html, /両面.*満タン\(\+0\)/);
@@ -403,14 +403,14 @@ test("the prompt names the lantern, lists the allies with their gain (ones at th
   assert.deepEqual(pv.hits.map((h) => [h.uid, -h.dmg, h.heal]), [[sc.ids.ryomen, 0, true], [sc.ids.cheap, 1, true]]);
 });
 
-test("log lines: the table says whose light it was; the spectate narration reads 「先手: 灯籠の精の灯 → 僵尸公主 HP+2」", () => {
+test("log lines: the table says whose light it was; the spectate narration reads 「先手: 灯籠の精の灯 → 僵尸公主 耐久+2」", () => {
   const ctx = r0923();
   const s = blankState(ctx);
   const k = place(s, "ad13", 0, 1, 1, 0);
-  const ev = { t: "effect" as const, player: 0 as PlayerId, source: "ad01", uid: k, text: "灯籠の精の灯 → 僵尸公主 HP+2" };
+  const ev = { t: "effect" as const, player: 0 as PlayerId, source: "ad01", uid: k, text: "灯籠の精の灯 → 僵尸公主 耐久+2" };
   const n = narrateStep(ctx, beforeOf(ctx, s), s, 1, [], [ev]);
-  assert.deepEqual(n.lines.map((l) => l.text), ["先手: 灯籠の精の灯 → 僵尸公主 HP+2"]);
-  assert.equal(describeEvent(ctx, ["あなた", "AI"], ev)?.text, "★ あなた: 灯籠の精の灯 → 僵尸公主 HP+2");
+  assert.deepEqual(n.lines.map((l) => l.text), ["先手: 灯籠の精の灯 → 僵尸公主 耐久+2"]);
+  assert.equal(describeEvent(ctx, ["あなた", "AI"], ev)?.text, "★ あなた: 灯籠の精の灯 → 僵尸公主 耐久+2");
   // other effects keep their star line
   const other = narrateStep(ctx, beforeOf(ctx, s), s, 1, [], [{ ...ev, source: "ad13", text: "僵尸公主: 撃破した位置へ移動" }]);
   assert.deepEqual(other.lines.map((l) => l.text), ["★ 僵尸公主: 撃破した位置へ移動"]);

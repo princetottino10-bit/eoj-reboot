@@ -94,7 +94,7 @@ test("settings page: both fields sit with 攻撃コストの増減, labels in Ja
   assert.equal(inh.group, delta.group);
   assert.equal(main.label, "召喚した手番の攻撃");
   assert.ok(main.kind === "choice");
-  assert.deepEqual(main.choices.map((c) => c.label), ["毎回コストを払う", "1回目はコストなし"]);
+  assert.deepEqual(main.choices.map((c) => c.label), ["毎回霊力を払う", "1回目は消費霊力なし"]);
   assert.equal(inh.label, "継承召喚にも適用");
   assert.equal(formatConfigValue(inh, true), "する");
   assert.equal(formatConfigValue(inh, false), "しない");
@@ -185,10 +185,10 @@ test("optional: a paid variant still pays its extra (酒呑童子【飲酒】 +2
   const drink = cmds.find((c) => c.id === "drink");
   assert.ok(atk !== undefined && drink !== undefined);
   assert.equal(atk.cost, 0);
-  assert.equal(atk.label, "攻撃(召喚攻撃・コスト0)");
+  assert.equal(atk.label, "攻撃(召喚攻撃・消費霊力0)");
   assert.equal(atk.free, true);
   assert.equal(drink.cost, 2);
-  assert.equal(drink.label, "飲酒(召喚攻撃・攻撃コスト0)");
+  assert.equal(drink.label, "飲酒(召喚攻撃・攻☆0)");
 });
 
 // ------------------------------------------------------------- 継承召喚
@@ -334,12 +334,12 @@ test("share URL: the fields round-trip; an old URL decodes to off", () => {
 
 test("bundle 「召喚攻撃はコストなし」: an overlay (optional + inherit) found on top of any ruleset", () => {
   const b = SETTING_PRESETS.freeSummon;
-  assert.equal(b.label, "召喚攻撃はコストなし");
+  assert.equal(b.label, "召喚攻撃は消費霊力なし");
   assert.equal(b.overlay, true);
   assert.deepEqual(b.config, { freeSummonAttack: "optional", freeSummonAttackInherit: true });
   assert.deepEqual(settingPresetSettings("freeSummon").config, b.config);
   const onR0923: GameSettings = { rule: "r0923", pack: "adopted-0922", config: { ...b.config }, cards: {} };
   assert.equal(matchingSettingPreset(onR0923, null), "freeSummon");
-  assert.match(settingsLabel(onR0923, null), /\+召喚攻撃はコストなし$/);
+  assert.match(settingsLabel(onR0923, null), /\+召喚攻撃は消費霊力なし$/);
   assert.equal(matchingSettingPreset({ ...onR0923, config: { freeSummonAttack: "optional" } }, null), null);
 });

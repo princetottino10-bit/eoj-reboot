@@ -117,7 +117,7 @@ test("僵尸公主 engine: after its attack-kill move, keep / left 90° / right 
   const right = withKyonshiTurns([1], () => applyAction(ctx, s, a)).result;
   assert.ok(right.events.some((e) => e.t === "effect" && e.text === "僵尸公主が移動 → 右へ90度(右向き)" && e.from === 0 && e.to === 1));
   assert.ok(r.events.some((e) => e.t === "effect" && e.text === "僵尸公主が移動 → 向きはそのまま"));
-  assert.equal(EFFECT_TEXT.ac13, "攻撃・反撃によって対象のHPを0にした場合、その位置に移動する。この時、向きを90度変えられる");
+  assert.equal(EFFECT_TEXT.ac13, "攻撃・反撃によって対象の耐久を0にした場合、その位置に移動する。この時、向きを90度変えられる");
 });
 
 test("僵尸公主 engine: no move, no ask (the target survives / the 9/22 card / effects off)", () => {
@@ -384,11 +384,11 @@ test("deck-out: r1003 ends at the second 山札切れ once the refill is done; m
   assert.deepEqual(end.occ, [3, 2]);
   assert.equal(end.by, 0);
   const names: [string, string] = ["先手", "後手"];
-  assert.equal(resultHow("deck_out", 0, names, [3, 2]), "2回目の山札切れ — 占拠 3 対 2 で先手の勝ち");
-  assert.equal(resultHow("deck_out", 1, names, [3, 4]), "2回目の山札切れ — 占拠 4 対 3 で後手の勝ち");
-  assert.equal(describeEvent(ctx, names, end)?.text, "◆ 決着 (第1ラウンド): 先手の勝ち(2回目の山札切れ・占拠 3 対 2)");
+  assert.equal(resultHow("deck_out", 0, names, [3, 2]), "2回目の山札切れ — 制圧数 3 対 2 で先手の勝ち");
+  assert.equal(resultHow("deck_out", 1, names, [3, 4]), "2回目の山札切れ — 制圧数 4 対 3 で後手の勝ち");
+  assert.equal(describeEvent(ctx, names, end)?.text, "◆ 決着 (第1ラウンド): 先手の勝ち(2回目の山札切れ・制圧数 3 対 2)");
   const turn = turnHtml(ctx, boardOf(s), names, { phaseText: "" });
-  assert.match(turn, /2回目の山札切れ — 占拠 3 対 2 で先手の勝ち/);
+  assert.match(turn, /2回目の山札切れ — 制圧数 3 対 2 で先手の勝ち/);
   assert.doesNotMatch(turn, /先手の勝ち・/);
 });
 
@@ -399,7 +399,7 @@ test("deck-out: a level 占拠 is a draw; a hidden unit (マヨヒガ) counts 0;
   const ev: GameEvent[] = [];
   assert.equal(checkDeckOut(ctx, s, ev), true);
   assert.equal(s.winner, null, "2 vs 2 (僵尸公主 counts 2)");
-  assert.equal(resultHow("deck_out", null, ["先手", "後手"], [2, 2]), "2回目の山札切れ — 占拠 2 対 2 で引き分け");
+  assert.equal(resultHow("deck_out", null, ["先手", "後手"], [2, 2]), "2回目の山札切れ — 制圧数 2 対 2 で引き分け");
   const hid = deckOutState(ctx, ["ac03"], ["ac13"]);
   hid.units[1].hiddenBy = 0;
   hid.players[0].reshuffleCount = 2;
@@ -416,7 +416,7 @@ test("deck-out: the r1003 default only; the other presets keep none; the setting
   const field = CONFIG_SCHEMA.find((f) => f.key === "deckOutMode");
   assert.ok(field !== undefined && field.kind === "choice");
   assert.equal(field.label, "山札切れでの終了");
-  assert.match(field.desc, /2回目の山札切れ.*その補充が終わったところでゲーム終了.*占拠.*多い方の勝ち.*引き分け/);
+  assert.match(field.desc, /2回目の山札切れ.*その補充が終わったところでゲーム終了.*制圧数.*多い方の勝ち.*引き分け/);
   assert.deepEqual(field.choices?.map((c) => c.label), ["なし", "2回目の山札切れで終了"]);
   const win = quickRules(presetConfig("r1003"), 23).find((r) => r.label === "勝ち");
   assert.match(win?.text ?? "", /2回目の山札切れ/);

@@ -85,7 +85,8 @@ test("pack-adopted-0922 is the sheet: 22 cards, one copy each, every number, cla
     const c = cardOf(AD, `ad${String(sc.no).padStart(2, "0")}`);
     const where = `No.${sc.no} ${sc.name}`;
     assert.equal(c.nameJa, sc.name, where);
-    assert.equal(c.clan, sc.clan, where);
+    // the sheet still says 玖龍街一門; the 2026-10-13 glossary shortened the clan name to 玖龍一門
+    assert.equal(c.clan, sc.clan === "玖龍街一門" ? "玖龍一門" : sc.clan, where);
     assert.equal(c.kind, sc.kind === "霊具" ? "reigu" : "shikigami", where);
     assert.equal(c.summonCost, sc.summonCost, where);
     assert.equal(c.attackCost, num(sc.attackCost), where);
@@ -233,7 +234,7 @@ test("ad01 灯籠の精: on death +2 HP to a surviving ally (no answer given: th
   assert.equal(unitByUid(r.state, toro), undefined);
   assert.equal(unitByUid(r.state, ryomen)!.damage, 1);
   assert.equal(unitHp(ctx, unitByUid(r.state, cheap)!), ctx.cfg.maxHp - 1, "untouched");
-  assert.ok(effects(r.events).some((t) => t.includes("灯籠の精") && t.includes("HP+2")));
+  assert.ok(effects(r.events).some((t) => t.includes("灯籠の精") && t.includes("耐久+2")));
 });
 
 test("ad07 変面: the heal-instead-of-attack restores ceil(ATK/2)", () => {

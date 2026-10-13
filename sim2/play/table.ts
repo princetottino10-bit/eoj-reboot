@@ -472,7 +472,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
   const onFace = (f: number): void => {
     if (touchOnly() && facePreview !== f) {
       facePreview = f as Facing;
-      say("この向きの攻撃範囲を表示中。もう一度押すと決まります");
+      say("この向きの間合を表示中。もう一度押すと決まります");
       return render();
     }
     facePreview = null;

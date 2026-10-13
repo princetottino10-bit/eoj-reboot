@@ -99,9 +99,9 @@ test("the sheets: true-size lg faces of the table, the 10/3 numbers, crop marks 
   for (const c of AC.cards) assert.equal(count(html, `data-card="${c.id}"`), 1, c.id);
   // 10/3 values after the sheet update
   const face = (id: string): string => html.split(`data-card="${id}"`)[1].split('class="pr-slot"')[0];
-  assert.match(face("ac16"), /title="HP 11"/, "酒呑童子 HP 11");
-  assert.match(face("ac07"), /この式神のATK分だけ対象のHP\+/, "変面 heals the full ATK");
-  assert.match(face("ac15"), /攻撃範囲: 前2・前・右前 \/ 反撃範囲: 前2・前・右前 \/ 隙: 右"/, "茨木童子 attack -223 / counter -223 / blind 6");
+  assert.match(face("ac16"), /title="耐久 11"/, "酒呑童子 耐久 11");
+  assert.match(face("ac07"), /この式神の攻撃力分だけ対象の耐久\+/, "変面 heals the full ATK");
+  assert.match(face("ac15"), /間合: 前2・前・右前 \/ 反撃間合: 前2・前・右前 \/ 隙: 右"/, "茨木童子 attack -223 / counter -223 / blind 6");
   assert.match(face("ac23"), /鬼の酒/);
   assert.match(face("ac23"), /O-012/);
   // art where the kit has it
@@ -109,7 +109,7 @@ test("the sheets: true-size lg faces of the table, the 10/3 numbers, crop marks 
   // 僵尸公主's 90° turn is in the table now: the paper card and the table say the sheet's words
   assert.equal(printTextOf("ac13"), undefined);
   assert.deepEqual(PRINT_TEXT, {});
-  assert.match(face("ac13"), /攻撃・反撃によって対象のHPを0にした場合、その位置に移動する。この時、向きを90度変えられる/);
+  assert.match(face("ac13"), /攻撃・反撃によって対象の耐久を0にした場合、その位置に移動する。この時、向きを90度変えられる/);
   assert.doesNotMatch(html, /未実装/);
   assert.doesNotMatch(EFFECT_TEXT.ac13, /未実装/);
   // the grid: centred, margins of 8 mm or more, cards edge to edge
@@ -144,23 +144,23 @@ test("the 早見表 reads every number from the r1003 preset", () => {
   const rows = quickRules(cfg, AC.cards.length);
   const text = (label: string): string => rows.find((r) => r.label === label)?.text ?? "";
   assert.match(text("初期霊力"), /先手6・後手8/);
-  assert.match(text("収入"), /自分のターン終了時に6。占拠チップ4枚で7・5枚で9。/);
+  assert.match(text("収入"), /自分のターン終了時に6。制圧チップ4枚で7・5枚で9。/);
   assert.match(text("収入"), /減らない/);
-  assert.match(text("太極"), /召喚コスト−2 \(1より下がらない\)/);
-  assert.match(text("属性"), /HP\+2.*HP−2/);
+  assert.match(text("太極"), /召喚霊力−2 \(1より下がらない\)/);
+  assert.match(text("属性"), /耐久\+2.*耐久−2/);
   assert.match(text("隙"), /ダメージ\+2/);
-  assert.match(text("HPの上限"), /19まで/);
-  assert.match(text("占拠"), /HP11以上の式神は2マス分/);
-  assert.match(text("勝ち"), /5マス分を占拠していれば制圧。次の自分のターン開始時にまだ5マス分あれば勝ち/);
+  assert.match(text("耐久の上限"), /19まで/);
+  assert.match(text("制圧"), /耐久11以上の式神は制圧力2/);
+  assert.match(text("勝ち"), /制圧数が5以上なら制圧が成立。次の自分のターン開始時にまだ制圧数が5以上なら勝ち/);
   assert.match(text("生命"), /生命価なし/);
   assert.match(text("手札"), /山札は23枚/);
   assert.match(text("効果"), /各カードの文面/);
   // the numbers follow the config, not the text
   const other = quickRules(presetConfig("r1003", { maxHp: 15, startMana: [5, 7], controlCountThreshold: 12 }), 23);
   const t2 = (label: string): string => other.find((r) => r.label === label)?.text ?? "";
-  assert.match(t2("HPの上限"), /15まで/);
+  assert.match(t2("耐久の上限"), /15まで/);
   assert.match(t2("初期霊力"), /先手5・後手7/);
-  assert.match(t2("占拠"), /HP12以上/);
+  assert.match(t2("制圧"), /耐久12以上/);
   // the page
   const page = printDocHtml(CTX, "10/3テスト案", "front").split('class="pr-page pr-rules"')[1];
   assert.match(page, /10\/3テスト案 早見表/);

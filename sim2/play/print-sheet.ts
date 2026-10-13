@@ -137,21 +137,21 @@ export type QuickRow = { label: string; text: string };
 export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
   const [first, second] = cfg.startMana;
   const timing = cfg.incomeTiming === "turn_end" ? "自分のターン終了時" : "自分のターン開始時";
-  const steps = cfg.chipIncomeSteps.length === 0 ? "" : `占拠チップ${chipStepsText(cfg.chipIncomeSteps, cfg.baseIncome)}。`;
-  const ratchet = cfg.incomeMode === "ratchet" ? "チップはターン終了時の占拠数まで増え、減らない (収入も下がらない)。" : "収入はその時の占拠数で決まる。";
-  const taiji = `太極のマスに召喚すると召喚コスト−${cfg.taijiDiscount} (${cfg.taijiFloor}より下がらない)。`;
-  const attr = `同じ属性のマスでHP+${cfg.attrBonus}、反対の属性のマスでHP−${cfg.attrBonus}。`;
+  const steps = cfg.chipIncomeSteps.length === 0 ? "" : `制圧チップ${chipStepsText(cfg.chipIncomeSteps, cfg.baseIncome)}。`;
+  const ratchet = cfg.incomeMode === "ratchet" ? "チップはターン終了時の制圧数まで増え、減らない (収入も下がらない)。" : "収入はその時の制圧数で決まる。";
+  const taiji = `太極のマスに召喚すると召喚霊力−${cfg.taijiDiscount} (${cfg.taijiFloor}より下がらない)。`;
+  const attr = `同じ属性のマスで耐久+${cfg.attrBonus}、反対の属性のマスで耐久−${cfg.attrBonus}。`;
   const twoCells =
     cfg.controlCount === "hp"
-      ? `HP${cfg.controlCountThreshold}以上の式神は2マス分と数える (ダメージで${cfg.controlCountThreshold}を下回れば1マス)。`
+      ? `耐久${cfg.controlCountThreshold}以上の式神は制圧力2と数える (ダメージで${cfg.controlCountThreshold}を下回れば制圧力1)。`
       : cfg.controlCount === "cost"
-        ? `召喚コスト${cfg.controlCountThreshold}以上の式神は2マス分と数える。`
+        ? `召☆${cfg.controlCountThreshold}以上の式神は制圧力2と数える。`
         : "";
   const keep = cfg.controlHold === "next_turn_end"
-    ? `自分のターン終了時に${cfg.controlWin}マス分を占拠していれば制圧。次の自分のターン終了時まで保てば勝ち (途中で下回れば解ける)。`
-    : `自分のターン終了時に${cfg.controlWin}マス分を占拠していれば制圧。次の自分のターン開始時にまだ${cfg.controlWin}マス分あれば勝ち。`;
-  const big = cfg.controlBigCells > 0 ? `、${cfg.controlBigCells}マス分以上なら${cfg.controlBigPoints}点` : "";
-  const points = `自分のターン終了時に${cfg.controlWin}マス分以上を占拠していれば制圧点1点${big} (減らない)。${cfg.controlPointsToWin}点先取で勝ち。`;
+    ? `自分のターン終了時に制圧数が${cfg.controlWin}以上なら制圧が成立。次の自分のターン終了時まで保てば勝ち (途中で下回れば解ける)。`
+    : `自分のターン終了時に制圧数が${cfg.controlWin}以上なら制圧が成立。次の自分のターン開始時にまだ制圧数が${cfg.controlWin}以上なら勝ち。`;
+  const big = cfg.controlBigCells > 0 ? `、制圧数${cfg.controlBigCells}以上なら${cfg.controlBigPoints}点` : "";
+  const points = `自分のターン終了時に制圧数が${cfg.controlWin}以上なら制圧点1点${big} (減らない)。${cfg.controlPointsToWin}点先取で勝ち。`;
   const hold =
     cfg.controlWinMode === "points" ? points : cfg.controlWinMode === "hold_points" ? `${keep}また、${points}` : keep;
   const reward =
@@ -160,40 +160,40 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
       : `撃破報酬: ${choiceLabel("refundMode", cfg.refundMode)}が${choiceLabel("killRewardBase", cfg.killRewardBase)}。`;
   const counter =
     cfg.counterMode === "all" && cfg.counterResolve === "chosen"
-      ? "物理攻撃を受けて残った敵のうち、反撃範囲に攻撃者がいる物理の式神が全員反撃する。順番は反撃する側が選んで1体ずつ、攻撃者が倒れたら残りはしない。隙から受けたとき・術式の攻撃には反撃しない。"
+      ? "攻撃を受けて残った敵のうち、反撃間合に攻撃者がいる式神 (【術式】を除く) が全員反撃する。順番は反撃する側が選んで1体ずつ、攻撃者が倒れたら残りはしない。隙から受けたとき・【術式】の攻撃には反撃しない。"
       : `${choiceLabel("counterMode", cfg.counterMode)}、${choiceLabel("counterResolve", cfg.counterResolve)}。`;
   const refill = cfg.handMode === "replace_discarded" ? "捨てた枚数だけ引く" : `${cfg.handRefill}枚まで引く`;
   const aoe =
     cfg.aoeMode === "off"
       ? "範囲攻撃はなし (すべて単体)。"
-      : `${cfg.aoeMode === "no_ff" ? "範囲攻撃は敵だけに当たる。" : cfg.jutsuAoeSparesAllies ? "物理の範囲攻撃は範囲内の味方にも当たる。術式の範囲攻撃は敵だけに当たる。" : "範囲攻撃は範囲内の味方にも当たる。"}`;
-  const hand = `手札${cfg.handRefill}枚で始める${cfg.mulligan ? (cfg.mulliganTo === "grave" ? " (開始前に一度だけ、選んだ札を捨て札にして引き直せる)" : " (開始前に一度だけ、選んだ札を山札に戻して引き直せる)") : ""}。ターン終了時、好きなだけ捨ててから${refill}。山札は${deckSize}枚 (各1枚)、尽きたら捨て札を切り直す。`;
+      : `${cfg.aoeMode === "no_ff" ? "範囲攻撃は敵だけに当たる。" : cfg.jutsuAoeSparesAllies ? "範囲攻撃は範囲内の味方にも当たる (【術式】の範囲攻撃は敵だけに当たる)。" : "範囲攻撃は範囲内の味方にも当たる。"}`;
+  const hand = `手札${cfg.handRefill}枚で始める${cfg.mulligan ? (cfg.mulliganTo === "grave" ? " (開始前に一度だけ、選んだ札を墓地にして引き直せる)" : " (開始前に一度だけ、選んだ札を山札に戻して引き直せる)") : ""}。ターン終了時、好きなだけ捨ててから${refill}。山札は${deckSize}枚 (各1枚)、尽きたら墓地を切り直す。`;
   const rows: QuickRow[] = [
     { label: "初期霊力", text: `先手${first}・後手${second}。霊力は${cfg.manaCap}まで貯まる。` },
     { label: "収入", text: `${timing}に${cfg.baseIncome}。${steps}${ratchet}` },
     { label: "太極", text: taiji },
     { label: "属性", text: attr },
-    { label: "隙", text: `隙からの物理攻撃はダメージ+${cfg.blindBonus}。` },
-    { label: "HPの上限", text: `盤上のHPは${cfg.maxHp}まで。回復はカードのHPを超えて${cfg.maxHp}まで伸びる。`},
+    { label: "隙", text: `隙からの攻撃はダメージ+${cfg.blindBonus} (【術式】を除く)。` },
+    { label: "耐久の上限", text: `盤上の耐久は${cfg.maxHp}まで。回復はカードの耐久を超えて${cfg.maxHp}まで伸びる。`},
     { label: "回転", text: `回転命令は霊力${cfg.rotateCost}で90度。` },
     { label: "範囲攻撃", text: aoe },
     { label: "反撃", text: counter },
     { label: "撃破", text: reward },
-    { label: "占拠", text: `自分の式神がいるマスを占拠と数える。${twoCells}` },
-    { label: "勝ち", text: cfg.deckOutMode === "second" ? `${hold}どちらかが2回目の山札切れを起こしたら、その補充が終わったところで終了。占拠の多い方の勝ち (同じなら引き分け)。` : hold },
+    { label: "制圧", text: `自分の式神がいるマスを制圧と数える (式神1体の制圧力はふつう1、その合計が制圧数)。${twoCells}` },
+    { label: "勝ち", text: cfg.deckOutMode === "second" ? `${hold}どちらかが2回目の山札切れを起こしたら、その補充が終わったところで終了。制圧数の多い方の勝ち (同じなら引き分け)。` : hold },
     { label: "生命", text: cfg.lifeValueEnabled ? `生命${cfg.startLife}。撃破された式神の生命価だけ減り、0で負け。` : "生命価なし (生命の増減・生命での勝ち負けはない)。" },
     { label: "手札", text: hand },
   ];
-  if (cfg.inheritSummon) rows.push({ label: "継承召喚", text: `自分の式神を、より召喚コストの高い式神に置き換えて召喚できる (位置と向きを引き継ぐ)。${cfg.inheritTaiji ? "" : "太極の上での継承召喚に太極割引はない。"}` });
+  if (cfg.inheritSummon) rows.push({ label: "継承召喚", text: `自分の式神を、より召喚霊力の高い式神に置き換えて召喚できる (位置と向きを引き継ぐ)。${cfg.inheritTaiji ? "" : "太極の上での継承召喚に太極割引はない。"}` });
   if (cfg.freeSummonAttack === "optional") {
     rows.push({
       label: "召喚攻撃",
-      text: `召喚した手番に、その式神の1回目の攻撃は攻撃コストなし (${cfg.summonAttackForced ? "" : "攻撃するかは自由。"}【飲酒】などの追加の霊力は払う)。${
-        cfg.inheritSummon ? (cfg.freeSummonAttackInherit ? "継承召喚で置いた式神も同じ (置き換えた式神が攻撃済みなら攻撃できない)。" : "継承召喚で置いた式神は攻撃コストを払う。") : ""
+      text: `召喚した手番に、その式神の1回目の攻撃は攻撃霊力なし (${cfg.summonAttackForced ? "" : "攻撃するかは自由。"}【飲酒】などの追加の霊力は払う)。${
+        cfg.inheritSummon ? (cfg.freeSummonAttackInherit ? "継承召喚で置いた式神も同じ (置き換えた式神が攻撃済みなら攻撃できない)。" : "継承召喚で置いた式神は攻撃霊力を払う。") : ""
       }`,
     });
   }
-  if (cfg.summonAttackForced) rows.push({ label: "必ず攻撃", text: "召喚 (継承召喚も) した式神は、攻撃範囲に敵がいて攻撃の霊力が払えるなら、ほかの行動の前にすぐ攻撃する (単体攻撃で敵が複数なら相手は選べる)。" });
+  if (cfg.summonAttackForced) rows.push({ label: "必ず攻撃", text: "召喚 (継承召喚も) した式神は、間合に敵がいて攻撃の霊力が払えるなら、ほかの行動の前にすぐ攻撃する (単体攻撃で敵が複数なら相手は選べる)。" });
   if (cfg.summonLimit !== null) rows.push({ label: "召喚", text: `1ターンに${cfg.summonLimit}回まで。` });
   rows.push({ label: "効果", text: cfg.effects ? "各カードの文面のとおり。" : "カードの効果は使わない。" });
   return rows;
@@ -204,13 +204,13 @@ const legendHtml = (): string => {
   const sample = rangeSvg([{ x: 0, y: 1 }, { x: -1, y: 1 }], [{ x: 0, y: -1 }], null, 0, { counter: [{ x: 0, y: 1 }] });
   const item = (icon: string, text: string): string => `<li><span class="pr-li-ic">${icon}</span><span>${text}</span></li>`;
   return `<ul class="pr-legend">${[
-    item(mark("mana-ring"), "召喚コスト (霊具は使用コスト)"),
-    item(mark("mana"), "上から攻撃コスト・回転コスト"),
-    item(mark("hp"), "HP"),
-    item(mark("atk"), "ATK"),
+    item(mark("mana-ring"), "召喚霊力 (霊具は使用霊力)"),
+    item(mark("mana"), "上から攻撃霊力・回転霊力"),
+    item(mark("hp"), "耐久"),
+    item(mark("atk"), "攻撃力"),
     item(flames(1, "pr-flame"), "霊力価 (撃破したときに得る霊力)"),
-    item(`${mark("phys")}${mark("jutsu")}`, "物理・術式 / 単体・範囲"),
-    item(sample, "間合いの図 (上が正面): 黒▲=自分、朱=攻撃 (○単体・□範囲)、緑=反撃、茶=隙"),
+    item(mark("jutsu"), "【術式】の攻撃 (印がなければ通常の攻撃) / 単体・範囲"),
+    item(sample, "間合の図 (上が正面): 黒▲=自分、朱=攻撃 (○単体・□範囲)、緑=反撃、茶=隙"),
   ].join("")}</ul>`;
 };
 

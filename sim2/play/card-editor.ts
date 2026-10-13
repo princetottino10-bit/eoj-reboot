@@ -59,7 +59,7 @@ const TOOLS: readonly { id: RangeTool; label: string }[] = [
   { id: "erase", label: "消す" },
 ];
 
-const CELL_WORD: Record<string, string> = { self: "自分", gap: "攻撃範囲・旧・隙", attack: "攻撃範囲", blind: "隙", empty: "なし" };
+const CELL_WORD: Record<string, string> = { self: "自分", gap: "間合・旧・隙", attack: "間合", blind: "隙", empty: "なし" };
 
 const dis = (b: boolean): string => (b ? "disabled" : "");
 
@@ -101,7 +101,7 @@ const tableHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
         ${cells}<td class="ce-shape-cell">${mini}</td></tr>`;
     })
     .join("");
-  return `<table class="sp-table ce-table"><thead><tr><th scope="col" class="ce-check"></th><th scope="col">カード(${esc(packLabel(w.packName))})</th>${head}<th scope="col">範囲</th></tr></thead><tbody>${rows}</tbody></table>`;
+  return `<table class="sp-table ce-table"><thead><tr><th scope="col" class="ce-check"></th><th scope="col">カード(${esc(packLabel(w.packName))})</th>${head}<th scope="col">間合</th></tr></thead><tbody>${rows}</tbody></table>`;
 };
 
 const bulkHtml = (w: CardWork, ui: CardUi): string => {
@@ -115,7 +115,7 @@ const bulkHtml = (w: CardWork, ui: CardUi): string => {
   const filters = `<div class="ce-filter-rows">
     <div><span class="ce-flabel">種類</span>${chip("kind", "shikigami", "式神", ui.chips.kind.includes("shikigami"))}${chip("kind", "reigu", "霊具", ui.chips.kind.includes("reigu"))}</div>
     <div><span class="ce-flabel">属性</span>${(["yin", "yang", "none"] as const).map((a) => chip("attr", a, ATTR_LABELS[a], ui.chips.attr.includes(a))).join("")}</div>
-    <div><span class="ce-flabel">召喚コスト</span>${costs.map((c) => chip("cost", c.cost, String(c.cost), ui.chips.cost.includes(c.cost), `<small>${c.count}枚</small>`)).join("")}</div>
+    <div><span class="ce-flabel">召喚霊力</span>${costs.map((c) => chip("cost", c.cost, String(c.cost), ui.chips.cost.includes(c.cost), `<small>${c.count}枚</small>`)).join("")}</div>
     <div class="ce-quick"><button type="button" class="btn btn-quiet" data-select="all" ${dis(w.locked)}>すべて</button><button type="button" class="btn btn-quiet" data-select="changed" ${dis(w.locked)}>変更したカード</button><button type="button" class="btn btn-quiet" data-select="clear" ${dis(w.locked || n === 0)}>選択を外す</button><span class="ce-fhint">同じ行はどれか、行どうしは両方を満たすカードを選ぶ</span></div>
   </div>`;
   const stats = CARD_STATS.map(
@@ -124,14 +124,14 @@ const bulkHtml = (w: CardWork, ui: CardUi): string => {
   ).join("");
   const focus = w.printed.byId.get(ui.focus);
   const canCopy = !off && focus !== undefined && canEditShape(focus);
-  const head = `<div class="ce-bulk-head"><button type="button" class="ce-bulk-toggle" data-bulk-toggle="1" aria-expanded="${ui.bulkOpen}"><span class="ce-bulk-title">まとめて変更</span><span class="ce-bulk-caret" aria-hidden="true">${ui.bulkOpen ? "▾" : "▸"}</span><span class="ce-bulk-hint">${ui.bulkOpen ? "閉じる" : "種類・属性・コストで選んで数値をまとめて変える"}</span></button><span class="ce-selcount"><b>${n}</b>枚を選択中</span></div>`;
+  const head = `<div class="ce-bulk-head"><button type="button" class="ce-bulk-toggle" data-bulk-toggle="1" aria-expanded="${ui.bulkOpen}"><span class="ce-bulk-title">まとめて変更</span><span class="ce-bulk-caret" aria-hidden="true">${ui.bulkOpen ? "▾" : "▸"}</span><span class="ce-bulk-hint">${ui.bulkOpen ? "閉じる" : "種類・属性・召喚霊力で選んで数値をまとめて変える"}</span></button><span class="ce-selcount"><b>${n}</b>枚を選択中</span></div>`;
   if (!ui.bulkOpen) return `<div class="ce-bulk is-closed${off ? " is-off" : ""}">${head}</div>`;
   return `<div class="ce-bulk${off ? " is-off" : ""}">
     ${head}
     ${filters}
     <div class="ce-bulk-stats">${stats}</div>
     <div class="ce-bulk-foot">
-      <button type="button" class="btn btn-quiet" data-bulk="copyShape" ${dis(!canCopy)}>「${esc(focus?.nameJa ?? "")}」の攻撃範囲・隙・反撃範囲を選んだカードにコピー</button>
+      <button type="button" class="btn btn-quiet" data-bulk="copyShape" ${dis(!canCopy)}>「${esc(focus?.nameJa ?? "")}」の間合・隙・反撃間合を選んだカードにコピー</button>
       <button type="button" class="btn btn-quiet" data-bulk="reset" ${dis(off)}>選んだカードを印刷どおりに戻す</button>
     </div>
   </div>`;
@@ -157,11 +157,11 @@ const gridHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
         continue;
       }
       buttons.push(
-        `<button type="button" class="ce-cell ce-${st}${ctr ? " ce-ctr" : ""}${outer ? " ce-outer" : ""}" data-cell="${x},${y}" ${dis(w.locked)} aria-label="${esc(cellWord({ x, y }))}: ${CELL_WORD[st]}${ctr ? "・反撃範囲" : ""}">${st === "blind" ? "×" : ""}</button>`,
+        `<button type="button" class="ce-cell ce-${st}${ctr ? " ce-ctr" : ""}${outer ? " ce-outer" : ""}" data-cell="${x},${y}" ${dis(w.locked)} aria-label="${esc(cellWord({ x, y }))}: ${CELL_WORD[st]}${ctr ? "・反撃間合" : ""}">${st === "blind" ? "×" : ""}</button>`,
       );
     }
   }
-  return `<div class="ce-grid" role="group" aria-label="攻撃範囲の編集(上が前)">${buttons.join("")}</div>`;
+  return `<div class="ce-grid" role="group" aria-label="間合の編集(上が前)">${buttons.join("")}</div>`;
 };
 
 const editorHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
@@ -175,7 +175,7 @@ const editorHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
     changed ? '<span class="sp-count">変更あり</span>' : ""
   }<button type="button" class="btn btn-quiet sp-reset" data-card-reset="${esc(base.id)}" ${dis(w.locked || !changed)}>このカードを戻す</button></div>`;
   if (!canEditShape(base)) {
-    return `<div class="ce-editor">${head}<div class="ce-body">${preview}<p class="muted ce-note">霊具は使用コスト(表の「召」)だけ変えられます。</p></div></div>`;
+    return `<div class="ce-editor">${head}<div class="ce-body">${preview}<p class="muted ce-note">霊具は使用霊力(表の「召☆」)だけ変えられます。</p></div></div>`;
   }
   // 旧・隙 only matters under the old counter mode (反撃方式「旧・隙位置の敵だけ」)
   const oldGap = w.cfg.counterMode === "gap";
@@ -184,15 +184,15 @@ const editorHtml = (w: CardWork, ui: CardUi, cards: CardOverrides): string => {
   ).join("");
   const gap = card.gapCell ?? null;
   const text = `<dl class="ce-text">
-    <dt>攻撃範囲</dt><dd>${esc(cellsText(card.attackRange))}</dd>
+    <dt>間合</dt><dd>${esc(cellsText(card.attackRange))}</dd>
     <dt>隙</dt><dd>${esc(cellsText(card.blindSpots))}</dd>
-    <dt>反撃範囲</dt><dd>${esc(card.counterRange.length === 0 ? "なし" : cellsText(card.counterRange))}</dd>
-    ${oldGap ? `<dt>旧・隙</dt><dd>${card.aoe ? esc(gap === null ? "なし" : cellWord(gap)) : "単体攻撃は攻撃範囲全体"}</dd>` : ""}
+    <dt>反撃間合</dt><dd>${esc(card.counterRange.length === 0 ? "なし" : cellsText(card.counterRange))}</dd>
+    ${oldGap ? `<dt>旧・隙</dt><dd>${card.aoe ? esc(gap === null ? "なし" : cellWord(gap)) : "単体攻撃は間合全体"}</dd>` : ""}
   </dl>`;
   const shape = `<div class="ce-shape">
     <div class="ce-tools" role="group" aria-label="塗るもの">${tools}</div>
     ${gridHtml(w, ui, cards)}
-    <p class="ce-hint">上が前。道具を選んでマスを押す(もう一度押すと外れる)。緑の枠が反撃範囲(「反撃」で付け外し)</p>
+    <p class="ce-hint">上が前。道具を選んでマスを押す(もう一度押すと外れる)。緑の枠が反撃間合(「反撃」で付け外し)</p>
     ${text}
     <div class="ce-rows">
       <div><span>範囲/単体</span>${segHtml("aoe", String(card.aoe), [{ v: "true", label: "範囲" }, { v: "false", label: "単体" }], w.locked)}</div>
@@ -229,7 +229,7 @@ const oddsHtml = (w: CardWork, cards: CardOverrides): string => {
   return `<div class="ce-odds">
     <h4>初手の見込み<small>${c.mulligan ? "マリガン1回込み・" : ""}${OPENING_TRIALS / 10000}万回配って数えた値</small></h4>
     <table><thead><tr><th scope="col"></th><th scope="col">1体以上</th><th scope="col">2体</th></tr></thead><tbody>${row(oddsMemo.odds[0])}${row(oddsMemo.odds[1])}</tbody></table>
-    <p class="ce-odds-deck">デッキ${shape.size}枚・式神${shape.shikigami}枚・召喚コスト4以下${shape.cheap}枚(最初のターンに出せる体数。2体は1体を太極に置いて軽くした場合)</p>
+    <p class="ce-odds-deck">デッキ${shape.size}枚・式神${shape.shikigami}枚・召☆4以下${shape.cheap}枚(最初のターンに出せる体数。2体は1体を太極に置いて軽くした場合)</p>
   </div>`;
 };
 
@@ -244,7 +244,7 @@ export const cardSectionHtml = (w: CardWork, ui: CardUi, shown: boolean): string
   const cards = normalizeCardOverrides(w.printed, w.cards);
   const count = cardChangeCount(cards);
   return `<section class="sp-group sp-cards" data-group="cards" ${shown ? "" : "hidden"}>
-    <div class="sp-ghead"><h3 class="sp-gname">カード(数値・攻撃範囲)</h3>${deckTotalHtml(w, cards)}${count > 0 ? `<span class="sp-count">${count}か所変更</span>` : ""}${
+    <div class="sp-ghead"><h3 class="sp-gname">カード(数値・間合)</h3>${deckTotalHtml(w, cards)}${count > 0 ? `<span class="sp-count">${count}か所変更</span>` : ""}${
       w.locked ? '<span class="sp-lock">変更できません</span>' : ""
     }<button type="button" class="btn btn-quiet sp-reset" data-reset="cards" ${dis(count === 0 || w.locked)}>カードを戻す</button></div>
     ${oddsHtml(w, cards)}
@@ -355,7 +355,7 @@ export const cardClick = (t: HTMLElement, form: HTMLFormElement, w: CardWork, ui
     }
     case "copyShape": {
       const r = copyShape(w.printed, cards, ui.focus, picked);
-      return { cards: r.cards, notice: `${r.changed}枚に攻撃範囲・隙・反撃範囲をコピーしました` };
+      return { cards: r.cards, notice: `${r.changed}枚に間合・隙・反撃間合をコピーしました` };
     }
     case "reset":
       return { cards: resetCards(cards, picked), notice: `${picked.length}枚を印刷どおりに戻しました` };

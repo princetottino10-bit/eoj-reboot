@@ -302,7 +302,7 @@ export const recheckControl = (ctx: Ctx, s: GameState, events: GameEvent[]): voi
 
 /** 「式神5体」 / 「占拠7」: what a 即勝ち counted. */
 export const coldCountWords = (by: InstantWinCount, count: number): string =>
-  by === "units" ? `式神${count}体` : `占拠${count}`;
+  by === "units" ? `式神${count}体` : `制圧数${count}`;
 
 /**
  * 即勝ち for p, checked at `timing`: the rule line, the control win and

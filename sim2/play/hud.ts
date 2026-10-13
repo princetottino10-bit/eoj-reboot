@@ -21,7 +21,7 @@ const incomeTip = (ctx: Ctx, board: BoardView, p: PlayerId): string => {
   const inc = incomeParts(ctx, board, p);
   const bits = [`収入 ${inc.total}`];
   if (inc.underdog > 0) bits.push(`うち劣勢ボーナス+${inc.underdog}`);
-  if (ctx.cfg.incomeMode === "current") bits.push("今の占拠で判定");
+  if (ctx.cfg.incomeMode === "current") bits.push("今の制圧数で判定");
   return bits.join("・");
 };
 
@@ -43,9 +43,9 @@ const chipsHtml = (ctx: Ctx, board: BoardView, p: PlayerId): string => {
 /** How heavy units count, for the 占拠 tooltip ("" under controlCount cells). */
 const occTip = (ctx: Ctx): string =>
   ctx.cfg.controlCount === "hp"
-    ? `・HP${ctx.cfg.controlCountThreshold}以上の駒は2マス分`
+    ? `・耐久${ctx.cfg.controlCountThreshold}以上の駒は制圧力2`
     : ctx.cfg.controlCount === "cost"
-      ? `・召喚コスト${ctx.cfg.controlCountThreshold}以上の駒は2マス分`
+      ? `・召☆${ctx.cfg.controlCountThreshold}以上の駒は制圧力2`
       : "";
 
 /**
@@ -69,7 +69,7 @@ export const endOcc = (ctx: Ctx, board: BoardView): [number, number] | undefined
  */
 const deckOutHtml = (ctx: Ctx, reshuffles: number): string =>
   ctx.cfg.deckOutMode === "second"
-    ? `<span class="np-stat np-deckout${reshuffles >= 1 ? " is-late" : ""}" data-stat="deckout" title="山札切れ(墓地を山札に戻した回数)。どちらかが2回目を起こしたら、その補充が終わったところで終了し、占拠の多い方の勝ち"><i>山札切れ</i><b>${Math.min(reshuffles, 2)}</b><small>/2</small></span>`
+    ? `<span class="np-stat np-deckout${reshuffles >= 1 ? " is-late" : ""}" data-stat="deckout" title="山札切れ(墓地を山札に戻した回数)。どちらかが2回目を起こしたら、その補充が終わったところで終了し、制圧数の多い方の勝ち"><i>山札切れ</i><b>${Math.min(reshuffles, 2)}</b><small>/2</small></span>`
     : "";
 
 /** controlWinMode "points": 「制圧点 1/2」. Nothing under "hold". */
@@ -94,7 +94,7 @@ export const nameplateHtml = (ctx: Ctx, board: BoardView, p: PlayerId, names: Na
     }</span>
     ${ctx.cfg.lifeValueEnabled ? `<span class="np-stat np-life" data-stat="life" title="生命"><i>生命</i><b>${Math.max(0, ps.life)}</b></span>` : ""}
     <span class="np-stat np-mana" data-stat="mana" title="霊力(上限 ${ctx.cfg.manaCap})"><i>霊力</i><b>${ps.mana}</b></span>
-    <span class="np-stat np-occ${late ? " is-late" : ""}" data-need="${need}" title="占拠 / 制圧に必要なマス${late ? "(終盤)" : ""}${occTip(ctx)}"><i>占拠</i><b>${occ}</b><small>/${need}</small></span>
+    <span class="np-stat np-occ${late ? " is-late" : ""}" data-need="${need}" title="制圧数 / 制圧に必要な数${late ? "(終盤)" : ""}${occTip(ctx)}"><i>制圧</i><b>${occ}</b><small>/${need}</small></span>
     ${pointsHtml(ctx, ps.controlPoints)}
     ${deckOutHtml(ctx, ps.reshuffleCount)}
     ${chipsHtml(ctx, board, p)}
@@ -175,7 +175,7 @@ export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInf
     <span class="turn-round">第${board.round}ラウンド</span>
     <span class="turn-who">${who}</span>
     ${phase === "" ? "" : `<span class="turn-phase${phaseText === "行動中" ? " is-plain" : ""}">${phase}</span>`}
-    ${holders.map((h) => `<span class="turn-ctl o${h}" title="${esc(names[h])} ${controlLabel(ctx)}(占拠${occupiedOf(ctx, board, h)})"><span class="turn-ctl-who">${esc(turnName(names[h], h) || names[h])} </span>${controlLabel(ctx)}<span class="turn-ctl-occ">(占拠${occupiedOf(ctx, board, h)})</span></span>`).join("")}
+    ${holders.map((h) => `<span class="turn-ctl o${h}" title="${esc(names[h])} ${controlLabel(ctx)}(制圧数${occupiedOf(ctx, board, h)})"><span class="turn-ctl-who">${esc(turnName(names[h], h) || names[h])} </span>${controlLabel(ctx)}<span class="turn-ctl-occ">(制圧数${occupiedOf(ctx, board, h)})</span></span>`).join("")}
   </div>`;
 };
 
@@ -195,12 +195,12 @@ const unitStatus = (ctx: Ctx, u: Unit, names: Names, turnPlayer: PlayerId): stri
   if (current && u.attackedThisTurn) flags.push("このターン攻撃済み");
   else if (current && u.rotatedThisTurn) flags.push("このターン回転済み");
   if (current && u.summonedThisTurn) flags.push("このターン召喚");
-  if (current && hasFreeSummonAttack(ctx, u)) flags.push("召喚攻撃はコスト0(1回目の攻撃)");
-  if (u.atkBuff > 0) flags.push(`ATK+${u.atkBuff}(このターン)`);
+  if (current && hasFreeSummonAttack(ctx, u)) flags.push("召喚攻撃は消費霊力0(1回目の攻撃)");
+  if (u.atkBuff > 0) flags.push(`攻撃力+${u.atkBuff}(このターン)`);
   const note = gapNote(ctx, u);
   return `<div class="dt-status o${u.owner}">
     <span>${esc(names[u.owner])}</span>
-    <span><i>HP</i><b>${Math.max(0, unitHp(ctx, u))}</b></span>
+    <span><i>耐久</i><b>${Math.max(0, unitHp(ctx, u))}</b></span>
     <span><i>向き</i>${FACING_LABEL[u.facing]}</span>
     ${flags.length > 0 ? `<span class="dt-flags">${flags.join(" / ")}</span>` : ""}
     ${note === "" ? "" : `<span class="dt-note">${esc(note)}</span>`}

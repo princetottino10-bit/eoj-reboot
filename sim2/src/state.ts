@@ -184,7 +184,7 @@ export const underdogNote = (ctx: Ctx, s: UnderdogView, p: PlayerId): string => 
   const o = opponent(p);
   const by = ctx.cfg.underdogBy;
   const parts: string[] = [];
-  if (by !== "chips") parts.push(`占拠 ${controlCount(ctx, s, p)} 対 ${controlCount(ctx, s, o)}`);
+  if (by !== "chips") parts.push(`制圧数 ${controlCount(ctx, s, p)} 対 ${controlCount(ctx, s, o)}`);
   if (by !== "cells") parts.push(`チップ ${s.players[p].chips} 対 ${s.players[o].chips}`);
   return parts.join("・");
 };

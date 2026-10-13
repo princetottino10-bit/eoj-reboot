@@ -113,7 +113,7 @@ const actionLine = (ctx: Ctx, e: Ev, before: Before, name: (id: string) => strin
 
 /** The turn-end details: 「占拠3・チップ3枚・2枚補充」. */
 const turnEndBits = (e: Extract<GameEvent, { t: "turnEnd" }>): string => {
-  const bits = [`占拠${e.occupied}`, `チップ${e.chips}枚`];
+  const bits = [`制圧数${e.occupied}`, `チップ${e.chips}枚`];
   if (e.discarded > 0) bits.push(`${e.discarded}枚捨てて${e.drawn}枚補充`);
   else if (e.drawn > 0) bits.push(`${e.drawn}枚補充`);
   return bits.join("・");
@@ -134,8 +134,8 @@ const heavyLines = (ctx: Ctx, before: Before, after: GameState): string[] => {
   for (const u of after.units) {
     if (controlWeight(ctx, u) < 2 || (before.units.get(u.uid)?.weight ?? 0) >= 2) continue;
     const card = cardOf(ctx.pack, u.cardId);
-    const why = ctx.cfg.controlCount === "hp" ? `HP${unitHp(ctx, u)}` : `召喚コスト${card.summonCost}`;
-    out.push(`◆ ${seatWord(u.owner)}の${card.nameJa}(${why})は占拠2マス分`);
+    const why = ctx.cfg.controlCount === "hp" ? `耐久${unitHp(ctx, u)}` : `召☆${card.summonCost}`;
+    out.push(`◆ ${seatWord(u.owner)}の${card.nameJa}(${why})は制圧力2`);
   }
   return out;
 };

@@ -55,83 +55,83 @@ export const rotateIsFree = (ctx: Ctx, u: Unit): boolean => effectsOn(ctx) && fx
  * no effect. Summarised from EFFECTS-SPEC.md section 1 and 2.
  */
 export const EFFECT_TEXT: Record<string, string> = {
-  tm01: "ダメージを与えられない。撃破された時、盤上の味方1体を選んでHP+1",
-  tm02: "陰属性の相手を対象とする場合、ATK+1",
-  tm03: "【影討ち】隙からの攻撃時、ATK+1(隙+2と累積)",
+  tm01: "ダメージを与えられない。撃破された時、盤上の味方1体を選んで耐久+1",
+  tm02: "陰属性の相手を対象とする場合、攻撃力+1",
+  tm03: "【影討ち】隙からの攻撃時、攻撃力+1(隙+2と累積)",
   tm04: "この式神の回転命令に必要な霊力は0",
-  tm06: "攻撃の代わりに、範囲内の味方1体のHPをATK分回復できる",
-  tm07: "自分の手番開始時、HPを1減らして「霊力+1」か「1ドロー」を選べる",
-  tm09: "【渾身】攻撃時にATK+1してよい。その場合、攻撃後に自身のHP-1",
-  tm10: "【巨撃】自身のほうが現在HPが多い対象には、ダメージ+1",
-  tm11: "召喚時、正面に式神がいた場合、そのHPと同じHPで召喚される",
-  tm12: "正面マスの式神が物理攻撃なら、自身のATKはそのATKを使用する",
-  tm15: "【再生】再攻撃(召喚攻撃を除く)のたびにHP+1",
-  tm16: "自身に霊具が使用された際、そのターンATK+1(敵味方どちらの霊具でも)",
+  tm06: "攻撃の代わりに、範囲内の味方1体の耐久を攻撃力分回復できる",
+  tm07: "自分の手番開始時、耐久を1減らして「霊力+1」か「1ドロー」を選べる",
+  tm09: "【渾身】攻撃時に攻撃力+1してよい。その場合、攻撃後に自身の耐久-1",
+  tm10: "【巨撃】自身のほうが現在耐久が多い対象には、ダメージ+1",
+  tm11: "召喚時、正面に式神がいた場合、その耐久と同じ耐久で召喚される",
+  tm12: "正面マスの式神が【術式】でなければ、自身の攻撃力はその攻撃力を使用する",
+  tm15: "【再生】再攻撃(召喚攻撃を除く)のたびに耐久+1",
+  tm16: "自身に霊具が使用された際、そのターン攻撃力+1(敵味方どちらの霊具でも)",
   tm17: "相手は回転命令を使えない(効果による回転は可)。自身の回転命令で、代わりに他の1体を90度回転できる",
   tm18: "【霊具】任意のユニット1体を90度回転",
-  tm19: "【霊具】1体を隠す(使用者の次ターン開始まで対象外・継承召喚もできない・占拠/リーチ/チップのカウント外)。味方+1HP / 敵-1HP",
-  tm20: "【霊具】自軍盤上全体のHP+2",
-  tm21: "【霊具】自分のユニット1体の現HPを7にする(実効最大を超えてよい)",
+  tm19: "【霊具】1体を隠す(使用者の次ターン開始まで対象外・継承召喚もできない・制圧/チェック/チップのカウント外)。味方の耐久+1 / 敵の耐久-1",
+  tm20: "【霊具】自軍盤上全体の耐久+2",
+  tm21: "【霊具】自分のユニット1体の現耐久を7にする(実効最大を超えてよい)",
   tm22: "【霊具】自分のユニット1体を選び、その正面のユニットに4ダメージ(反撃・隙の対象外)",
   // pack-shuten-kyuryu (EXP-0913B Sec.2.3)
-  sk01: "ダメージを与えられない。撃破された時、盤上の味方1体を選んでHP+1",
-  sk02: "陰属性の相手を対象とする場合、ATK+1",
-  sk03: "【影討ち】隙からの攻撃時、ATK+1(隙+2と累積)",
+  sk01: "ダメージを与えられない。撃破された時、盤上の味方1体を選んで耐久+1",
+  sk02: "陰属性の相手を対象とする場合、攻撃力+1",
+  sk03: "【影討ち】隙からの攻撃時、攻撃力+1(隙+2と累積)",
   sk04: "この式神の回転命令に必要な霊力は0",
-  sk06: "攻撃の代わりに、範囲内の味方1体のHPをATK分回復できる",
-  sk07: "自分の手番開始時、HPを1減らして「霊力+1」か「1ドロー」を選べる",
-  sk09: "【巨撃】自身のほうが現在HPが多い対象には、ダメージ+1",
-  sk10: "召喚時、正面に式神がいた場合、そのHPと同じHPで召喚される",
-  sk11: "正面マスの式神が物理攻撃なら、自身のATKはそのATKを使用する",
-  sk12: "【渾身】攻撃時にATK+1してよい(範囲内の全対象に乗る)。その場合、攻撃後に自身のHP-1",
-  sk13: "攻撃で対象のHPを0にした場合、同じ向きのままその位置へ移動する(属性効果を受け直す)",
-  sk15: "【再生】再攻撃(召喚攻撃を除く)のたびにHP+1",
-  sk16: "自身に霊具が使用された際、そのターンATK+1(敵味方どちらの霊具でも)",
+  sk06: "攻撃の代わりに、範囲内の味方1体の耐久を攻撃力分回復できる",
+  sk07: "自分の手番開始時、耐久を1減らして「霊力+1」か「1ドロー」を選べる",
+  sk09: "【巨撃】自身のほうが現在耐久が多い対象には、ダメージ+1",
+  sk10: "召喚時、正面に式神がいた場合、その耐久と同じ耐久で召喚される",
+  sk11: "正面マスの式神が【術式】でなければ、自身の攻撃力はその攻撃力を使用する",
+  sk12: "【渾身】攻撃時に攻撃力+1してよい(範囲内の全対象に乗る)。その場合、攻撃後に自身の耐久-1",
+  sk13: "攻撃で対象の耐久を0にした場合、同じ向きのままその位置へ移動する(属性効果を受け直す)",
+  sk15: "【再生】再攻撃(召喚攻撃を除く)のたびに耐久+1",
+  sk16: "自身に霊具が使用された際、そのターン攻撃力+1(敵味方どちらの霊具でも)",
   sk17: "相手は回転命令を使えない(効果による回転は可)。自身の回転命令で、代わりに他の1体を90度回転できる",
   sk18: "【霊具】任意のユニット1体を任意の向きに変える",
-  sk19: "【霊具】1体を隠す(使用者の次ターン開始まで対象外・継承召喚もできない・占拠/リーチ/チップのカウント外)。味方+1HP / 敵-1HP",
-  sk20: "【霊具】自軍盤上全体のHP+1",
-  sk21: "【霊具】自分のユニット1体の現HPを7にする(実効最大を超えてよい)",
+  sk19: "【霊具】1体を隠す(使用者の次ターン開始まで対象外・継承召喚もできない・制圧/チェック/チップのカウント外)。味方の耐久+1 / 敵の耐久-1",
+  sk20: "【霊具】自軍盤上全体の耐久+1",
+  sk21: "【霊具】自分のユニット1体の現耐久を7にする(実効最大を超えてよい)",
   sk22: "【霊具】自分のユニット1体を選び、その正面のユニットに3ダメージ(反撃・隙の対象外)",
   // pack-adopted-0922 (採用 9/22). ad* = new or changed effect, the rest reuse tm* / sk*.
-  ad01: "この式神はダメージを与えられない。撃破された時、盤上の味方1体を選んでHP+2",
-  ad02: "陰属性の相手を対象とする場合、ATK+1",
-  ad03: "【影討ち】隙からの攻撃時、ATK+1(隙+2と累積)",
-  ad05: "自分の手番開始時、HPを1減らして「霊力+1」か「1ドロー」を選べる",
-  ad07: "召喚攻撃・再攻撃の対象を味方にできる。その場合ダメージの代わりに、ATKの1/2(切り上げ)だけ対象のHP+",
-  ad09: "【巨撃】攻撃の際、自身のほうが現在HPが多い対象には、ダメージ+1",
-  ad10: "召喚時、正面に式神がいた場合、そのHPと同じHPで召喚される",
-  ad11: "正面マスの式神が物理攻撃なら、自身のATKはそのATKを使用する(範囲は自身のもの)",
-  ad12: "【渾身】攻撃時にATK+1してよい(範囲内の全対象に乗る)。その場合、攻撃後に自身のHP-1",
-  ad13: "攻撃・反撃で対象のHPを0にした場合、同じ向きのままその位置へ移動する(属性効果を受け直す)",
-  ad15: "【再生】攻撃の際、追加で霊力1を払うと、攻撃の後に自身のHP+1",
-  ad16: "【飲酒】攻撃時、追加で霊力2を払うと、その攻撃のATK+1",
+  ad01: "この式神はダメージを与えられない。撃破された時、盤上の味方1体を選んで耐久+2",
+  ad02: "陰属性の相手を対象とする場合、攻撃力+1",
+  ad03: "【影討ち】隙からの攻撃時、攻撃力+1(隙+2と累積)",
+  ad05: "自分の手番開始時、耐久を1減らして「霊力+1」か「1ドロー」を選べる",
+  ad07: "召喚攻撃・再攻撃の対象を味方にできる。その場合ダメージの代わりに、攻撃力の1/2(切り上げ)だけ対象の耐久+",
+  ad09: "【巨撃】攻撃の際、自身のほうが現在耐久が多い対象には、ダメージ+1",
+  ad10: "召喚時、正面に式神がいた場合、その耐久と同じ耐久で召喚される",
+  ad11: "正面マスの式神が【術式】でなければ、自身の攻撃力はその攻撃力を使用する(範囲は自身のもの)",
+  ad12: "【渾身】攻撃時に攻撃力+1してよい(範囲内の全対象に乗る)。その場合、攻撃後に自身の耐久-1",
+  ad13: "攻撃・反撃で対象の耐久を0にした場合、同じ向きのままその位置へ移動する(属性効果を受け直す)",
+  ad15: "【再生】攻撃の際、追加で霊力1を払うと、攻撃の後に自身の耐久+1",
+  ad16: "【飲酒】攻撃時、追加で霊力2を払うと、その攻撃の攻撃力+1",
   ad17: "相手は回転命令を使えない(効果による回転は可)。自身の回転命令で、代わりに他の1体を90度回転できる",
   ad18: "【霊具】任意の式神1体を任意の向きに変える",
-  ad19: "【霊具】1体を隠す(使用者の次ターン開始まで対象外・継承召喚もできない・占拠/リーチ/チップのカウント外)。味方+1HP / 敵-1HP",
-  ad20: "【霊具】自軍盤上全体のHP+1",
+  ad19: "【霊具】1体を隠す(使用者の次ターン開始まで対象外・継承召喚もできない・制圧/チェック/チップのカウント外)。味方の耐久+1 / 敵の耐久-1",
+  ad20: "【霊具】自軍盤上全体の耐久+1",
   ad21: "【霊具】自分の式神1体の正面方向で直近の敵に3ダメージ。【拳】空いていれば1マス遠ざける /【握】空いていれば1マス近づける(反撃・隙なし)",
   ad22: "【霊具】酒呑一門の自分の式神1体を選び、隣(斜めを含む)の隙以外のマスの敵1体に5ダメージ(反撃なし)",
   // pack-adopted-1003 (10/3テスト案). Card ids ac*; the effect keys are in the pack.
-  ac01: "この式神はダメージを与えられない。撃破された時、盤上の味方1体を選んでHP+2",
-  ac02: "陰属性の相手を対象とする場合、ATK+1",
-  ac03: "【影討ち】隙からの攻撃時、ATK+1(隙+2と累積)",
-  ac05: "自分の手番開始時、HPを1減らして「霊力+1」か「1ドロー」を選べる",
-  ac07: "召喚攻撃・再攻撃の対象を味方にできる。その場合ダメージの代わりに、この式神のATK分だけ対象のHP+",
-  ac09: "【巨撃】攻撃の際、自身のほうが現在HPが多い対象には、ダメージ+1",
-  ac10: "召喚時、正面に式神がいた場合、そのHPと同じHPで召喚される",
-  ac11: "正面マスの式神が物理攻撃なら、自身のATKはそのATKを使用する(範囲は自身のもの)",
-  ac12: "【渾身】攻撃時にATK+1してよい(範囲内の全対象に乗る)。その場合、攻撃後に自身のHP-1",
-  ac13: "攻撃・反撃によって対象のHPを0にした場合、その位置に移動する。この時、向きを90度変えられる",
-  ac15: "【再生】攻撃の際、自身のHP+1(相手の反撃の前。追加の霊力なし)",
-  ac16: "【飲酒】攻撃時、追加で霊力2を払うと、その攻撃のATK+1",
-  ac17: "自身の回転命令で、代わりに他の1体(敵味方を問わず)を90度回転できる。この式神の攻撃は隙・反撃間合いを無視する(隙+2なし・反撃されない)",
+  ac01: "この式神はダメージを与えられない。撃破された時、盤上の味方1体を選んで耐久+2",
+  ac02: "陰属性の相手を対象とする場合、攻撃力+1",
+  ac03: "【影討ち】隙からの攻撃時、攻撃力+1(隙+2と累積)",
+  ac05: "自分の手番開始時、耐久を1減らして「霊力+1」か「1ドロー」を選べる",
+  ac07: "召喚攻撃・再攻撃の対象を味方にできる。その場合ダメージの代わりに、この式神の攻撃力分だけ対象の耐久+",
+  ac09: "【巨撃】攻撃の際、自身のほうが現在耐久が多い対象には、ダメージ+1",
+  ac10: "召喚時、正面に式神がいた場合、その耐久と同じ耐久で召喚される",
+  ac11: "正面マスの式神が【術式】でなければ、自身の攻撃力はその攻撃力を使用する(範囲は自身のもの)",
+  ac12: "【渾身】攻撃時に攻撃力+1してよい(範囲内の全対象に乗る)。その場合、攻撃後に自身の耐久-1",
+  ac13: "攻撃・反撃によって対象の耐久を0にした場合、その位置に移動する。この時、向きを90度変えられる",
+  ac15: "【再生】攻撃の際、自身の耐久+1(相手の反撃の前。追加の霊力なし)",
+  ac16: "【飲酒】攻撃時、追加で霊力2を払うと、その攻撃の攻撃力+1",
+  ac17: "自身の回転命令で、代わりに他の1体(敵味方を問わず)を90度回転できる。この式神の攻撃は隙・反撃間合を無視する(隙+2なし・反撃されない)",
   ac18: "【霊具】任意の式神1体を任意の向きに変える",
-  ac19: "【霊具】1体を隠す(使用者の次ターン開始まで対象外・継承召喚もできない・占拠/リーチ/チップのカウント外)。味方+1HP / 敵-1HP",
-  ac20: "【霊具】自軍盤上全体のHP+2",
+  ac19: "【霊具】1体を隠す(使用者の次ターン開始まで対象外・継承召喚もできない・制圧/チェック/チップのカウント外)。味方の耐久+1 / 敵の耐久-1",
+  ac20: "【霊具】自軍盤上全体の耐久+2",
   ac21: "【霊具】自分の式神1体の正面方向で直近の敵に3ダメージ。【拳】空いていれば1マス遠ざける /【握】空いていれば1マス近づける(反撃・隙なし)",
   ac22: "【霊具】酒呑一門の自分の式神1体を選び、隣(斜めを含む)の隙以外のマスの敵1体に5ダメージ(反撃なし)",
-  ac23: "【霊具】式神1体(敵味方を問わず)のHPを10にする(下がることもある)。【飲酒】をもつ式神なら15にする",
+  ac23: "【霊具】式神1体(敵味方を問わず)の耐久を10にする(下がることもある)。【飲酒】をもつ式神なら15にする",
 };
 
 /** Reigu parameter tables: same effect shape, different numbers per pack. */
@@ -210,7 +210,7 @@ export const atkReplacementNote = (ctx: Ctx, s: GameState, u: Unit): string | nu
   const fc = cardOf(ctx.pack, front.cardId);
   if (fc.attackType !== "phys") return null;
   const own = cardOf(ctx.pack, u.cardId).atk;
-  return `照魔鏡: 正面の${fc.nameJa}のATK${fc.atk}を参照 (自身は${own})`;
+  return `照魔鏡: 正面の${fc.nameJa}の攻撃力${fc.atk}を参照 (自身は${own})`;
 };
 
 /** Attacker-side ATK after replacement and attacker-level additions. */
@@ -265,7 +265,7 @@ export const damageBonusReasons = (
   if (fx === "tm03" && blind) out.push("【影討ち】影鬼: 隙からの攻撃でダメージ+1");
   if (fx === "tm10" && unitHp(ctx, attacker) > unitHp(ctx, target)) {
     out.push(
-      `【巨撃】一目鬼: HP差(${unitHp(ctx, attacker)} > ${unitHp(ctx, target)})によりダメージ+1`,
+      `【巨撃】一目鬼: 耐久差(${unitHp(ctx, attacker)} > ${unitHp(ctx, target)})によりダメージ+1`,
     );
   }
   return out;
@@ -310,7 +310,7 @@ export const onAttackBeforeCounters = (ctx: Ctx, attacker: Unit, variant: Attack
   const before = unitHp(ctx, attacker);
   healUnit(ctx, attacker, amount);
   const gained = unitHp(ctx, attacker) - before;
-  log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? `【再生】HP+${gained}(反撃の前)` : `【再生】HPは上限(${ctx.cfg.maxHp})のまま`);
+  log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? `【再生】耐久+${gained}(反撃の前)` : `【再生】耐久は上限(${ctx.cfg.maxHp})のまま`);
 };
 
 /** ac17 玖龍街 (10/3): this unit's attacks ignore blind spots and counter ranges. */
@@ -356,7 +356,7 @@ export const onAfterAttack = (
   if (fxOf(ctx, attacker.cardId) === "tm15" && !wasSummonAttack && variant !== "heal" && alive()) {
     if (healGain(ctx, attacker, 1) > 0) {
       healUnit(ctx, attacker, 1);
-      log(events, attacker.owner, attacker.cardId, attacker.uid, "再生: HP+1");
+      log(events, attacker.owner, attacker.cardId, attacker.uid, "再生: 耐久+1");
     }
   }
 
@@ -366,7 +366,7 @@ export const onAfterAttack = (
     const before = unitHp(ctx, attacker);
     healUnit(ctx, attacker, 1);
     const gained = unitHp(ctx, attacker) - before;
-    log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? "【再生】HP+1" : `【再生】HPは上限(${ctx.cfg.maxHp})のまま`);
+    log(events, attacker.owner, attacker.cardId, attacker.uid, gained > 0 ? "【再生】耐久+1" : `【再生】耐久は上限(${ctx.cfg.maxHp})のまま`);
   }
 };
 
@@ -390,7 +390,7 @@ export const onSummon = (ctx: Ctx, s: GameState, u: Unit, events: GameEvent[]): 
   const target = summonHpOverwrite(ctx, s, u);
   if (target === null) return;
   u.damage = unitMaxHp(ctx, u) - target;
-  log(events, u.owner, u.cardId, u.uid, `雲外鏡: 正面のHPを写して HP${target} で召喚`);
+  log(events, u.owner, u.cardId, u.uid, `雲外鏡: 正面の耐久を写して 耐久${target} で召喚`);
 };
 
 /**
@@ -412,7 +412,7 @@ export const onUnitDestroyed = (
   healUnit(ctx, target, amount);
   const gained = unitHp(ctx, target) - before;
   const lamp = cardOf(ctx.pack, u.cardId).nameJa;
-  log(events, u.owner, u.cardId, target.uid, `${lamp}の灯 → ${cardOf(ctx.pack, target.cardId).nameJa} HP+${gained}`);
+  log(events, u.owner, u.cardId, target.uid, `${lamp}の灯 → ${cardOf(ctx.pack, target.cardId).nameJa} 耐久+${gained}`);
 };
 
 /**
@@ -453,12 +453,12 @@ export const onTurnStart = (
     if (choice === "draw" && drawOne !== undefined) {
       u.damage += 1;
       const drew = drawOne(p);
-      log(events, p, u.cardId, u.uid, `古箪笥: HP-1 で${drew ? "1ドロー" : "ドロー(山札切れ)"}`);
+      log(events, p, u.cardId, u.uid, `古箪笥: 耐久-1 で${drew ? "1ドロー" : "ドロー(山札切れ)"}`);
       continue;
     }
     u.damage += 1;
     s.players[p].mana = Math.min(ctx.cfg.manaCap, s.players[p].mana + 1);
-    log(events, p, u.cardId, u.uid, "古箪笥: HP-1 で霊力+1");
+    log(events, p, u.cardId, u.uid, "古箪笥: 耐久-1 で霊力+1");
   }
 };
 
@@ -678,7 +678,7 @@ export const applyReigu = (
   // from either side.
   if (target !== null && fxOf(ctx, target.cardId) === "tm16") {
     target.atkBuff += 1;
-    log(events, target.owner, target.cardId, target.uid, "酒呑童子: 霊具を受けて このターンATK+1");
+    log(events, target.owner, target.cardId, target.uid, "酒呑童子: 霊具を受けて このターン攻撃力+1");
   }
 
   const fx = fxOf(ctx, cardId);
@@ -697,10 +697,10 @@ export const applyReigu = (
       const friendly = target.owner === p;
       if (friendly) {
         healUnit(ctx, target, 1);
-        log(events, p, cardId, target.uid, `マヨヒガ: 味方 ${nameOf(target)} を隠す (HP+1)`);
+        log(events, p, cardId, target.uid, `マヨヒガ: 味方 ${nameOf(target)} を隠す (耐久+1)`);
       } else {
         target.damage += 1;
-        log(events, p, cardId, target.uid, `マヨヒガ: 敵 ${nameOf(target)} を隠す (HP-1)`);
+        log(events, p, cardId, target.uid, `マヨヒガ: 敵 ${nameOf(target)} を隠す (耐久-1)`);
         if (unitHp(ctx, target) <= 0) destroy(target);
       }
       return;
@@ -712,14 +712,14 @@ export const applyReigu = (
         if (u.owner !== p || isHidden(u)) continue;
         healUnit(ctx, u, amount);
       }
-      log(events, p, cardId, null, `琵琶牧々: 自軍全体にHP+${amount}`);
+      log(events, p, cardId, null, `琵琶牧々: 自軍全体に耐久+${amount}`);
       return;
     }
     case "tm21": {
       if (target === null) return;
       // set current HP to exactly 7, allowed to exceed the effective max
       target.damage = unitMaxHp(ctx, target) - 7;
-      log(events, p, cardId, target.uid, `鬼の酒: ${nameOf(target)} のHPを7に`);
+      log(events, p, cardId, target.uid, `鬼の酒: ${nameOf(target)} の耐久を7に`);
       return;
     }
     case "tm22":
@@ -776,7 +776,7 @@ export const applyReigu = (
       // set, not heal: may exceed the card's own max (like tm21) and may go down
       target.damage = unitMaxHp(ctx, target) - hp;
       const drinker = param(DRINK_EXTRA_COST, fxOf(ctx, target.cardId)) !== undefined;
-      log(events, p, cardId, target.uid, `鬼の酒: ${nameOf(target)} のHPを${before}→${hp}に${drinker ? "(【飲酒】)" : ""}`);
+      log(events, p, cardId, target.uid, `鬼の酒: ${nameOf(target)} の耐久を${before}→${hp}に${drinker ? "(【飲酒】)" : ""}`);
       if (unitHp(ctx, target) <= 0) destroy(target);
       return;
     }

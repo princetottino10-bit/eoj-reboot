@@ -382,7 +382,7 @@ const submitDiscard = (f: Flow, seat: PlayerId, indices: number[]): SubmitResult
   if (ph.kind !== "discard") return fail("phase", "手札整理の時間ではありません");
   if (ph.player !== seat) return fail("forbidden", "相手の手札整理を待っています");
   if (!validIndices(indices, f.state.players[seat].hand.length)) {
-    return fail("illegal", "捨て札の指定が不正です");
+    return fail("illegal", "捨てる札の指定が不正です");
   }
   const chosen = indices.slice();
   runEndTurn(f, () => chosen);

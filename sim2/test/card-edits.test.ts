@@ -146,14 +146,14 @@ test("range edits survive the share URL, compactly, and read as words in the cha
   assert.equal(back.ok, true, back.ok ? "" : back.error);
   if (back.ok) assert.deepEqual(back.value.cards, s.cards);
   const lines = cardChanges(SK, { sk03: { attackRange: [{ x: 0, y: 2 }, { x: 0, y: 1 }], attribute: "yang" } }).map((c) => `${c.label} ${c.from}→${c.to}`);
-  assert.deepEqual(lines, ["属性 陰→陽", "攻撃範囲 前(2)→前2・前(-22)"]);
+  assert.deepEqual(lines, ["属性 陰→陽", "間合 前(2)→前2・前(-22)"]);
   assert.equal(formatTenkey(parseTenkey("-1-2-32")), "-1-2-32");
   assert.equal(formatTenkey([{ x: 2, y: 0 }]), null, "two cells sideways has no tenkey token");
 });
 
 test("a reigu in hand shows its effect text on the card", () => {
   const html = cardFaceHtml(makeCtx(presetConfig("r0914"), SK), "sk21", { size: "md" });
-  assert.match(html, /class="fu-text"><span class="fu-tx">自分のユニット1体の現HPを7にする/);
+  assert.match(html, /class="fu-text"><span class="fu-tx">自分のユニット1体の現耐久を7にする/);
   assert.doesNotMatch(html, /【霊具】/);
 });
 

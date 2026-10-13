@@ -195,8 +195,8 @@ export const hpBadgeCanvas = (hp: number, max: number, owner: 0 | 1): HTMLCanvas
   g.textBaseline = "middle";
   g.textAlign = "center";
   g.fillStyle = PAL.washiDim;
-  g.font = `700 26px ${GOTHIC}`;
-  g.fillText("命", 96, H / 2 + 2);
+  g.font = `700 20px ${GOTHIC}`;
+  g.fillText("耐久", 96, H / 2 + 2);
   g.fillStyle = hp < max ? PAL.vermHi : PAL.washi;
   g.font = `800 44px ${GOTHIC}`;
   g.fillText(`${hp}`, 146, H / 2 + 3);

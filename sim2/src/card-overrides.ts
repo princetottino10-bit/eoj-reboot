@@ -21,10 +21,10 @@ export type CardStat = {
 };
 
 export const CARD_STATS: readonly CardStat[] = [
-  { key: "summonCost", label: "召喚コスト", short: "召", desc: "召喚(霊具は使用)に払う霊力", min: 0, max: 15 },
-  { key: "attackCost", label: "攻撃コスト", short: "攻", desc: "攻撃1回に払う霊力", min: 0, max: 15 },
-  { key: "hp", label: "HP", short: "HP", desc: "属性ボーナスを含まない基本HP", min: 1, max: 20 },
-  { key: "atk", label: "ATK", short: "ATK", desc: "与えるダメージの基本値", min: 0, max: 10 },
+  { key: "summonCost", label: "召喚霊力", short: "召☆", desc: "召喚(霊具は使用)に払う霊力", min: 0, max: 15 },
+  { key: "attackCost", label: "攻撃霊力", short: "攻☆", desc: "攻撃1回に払う霊力", min: 0, max: 15 },
+  { key: "hp", label: "耐久", short: "耐久", desc: "属性ボーナスを含まない基本の耐久", min: 1, max: 20 },
+  { key: "atk", label: "攻撃力", short: "攻撃", desc: "与えるダメージの基本値", min: 0, max: 10 },
   { key: "lifeValue", label: "生命価", short: "命", desc: "撃破されたとき持ち主が失う生命", min: 0, max: 15 },
   { key: "manaValue", label: "霊力価", short: "霊", desc: "撃破した側が得る霊力(撃破報酬の額が「カードの霊力価」のとき)", min: 0, max: 15 },
   { key: "copies", label: "枚数", short: "枚", desc: "1つのデッキに入れる枚数(0でデッキから外す)", min: 0, max: 4 },
@@ -56,14 +56,14 @@ export const SHAPE_LABELS: Record<CardShapeKey, string> = {
   attribute: "属性",
   attackType: "攻撃の種類",
   aoe: "範囲/単体",
-  attackRange: "攻撃範囲",
+  attackRange: "間合",
   blindSpots: "隙",
-  counterRange: "反撃範囲",
+  counterRange: "反撃間合",
   gapCell: "旧・隙",
 };
 
 export const ATTR_LABELS: Record<Attr, string> = { yin: "陰", yang: "陽", none: "空" };
-export const ATTACK_TYPE_LABELS: Record<AttackType, string> = { phys: "物理", jutsu: "術式" };
+export const ATTACK_TYPE_LABELS: Record<AttackType, string> = { phys: "通常", jutsu: "術式" };
 
 const STAT_KEYS = new Set<string>(CARD_STATS.map((s) => s.key));
 const SHAPE_KEYS = new Set<string>(Object.keys(SHAPE_LABELS));
@@ -152,8 +152,8 @@ const effective = <K extends keyof CardEdit & keyof CardDef>(card: CardDef, edit
 /** Relations between range, blind spots and gap, on the card as it will be played. */
 const checkShape = (name: string, range: readonly Pos[], blind: readonly Pos[], gap: Pos | null, aoe: boolean): string | null => {
   const keys = new Set(range.map(posKey));
-  if (blind.some((c) => keys.has(posKey(c)))) return `${name}: 攻撃範囲と隙が同じマスにあります`;
-  if (gap !== null && aoe && !keys.has(posKey(gap))) return `${name}: 旧・隙は攻撃範囲のマスに置いてください`;
+  if (blind.some((c) => keys.has(posKey(c)))) return `${name}: 間合と隙が同じマスにあります`;
+  if (gap !== null && aoe && !keys.has(posKey(gap))) return `${name}: 旧・隙は間合のマスに置いてください`;
   return null;
 };
 
@@ -182,7 +182,7 @@ const parseShape = (key: string, v: unknown, name: string, edit: CardEdit): stri
       return null;
     }
     default: {
-      const label = key === "attackRange" ? "攻撃範囲" : key === "counterRange" ? "反撃範囲" : "隙";
+      const label = key === "attackRange" ? "間合" : key === "counterRange" ? "反撃間合" : "隙";
       const cells = parseCellList(v, `${name} の${label}`);
       if (!cells.ok) return cells.error;
       if (key === "attackRange") edit.attackRange = cells.value;
