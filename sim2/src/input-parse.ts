@@ -19,7 +19,7 @@ const MAX_UID = 1_000_000;
 const MAX_HAND = 64;
 /** A 3x3 board holds at most 8 units around an attacker. */
 const MAX_COUNTERERS = 8;
-const ATTACK_VARIANTS: readonly AttackVariant[] = ["normal", "konshin", "heal", "regen", "drink"];
+const ATTACK_VARIANTS: readonly AttackVariant[] = ["normal", "konshin", "heal", "regen", "drink", "tansuMana", "tansuDraw"];
 
 const intList = (v: unknown, hi: number): number[] | null => {
   if (!Array.isArray(v) || v.length > MAX_HAND) return null;

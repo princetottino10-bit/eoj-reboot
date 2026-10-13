@@ -72,6 +72,7 @@ const GLYPH: Record<CommandId, string> = {
   regen: "再",
   drink: "酒",
   heal: "癒",
+  tansu: "攻",
   rotate: "回",
   proxyRotate: "代",
 };
@@ -84,6 +85,8 @@ const ANGLE: Record<CommandId, number> = {
   regen: 52,
   drink: 52,
   heal: -52,
+  // 古箪笥 tm07b: its only attack, in the attack's place
+  tansu: 0,
   rotate: -104,
   proxyRotate: 180,
 };

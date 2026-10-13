@@ -1,4 +1,5 @@
 import { applyActionInPlace, incomeNow, legalActions } from "../rules.ts";
+import { isTansuAction } from "../effects.ts";
 import { cloneState, opponent } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import type { Action, GameEvent, GameState, PlayerId } from "../types.ts";
@@ -46,7 +47,7 @@ const opponentReplyScore = (ctx: Ctx, s: GameState, p: PlayerId, w: Weights): nu
   let worst = evaluate(ctx, probe, p, w);
   const sink: GameEvent[] = [];
   for (const a of legalActions(ctx, probe)) {
-    if (a.kind === "pass") continue;
+    if (a.kind === "pass" || isTansuAction(a)) continue;
     const next = cloneState(probe);
     sink.length = 0;
     applyActionInPlace(ctx, next, a, sink);
@@ -78,7 +79,7 @@ export const makeBeam = (opts: Partial<BeamOptions> = {}): Ai => {
         for (const node of beam) {
           if (node.state.ended) continue;
           for (const a of legalActions(ctx, node.state)) {
-            if (a.kind === "pass") continue;
+            if (a.kind === "pass" || isTansuAction(a)) continue;
             const st = cloneState(node.state);
             sink.length = 0;
             applyActionInPlace(ctx, st, a, sink);

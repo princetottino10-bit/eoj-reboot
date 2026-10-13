@@ -9,7 +9,7 @@
 import { toBoardCells } from "../board.ts";
 import { canAttack, cardOf } from "../cards.ts";
 import { applyActionInPlace, incomeFor, incomeNow, legalActions, underdogBonus } from "../rules.ts";
-import { clearExpiredHidden, clearTurnBuffs, fxOf } from "../effects.ts";
+import { clearExpiredHidden, clearTurnBuffs, fxOf, isTansuAction } from "../effects.ts";
 import { cloneState, controlCount, controlNeed, isHidden, meetsInstantWin, opponent, unitByUid, unitHp } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import type { Action, Facing, GameEvent, GameState, PlayerId, Pos, Unit } from "../types.ts";
@@ -163,7 +163,7 @@ export const candidates = (ctx: Ctx, s: GameState, p: PlayerId): Action[] => {
   const out: Action[] = [];
   const facingsFor = new Map<string, Facing[]>();
   for (const a of legalActions(ctx, s)) {
-    if (a.kind === "pass") continue;
+    if (a.kind === "pass" || isTansuAction(a)) continue;
     if (a.kind === "summon") {
       const key = `${a.handIndex}:${a.pos.x}${a.pos.y}`;
       let allowed = facingsFor.get(key);
@@ -291,7 +291,7 @@ export const deepEval = (ctx: Ctx, leaf: GameState, p: PlayerId, w: StrongWeight
   let worst = replyScore(ctx, probe, p, w);
   const sink: GameEvent[] = [];
   for (const a of legalActions(ctx, probe)) {
-    if (a.kind === "pass") continue;
+    if (a.kind === "pass" || isTansuAction(a)) continue;
     if (exhausted(budget)) break;
     const next = cloneState(probe);
     sink.length = 0;
@@ -528,7 +528,7 @@ const finisherCandidates = (ctx: Ctx, s: GameState, p: PlayerId): Action[] => {
   const out: Action[] = [];
   const hand = s.players[p].hand;
   for (const a of legalActions(ctx, s)) {
-    if (a.kind === "attack" && a.variant !== "heal") out.push(a);
+    if (a.kind === "attack" && a.variant !== "heal" && !isTansuAction(a)) out.push(a);
     else if (a.kind === "reigu" && isDamagingReigu(fxOf(ctx, hand[a.handIndex]))) out.push(a);
   }
   return out;

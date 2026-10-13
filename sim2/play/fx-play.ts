@@ -239,6 +239,11 @@ const slash = (c: Ctx, at: DOMRect, t: number): void => {
 const attack = (c: Ctx, e: Extract<GameEvent, { t: "attack" }>, destroyed: number[], t: number): number => {
   const aRect = pieceRect(c, e.uid);
   if (aRect === null) return t;
+  // 古箪笥 tm07b (10/13): no strike, only what it took instead
+  if (e.variant === "tansuMana" || e.variant === "tansuDraw") {
+    word(c, e.variant === "tansuMana" ? "霊力+1" : "1枚引く", aRect, e.variant === "tansuMana" ? "fx-gold" : "fx-heal", t + 80, 820);
+    return t + 500;
+  }
   const attacker = pieceEl(c, e.uid) ?? ghost(c, e.uid, t + (e.counterTotal > 0 ? 700 : 400));
   const first = e.hits[0];
   const tRect = first === undefined ? null : pieceRect(c, first.uid);

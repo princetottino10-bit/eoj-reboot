@@ -148,11 +148,12 @@ test("r1003 = 10/3テスト案: the numbers, and it is the default for new rooms
   // 10/7決定 (10/6案 with the dial, chips 4/5 and 太極−1) is the default since the 10/7 test
   assert.equal(DEFAULT_RULE_PRESET, "r1007");
   assert.equal(RULE_PRESET_IDS[0], "r1007");
-  assert.equal(PLAYABLE_PACKS[0], "adopted-1006");
+  // 10/13: the default cards are 10/13案 (10/6案その2 with the new 古箪笥)
+  assert.equal(PLAYABLE_PACKS[0], "adopted-1013");
   assert.deepEqual(presetConfig("r1006"), presetConfig("r1003"));
   const d = defaultSettings();
   assert.equal(d.rule, "r1007");
-  assert.equal(d.pack, "adopted-1006");
+  assert.equal(d.pack, "adopted-1013");
   assert.deepEqual(settingsConfig(d), { ...cfg, incomeMode: "current", chipIncomeSteps: [4, 5], taijiDiscount: 1 });
   // the preset table does not move through a returned config
   cfg.chipIncomeSteps.push(9);

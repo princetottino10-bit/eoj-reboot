@@ -27,12 +27,16 @@
 // (no rotate lock any more; its attack ignores blind spots and counter ranges),
 // ac23 鬼の酒 (set one shikigami's HP to 10, 15 on a【飲酒】 unit). 琵琶牧々 (HP+2
 // to every own unit) is tm20 unchanged.
+//
+// 10/13 (pack-adopted-1013): 古箪笥 ac05 moves from tm07 (a turn-start choice)
+// to tm07b: its ATTACK command does the 耐久-1 → 霊力+1 / draw-1 choice instead
+// of damage (src/tansu-attack.ts). tm07 stays as it was for every older pack.
 import { inBoard, posEq, rotateRel, toBoardCells } from "./board.ts";
 import { cardOf, effectKeyOf } from "./cards.ts";
 import { healGain, healUnit, isHidden, unitAt, unitHp, unitMaxHp, visibleUnitAt } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import { chooseLanternTarget, lanternAmount } from "./lantern.ts";
-import type { AttackVariant, GameEvent, GameState, PlayerId, Pos, ReiguMode, Unit } from "./types.ts";
+import type { Action, AttackVariant, GameEvent, GameState, PlayerId, Pos, ReiguMode, Unit } from "./types.ts";
 
 /** Own-key lookup in a parameter table (never reaches Object.prototype). */
 const param = <T>(table: Record<string, T>, key: string): T | undefined =>
@@ -132,7 +136,15 @@ export const EFFECT_TEXT: Record<string, string> = {
   ac21: "【霊具】自分の式神1体の正面方向で直近の敵に3ダメージ。【拳】空いていれば1マス遠ざける /【握】空いていれば1マス近づける(反撃・隙なし)",
   ac22: "【霊具】酒呑一門の自分の式神1体を選び、隣(斜めを含む)の隙以外のマスの敵1体に5ダメージ(反撃なし)",
   ac23: "【霊具】式神1体(敵味方を問わず)の耐久を10にする(下がることもある)。【飲酒】をもつ式神なら15にする",
+  // 10/13 古箪笥 (pack-adopted-1013): keyed by the EFFECT key, since the card id ac05 is shared with 10/3-10/6
+  tm07b: "この式神に攻撃を命じた際、ダメージを与える代わりに、次のいずれか1つを行う。・耐久を1消費し、霊力を1得る ・カードを1枚引く",
 };
+
+/**
+ * Effect keys whose text is looked up by the key, not the card id: a card id
+ * reused with a new effect (ac05 古箪笥 under tm07b) must not show the old text.
+ */
+const TEXT_BY_KEY: Record<string, true> = { tm07b: true };
 
 /** Reigu parameter tables: same effect shape, different numbers per pack. */
 const HEAL_ALL_AMOUNT: Record<string, number> = { tm20: 2, sk20: 1 };
@@ -145,6 +157,8 @@ const DRINK_EXTRA_COST: Record<string, number> = { ad16: 2 };
 const ARM_DAMAGE: Record<string, number> = { ad21: 3 };
 const CLUB_DAMAGE: Record<string, number> = { ad22: 5 };
 const CLUB_CLAN: Record<string, string> = { ad22: "酒呑一門" };
+/** 古箪笥 (10/13): the attack command does the 霊力 / draw choice instead of damage. */
+const TANSU_ATTACK: Record<string, true> = { tm07b: true };
 /** Free【再生】 on every attack, before the counters (ac15 茨木童子, 10/3): HP gained. */
 const FREE_REGEN: Record<string, number> = { ac15: 1 };
 /** Attacks that ignore blind spots (no blind bonus) and counter ranges (no counter): ac17 玖龍街 (10/3). */
@@ -160,7 +174,11 @@ const SAKE_HP: Record<string, { base: number; drinker: number }> = { ac23: { bas
 /** Damage a front-strike reigu (閻魔獄卒棒) deals; 0 for any other card. */
 export const frontStrikeDamage = (ctx: Ctx, cardId: string): number => FRONT_STRIKE_DAMAGE[fxOf(ctx, cardId)] ?? 0;
 
-export const effectTextOf = (cardId: string): string | null => EFFECT_TEXT[cardId] ?? null;
+/** The card's effect text. `effectKey` (the card's `effect`) wins when that key has its own text (TEXT_BY_KEY). */
+export const effectTextOf = (cardId: string, effectKey?: string): string | null => {
+  if (effectKey !== undefined && param(TEXT_BY_KEY, effectKey) === true) return EFFECT_TEXT[effectKey] ?? null;
+  return param(EFFECT_TEXT, cardId) ?? null;
+};
 
 const FRONT: Pos[] = [{ x: 0, y: 1 }];
 
@@ -279,6 +297,9 @@ export const canUseVariant = (
   u: Unit,
   variant: AttackVariant,
 ): boolean => {
+  if (isTansuVariant(variant)) return hasTansuAttack(ctx, u);
+  // tm07b: its attack command is the effect, never a damaging attack
+  if (hasTansuAttack(ctx, u)) return false;
   if (variant === "normal") return true;
   if (!effectsOn(ctx)) return false;
   const fx = fxOf(ctx, u.cardId);
@@ -288,6 +309,16 @@ export const canUseVariant = (
   if (variant === "drink") return param(DRINK_EXTRA_COST, fx) !== undefined;
   return false;
 };
+
+/** 古箪笥 tm07b's two attack choices. */
+export const isTansuVariant = (v: AttackVariant | string | undefined): v is "tansuMana" | "tansuDraw" => v === "tansuMana" || v === "tansuDraw";
+
+/** An attack action that is 古箪笥's effect (no damage; the AIs decide it by policy, not by search). */
+export const isTansuAction = (a: Action): boolean => a.kind === "attack" && isTansuVariant(a.variant);
+
+/** tm07b 古箪笥 (10/13): this unit's attack command is the 霊力 / draw choice. Off with effects off. */
+export const hasTansuAttack = (ctx: Ctx, u: Unit): boolean =>
+  effectsOn(ctx) && param(TANSU_ATTACK, fxOf(ctx, u.cardId)) === true;
 
 /** Mana a paid variant costs on top of the attack cost (ad15【再生】 +1, ad16【飲酒】 +2); 0 otherwise. */
 export const variantExtraCost = (ctx: Ctx, u: Unit, variant: AttackVariant): number => {

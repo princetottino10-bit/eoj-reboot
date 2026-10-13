@@ -1,5 +1,6 @@
 import { applyActionInPlace, legalActions } from "../rules.ts";
 import { cloneState } from "../state.ts";
+import { isTansuAction } from "../effects.ts";
 import type { Ctx } from "../state.ts";
 import type { Action, GameEvent, GameState, PlayerId } from "../types.ts";
 import { DEFAULT_WEIGHTS, evaluate } from "./eval.ts";
@@ -25,7 +26,7 @@ export const bestSingleAction = (
   let bestScore = base + GREEDY_EPSILON;
   const sink: GameEvent[] = [];
   for (const a of legalActions(ctx, s)) {
-    if (a.kind === "pass") continue;
+    if (a.kind === "pass" || isTansuAction(a)) continue;
     const next = cloneState(s);
     sink.length = 0;
     applyActionInPlace(ctx, next, a, sink);

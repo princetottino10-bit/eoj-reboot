@@ -420,8 +420,10 @@ export const defaultConfig = (): Config => ({
  * heal: tm06 Meoto-Men - targets an ally and restores ATK worth of HP.
  * regen: ad15 茨木童子【再生】 - pay 1 more mana, HP+1 after the attack.
  * drink: ad16 酒呑童子【飲酒】 - pay 2 more mana, ATK+1 for this attack.
+ * tansuMana / tansuDraw: tm07b 古箪笥 (10/13) - its attack command deals no
+ *   damage; instead 耐久-1 for 霊力+1, or draw 1. No target, no cost, no counter.
  */
-export type AttackVariant = "normal" | "konshin" | "heal" | "regen" | "drink";
+export type AttackVariant = "normal" | "konshin" | "heal" | "regen" | "drink" | "tansuMana" | "tansuDraw";
 
 /** ad21 茨木の左腕: 【拳】 pushes the struck enemy away, 【握】 pulls it closer. */
 export type ReiguMode = "ken" | "aku";

@@ -186,6 +186,11 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
     case "attack": {
       // freeSummonAttack: 「先手: 影鬼の召喚攻撃(霊力0)」 (a paid variant's extra still shows)
       const paid = e.free === true && e.cost === 0 ? "(霊力0)" : ` (霊力-${e.cost})`;
+      // 古箪笥 tm07b (10/13): no damage; the effect line that follows says what it did
+      if (e.variant === "tansuMana" || e.variant === "tansuDraw") {
+        const what = e.variant === "tansuMana" ? "耐久-1で霊力+1" : "1枚引く";
+        return { text: `${seat(e.player)}: ${name(e.cardId)}の${e.free === true ? "召喚攻撃" : "攻撃"}(霊力0) → ダメージの代わりに${what}`, cls: "" };
+      }
       if (e.variant === "heal") {
         const h = e.hits[0];
         if (e.free === true) {

@@ -42,6 +42,7 @@ import {
   onAttackBeforeCounters,
   onUnitDestroyed,
   variantExtraCost,
+  isTansuVariant,
 } from "./effects.ts";
 
 export const attackCells = (ctx: Ctx, u: Unit): Pos[] => {
@@ -78,7 +79,8 @@ export const hasFreeSummonAttack = (ctx: Ctx, u: Unit): boolean =>
  * attack cost only; the extra is still paid.
  */
 export const attackCostFor = (ctx: Ctx, u: Unit, variant: AttackVariant = "normal"): number =>
-  (hasFreeSummonAttack(ctx, u) ? 0 : attackCostOf(ctx, cardOfUnit(ctx, u))) + variantExtraCost(ctx, u, variant);
+  // 古箪笥 tm07b: its 攻撃霊力 is "-" on the sheet, so its attack command costs nothing
+  isTansuVariant(variant) ? 0 : (hasFreeSummonAttack(ctx, u) ? 0 : attackCostOf(ctx, cardOfUnit(ctx, u))) + variantExtraCost(ctx, u, variant);
 
 /**
  * EXP-0913 aoeMode. "off" downgrades range cards to single-target attacks;
@@ -422,6 +424,7 @@ export const resolveAttack = (
   variant: AttackVariant = "normal",
   opts: AttackOptions = {},
 ): void => {
+  if (isTansuVariant(variant)) throw new Error("resolveAttack: 古箪笥's attack resolves in tansu-attack.ts");
   const attacker = unitByUid(s, attackerUid);
   if (attacker === undefined) throw new Error(`resolveAttack: no unit ${attackerUid}`);
   const card = cardOfUnit(ctx, attacker);

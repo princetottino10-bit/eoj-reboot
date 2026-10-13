@@ -88,8 +88,9 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
     id: "r1007",
     label: "10/7決定",
     experiment: "",
-    defaultPack: "adopted-1006",
-    note: "10/7決定ルール: 10/6案から3つ変えたもの。収入はダイヤル(今の制圧数で上下する)、収入が増える制圧チップは4枚で+1・5枚で+2、太極の軽減は1(下限1)。ほかは10/6案と同じ(初期霊力 先手6・後手8、毎ターン収入6、属性±2、隙+2、耐久の上限19、耐久11以上は制圧力2、制圧5で相手の番を耐えたら次の自分の番の始めに勝ち、2回目の山札切れで終了)。札は10/6案その2。",
+    // 10/13: the 10/6案その2 cards with the new 古箪笥 (adopted-1013); adopted-1006 stays selectable
+    defaultPack: "adopted-1013",
+    note: "10/7決定ルール: 10/6案から3つ変えたもの。収入はダイヤル(今の制圧数で上下する)、収入が増える制圧チップは4枚で+1・5枚で+2、太極の軽減は1(下限1)。ほかは10/6案と同じ(初期霊力 先手6・後手8、毎ターン収入6、属性±2、隙+2、耐久の上限19、耐久11以上は制圧力2、制圧5で相手の番を耐えたら次の自分の番の始めに勝ち、2回目の山札切れで終了)。札は10/13案(10/6案その2の古箪笥を10/13の効果「攻撃を命じた際、ダメージの代わりに耐久1で霊力1か、1枚引く」にしたもの)。札の組を選び直せば10/6案その2でも遊べる。",
     overrides: {} as Partial<Config>,
   },
   r1006: {
@@ -195,11 +196,12 @@ RULE_PRESETS.r1006.overrides = RULE_PRESETS.r1003.overrides;
 RULE_PRESETS.r1007.overrides = { ...RULE_PRESETS.r1003.overrides, incomeMode: "current", chipIncomeSteps: [4, 5], taijiDiscount: 1 };
 
 /** Packs selectable from the play UI and the online lobby. */
-export const PLAYABLE_PACKS = ["adopted-1006", "adopted-1006a", "adopted-1004", "adopted-1003", "adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const;
+export const PLAYABLE_PACKS = ["adopted-1013", "adopted-1006", "adopted-1006a", "adopted-1004", "adopted-1003", "adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const;
 export type PlayablePack = (typeof PLAYABLE_PACKS)[number];
 
 /** What a pack is called on screen (the ids stay in files, URLs and records). */
 export const PACK_LABELS: Record<PlayablePack, string> = {
+  "adopted-1013": "10/13案の札(古箪笥の新効果)",
   "adopted-1006": "10/6案その2の札(範囲2マス)",
   "adopted-1006a": "10/6案その1の札",
   "adopted-1004": "10/4採用版の札",

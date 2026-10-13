@@ -59,6 +59,11 @@ type Ev = GameEvent | FlowEvent;
 
 const attackLine = (e: Extract<GameEvent, { t: "attack" }>, seat: string, name: (id: string) => string): string => {
   const who = name(e.cardId);
+  // 古箪笥 tm07b (10/13): told to attack, it does one of its two choices instead of damage
+  if (e.variant === "tansuMana" || e.variant === "tansuDraw") {
+    const what = e.variant === "tansuMana" ? "耐久を1減らして霊力+1" : "カードを1枚引く";
+    return `${seat}: ${who}に${e.free === true ? "召喚攻撃" : "攻撃"}を命じた → ダメージの代わりに${what}`;
+  }
   if (e.variant === "heal") {
     const h = e.hits[0];
     return `${seat}: ${who}が味方の${h === undefined ? "駒" : name(h.cardId)}を${h === undefined ? 0 : -h.dmg}回復${cost(e.cost)}`;

@@ -18,6 +18,7 @@ import type { KyonshiChooser } from "../kyonshi-choice.ts";
 import { checkAwareDiscard } from "./check-discard.ts";
 import { defaultDiscardPolicy } from "../turn.ts";
 import { bestKyonshiTurn } from "./kyonshi.ts";
+import { withTansuPolicy } from "./tansu.ts";
 
 export const AI_KINDS = ["greedy", "beam", "strong"] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -67,6 +68,7 @@ export const makeAi = (kind: string, evalName = "territorial", opts: MakeAiOptio
       : kind === "beam"
         ? { ...makeBeam({ weights: w() }), lantern: bestLanternPick(w()), kyonshi: bestKyonshiTurn(w()) }
         : makeStrong({ ...opts.strong, weights: strongProfileWeights(evalName), seed: opts.seed ?? 0 });
-  const s = seat();
+  // 古箪笥 tm07b's attack is a fixed rule for every kind (ai/tansu.ts), never searched
+  const s = withTansuPolicy(seat());
   return { ...s, discard: checkAwareDiscard(s.discard ?? defaultDiscardPolicy) };
 };

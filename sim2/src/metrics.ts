@@ -265,7 +265,8 @@ export const buildRecord = (seed: number, events: GameEvent[]): GameRecord => {
             else bump(rec.aoeEnemyHits, e.player);
           }
         }
-        if (e.variant !== "heal") {
+        // heal and 古箪笥's effect (tansuMana / tansuDraw) strike nobody
+        if (e.variant !== "heal" && e.variant !== "tansuMana" && e.variant !== "tansuDraw") {
           if (e.aoe) {
             rec.attacksAoe += 1;
             rec.countersAoe += e.counterCount;

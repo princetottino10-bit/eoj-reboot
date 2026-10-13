@@ -5,7 +5,7 @@
 // Pure: no node builtins, importable from the browser.
 import { cardOf } from "./cards.ts";
 import { counterOrderChoice } from "./counter-order.ts";
-import { armDamage, clubDamage, forwardEnemy, fxOf, reiguTargeting, summonHpOverwrite } from "./effects.ts";
+import { armDamage, clubDamage, forwardEnemy, fxOf, isTansuAction, reiguTargeting, summonHpOverwrite } from "./effects.ts";
 import { applyAction, legalActions } from "./rules.ts";
 import { inheritCostAt, inheritCostFor, inheritRefund, summonCostAt, summonCostFor } from "./rules.ts";
 import { unitByUid, unitHp, unitMaxHp } from "./state.ts";
@@ -260,7 +260,8 @@ export const previewSummon = (ctx: Ctx, s: GameState, a: Action): SummonPreview 
 
 export const previewAction = (ctx: Ctx, s: GameState, a: Action): ActionPreview | null => {
   if (a.kind === "summon") return previewSummon(ctx, s, a);
-  if (a.kind === "attack") return previewAttack(ctx, s, a);
+  // 古箪笥 tm07b: no damage to preview, and a draw would look at the deck
+  if (a.kind === "attack") return isTansuAction(a) ? null : previewAttack(ctx, s, a);
   if (a.kind === "inherit") return previewInherit(ctx, s, a);
   if (a.kind === "reigu") return previewReigu(ctx, s, a);
   return null;

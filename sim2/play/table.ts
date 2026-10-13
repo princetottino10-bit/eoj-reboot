@@ -46,6 +46,7 @@ import {
   reiguPreviewPrediction,
   selStillValid,
   summonFacings,
+  tansuEntries,
   unitEntries,
 } from "./select.ts";
 import type { Sel } from "./select.ts";
@@ -422,13 +423,15 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
   const onCommand = (id: string): void => {
     const m = model;
     const s = sel;
-    if (m === null || m.prompt.kind !== "main" || (s.kind !== "unit" && s.kind !== "aim" && s.kind !== "proxy")) return;
+    if (m === null || m.prompt.kind !== "main" || (s.kind !== "unit" && s.kind !== "aim" && s.kind !== "proxy" && s.kind !== "chest")) return;
     const info = (commands()[String(s.uid)] ?? []).find((c) => c.id === id);
     if (info === undefined) return;
     if (!info.enabled) return say(`${info.label}: ${info.reason ?? "今は使えない"}`);
     const lg = legal();
     const mode = commandMode(info.id);
-    const summonAttack = s.kind === "unit" || s.kind === "aim" ? s.summonAttack : false;
+    const summonAttack = s.kind === "unit" || s.kind === "aim" || s.kind === "chest" ? s.summonAttack : false;
+    // 古箪笥 tm07b: its 攻撃 opens the 霊力 / draw choice instead of a target
+    if (info.id === "tansu") return setSel({ kind: "chest", uid: s.uid, summonAttack });
     if (mode !== null) {
       const entries = attackEntries(lg, s.uid, mode);
       const area = entries.some((e) => e.action.kind === "attack" && e.action.targetUid === null);
@@ -568,6 +571,12 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
         const o = m.prompt.ask.options.find((x) => x.turn === turn);
         if (o === undefined) return;
         return send({ type: "kyonshi", turn: o.turn });
+      }
+      case "chest": {
+        if (s.kind !== "chest") return;
+        const variant = data.choice === "mana" ? "tansuMana" : data.choice === "draw" ? "tansuDraw" : null;
+        if (variant === null) return;
+        return sendAction(tansuEntries(lg, s.uid).find((e) => e.action.kind === "attack" && e.action.variant === variant));
       }
       case "co-send":
         if (m.prompt.kind !== "counterOrder") return;
@@ -726,7 +735,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
   const focusNow = (): Focus => {
     if (hover !== null) return hover;
     const s = sel;
-    if (s.kind === "unit" || s.kind === "aim" || s.kind === "proxy" || s.kind === "turn") return { kind: "unit", uid: s.uid };
+    if (s.kind === "unit" || s.kind === "aim" || s.kind === "proxy" || s.kind === "turn" || s.kind === "chest") return { kind: "unit", uid: s.uid };
     if ((s.kind === "hand" || s.kind === "place" || s.kind === "inherit" || s.kind === "reigu") && model?.hand) {
       return { kind: "card", cardId: model.hand[s.handIndex] ?? "" };
     }
@@ -757,7 +766,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const lg = legal();
     const hand = handOf();
     const s = sel;
-    const shownUid = s.kind === "unit" || s.kind === "aim" || s.kind === "proxy" || s.kind === "turn" ? s.uid : null;
+    const shownUid = s.kind === "unit" || s.kind === "aim" || s.kind === "proxy" || s.kind === "turn" || s.kind === "chest" ? s.uid : null;
     const shown = shownUid === null ? undefined : unitById(m.board, shownUid);
     const main = m.prompt.kind === "main";
     const own = shown !== undefined && shown.owner === m.viewer;
@@ -1041,6 +1050,11 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     if (fresh === undefined) return;
     const lg = m.prompt.legal;
     const normals = attackEntries(lg, fresh.uid, "normal");
+    // 古箪笥 tm07b: its 召喚攻撃 is the 霊力 / draw choice (never forced): offer it from the command menu
+    if (normals.length === 0 && tansuEntries(lg, fresh.uid).length > 0) {
+      sel = { kind: "unit", uid: fresh.uid, summonAttack: true };
+      return;
+    }
     if (normals.length === 0 && attackEntries(lg, fresh.uid, "konshin").length === 0) return;
     const single = normals.some((e) => e.action.kind === "attack" && e.action.targetUid !== null);
     // 召喚したら必ず攻撃: nothing but this unit's attack is legal (no pass), so an area attack goes straight to its confirm

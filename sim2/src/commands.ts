@@ -6,13 +6,14 @@
 // Pure: no node builtins.
 import { canAttack, cardOf } from "./cards.ts";
 import { alliesInRange, attackCostFor, enemiesInRange, hasFreeSummonAttack, isAoeAttack } from "./combat.ts";
-import { canUseVariant, fxOf, isProxyRotator, rotateCommandLocked } from "./effects.ts";
+import { canUseVariant, fxOf, hasTansuAttack, isProxyRotator, isTansuAction, rotateCommandLocked } from "./effects.ts";
 import { legalActions, rotateCostOf } from "./rules.ts";
 import { isHidden } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import type { Action, AttackVariant, GameState, PlayerId, Unit } from "./types.ts";
 
-export type CommandId = "attack" | "konshin" | "regen" | "drink" | "heal" | "rotate" | "proxyRotate";
+/** tansu: 古箪笥 tm07b's attack command (the 霊力 / draw choice instead of damage). */
+export type CommandId = "attack" | "konshin" | "regen" | "drink" | "heal" | "tansu" | "rotate" | "proxyRotate";
 
 export type CommandInfo = {
   id: CommandId;
@@ -36,6 +37,7 @@ const LABEL: Record<CommandId, string> = {
   regen: "再生",
   drink: "飲酒",
   heal: "回復",
+  tansu: "攻撃",
   rotate: "回転",
   proxyRotate: "代理回転",
 };
@@ -83,6 +85,14 @@ export const unitCommands = (ctx: Ctx, s: GameState, u: Unit, legal: Action[]): 
     out.push({ id, label, cost, enabled, reason: enabled ? null : (hidden ?? reason()), area, ...(free ? { free: true as const } : {}) });
   };
   const area = isAoeAttack(ctx, card);
+  const rotCost = rotateCostOf(ctx, u);
+  if (hasTansuAttack(ctx, u)) {
+    // 古箪笥 tm07b: one 攻撃 that opens the 霊力 / draw choice (cost 0, no target)
+    const enabled = mine.some((a) => isTansuAction(a));
+    push("tansu", 0, enabled, () => (u.attackedThisTurn ? "攻撃済み" : "今は使えない"), true, hasFreeSummonAttack(ctx, u));
+    push("rotate", rotCost, mine.some((a) => a.kind === "rotate"), () => rotateReason(ctx, s, u, false));
+    return out;
+  }
   const variants: [CommandId, AttackVariant][] = [["attack", "normal"]];
   if (canUseVariant(ctx, u, "konshin")) variants.push(["konshin", "konshin"]);
   // paid variants (adopted 9/22): 再生 +1 / 飲酒 +2 on top of the attack cost
@@ -94,7 +104,6 @@ export const unitCommands = (ctx: Ctx, s: GameState, u: Unit, legal: Action[]): 
     const enabled = mine.some((a) => variantOf(a) === variant);
     push(id, attackCostFor(ctx, u, variant), enabled, () => attackReason(ctx, s, u, variant), variant === "heal" ? false : area, free);
   }
-  const rotCost = rotateCostOf(ctx, u);
   // one 回転: the facing is picked on the board's arrows (the ones it cannot turn to are greyed)
   push("rotate", rotCost, mine.some((a) => a.kind === "rotate"), () => rotateReason(ctx, s, u, false));
   if (isProxyRotator(ctx, u)) {

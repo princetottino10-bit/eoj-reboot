@@ -21,6 +21,8 @@ import {
   clubVictims,
   effectsOn,
   fxOf,
+  hasTansuAttack,
+  isTansuVariant,
   isProxyRotator,
   REIGU_MODES,
   reiguChoiceOk,
@@ -31,6 +33,7 @@ import {
   rotateCommandLocked,
   rotateIsFree,
 } from "./effects.ts";
+import { resolveTansuAttack } from "./tansu-attack.ts";
 import type {
   Action,
   ApplyResult,
@@ -281,7 +284,7 @@ export const isLegal = (ctx: Ctx, s: GameState, a: Action): boolean => {
   if (s.ended) return false;
   if (s.forcedAttackUid !== null && s.forcedAttackUid !== undefined) {
     const forced = forcedAttacks(allLegalActions(ctx, s), s.forcedAttackUid);
-    if (forced.length > 0 && !(a.kind === "attack" && a.uid === s.forcedAttackUid && a.variant !== "heal")) return false;
+    if (forced.length > 0 && !(a.kind === "attack" && a.uid === s.forcedAttackUid && a.variant !== "heal" && !isTansuVariant(a.variant))) return false;
   }
   const p = s.turnPlayer;
   const ps = s.players[p];
@@ -346,6 +349,8 @@ export const isLegal = (ctx: Ctx, s: GameState, a: Action): boolean => {
   // attack
   const variant = a.variant ?? "normal";
   if (u.attackedThisTurn) return false;
+  // 古箪笥 tm07b: no target, no range, no cost, no counter order
+  if (isTansuVariant(variant)) return canUseVariant(ctx, u, variant) && a.targetUid === null && a.counterOrder === undefined;
   if (!canAttack(card)) return false;
   if (!canUseVariant(ctx, u, variant)) return false;
   if (ps.mana < attackCostFor(ctx, u, variant)) return false;
@@ -384,9 +389,9 @@ const counterOrderOk = (
 const STRIKE_VARIANTS: readonly AttackVariant[] = ["konshin", "regen", "drink"];
 
 /** All legal atomic actions for the turn player. `pass` is always last. */
-/** summonAttackForced: the attacks the obliged unit may make (heal excluded); [] = no obligation now. */
+/** summonAttackForced: the attacks the obliged unit may make (heal and 古箪笥's effect excluded: never forced); [] = no obligation now. */
 const forcedAttacks = (all: Action[], uid: number | null | undefined): Action[] =>
-  uid === null || uid === undefined ? [] : all.filter((a) => a.kind === "attack" && a.uid === uid && a.variant !== "heal");
+  uid === null || uid === undefined ? [] : all.filter((a) => a.kind === "attack" && a.uid === uid && a.variant !== "heal" && !isTansuVariant(a.variant));
 
 export const legalActions = (ctx: Ctx, s: GameState): Action[] => {
   const all = allLegalActions(ctx, s);
@@ -471,7 +476,11 @@ const allLegalActions = (ctx: Ctx, s: GameState): Action[] => {
     if (u.owner !== p || isHidden(u)) continue;
     const card = cardOf(ctx.pack, u.cardId);
     if (!u.attackedThisTurn) {
-      if (canAttack(card) && ps.mana >= attackCostFor(ctx, u)) {
+      // 古箪笥 tm07b: the attack command is the choice (cost 0, no target)
+      if (hasTansuAttack(ctx, u)) {
+        out.push({ kind: "attack", uid: u.uid, targetUid: null, variant: "tansuMana" });
+        out.push({ kind: "attack", uid: u.uid, targetUid: null, variant: "tansuDraw" });
+      } else if (canAttack(card) && ps.mana >= attackCostFor(ctx, u)) {
         const foes = enemiesInRange(ctx, s, u);
         // the striking variants this unit has and can pay for (再生 / 飲酒 cost extra)
         const extra = STRIKE_VARIANTS.filter((v) => canUseVariant(ctx, u, v) && ps.mana >= attackCostFor(ctx, u, v));
@@ -649,6 +658,10 @@ const applyActionCore = (
       from: turnedFrom,
       to: t.facing,
     });
+    return;
+  }
+  if (isTansuVariant(a.variant)) {
+    resolveTansuAttack(ctx, s, a.uid, a.variant, events);
     return;
   }
   resolveAttack(ctx, s, a.uid, a.targetUid, events, a.variant ?? "normal", { counterOrder: a.counterOrder });

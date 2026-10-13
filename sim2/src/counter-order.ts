@@ -7,6 +7,7 @@
 // attacker: whether its counter lands the kill decides whether it moves.
 // Pure: no node builtins, importable from the browser.
 import { counterersOf } from "./combat.ts";
+import { isTansuVariant } from "./effects.ts";
 import { applyAction } from "./rules.ts";
 import type { Ctx } from "./state.ts";
 import type { Action, GameState } from "./types.ts";
@@ -48,7 +49,7 @@ export type CounterOrderChoice = {
  * when every order leads to the same board. Call it for a legal attack.
  */
 export const counterOrderChoice = (ctx: Ctx, s: GameState, a: AttackAction): CounterOrderChoice | null => {
-  if (ctx.cfg.counterResolve !== "chosen" || (a.variant ?? "normal") === "heal") return null;
+  if (ctx.cfg.counterResolve !== "chosen" || (a.variant ?? "normal") === "heal" || isTansuVariant(a.variant)) return null;
   const uids = counterersOf(ctx, s, a);
   if (uids.length < 2) return null;
   const orders = counterOrderCandidates(uids);

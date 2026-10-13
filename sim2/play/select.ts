@@ -27,6 +27,8 @@ export type Sel =
   /** An attack variant is armed: pick a target, then confirm. */
   | { kind: "aim"; uid: number; mode: AttackVariant; targetUid: number | null; area: boolean; summonAttack: boolean }
   | { kind: "proxy"; uid: number; targetUid: number | null }
+  /** 古箪笥 tm07b's 攻撃: choose 霊力 (耐久-1) or one draw instead of a target. */
+  | { kind: "chest"; uid: number; summonAttack: boolean }
   /** 回転 of an own unit: pick the facing on the board's arrows. */
   | { kind: "turn"; uid: number }
   /**
@@ -55,6 +57,10 @@ export const unitEntries = (legal: LegalEntry[], uid: number, kind: Action["kind
 
 export const attackEntries = (legal: LegalEntry[], uid: number, mode: AttackVariant): LegalEntry[] =>
   unitEntries(legal, uid, "attack").filter((e) => e.action.kind === "attack" && (e.action.variant ?? "normal") === mode);
+
+/** 古箪笥 tm07b's two attack choices of this unit (霊力 / draw), as legal entries. */
+export const tansuEntries = (legal: LegalEntry[], uid: number): LegalEntry[] =>
+  unitEntries(legal, uid, "attack").filter((e) => e.action.kind === "attack" && (e.action.variant === "tansuMana" || e.action.variant === "tansuDraw"));
 
 export const handPlayable = (legal: LegalEntry[], hand: string[], i: number, isReigu: boolean): boolean =>
   isReigu
@@ -160,7 +166,7 @@ export const radialItems = (commands: UnitCommands, uid: number, mana: number, s
     affordable: mana >= c.cost,
     free: c.free === true,
     active:
-      (sel.kind === "aim" && commandMode(c.id) === sel.mode) || (sel.kind === "proxy" && c.id === "proxyRotate"),
+      (sel.kind === "aim" && commandMode(c.id) === sel.mode) || (sel.kind === "proxy" && c.id === "proxyRotate") || (sel.kind === "chest" && c.id === "tansu"),
   }));
 
 /** The legal attack entry the current aim points at (target or area). */
@@ -255,6 +261,8 @@ export const selStillValid = (sel: Sel, board: BoardView, hand: string[] | null,
       return attackEntries(legal, sel.uid, sel.mode).length > 0;
     case "proxy":
       return unitEntries(legal, sel.uid, "proxyRotate").length > 0;
+    case "chest":
+      return tansuEntries(legal, sel.uid).length > 0;
     case "turn":
       return unitEntries(legal, sel.uid, "rotate").length > 0;
     default:

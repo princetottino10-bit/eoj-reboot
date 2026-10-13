@@ -343,6 +343,22 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       buttons.push(cancel);
       return bar("confirm", `<b>${who === undefined ? "" : esc(cardName(vm.ctx, who.cardId))}</b>の${verb}:`, lines, buttons, f);
     }
+    case "chest": {
+      // 古箪笥 tm07b (10/13): the attack command does one of the two instead of damage
+      const u = unitById(vm.board, s.uid);
+      const name = u === undefined ? "古箪笥" : cardName(vm.ctx, u.cardId);
+      const hp = u === undefined ? 0 : unitHp(vm.ctx, u);
+      const mana = vm.viewer === null ? 0 : vm.board.players[vm.viewer].mana;
+      const notes: string[] = [];
+      if (hp <= 1) notes.push(`<span class="warn">耐久${hp}: 霊力を得ると${esc(name)}は撃破されます(自滅・相手は霊力を得ない)</span>`);
+      if (mana >= vm.ctx.cfg.manaCap) notes.push(`霊力は上限(${vm.ctx.cfg.manaCap})なので増えません`);
+      const how = s.summonAttack ? "召喚攻撃" : "攻撃";
+      return bar("confirm", `<b>${esc(name)}</b>の${how}(霊力0・対象なし): ダメージを与える代わりに、どちらか1つ`, notes, [
+        btn("chest", `耐久−1 → 霊力を得る(+1)`, hp <= 1 ? "btn-red" : "btn-gold", 'data-choice="mana"'),
+        btn("chest", "1枚引く", "", 'data-choice="draw"'),
+        cancel,
+      ], f);
+    }
     case "proxy": {
       if (s.targetUid === null) return bar("pick", "代理回転: 回す式神を盤上で選ぶ", [], [cancel], f);
       const t = unitById(vm.board, s.targetUid);

@@ -294,7 +294,8 @@ const rangeBlockHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => 
 };
 
 const textHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => {
-  const printedText = opts.text ?? effectTextOf(card.id);
+  // by the effect key when it has its own text (10/13 古箪笥 tm07b shares the card id ac05)
+  const printedText = opts.text ?? effectTextOf(card.id, card.effect);
   // the hand card has no room for the 【霊具】 tag the badge already shows
   const text = printedText !== null && opts.size === "md" ? printedText.replace(/^【霊具】/, "") : printedText;
   // the corner value: 生命価 (the cold flame) while life counts (霊力価 has its
