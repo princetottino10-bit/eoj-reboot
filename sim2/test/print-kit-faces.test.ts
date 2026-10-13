@@ -209,5 +209,5 @@ test("the print card number sits at the bottom right of hand and detail cards, n
   assert.doesNotMatch(cardFaceHtml(makeCtx(presetConfig("r0914"), SK), "sk09", { size: "lg" }), /fu-pid|has-pid/);
   // the text keeps clear of the corner only while 生命価 sits there
   assert.match(cardFaceHtml(CTX, "ad15", { size: "md" }), /class="fu-text"/);
-  assert.match(cardFaceHtml(r0923({ lifeValueEnabled: true }), "ad15", { size: "md" }), /class="fu-text has-corner">.*title="生命価 3"/);
+  assert.match(cardFaceHtml(r0923({ lifeValueEnabled: true }), "ad15", { size: "md" }), /class="fu-text has-corner">.*title="\(旧\)生命価 3"/);
 });

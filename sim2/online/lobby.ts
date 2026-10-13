@@ -5,7 +5,7 @@
 import { parsePack } from "../src/cards.ts";
 import type { CardPack } from "../src/cards.ts";
 import type { PlayablePack } from "../src/presets.ts";
-import { decodeSettings, defaultSettings, encodeSettings, settingsConfig } from "../src/settings.ts";
+import { decodeSettings, defaultSettings, encodeSettings, settingsConfig, upgradeLegacyPack } from "../src/settings.ts";
 import type { GameSettings } from "../src/settings.ts";
 import { entryTopHtml, rulesBlockHtml } from "../play/entry-shell.ts";
 import { bindModeSwitch } from "../play/mode-switch.ts";
@@ -74,8 +74,9 @@ const remember = (): void => {
 
 /** Settings from a ?s= share link, validated against the printed pack. */
 const fromShareLink = async (): Promise<void> => {
-  const shared = new URLSearchParams(location.search).get("s");
-  if (shared === null) return;
+  const rawShared = new URLSearchParams(location.search).get("s");
+  if (rawShared === null) return;
+  const shared = upgradeLegacyPack(rawShared);
   const first = decodeSettings(shared, null);
   if (!first.ok) {
     showError(`共有された設定を読めません: ${first.error}`);

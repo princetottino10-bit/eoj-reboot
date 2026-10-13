@@ -25,7 +25,8 @@ export const CARD_STATS: readonly CardStat[] = [
   { key: "attackCost", label: "攻撃霊力", short: "攻☆", desc: "攻撃1回に払う霊力", min: 0, max: 15 },
   { key: "hp", label: "耐久", short: "耐久", desc: "属性ボーナスを含まない基本の耐久", min: 1, max: 20 },
   { key: "atk", label: "攻撃力", short: "攻撃", desc: "与えるダメージの基本値", min: 0, max: 10 },
-  { key: "lifeValue", label: "生命価", short: "命", desc: "撃破されたとき持ち主が失う生命", min: 0, max: 15 },
+  // 生命価 was abolished on 2026-09-22 (the column is 霊力価 now); the life rule stays selectable for the old rule sets, so the stat is named as old
+  { key: "lifeValue", label: "(旧)生命価", short: "旧命", desc: "旧ルールの生命価: 撃破されたとき持ち主が失う生命(「(旧)生命価」のルールが有効なときだけ使う)", min: 0, max: 15 },
   { key: "manaValue", label: "霊力価", short: "霊", desc: "撃破した側が得る霊力(撃破報酬の額が「カードの霊力価」のとき)", min: 0, max: 15 },
   { key: "copies", label: "枚数", short: "枚", desc: "1つのデッキに入れる枚数(0でデッキから外す)", min: 0, max: 4 },
 ];

@@ -302,7 +302,7 @@ const textHtml = (ctx: Ctx, card: CardDef, opts: CardFaceOpts): string => {
   // flames under the attribute mark, manaValueHtml)
   const lm = modOf(card, ["lifeValue"], opts);
   const lifeOn = ctx.cfg.lifeValueEnabled && card.kind !== "reigu";
-  const life = lifeOn ? `<span class="fu-life${lm.cls}" title="生命価 ${card.lifeValue}${lm.tip}">${sr("生命価")}${mark("life")}${num(card.lifeValue)}</span>` : "";
+  const life = lifeOn ? `<span class="fu-life${lm.cls}" title="(旧)生命価 ${card.lifeValue}${lm.tip}">${sr("(旧)生命価")}${mark("life")}${num(card.lifeValue)}</span>` : "";
   // the text keeps clear of the corner only while something sits in it
   const corner = lifeOn ? " has-corner" : "";
   if (text === null || text === "") return `<span class="fu-text none${corner}"><span class="fu-tx">効果なし</span>${life}</span>`;

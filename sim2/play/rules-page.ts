@@ -13,7 +13,7 @@ import { diffPatch } from "../src/config-schema.ts";
 import { submit } from "../src/flow.ts";
 import { presetConfig } from "../src/presets.ts";
 import type { PlayablePack } from "../src/presets.ts";
-import { decodeSettings, defaultSettings, encodeSettings, MAX_ENCODED } from "../src/settings.ts";
+import { decodeSettings, defaultSettings, encodeSettings, MAX_ENCODED, upgradeLegacyPack } from "../src/settings.ts";
 import type { GameSettings } from "../src/settings.ts";
 import type { PlayerId } from "../src/types.ts";
 import { loadStoredGame, restoreStoredGame, storageOr, storedGameOf, storedUnchanged, writeStoredGame } from "./ai-store.ts";
@@ -97,8 +97,9 @@ const leave = (href: string): void => location.replace(href);
 // ------------------------------------------------------------ settings modes
 
 /** s= validated against its printed pack; defaults (and a notice) when it cannot be read. */
-const settingsFromUrl = async (s: string | null): Promise<GameSettings> => {
-  if (s === null) return defaultSettings();
+const settingsFromUrl = async (raw: string | null): Promise<GameSettings> => {
+  if (raw === null) return defaultSettings();
+  const s = upgradeLegacyPack(raw);
   const first = decodeSettings(s, null);
   const printed = first.ok ? await loadPack(first.value.pack).catch(() => null) : null;
   const checked = first.ok ? decodeSettings(s, () => printed) : first;

@@ -10,7 +10,7 @@ import type { AiKind } from "../src/ai/index.ts";
 import { diffPatch } from "../src/config-schema.ts";
 import { presetConfig } from "../src/presets.ts";
 import type { PlayablePack } from "../src/presets.ts";
-import { decodeSettings, encodeSettings, settingsConfig, settingsPack } from "../src/settings.ts";
+import { decodeSettings, encodeSettings, settingsConfig, settingsPack, upgradeLegacyPack } from "../src/settings.ts";
 import { settingsLabel } from "../src/setting-presets.ts";
 import type { GameSettings } from "../src/settings.ts";
 import { overridesBetween } from "../src/card-overrides.ts";
@@ -73,7 +73,11 @@ const readSetup = (): WatchSetup | null => {
   }
 };
 
-let setup: WatchSetup = readSetup() ?? defaultWatchSetup((readAiSetup(stores) ?? defaultAiSetup()).s);
+const rememberedWatch = readSetup();
+let setup: WatchSetup =
+  rememberedWatch === null
+    ? defaultWatchSetup(upgradeLegacyPack((readAiSetup(stores) ?? defaultAiSetup()).s))
+    : { ...rememberedWatch, s: upgradeLegacyPack(rememberedWatch.s) };
 
 const saveSetup = (next: WatchSetup): void => {
   setup = next;
@@ -543,7 +547,7 @@ const init = async (): Promise<void> => {
   const shared = new URLSearchParams(location.search).get("s");
   let problem = "";
   if (shared !== null) {
-    const checked = await checkedSettings(shared);
+    const checked = await checkedSettings(upgradeLegacyPack(shared));
     if (checked.ok) saveSetup({ ...setup, s: encodeSettings(checked.value) });
     else problem = `共有された設定を読めません: ${checked.error}`;
   }

@@ -376,7 +376,8 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
   },
   {
     key: "lifeValueEnabled", group: "victory", kind: "bool",
-    label: "生命価", desc: "撃破された式神の生命価だけ生命を失い、生命0で負ける", midGame: true,
+    // 生命価 was abolished on 2026-09-22; kept as an option of the old rule sets, named as old
+    label: "(旧)生命価", desc: "旧ルール: 撃破された式神の(旧)生命価だけ生命を失い、生命0で負ける(2026-09-22に廃止。今のルールでは撃破した側が霊力価を得る)", midGame: true,
   },
   {
     key: "startLife", group: "victory", kind: "int", min: 1, max: 50,

@@ -47,7 +47,7 @@ test("cards speak in marks: no kanji badges or 召 / 攻 / HP / ATK labels, but 
   assert.match(md, /title="攻撃霊力 2">.*<use href="#mk-mana"\/>/);
   assert.match(md, /title="回転霊力 1">/);
   assert.match(cardFaceHtml(ctx, "sk04", { size: "md" }), /title="回転霊力 0">/);
-  assert.match(md, /title="生命価 2"><i class="sr">生命価<\/i><svg[^>]*><use href="#mk-life"\/>/);
+  assert.match(md, /title="\(旧\)生命価 2"><i class="sr">\(旧\)生命価<\/i><svg[^>]*><use href="#mk-life"\/>/);
   // since the 2026-10-13 glossary a plain attack is unnamed: the hand card keeps an unseen plate, the large card shows the word only
   assert.match(md, /class="fu-type is-plain" title="範囲" aria-hidden="true"><svg[^>]*><use href="#mk-phys"\/><\/svg><span class="fu-type-w">範囲<\/span>/);
   assert.match(cardFaceHtml(ctx, "sk09", { size: "lg" }), /class="fu-type is-plain" title="範囲"><span class="fu-type-w">範囲<\/span>/);

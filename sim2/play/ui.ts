@@ -16,7 +16,7 @@ import type { Flow, FlowInput } from "../src/flow.ts";
 import { legalEntries } from "../src/preview.ts";
 import { presetConfig } from "../src/presets.ts";
 import type { PlayablePack } from "../src/presets.ts";
-import { decodeSettings, encodeSettings, settingsConfig, settingsHash, settingsPack } from "../src/settings.ts";
+import { decodeSettings, encodeSettings, settingsConfig, settingsHash, settingsPack, upgradeLegacyPack } from "../src/settings.ts";
 import { settingsLabel } from "../src/setting-presets.ts";
 import { summaryLine } from "../src/match-summary.ts";
 import { addHistory, clearHistory, downloadText, historyCsv, historyHtml, readHistory } from "./result-history.ts";
@@ -226,7 +226,8 @@ const refresh = (): void => {
 // ------------------------------------------------------------- storage
 
 /** The start card's choices (this tab); the settings are kept encoded, as in a share URL. */
-let setup: AiSetup = readAiSetup(stores) ?? defaultAiSetup();
+const remembered = readAiSetup(stores);
+let setup: AiSetup = remembered === null ? defaultAiSetup() : { ...remembered, s: upgradeLegacyPack(remembered.s) };
 
 const saveSetup = (next: AiSetup): void => {
   setup = next;
@@ -589,7 +590,7 @@ const init = async (): Promise<void> => {
   const shared = new URLSearchParams(location.search).get("s");
   let problem = "";
   if (shared !== null) {
-    const checked = await checkedSettings(shared);
+    const checked = await checkedSettings(upgradeLegacyPack(shared));
     if (checked.ok) saveSetup({ ...setup, s: encodeSettings(checked.value) });
     else problem = `共有された設定を読めません: ${checked.error}`;
   }

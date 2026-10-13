@@ -181,7 +181,7 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
     { label: "撃破", text: reward },
     { label: "制圧", text: `自分の式神がいるマスを制圧と数える (式神1体の制圧力はふつう1、その合計が制圧数)。${twoCells}` },
     { label: "勝ち", text: cfg.deckOutMode === "second" ? `${hold}どちらかが2回目の山札切れを起こしたら、その補充が終わったところで終了。制圧数の多い方の勝ち (同じなら引き分け)。` : hold },
-    { label: "生命", text: cfg.lifeValueEnabled ? `生命${cfg.startLife}。撃破された式神の生命価だけ減り、0で負け。` : "生命価なし (生命の増減・生命での勝ち負けはない)。" },
+    { label: "生命", text: cfg.lifeValueEnabled ? `生命${cfg.startLife}。撃破された式神の(旧)生命価だけ減り、0で負け。` : "(旧)生命価なし (生命の増減・生命での勝ち負けはない)。" },
     { label: "手札", text: hand },
   ];
   if (cfg.inheritSummon) rows.push({ label: "継承召喚", text: `自分の式神を、より召喚霊力の高い式神に置き換えて召喚できる (位置と向きを引き継ぐ)。${cfg.inheritTaiji ? "" : "太極の上での継承召喚に太極割引はない。"}` });

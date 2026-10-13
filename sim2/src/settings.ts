@@ -161,6 +161,23 @@ export const encodeSettings = (s: GameSettings): string => {
   return toBase64Url(JSON.stringify(compact));
 };
 
+/**
+ * Card packs that the team has replaced: settings opened from a share link or
+ * from what this browser remembered are moved to the newer pack, so people who
+ * open an old link get today's cards (10/13: adopted-1006 -> adopted-1013, the
+ * new 古箪笥). Only used where a new match is being set up; stored matches and
+ * replays keep the pack they were played with. Choosing the old pack on the
+ * start card still works for the match being set up.
+ */
+export const LEGACY_PACK_UPGRADES: Partial<Record<PlayablePack, PlayablePack>> = { "adopted-1006": "adopted-1013" };
+
+export const upgradeLegacyPack = (encoded: string): string => {
+  const d = decodeSettings(encoded, null);
+  if (!d.ok) return encoded;
+  const to = LEGACY_PACK_UPGRADES[d.value.pack];
+  return to === undefined ? encoded : encodeSettings({ ...d.value, pack: to });
+};
+
 /** Inverse of encodeSettings, validating everything. */
 export const decodeSettings = (
   text: string,
