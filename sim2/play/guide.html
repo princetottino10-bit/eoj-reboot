@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>陰陽符陣(仮) 遊び方</title>
+<meta name="description" content="陰陽符陣(仮)の遊び方。九宮盤に式神を並べ、向きと隙を読み合う2人対戦ゲームのルールを、図とカード一覧つきでまとめました。">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%230b0b0e'/%3E%3Ccircle cx='32' cy='32' r='27.5' fill='none' stroke='%23d7b565' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='23' fill='%231b2340'/%3E%3Cpath d='M32 9A23 23 0 0 1 32 55A11.5 11.5 0 0 1 32 32A11.5 11.5 0 0 0 32 9Z' fill='%23f5f1e2'/%3E%3Ccircle cx='32' cy='43.5' r='4.4' fill='%231b2340'/%3E%3Ccircle cx='32' cy='20.5' r='4.4' fill='%23f5f1e2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/play/guide.css">
+</head>
+<body>
+<header class="g-head">
+  <a class="g-brand" href="/guide"><span class="g-mark" aria-hidden="true">符</span><span class="g-name">陰陽符陣<small>(仮)</small></span></a>
+  <nav class="g-links" aria-label="遊ぶ">
+    <a href="/ai">AIと対戦</a>
+    <a href="/" class="is-gold">オンライン対戦</a>
+  </nav>
+</header>
+
+<div class="g-hero">
+  <div class="g-hero-text">
+    <p class="g-kicker">遊び方</p>
+    <h1>九つのマスに式神を並べ、<br>向きを読み合う。</h1>
+    <p class="g-lead">陰陽符陣は、2人で遊ぶ対戦ゲームです。あなたは陰陽師。符から<b>式神</b>を呼び出し、3×3の<b>九宮盤</b>に並べます。式神には向きがあり、前は強く、背中の<b>隙</b>は弱い。どこに置き、どちらを向かせ、いつ攻めるか。9マスの小さな盤面で、陣地を取り合います。</p>
+  </div>
+  <div class="g-hero-cards" aria-hidden="true">
+    <img src="/play/art/face/T-008.webp" alt="" width="600" height="850">
+    <img src="/play/art/face/O-009.webp" alt="" width="600" height="850">
+    <img src="/play/art/face/back.webp" alt="" width="600" height="850">
+  </div>
+</div>
+
+<div class="g-layout">
+<nav class="g-toc" aria-label="目次">
+  <details open id="tocBox">
+    <summary>目次</summary>
+    <ol>
+      <li><a href="#summary">1分でわかるルール</a></li>
+      <li><a href="#setup">内容物と準備</a></li>
+      <li><a href="#card">カードの見方</a></li>
+      <li><a href="#board">九宮盤とマス</a></li>
+      <li><a href="#turn">ターンの流れ</a></li>
+      <li><a href="#summon">召喚と継承召喚</a></li>
+      <li><a href="#command">命令: 攻撃と回転</a></li>
+      <li><a href="#attack">攻撃と反撃</a></li>
+      <li><a href="#kill">撃破と霊力価</a></li>
+      <li><a href="#win">制圧と勝利</a></li>
+      <li><a href="#mana">霊力と収入</a></li>
+      <li><a href="#deckout">山札切れ</a></li>
+      <li><a href="#reigu">霊具</a></li>
+      <li><a href="#faq">よくある質問</a></li>
+      <li><a href="#cards">カード一覧</a></li>
+    </ol>
+  </details>
+</nav>
+
+<main class="g-main">
+
+<section id="summary" class="g-sec">
+  <h2><span class="g-num">一</span>1分でわかるルール</h2>
+  <ol class="g-steps">
+    <li><b>霊力を払って式神を召喚</b>し、九宮盤の空いているマスに、好きな向きで置きます。</li>
+    <li>式神は<b>間合</b>(多くは前のマス)にいる敵を攻撃します。攻撃された式神は、反撃間合から攻撃されたなら<b>反撃</b>します。</li>
+    <li>背中などの<b>隙</b>から攻撃すると、ダメージ<b>+2</b>。しかも反撃されません。</li>
+    <li>盤面にいる自分の式神の数が<b>総制圧力</b>です。耐久が<b>11以上</b>の式神は1体で<b>2</b>と数えます。</li>
+    <li>自分のターンを総制圧力<b>5以上</b>で終えたら<b>チェック</b>。相手のターンを耐えて、次の自分のターンの始めにまだ5以上なら<b>勝ち</b>です。</li>
+  </ol>
+  <div class="g-quick" role="table" aria-label="数字のまとめ">
+    <div role="row"><span role="cell">初期霊力</span><b role="cell">先手 6 ／ 後手 8</b></div>
+    <div role="row"><span role="cell">収入(ターン終了時)</span><b role="cell">6　総制圧力4で 7、5以上で 8</b></div>
+    <div role="row"><span role="cell">霊力の上限</span><b role="cell">15</b></div>
+    <div role="row"><span role="cell">手札</span><b role="cell">ターン終了時に5枚まで引く</b></div>
+    <div role="row"><span role="cell">太極に召喚</span><b role="cell">召☆ −1(最低1)</b></div>
+    <div role="row"><span role="cell">属性マス</span><b role="cell">同じ属性 +2 ／ 反対 −2</b></div>
+    <div role="row"><span role="cell">隙からの攻撃</span><b role="cell">ダメージ +2・反撃なし</b></div>
+    <div role="row"><span role="cell">回転霊力(回☆)</span><b role="cell">1</b></div>
+    <div role="row"><span role="cell">耐久の上限</span><b role="cell">19</b></div>
+  </div>
+</section>
+
+<section id="setup" class="g-sec">
+  <h2><span class="g-num">二</span>内容物と準備</h2>
+  <h3>使うもの</h3>
+  <ul class="g-list">
+    <li><b>カード 23枚 × 2人分</b> ── 1人分の山札は「玖龍一門」11枚と「酒呑一門」12枚。2人とも同じ23枚を使います。</li>
+    <li><b>九宮盤</b> ── 3×3の盤。マスには陰・陽・空・太極の属性があります。</li>
+    <li>紙で遊ぶときは、式神の耐久と、自分の霊力を数えておくものを用意します。オンラインのテスト卓では画面が数えます。</li>
+  </ul>
+  <h3>準備の手順</h3>
+  <ol class="g-steps is-plain">
+    <li>2人で向かい合い、間に九宮盤を置きます。盤面のマスはどちらのものでもありません。</li>
+    <li>それぞれ自分の23枚をよく切って、裏向きの<b>山札</b>にします。</li>
+    <li>山札の上から<b>5枚</b>引いて手札にします。</li>
+    <li>先手と後手を決めます。<b>先手は霊力6、後手は霊力8</b>で始めます(後手は先に動けない分の埋め合わせ)。</li>
+    <li><b>マリガン</b>: 最初のターンの前に1回だけ、手札を引き直せます。好きな枚数(0枚でもよい)を山札に戻して切り直し、戻した枚数だけ引きます。</li>
+  </ol>
+  <p class="g-tip"><b>こつ</b>召☆5以上の重い式神を戻して、序盤に出せる札を探すのが基本です。</p>
+</section>
+
+<section id="card" class="g-sec">
+  <h2><span class="g-num">三</span>カードの見方</h2>
+  <p>カードは、盤面に置いて戦う<b>式神</b>と、使い切りの<b>霊具</b>の2種類です。</p>
+  <figure class="g-anatomy">
+    <div class="g-anat-img">
+      <img src="/play/art/face/O-008.webp" alt="茨木童子のカード" width="600" height="850">
+      <span class="pin" style="left:6%;top:5%">1</span>
+      <span class="pin" style="left:5%;top:22.5%">2</span>
+      <span class="pin" style="left:32%;top:15%">3</span>
+      <span class="pin" style="left:83%;top:5%">4</span>
+      <span class="pin" style="left:5%;top:60%">5</span>
+      <span class="pin" style="left:30%;top:60%">6</span>
+      <span class="pin" style="left:56%;top:62.5%">7</span>
+      <span class="pin" style="left:95%;top:68%">8</span>
+      <span class="pin" style="left:5%;top:82%">9</span>
+      <span class="pin" style="left:70%;top:94%">10</span>
+    </div>
+    <figcaption>
+      <ol class="g-pins">
+        <li><b>召☆(召喚霊力)</b> 盤面に呼び出すときに払う霊力。</li>
+        <li><b>攻☆(攻撃霊力)</b> 攻撃の命令をするたびに払う霊力。</li>
+        <li><b>属性</b> 陰・陽・空のどれか。属性マスで耐久が増減します。</li>
+        <li><b>霊力価</b> この式神を撃破した人が得る霊力。</li>
+        <li><b>耐久</b> 0以下になると撃破されます。</li>
+        <li><b>攻撃力</b> 攻撃で与えるダメージ。</li>
+        <li><b>単体 / 範囲</b> 間合の敵1体を選ぶか、間合の全員に当たるか。</li>
+        <li><b>間合の図</b> 攻撃・反撃が届くマスと、隙(下で説明)。</li>
+        <li><b>効果</b> その式神だけの能力。【 】は効果の名前。</li>
+        <li><b>一門</b> 玖龍一門か酒呑一門か。左下は番号。</li>
+      </ol>
+    </figcaption>
+  </figure>
+
+  <h3>間合の図の読み方</h3>
+  <div class="g-range">
+    <div class="g-range-fig">
+      <svg class="rg" viewBox="0 0 150 150" width="150" height="150" role="img" aria-label="間合の図"><defs><pattern id="st-a" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#1d1c22"/><rect width="4" height="8" fill="#e0b13a"/></pattern></defs><rect x="1" y="1" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="51" y="1" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><circle cx="75" cy="25" r="8.5" fill="#e0674f"/><rect x="101" y="1" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><circle cx="125" cy="25" r="15" fill="none" stroke="#5fc49b" stroke-width="4.5"/><circle cx="125" cy="25" r="8.5" fill="#e0674f"/><rect x="1" y="51" width="48" height="48" rx="3" fill="url(#st-a)" stroke="#6b6458" stroke-width="1"/><rect x="51" y="51" width="48" height="48" rx="3" fill="#f3eee1" stroke="#6b6458" stroke-width="1"/><polygon points="75,64 85.45,82.7 64.55,82.7" fill="#26262b" transform="rotate(0 75 75)"/><rect x="101" y="51" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="1" y="101" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="51" y="101" width="48" height="48" rx="3" fill="url(#st-a)" stroke="#6b6458" stroke-width="1"/><rect x="101" y="101" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/></svg>
+      <p class="g-cap">鉈鬼(前を上にした図)</p>
+    </div>
+    <dl class="g-legend">
+      <div><dt><i class="lg-self"></i></dt><dd>その式神。<b>▲の向きが前</b>です。</dd></div>
+      <div><dt><i class="lg-atk"></i></dt><dd><b>間合</b> ── 攻撃が届くマス。</dd></div>
+      <div><dt><i class="lg-ctr"></i></dt><dd><b>反撃間合</b> ── ここから攻撃してきた相手に反撃します。</dd></div>
+      <div><dt><i class="lg-both"></i></dt><dd>間合でもあり、反撃間合でもあるマス。</dd></div>
+      <div><dt><i class="lg-blind"></i></dt><dd><b>隙</b> ── ここから攻撃されるとダメージ+2、反撃もできません。</dd></div>
+    </dl>
+  </div>
+  <p>鉈鬼は前と右前に攻撃できますが、反撃できるのは右前から攻撃してきた相手だけ。左と後ろが隙です。</p>
+  <div class="g-range is-turn">
+    <div class="g-range-fig"><svg class="rg" viewBox="0 0 150 150" width="150" height="150" role="img" aria-label="間合の図"><defs><pattern id="st-c" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#1d1c22"/><rect width="4" height="8" fill="#e0b13a"/></pattern></defs><rect x="1" y="1" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="51" y="1" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><circle cx="75" cy="25" r="8.5" fill="#e0674f"/><rect x="101" y="1" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><circle cx="125" cy="25" r="15" fill="none" stroke="#5fc49b" stroke-width="4.5"/><circle cx="125" cy="25" r="8.5" fill="#e0674f"/><rect x="1" y="51" width="48" height="48" rx="3" fill="url(#st-c)" stroke="#6b6458" stroke-width="1"/><rect x="51" y="51" width="48" height="48" rx="3" fill="#f3eee1" stroke="#6b6458" stroke-width="1"/><polygon points="75,64 85.45,82.7 64.55,82.7" fill="#26262b" transform="rotate(0 75 75)"/><rect x="101" y="51" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="1" y="101" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="51" y="101" width="48" height="48" rx="3" fill="url(#st-c)" stroke="#6b6458" stroke-width="1"/><rect x="101" y="101" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/></svg><p class="g-cap">上を向いた鉈鬼</p></div>
+    <span class="g-arrow" aria-hidden="true">右へ回転 →</span>
+    <div class="g-range-fig"><svg class="rg" viewBox="0 0 150 150" width="150" height="150" role="img" aria-label="間合の図"><defs><pattern id="st-b" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#1d1c22"/><rect width="4" height="8" fill="#e0b13a"/></pattern></defs><rect x="1" y="1" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="51" y="1" width="48" height="48" rx="3" fill="url(#st-b)" stroke="#6b6458" stroke-width="1"/><rect x="101" y="1" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="1" y="51" width="48" height="48" rx="3" fill="url(#st-b)" stroke="#6b6458" stroke-width="1"/><rect x="51" y="51" width="48" height="48" rx="3" fill="#f3eee1" stroke="#6b6458" stroke-width="1"/><polygon points="75,64 85.45,82.7 64.55,82.7" fill="#26262b" transform="rotate(90 75 75)"/><rect x="101" y="51" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><circle cx="125" cy="75" r="8.5" fill="#e0674f"/><rect x="1" y="101" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="51" y="101" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="101" y="101" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><circle cx="125" cy="125" r="15" fill="none" stroke="#5fc49b" stroke-width="4.5"/><circle cx="125" cy="125" r="8.5" fill="#e0674f"/></svg><p class="g-cap">右を向いた鉈鬼</p></div>
+  </div>
+  <p class="g-key"><b>間合の図は、式神の向きといっしょに回ります。</b>盤面に置いたカードの上辺が向いている方向が「前」です。盤の外にはみ出したマスは、ないものとして扱います。</p>
+  <ul class="g-list is-small">
+    <li>一角鬼と茨木童子は<b>2つ前の列</b>にも届くので、図が1段高くなっています。</li>
+    <li>玖龍街の間合は「周囲すべて」。盤面のどこにいても、ほかの8マスすべてに届きます。</li>
+  </ul>
+
+  <h3>霊具</h3>
+  <p>霊具は盤面に置かず、<b>使☆(使用霊力)</b>を払って効果を使い、すぐ墓地に置くカードです。耐久・攻撃力・間合・霊力価はなく、太極の割引も効きません。</p>
+</section>
+
+<section id="board" class="g-sec">
+  <h2><span class="g-num">四</span>九宮盤とマス</h2>
+  <div class="g-boardrow">
+    <figure class="g-board" aria-label="九宮盤のマスの並び(先手から見た図)">
+      <div class="g-cell c-void"><span>空</span></div>
+      <div class="g-cell c-yin"><span>陰</span></div>
+      <div class="g-cell c-void"><span>空</span></div>
+      <div class="g-cell c-yin"><span>陰</span></div>
+      <div class="g-cell c-taiji"><span>太極</span></div>
+      <div class="g-cell c-yang"><span>陽</span></div>
+      <div class="g-cell c-void"><span>空</span></div>
+      <div class="g-cell c-yang"><span>陽</span></div>
+      <div class="g-cell c-void"><span>空</span></div>
+      <figcaption>先手から見た九宮盤。奥が後手の側です。</figcaption>
+    </figure>
+    <div>
+      <h3>属性マス</h3>
+      <p>式神の属性とマスの属性で、耐久が増えたり減ったりします。</p>
+      <table class="g-table">
+        <thead><tr><th>式神 ＼ マス</th><th>陰</th><th>陽</th><th>空・太極</th></tr></thead>
+        <tbody>
+          <tr><th>陰の式神</th><td class="up">+2</td><td class="down">−2</td><td>±0</td></tr>
+          <tr><th>陽の式神</th><td class="down">−2</td><td class="up">+2</td><td>±0</td></tr>
+          <tr><th>空の式神</th><td>±0</td><td>±0</td><td>±0</td></tr>
+        </tbody>
+      </table>
+      <h3>太極</h3>
+      <p>中央のマスです。ここに召喚すると<b>召☆が1安く</b>なります(最低1)。耐久の増減はありません。四方のマスすべてと隣り合うので、多くの式神の間合に入ります。</p>
+    </div>
+  </div>
+  <ul class="g-list is-small">
+    <li>耐久は<b>19</b>より大きくなりません。</li>
+    <li>耐久が0以下になるマスには召喚できません。</li>
+    <li>効果で別のマスに動いたら、その場で新しいマスの増減に変わります。陰の式神が陰のマスから陽のマスへ動けば、耐久は4減ります。それで0以下になれば撃破です。</li>
+  </ul>
+  <div class="g-example">
+    <p class="g-ex-h">例</p>
+    <p>陽の鉈鬼(耐久3)は、陽のマスなら<b>5</b>、陰のマスなら<b>1</b>。陽の首引の姫鬼(耐久11)を陽のマスに置くと<b>13</b>です。</p>
+  </div>
+</section>
+
+<section id="turn" class="g-sec">
+  <h2><span class="g-num">五</span>ターンの流れ</h2>
+  <p>先手から交互にターンを行います。先手と後手が1回ずつターンを終えると、1<b>ラウンド</b>です。ターンは<b>開始時 → メイン → 終了時</b>の3つに分かれます。</p>
+  <div class="g-flow">
+    <div class="g-flow-step">
+      <p class="g-flow-h">開始時</p>
+      <ol>
+        <li>自分が前のターンに使った<b>マヨヒガ</b>を取り除く。</li>
+        <li><b>チェック</b>していたら勝利の判定(<a href="#win">制圧と勝利</a>)。</li>
+      </ol>
+    </div>
+    <div class="g-flow-step is-main">
+      <p class="g-flow-h">メイン</p>
+      <p>次のことを<b>好きな順に、霊力が続くかぎり何回でも</b>。</p>
+      <ul>
+        <li><b>召喚</b>・<b>継承召喚</b> ── 召☆</li>
+        <li><b>攻撃</b>の命令 ── 攻☆(1体1ターン1回)</li>
+        <li><b>回転</b>の命令 ── 回☆1(1体1ターン1回)</li>
+        <li><b>霊具</b>を使う ── 使☆</li>
+      </ul>
+      <p>やめたいときに終了を宣言します。</p>
+    </div>
+    <div class="g-flow-step">
+      <p class="g-flow-h">終了時</p>
+      <ol>
+        <li><b>総制圧力</b>を数え、5以上なら<b>チェック</b>を宣言。</li>
+        <li><b>収入</b>: 霊力を得る(6・7・8)。</li>
+        <li>手札から好きな枚数を捨て、<b>5枚になるまで</b>引く。</li>
+      </ol>
+    </div>
+  </div>
+  <ul class="g-list is-small">
+    <li>開始時に霊力は増えません。収入は終了時です(最初のターンも含みます)。</li>
+    <li>捨てた札は、引き終わってから墓地に置きます。</li>
+    <li>山札がなくなったら、墓地の札をよく切って新しい山札にし、続けて引きます(<a href="#deckout">山札切れ</a>)。</li>
+  </ul>
+</section>
+
+<section id="summon" class="g-sec">
+  <h2><span class="g-num">六</span>召喚と継承召喚</h2>
+  <h3>召喚</h3>
+  <p>手札の式神の召☆を払い、盤面の<b>空いているマス</b>に置きます。向きは上下左右から自由に選べます。1ターンに何体でも召喚できます。</p>
+  <ul class="g-list is-small">
+    <li>召喚したそのターンから、攻撃も回転もできます(攻撃するときは攻☆を払います)。</li>
+    <li>太極なら召☆が1安くなります(最低1)。召☆3の式神は2、召☆9なら8で出せます。</li>
+  </ul>
+  <h3>継承召喚</h3>
+  <p>盤面にいる<b>自分の式神</b>を、手札の式神と入れ替えて出す召喚です。</p>
+  <ul class="g-list">
+    <li>手札の式神の召☆が、盤面の式神より<b>高い</b>こと(同じは不可)。</li>
+    <li>属性が同じであること。どちらかが空なら、どの属性とでも入れ替えられます。</li>
+    <li>手札の式神の召☆を<b>そのまま</b>払います(太極でも割引はありません)。払ったあと、入れ替えた式神の召☆の<b>半分(切り上げ)</b>が戻ります。</li>
+    <li>位置と向き、<b>受けていたダメージ</b>を引き継ぎます。引き継いだダメージで耐久が0以下になるなら、継承召喚はできません。</li>
+    <li>前の式神がこのターンにもう攻撃・回転していたら、新しい式神もそのぶんはできません。</li>
+    <li>入れ替えた式神は墓地へ。撃破ではないので、霊力価は誰も得ません。</li>
+  </ul>
+  <div class="g-example">
+    <p class="g-ex-h">例</p>
+    <p>陽のマスにいる鉈鬼(陽・耐久3+2=5、ダメージ1で今の耐久4)を、手札の酒呑童子(陽・召☆9・耐久15)に継承召喚します。</p>
+    <p>霊力12から9を払い、鉈鬼の召☆3の半分(切り上げて2)が戻って、残りは<b>5</b>。酒呑童子は陽のマスで15+2=17、ダメージ1を引き継いで<b>耐久16</b>で出ます。耐久11以上なので、この1体で制圧力2です。</p>
+  </div>
+</section>
+
+<section id="command" class="g-sec">
+  <h2><span class="g-num">七</span>命令: 攻撃と回転</h2>
+  <p>盤面の自分の式神に行動させることを<b>命令</b>といいます。</p>
+  <div class="g-two">
+    <div class="g-card-box">
+      <h3>攻撃</h3>
+      <p>攻☆を払い、間合にいる敵を攻撃します。間合に<b>敵が1体もいなければ</b>攻撃できません。</p>
+      <p>攻撃は1体につき<b>1ターン1回</b>。攻撃した式神は、そのターンはもう回転できません。</p>
+    </div>
+    <div class="g-card-box">
+      <h3>回転</h3>
+      <p>回☆1を払い、向きを右か左に<b>90度</b>変えます。</p>
+      <p>回転は1体につき<b>1ターン1回</b>。回転してから攻撃するのはかまいません。</p>
+    </div>
+  </div>
+</section>
+
+<section id="attack" class="g-sec">
+  <h2><span class="g-num">八</span>攻撃と反撃</h2>
+  <h3>攻撃の手順</h3>
+  <ol class="g-steps is-plain">
+    <li><b>宣言</b>: 攻撃する式神を選び、攻☆を払います。単体攻撃なら間合の敵1体を選びます。範囲攻撃なら選ばず、<b>間合にいる式神すべて</b>に当たります。</li>
+    <li><b>隙</b>: 攻撃する式神が、相手の<b>隙のマス</b>にいれば、その相手へのダメージ<b>+2</b>。範囲攻撃では相手ごとに見ます。</li>
+    <li><b>ダメージ</b>: 攻撃力+隙+効果。範囲攻撃は全員に<b>同時に</b>与えます。</li>
+    <li><b>撃破</b>: 耐久が0以下になった式神は撃破され、持ち主の墓地へ。撃破した人が<b>霊力価</b>を得ます。</li>
+    <li><b>反撃</b>: 生き残った相手が、条件を満たせば反撃します。</li>
+  </ol>
+  <div class="g-warn"><b>範囲攻撃は味方にも当たります。</b>間合にいる自分の式神にもダメージを与えます(【術式】の範囲攻撃だけは味方に当たりません)。</div>
+
+  <h3>反撃</h3>
+  <p>攻撃を受けて<b>生き残った敵</b>は、次のすべてを満たすと反撃します。</p>
+  <ul class="g-check">
+    <li>攻撃してきた式神が、自分の<b>反撃間合</b>にいる。</li>
+    <li>その攻撃が、自分の<b>隙からではない</b>。</li>
+    <li>自分に攻撃力と反撃間合があり、【術式】の式神ではない。攻撃してきた側も【術式】ではない。</li>
+  </ul>
+  <ul class="g-list is-small">
+    <li>反撃のダメージは、反撃する式神の<b>カードに書かれた攻撃力</b>。隙の+2や「攻撃の際」の効果は乗りません。</li>
+    <li>反撃に霊力はいりません。反撃に、さらに反撃することはできません。</li>
+    <li>条件を満たす式神は全員が反撃します。2体以上のときは<b>反撃する側が順番を決めて、1体ずつ</b>。途中で攻撃した式神が撃破されたら、残りは反撃しません。</li>
+    <li>反撃で撃破したら、反撃した側がその式神の霊力価を得ます。</li>
+  </ul>
+
+  <h3>攻撃の例</h3>
+  <div class="g-exboard">
+    <div class="g-xb" aria-label="攻撃の例の盤面(先手から見た図)">
+      <div class="g-cell c-void"></div>
+      <div class="g-cell c-yin"><div class="tok is-p1" style="--r:90deg"><img src="/play/art/face/O-004.webp" alt="後手の一角鬼"></div><span class="hp">11 → <b>7</b></span></div>
+      <div class="g-cell c-void"></div>
+      <div class="g-cell c-yin"></div>
+      <div class="g-cell c-taiji"><div class="tok is-p0" style="--r:0deg"><img src="/play/art/face/O-003.webp" alt="先手の鎖鬼"></div><span class="hp">6 → <b>4</b></span></div>
+      <div class="g-cell c-yang"><div class="tok is-p1" style="--r:-90deg"><img src="/play/art/face/O-007.webp" alt="後手の両面"></div><span class="hp">14 → <b>12</b></span></div>
+      <div class="g-cell c-void"></div>
+      <div class="g-cell c-yang"></div>
+      <div class="g-cell c-void"></div>
+    </div>
+    <div class="g-xb-text">
+      <p class="g-xb-legend"><span class="sw is-p0"></span>先手　<span class="sw is-p1"></span>後手　カードの上辺が前</p>
+      <p>先手が、太極で奥を向いた<b>鎖鬼</b>(陰・耐久6・攻撃力2・範囲: 前と右)で攻撃します。</p>
+      <ul class="g-list is-small">
+        <li>奥の<b>一角鬼</b>(陰のマスで9+2=11、制圧力2)は右を向いていて、隙は左右。太極は一角鬼の右、つまり<b>隙</b>です。</li>
+        <li>右の<b>両面</b>(陽のマスで12+2=14)は左を向いていて、太極は両面の<b>前=反撃間合</b>です。</li>
+      </ul>
+    </div>
+  </div>
+  <table class="g-table is-steps">
+    <tbody>
+      <tr><th>① 宣言</th><td>攻☆2を払う(霊力10 → 8)。範囲攻撃なので、間合の一角鬼と両面の両方に当たる。</td></tr>
+      <tr><th>② ダメージ</th><td>一角鬼: 攻撃力2+隙2=<b>4</b>で 11 → 7。両面: <b>2</b>で 14 → 12。</td></tr>
+      <tr><th>③ 撃破</th><td>どちらも生き残る。ただし一角鬼は耐久が10以下になったので<b>制圧力が2から1</b>に。後手の総制圧力は4 → 3。</td></tr>
+      <tr><th>④ 反撃</th><td>一角鬼は隙から攻撃されたので反撃できない。両面は反撃間合から攻撃されたので反撃し、カードの攻撃力<b>2</b>で鎖鬼は 6 → 4。</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="kill" class="g-sec">
+  <h2><span class="g-num">九</span>撃破と霊力価</h2>
+  <p>耐久が0以下になった式神は<b>撃破</b>され、持ち主の墓地に置きます。撃破した人は、その式神の<b>霊力価</b>だけ霊力を得ます。</p>
+  <ul class="g-list is-small">
+    <li>自分の範囲攻撃で自分の式神を撃破したときも、霊力価は<b>自分</b>が得ます。</li>
+    <li>【渾身】や古箪笥の効果で、自分で耐久を減らして撃破されたときは、誰も霊力価を得ません。</li>
+    <li>継承召喚で入れ替えた式神は撃破ではありません。</li>
+  </ul>
+</section>
+
+<section id="win" class="g-sec">
+  <h2><span class="g-num">十</span>制圧と勝利</h2>
+  <h3>制圧力と総制圧力</h3>
+  <p>盤面に式神がいるマスは、その持ち主が<b>制圧</b>しています。その強さが<b>制圧力</b>です。</p>
+  <div class="g-power">
+    <div><b class="pw">1</b><span>ふつうの式神</span></div>
+    <div><b class="pw is-2">2</b><span>今の耐久が<b>11以上</b>の式神</span></div>
+    <div><b class="pw is-0">0</b><span>マヨヒガで隠れている式神</span></div>
+  </div>
+  <p>自分の式神の制圧力の合計が<b>総制圧力</b>です。耐久は戦いの中で上下するので、制圧力も変わります。耐久12の式神が2ダメージを受けて10になれば、2から1に。回復して11に戻れば、また2です。属性マスのおかげで11以上になっても2と数えます。</p>
+  <h3>チェックと勝利</h3>
+  <div class="g-wins">
+    <div class="g-win"><span class="g-win-n">1</span><p>自分のターンの<b>終了時</b>に総制圧力が<b>5以上</b>なら、<b>チェック</b>を宣言します。</p></div>
+    <div class="g-win"><span class="g-win-n">2</span><p>相手のターン。相手はあなたの総制圧力を減らして、チェックを崩しにきます。</p></div>
+    <div class="g-win is-goal"><span class="g-win-n">3</span><p>次の自分のターンの<b>開始時</b>に、総制圧力がまだ<b>5以上</b>なら<b>勝利</b>です。</p></div>
+  </div>
+  <ul class="g-list is-small">
+    <li>開始時に5未満になっていたら、チェックは外れます。そのターンの終了時に5以上なら、あらためてチェックを宣言します。</li>
+    <li>チェックされた側は、自分のターンのうちに相手の総制圧力を4以下にすれば崩せます。式神を撃破する、耐久11以上の式神を10以下まで削る、マヨヒガで隠す、などの手があります。</li>
+    <li>2人が同時にチェックしていることもあります。そのときも、それぞれ自分のターンの開始時に判定します。</li>
+  </ul>
+  <div class="g-example">
+    <p class="g-ex-h">例</p>
+    <p>陰のマスにいる僵尸公主(陰・耐久14+2=16)と、小さな式神が3体。総制圧力は 2+1+1+1=<b>5</b> です。</p>
+  </div>
+</section>
+
+<section id="mana" class="g-sec">
+  <h2><span class="g-num">十一</span>霊力と収入</h2>
+  <p>霊力は、召喚・攻撃・回転・霊具のすべてに使う「お金」です。使わなかった霊力は次のターンに持ち越せますが、<b>15</b>を超えた分はなくなります。</p>
+  <p>自分のターンの<b>終了時</b>に、そのときの<b>総制圧力</b>で収入が決まります。</p>
+  <div class="g-income">
+    <div><span>総制圧力 0〜3</span><b>6</b></div>
+    <div><span>総制圧力 4</span><b>7</b></div>
+    <div class="is-top"><span>総制圧力 5以上</span><b>8</b></div>
+  </div>
+  <p class="g-tip"><b>こつ</b>収入は毎ターン、そのときの総制圧力で決まります。盤面を押さえるほど霊力が増え、崩されれば減ります。</p>
+</section>
+
+<section id="deckout" class="g-sec">
+  <h2><span class="g-num">十二</span>山札切れ</h2>
+  <p>山札がなくなって、墓地を切り直して新しい山札にすることを<b>山札切れ</b>といいます。</p>
+  <div class="g-key"><b>どちらかが2回目の山札切れを起こしたら、その補充が終わったところでゲーム終了。</b>総制圧力の多い方の勝ち、同じなら引き分けです。</div>
+</section>
+
+<section id="reigu" class="g-sec">
+  <h2><span class="g-num">十三</span>霊具</h2>
+  <p>手札の霊具の使☆を払い、書かれた効果を使います。使った霊具は墓地へ置きます。メインのあいだなら、いつでも何枚でも使えます。</p>
+  <ul class="g-list is-small">
+    <li>霊具のダメージは攻撃ではありません。隙の+2はつかず、反撃も起きません。</li>
+    <li>マヨヒガで隠れている式神は、霊具の対象に選べません。</li>
+  </ul>
+  <div class="g-reigu">
+    <img src="/play/art/face/T-009.webp" alt="家鳴り" loading="lazy" width="600" height="850">
+    <img src="/play/art/face/T-011.webp" alt="マヨヒガ" loading="lazy" width="600" height="850">
+    <img src="/play/art/face/T-010.webp" alt="琵琶牧々" loading="lazy" width="600" height="850">
+    <img src="/play/art/face/O-010.webp" alt="茨木の左腕" loading="lazy" width="600" height="850">
+    <img src="/play/art/face/O-011.webp" alt="閻魔獄卒棒" loading="lazy" width="600" height="850">
+    <img src="/play/art/face/O-012.webp" alt="鬼の酒" loading="lazy" width="600" height="850">
+  </div>
+</section>
+
+<section id="faq" class="g-sec">
+  <h2><span class="g-num">十四</span>よくある質問</h2>
+  <div class="g-faq">
+    <details><summary>隙から攻撃されたら、反撃できますか?</summary><p>できません。隙からの攻撃は、ダメージ+2のうえ、その式神からの反撃もありません。</p></details>
+    <details><summary>反撃のダメージに、隙の+2や効果は乗りますか?</summary><p>乗りません。反撃はカードに書かれた攻撃力のままです。提灯お化けの+1、【影討ち】、【巨撃】、【渾身】、【飲酒】は、どれも攻撃のときだけです。</p></details>
+    <details><summary>攻撃したあとに回転できますか?</summary><p>できません。回転してから攻撃するのはかまいません。回転も攻撃も、1体につき1ターン1回までです。</p></details>
+    <details><summary>回復で、カードに書かれた耐久より多くなりますか?</summary><p>なります。回復は耐久の上限19まで増やせます。カードに書かれた耐久で止まることはありません。</p></details>
+    <details><summary>範囲攻撃で、自分の式神を撃破してしまいました。</summary><p>霊力価は自分が得ます。総制圧力は減るので、チェック中なら崩れることがあります。玖龍街の間合は周囲すべてなので、隣の味方もすべて巻き込みます。</p></details>
+    <details><summary>反撃する式神が2体。1体目で攻撃した式神が撃破されたら?</summary><p>2体目は反撃しません。どちらから反撃するかは、反撃する側が決めます。たとえば僵尸公主の反撃で撃破すれば、僵尸公主はそのマスへ移動できます。</p></details>
+    <details><summary>茨木童子の【再生】は、いつ起きますか?</summary><p>茨木童子が攻撃するたびに、必ず起きます。霊力はいりません。ダメージと撃破を済ませたあと、相手の反撃の前に耐久+1。反撃で撃破されるはずだった茨木童子が、これで生き残ることがあります。</p></details>
+    <details><summary>玖龍街の攻撃に反撃できますか?</summary><p>できません。玖龍街の攻撃は隙と反撃間合を無視するので、隙にいても+2はつかず、誰も反撃できません。また、玖龍街は回転の命令で、自分のかわりに他の式神1体を90度回せます(回☆1)。</p></details>
+    <details><summary>古箪笥の「攻撃を命じた際」とは?</summary><p>古箪笥に攻撃の命令をすると、ダメージを与えるかわりに「耐久を1減らして霊力+1」か「カードを1枚引く」を選びます。攻☆は0で、間合に敵がいなくても使えます。攻撃1回分を使うので、そのあと回転はできません。耐久1のときに耐久を減らすと撃破されます(霊力価は誰も得ません)。</p></details>
+    <details><summary>鬼の酒は、どう使いますか?</summary><p>盤面の式神1体を選びます。敵でも味方でもかまいません。耐久を「10にする」効果なので、カードの耐久より高くなることも、下がることもあります。【飲酒】をもつ酒呑童子なら15。耐久が変わらない式神には使えません。敵の大きな式神に使えば制圧力を2から1にでき、チェックを崩す手になります。</p></details>
+    <details><summary>マヨヒガで隠れた式神はどうなりますか?</summary><p>使った人の次のターンの開始時まで、命令・攻撃・効果・霊具の対象にならず、制圧力も0になります。マスはふさいだままなので、そこには召喚できません。継承召喚もできません。</p></details>
+    <details><summary>僵尸公主が撃破して移動するとき、向きはどうなりますか?</summary><p>移動したあと、持ち主が「そのまま・左へ90度・右へ90度」から選びます。相手のターンに反撃で撃破して移動したときも、持ち主が決めます。移動先で耐久が0以下になるなら、移動しません。</p></details>
+    <details><summary>ゲームが長引いたら?</summary><p>40ラウンドを終えても決着がつかなければ、引き分けです。ふつうはその前に山札切れで終わります。</p></details>
+  </div>
+</section>
+
+<section id="cards" class="g-sec">
+  <h2><span class="g-num">十五</span>カード一覧</h2>
+  <p>耐久はカードに書かれた値です。属性マスで±2され、<b>11以上のときは制圧力2</b>です。</p>
+  <h3 class="g-clan is-kuryu">玖龍一門 <small>付喪神 ── 11枚</small></h3>
+  <div class="g-cardlist">
+<article class="cl-card"><img src="/play/art/face/T-001.webp" alt="灯籠の精" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-001</small>灯籠の精</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>3</dd></div><div><dt>攻☆</dt><dd>ー</dd></div><div><dt>耐久</dt><dd>4</dd></div><div><dt>攻撃力</dt><dd>ー</dd></div><div><dt>属性</dt><dd>陽</dd></div><div><dt>霊力価</dt><dd>1</dd></div></dl>
+      <p class="cl-range"><span>間合</span>なし<br><span>反撃間合</span>なし<br><span>隙</span>後</p><p class="cl-note">攻撃はできません(攻撃霊力なし)。撃破されたとき、持ち主が盤面の味方1体を選んで耐久+2。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/T-002.webp" alt="提灯お化け" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-002</small>提灯お化け</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>3</dd></div><div><dt>攻☆</dt><dd>2</dd></div><div><dt>耐久</dt><dd>3</dd></div><div><dt>攻撃力</dt><dd>2</dd></div><div><dt>属性</dt><dd>陰</dd></div><div><dt>霊力価</dt><dd>1</dd></div></dl>
+      <p class="cl-range"><span>間合</span>前(単体)<br><span>反撃間合</span>前<br><span>隙</span>後</p><p class="cl-note">陰の式神を攻撃するとき、ダメージ+1。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/T-004.webp" alt="古箪笥" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-004</small>古箪笥</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>4</dd></div><div><dt>攻☆</dt><dd>0</dd></div><div><dt>耐久</dt><dd>7</dd></div><div><dt>攻撃力</dt><dd>ー</dd></div><div><dt>属性</dt><dd>陽</dd></div><div><dt>霊力価</dt><dd>1</dd></div></dl>
+      <p class="cl-range"><span>間合</span>なし<br><span>反撃間合</span>なし<br><span>隙</span>後</p><p class="cl-note">攻撃の命令をすると、ダメージを与えるかわりに「耐久を1減らして霊力+1」か「カードを1枚引く」。霊力は払わず、間合も相手もいりません。攻撃1回分を使います。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/T-003.webp" alt="変面" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-003</small>変面</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>5</dd></div><div><dt>攻☆</dt><dd>3</dd></div><div><dt>耐久</dt><dd>8</dd></div><div><dt>攻撃力</dt><dd>3</dd></div><div><dt>属性</dt><dd>空</dd></div><div><dt>霊力価</dt><dd>1</dd></div></dl>
+      <p class="cl-range"><span>間合</span>左前・右前(単体)<br><span>反撃間合</span>左前・右前<br><span>隙</span>後</p><p class="cl-note">攻撃のかわりに、間合にいる味方1体の耐久を、変面の攻撃力の分だけ増やせます(攻撃霊力を払う)。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/T-005.webp" alt="照魔鏡" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-005</small>照魔鏡</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>6</dd></div><div><dt>攻☆</dt><dd>3</dd></div><div><dt>耐久</dt><dd>10</dd></div><div><dt>攻撃力</dt><dd>2</dd></div><div><dt>属性</dt><dd>空</dd></div><div><dt>霊力価</dt><dd>2</dd></div></dl>
+      <p class="cl-range"><span>間合</span>左前・前・右前・左・右(単体)<br><span>反撃間合</span>なし<br><span>隙</span>左後・後・右後</p><p class="cl-note">正面のマスに【術式】でない式神(敵味方を問わず)がいるあいだ、照魔鏡の攻撃力はその式神のカードの攻撃力になります。間合は照魔鏡のまま。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/T-007.webp" alt="雲外鏡" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-007</small>雲外鏡</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>6</dd></div><div><dt>攻☆</dt><dd>3</dd></div><div><dt>耐久</dt><dd>10</dd></div><div><dt>攻撃力</dt><dd>2</dd></div><div><dt>属性</dt><dd>空</dd></div><div><dt>霊力価</dt><dd>2</dd></div></dl>
+      <p class="cl-range"><span>間合</span>左前・前・右前・左・右(単体)<br><span>反撃間合</span>なし<br><span>隙</span>左後・後・右後</p><p class="cl-note">召喚したとき、正面のマスに式神(敵味方を問わず)がいれば、その式神と同じ耐久で盤面に出ます。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/T-006.webp" alt="僵尸公主" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-006</small>僵尸公主</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>8</dd></div><div><dt>攻☆</dt><dd>2</dd></div><div><dt>耐久</dt><dd>14</dd></div><div><dt>攻撃力</dt><dd>4</dd></div><div><dt>属性</dt><dd>陰</dd></div><div><dt>霊力価</dt><dd>2</dd></div></dl>
+      <p class="cl-range"><span>間合</span>左前・右前・左後・右後(単体)<br><span>反撃間合</span>前・左・右・後<br><span>隙</span>なし</p><p class="cl-note">攻撃か反撃で相手を撃破したら、そのマスへ移動します。移動したあと、持ち主は向きを左右どちらかに90度変えてもよい。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/T-008.webp" alt="玖龍街" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-008</small>玖龍街</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>10</dd></div><div><dt>攻☆</dt><dd>2</dd></div><div><dt>耐久</dt><dd>19</dd></div><div><dt>攻撃力</dt><dd>1</dd></div><div><dt>属性</dt><dd>空</dd></div><div><dt>霊力価</dt><dd>3</dd></div></dl>
+      <p class="cl-range"><span>間合</span>周囲すべて(範囲)<br><span>反撃間合</span>なし<br><span>隙</span>なし</p><p class="cl-note">回転の命令で、自分のかわりに他の式神1体(敵味方を問わず)を90度回せます。玖龍街の攻撃は隙の+2がなく、だれも反撃できません。間合は周囲すべて(味方にも当たります)。</p></div></article>
+<article class="cl-card is-reigu"><img src="/play/art/face/T-009.webp" alt="家鳴り" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-009</small>家鳴り</h4><dl class="cl-stat"><div><dt>使☆</dt><dd>2</dd></div></dl><p class="cl-note">式神1体(敵味方を問わず)の向きを、好きな向きに変えます。</p></div></article>
+<article class="cl-card is-reigu"><img src="/play/art/face/T-011.webp" alt="マヨヒガ" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-011</small>マヨヒガ</h4><dl class="cl-stat"><div><dt>使☆</dt><dd>2</dd></div></dl><p class="cl-note">式神1体(敵味方を問わず)に重ねて隠します。使った人の次のターン開始時まで、その式神は命令・攻撃・効果の対象にならず、制圧力も0です。味方なら耐久+1、敵なら耐久-1。</p></div></article>
+<article class="cl-card is-reigu"><img src="/play/art/face/T-010.webp" alt="琵琶牧々" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>T-010</small>琵琶牧々</h4><dl class="cl-stat"><div><dt>使☆</dt><dd>6</dd></div></dl><p class="cl-note">自分の盤面の式神全員の耐久+2。自分の式神が盤面にいないときは使えません。</p></div></article>
+  </div>
+  <h3 class="g-clan is-shuten">酒呑一門 <small>鬼 ── 12枚</small></h3>
+  <div class="g-cardlist">
+<article class="cl-card"><img src="/play/art/face/O-001.webp" alt="影鬼" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-001</small>影鬼</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>3</dd></div><div><dt>攻☆</dt><dd>2</dd></div><div><dt>耐久</dt><dd>3</dd></div><div><dt>攻撃力</dt><dd>2</dd></div><div><dt>属性</dt><dd>陰</dd></div><div><dt>霊力価</dt><dd>1</dd></div></dl>
+      <p class="cl-range"><span>間合</span>前(単体)<br><span>反撃間合</span>前<br><span>隙</span>後</p><p class="cl-note">【影討ち】隙から攻撃するとき、さらにダメージ+1(隙の+2と合わせて+3)。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/O-002.webp" alt="鉈鬼" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-002</small>鉈鬼</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>3</dd></div><div><dt>攻☆</dt><dd>2</dd></div><div><dt>耐久</dt><dd>3</dd></div><div><dt>攻撃力</dt><dd>3</dd></div><div><dt>属性</dt><dd>陽</dd></div><div><dt>霊力価</dt><dd>1</dd></div></dl>
+      <p class="cl-range"><span>間合</span>前・右前(単体)<br><span>反撃間合</span>右前<br><span>隙</span>左・後</p><p class="cl-note">効果なし。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/O-003.webp" alt="鎖鬼" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-003</small>鎖鬼</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>4</dd></div><div><dt>攻☆</dt><dd>2</dd></div><div><dt>耐久</dt><dd>6</dd></div><div><dt>攻撃力</dt><dd>2</dd></div><div><dt>属性</dt><dd>陰</dd></div><div><dt>霊力価</dt><dd>1</dd></div></dl>
+      <p class="cl-range"><span>間合</span>前・右(範囲)<br><span>反撃間合</span>なし<br><span>隙</span>左・後</p><p class="cl-note">効果なし。範囲攻撃なので、間合にいる味方にも当たります。反撃はしません。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/O-004.webp" alt="一角鬼" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-004</small>一角鬼</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>5</dd></div><div><dt>攻☆</dt><dd>2</dd></div><div><dt>耐久</dt><dd>9</dd></div><div><dt>攻撃力</dt><dd>2</dd></div><div><dt>属性</dt><dd>陰</dd></div><div><dt>霊力価</dt><dd>1</dd></div></dl>
+      <p class="cl-range"><span>間合</span>2つ前の左・2つ前・2つ前の右・前(単体)<br><span>反撃間合</span>2つ前の左・2つ前・2つ前の右<br><span>隙</span>左・右</p><p class="cl-note">効果なし。2つ前の列にも届きます。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/O-006.webp" alt="一目鬼" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-006</small>一目鬼</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>5</dd></div><div><dt>攻☆</dt><dd>3</dd></div><div><dt>耐久</dt><dd>11</dd></div><div><dt>攻撃力</dt><dd>2</dd></div><div><dt>属性</dt><dd>陽</dd></div><div><dt>霊力価</dt><dd>1</dd></div></dl>
+      <p class="cl-range"><span>間合</span>前・左・右(範囲)<br><span>反撃間合</span>前<br><span>隙</span>左前・右前・後</p><p class="cl-note">【巨撃】自分より今の耐久が少ない相手へのダメージ+1。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/O-005.webp" alt="首引の姫鬼" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-005</small>首引の姫鬼</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>7</dd></div><div><dt>攻☆</dt><dd>4</dd></div><div><dt>耐久</dt><dd>11</dd></div><div><dt>攻撃力</dt><dd>3</dd></div><div><dt>属性</dt><dd>陽</dd></div><div><dt>霊力価</dt><dd>2</dd></div></dl>
+      <p class="cl-range"><span>間合</span>左前・前(範囲)<br><span>反撃間合</span>前<br><span>隙</span>後・右後</p><p class="cl-note">【渾身】攻撃のときに攻撃力+1にしてよい(範囲の全員に乗る)。そのときは攻撃のあとに自分の耐久-1。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/O-007.webp" alt="両面" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-007</small>両面</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>7</dd></div><div><dt>攻☆</dt><dd>2</dd></div><div><dt>耐久</dt><dd>12</dd></div><div><dt>攻撃力</dt><dd>2</dd></div><div><dt>属性</dt><dd>陽</dd></div><div><dt>霊力価</dt><dd>2</dd></div></dl>
+      <p class="cl-range"><span>間合</span>前・後(範囲)<br><span>反撃間合</span>前・後<br><span>隙</span>なし</p><p class="cl-note">効果なし。前と後ろに同時に攻撃し、前と後ろの両方へ反撃します。隙がありません。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/O-008.webp" alt="茨木童子" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-008</small>茨木童子</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>8</dd></div><div><dt>攻☆</dt><dd>4</dd></div><div><dt>耐久</dt><dd>12</dd></div><div><dt>攻撃力</dt><dd>5</dd></div><div><dt>属性</dt><dd>陰</dd></div><div><dt>霊力価</dt><dd>2</dd></div></dl>
+      <p class="cl-range"><span>間合</span>2つ前・前・右前(単体)<br><span>反撃間合</span>2つ前・前・右前<br><span>隙</span>左</p><p class="cl-note">【再生】攻撃するたびに、自分の耐久+1。ダメージのあと、相手の反撃の前に増えます。霊力はいりません。</p></div></article>
+<article class="cl-card"><img src="/play/art/face/O-009.webp" alt="酒呑童子" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-009</small>酒呑童子</h4><dl class="cl-stat"><div><dt>召☆</dt><dd>9</dd></div><div><dt>攻☆</dt><dd>5</dd></div><div><dt>耐久</dt><dd>15</dd></div><div><dt>攻撃力</dt><dd>4</dd></div><div><dt>属性</dt><dd>陽</dd></div><div><dt>霊力価</dt><dd>2</dd></div></dl>
+      <p class="cl-range"><span>間合</span>左前・前・左(範囲)<br><span>反撃間合</span>左前・前<br><span>隙</span>後</p><p class="cl-note">【飲酒】攻撃するとき、霊力2を追加で払えば、その攻撃の攻撃力+1。</p></div></article>
+<article class="cl-card is-reigu"><img src="/play/art/face/O-010.webp" alt="茨木の左腕" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-010</small>茨木の左腕</h4><dl class="cl-stat"><div><dt>使☆</dt><dd>4</dd></div></dl><p class="cl-note">自分の式神1体を選び、その正面の方向でいちばん近い敵に3ダメージ。【拳】ならその敵を1マス遠ざけ、【握】なら1マス近づけます(空いていれば)。</p></div></article>
+<article class="cl-card is-reigu"><img src="/play/art/face/O-011.webp" alt="閻魔獄卒棒" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-011</small>閻魔獄卒棒</h4><dl class="cl-stat"><div><dt>使☆</dt><dd>4</dd></div></dl><p class="cl-note">酒呑一門の自分の式神1体を選び、そのまわり8マス(隙のマスを除く)にいる敵1体に5ダメージ。</p></div></article>
+<article class="cl-card is-reigu"><img src="/play/art/face/O-012.webp" alt="鬼の酒" loading="lazy" width="600" height="850"><div class="cl-body"><h4><small>O-012</small>鬼の酒</h4><dl class="cl-stat"><div><dt>使☆</dt><dd>5</dd></div></dl><p class="cl-note">式神1体(敵味方を問わず)の耐久を10にします。【飲酒】をもつ式神なら15に。下がることもあります。</p></div></article>
+  </div>
+</section>
+
+<footer class="g-foot">
+  <p>オンラインのテスト卓で、このルールのまま遊べます。</p>
+  <p class="g-foot-links"><a class="btn-gold" href="/">オンライン対戦</a><a class="btn-quiet" href="/ai">AIと対戦</a></p>
+  <p class="g-small">開発中のため、カードの絵・数値・ルールは変わることがあります。</p>
+</footer>
+
+</main>
+</div>
+<script type="module" src="/play/guide.ts"></script>
+</body>
+</html>
