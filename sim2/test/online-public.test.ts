@@ -1,0 +1,95 @@
+// The public build (online/server.ts --public): the decided rules and cards
+// only, no settings page, no proposals, and every page marked for
+// play/site-public.css.
+import test from "node:test";
+import assert from "node:assert/strict";
+import { existsSync, rmSync } from "node:fs";
+import { DEFAULT_RULE_PRESET, RULE_PRESETS } from "../src/presets.ts";
+import { createOnlineServer, markPublicHtml, parseServerArgs, publicHidden, PUBLIC_NO_CHANGES, staticTarget } from "../online/server.ts";
+import { call, newApp, seatTwo, send, testRecordDir } from "./online-api-helpers.ts";
+
+const DIR = testRecordDir("public");
+
+test.after(() => {
+  if (existsSync(DIR)) rmSync(DIR, { recursive: true, force: true });
+});
+
+test("public build: --public turns it on, off by default", () => {
+  assert.equal(parseServerArgs([]).publicSite, false);
+  assert.equal(parseServerArgs(["--public"]).publicSite, true);
+  assert.equal(newApp(DIR).publicSite, false);
+  assert.equal(newApp(DIR, { publicSite: true }).publicSite, true);
+});
+
+test("public build: a room gets the decided rules and cards whatever the request asks", () => {
+  const app = newApp(DIR, { publicSite: true });
+  const s = seatTwo(app, { rule: "r0913", pack: "shuten-kyuryu", config: { startMana: [9, 9] } });
+  const room = app.lobby.rooms.get(s.code);
+  assert.ok(room !== undefined);
+  assert.equal(room.settings.rule, DEFAULT_RULE_PRESET);
+  assert.equal(room.settings.pack, RULE_PRESETS[DEFAULT_RULE_PRESET].defaultPack);
+  assert.deepEqual(room.settings.config, {});
+  assert.deepEqual(room.settings.cards, {});
+});
+
+test("public build: settings proposals are refused, other inputs pass", () => {
+  const app = newApp(DIR, { publicSite: true });
+  const s = seatTwo(app);
+  const now = send(s, s.tokens[0], { type: "propose", scope: "now", patch: { rotateCost: 0 }, cards: {} });
+  assert.equal(now.status, 403);
+  assert.equal(now.json.error, PUBLIC_NO_CHANGES);
+  const next = send(s, s.tokens[0], { type: "propose", scope: "next", settings: { rule: "r0913", pack: "shuten-kyuryu", config: {}, cards: {} } });
+  assert.equal(next.status, 403);
+  assert.equal(send(s, s.tokens[0], { type: "mulligan", indices: [] }).status, 200);
+  // the test table keeps its proposals
+  const open = seatTwo(newApp(DIR));
+  assert.equal(send(open, open.tokens[0], { type: "propose", scope: "now", patch: { rotateCost: 0 }, cards: {} }).status, 200);
+});
+
+test("public build: the hidden pages and the page mark", () => {
+  for (const p of ["/rules", "/rules/", "/world", "/print", "/records", "/records.csv", "/play/rules.html", "/play/print.html", "/play/world.html"]) {
+    assert.ok(publicHidden(p), p);
+  }
+  for (const p of ["/", "/ai", "/watch", "/guide", "/room/ABC234", "/play/index.html", "/play/guide.html", "/play/art/face/T-001.webp"]) {
+    assert.ok(!publicHidden(p), p);
+  }
+  assert.equal(staticTarget("/guide"), "/play/guide.html");
+  const marked = markPublicHtml('<!doctype html>\n<html lang="ja">\n<head>\n<title>x</title>\n</head>\n<body></body></html>');
+  assert.match(marked, /<html lang="ja" data-site="public">/);
+  assert.match(marked, /<link rel="stylesheet" href="\/play\/site-public.css">\n<\/head>/);
+});
+
+test("public build over HTTP: marked pages, /rules goes to /guide, records are not served", async () => {
+  const run = async (publicSite: boolean, check: (base: string) => Promise<void>): Promise<void> => {
+    const server = createOnlineServer(newApp(DIR, { publicSite }));
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r()));
+    const addr = server.address();
+    assert.ok(addr !== null && typeof addr === "object");
+    try {
+      await check(`http://127.0.0.1:${addr.port}`);
+    } finally {
+      server.closeAllConnections();
+      await new Promise<void>((r) => server.close(() => r()));
+    }
+  };
+  await run(true, async (base) => {
+    for (const p of ["/", "/ai", "/watch", "/room/ABC234"]) {
+      const html = await (await fetch(base + p)).text();
+      assert.match(html, /data-site="public"/, p);
+      assert.match(html, /\/play\/site-public\.css/, p);
+    }
+    const rules = await fetch(`${base}/rules`, { redirect: "manual" });
+    assert.equal(rules.status, 302);
+    assert.equal(rules.headers.get("location"), "/guide");
+    assert.equal((await fetch(`${base}/records`)).status, 404);
+    assert.equal((await fetch(`${base}/print`)).status, 404);
+    assert.equal((await fetch(`${base}/play/site-public.css`)).status, 200);
+    assert.equal((await fetch(`${base}/play/art/face/back.webp`)).status, 200);
+    assert.equal((await fetch(`${base}/play/art/board/taiji.webp`)).status, 200);
+  });
+  await run(false, async (base) => {
+    const html = await (await fetch(`${base}/ai`)).text();
+    assert.doesNotMatch(html, /data-site=/);
+    assert.equal((await fetch(`${base}/rules`)).status, 200);
+  });
+});

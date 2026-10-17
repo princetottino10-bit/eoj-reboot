@@ -23,6 +23,7 @@ import { cardOfUnit, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { CardDef, Config, Facing, PlayerId, Pos, Unit } from "../src/types.ts";
 import { ATTR_MARK_ID, flames, mark } from "./marks.ts";
+import { BACK_URL, faceUrl, isPublicSite } from "./site.ts";
 
 export type CardSize = "sm" | "md" | "lg";
 
@@ -333,7 +334,10 @@ export const cardFaceHtml = (ctx: Ctx, cardId: string, opts: CardFaceOpts): stri
   const card = cardOf(ctx.pack, cardId);
   const size = opts.size;
   const pid = printIdHtml(card, size);
-  const cls = ["fu", `fu-${size}`, `k-${card.kind}`, `a-${card.attribute}`, `m-${motifOf(card)}`, card.art === undefined ? "" : "has-art", pid === "" ? "" : "has-pid", opts.extraClass ?? ""]
+  // the public build lays the printed face over the drawn parts (they stay for screen readers and for the
+  // numbers that change in play: the board piece's 耐久, a discounted summon cost)
+  const face = isPublicSite() && card.printId !== undefined ? `<img class="fu-face" src="${faceUrl(card.printId)}" alt="" loading="lazy" decoding="async">` : "";
+  const cls = ["fu", `fu-${size}`, `k-${card.kind}`, `a-${card.attribute}`, `m-${motifOf(card)}`, card.art === undefined ? "" : "has-art", pid === "" ? "" : "has-pid", face === "" ? "" : "has-face", opts.extraClass ?? ""]
     .filter((c) => c !== "")
     .join(" ");
   // board pieces carry no name (the detail panel and the cell's label have it)
@@ -343,14 +347,16 @@ export const cardFaceHtml = (ctx: Ctx, cardId: string, opts: CardFaceOpts): stri
   const attr = attrHtml(card, opts);
   const text = size === "sm" ? "" : textHtml(ctx, card, opts);
   if (card.kind === "reigu") {
-    return `<div class="${cls}" data-card="${esc(card.id)}">${art}${cost}${attr}${name}${text}${pid}</div>`;
+    return `<div class="${cls}" data-card="${esc(card.id)}">${art}${cost}${attr}${name}${text}${pid}${face}</div>`;
   }
   const body = `${statsHtml(card, opts)}${rangeBlockHtml(ctx, card, opts)}`;
-  return `<div class="${cls}" data-card="${esc(card.id)}">${art}${cost}${attr}${manaValueHtml(ctx, card, opts)}${name}${body}${text}${pid}</div>`;
+  return `<div class="${cls}" data-card="${esc(card.id)}">${art}${cost}${attr}${manaValueHtml(ctx, card, opts)}${name}${body}${text}${pid}${face}</div>`;
 };
 
 export const cardBackHtml = (extraClass = ""): string =>
-  `<div class="fu fu-back ${extraClass}" aria-hidden="true"><span class="fu-back-mark">符</span></div>`;
+  isPublicSite()
+    ? `<div class="fu fu-back has-face ${extraClass}" aria-hidden="true"><img class="fu-face" src="${BACK_URL}" alt="" decoding="async"></div>`
+    : `<div class="fu fu-back ${extraClass}" aria-hidden="true"><span class="fu-back-mark">符</span></div>`;
 
 export const SEAT_SEAL = ["先", "後"];
 

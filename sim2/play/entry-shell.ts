@@ -13,6 +13,7 @@ import { esc } from "./cards-view.ts";
 import { modeSwitchHtml } from "./mode-switch.ts";
 import type { PlayMode } from "./mode-switch.ts";
 import { badgeHtml, diffFromPresetHtml } from "./settings-badge.ts";
+import { GUIDE_HREF, isPublicSite } from "./site.ts";
 import type { SettingsLook } from "./settings-badge.ts";
 
 /** Per mode: the subtitle under the title, the panel's heading, the gold button. */
@@ -40,8 +41,20 @@ export const entryTopHtml = (mode: PlayMode, s: string | null): string =>
  * the one button to the settings page, and the ruleset's note and the
  * changes from it folded away.
  */
+/** The public build's block in its place: no settings, the way to the rules instead. */
+export const PUBLIC_RULES_HTML = `<div class="entry-rules entry-rules-public">
+    <span class="entry-label">ルール</span>
+    <div class="entry-rules-row">
+      <span class="entry-public-note">はじめての方は、先に遊び方をどうぞ。</span>
+      <a class="btn btn-quiet" href="${GUIDE_HREF}" target="_blank" rel="noopener">遊び方を読む</a>
+    </div>
+    <p class="entry-public-fine">開発中のテスト版です。札の絵・盤・ルールは、製品版までに変わることがあります。</p>
+  </div>`;
+
 export const rulesBlockHtml = (look: SettingsLook, href: string): string =>
-  `<div class="entry-rules">
+  isPublicSite()
+    ? PUBLIC_RULES_HTML
+    : `<div class="entry-rules">
     <span class="entry-label">ルールとカード</span>
     <div class="entry-rules-row">
       <span class="rules-badge">${badgeHtml(look)}</span>

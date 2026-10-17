@@ -16,7 +16,7 @@ import type { Flow, FlowInput } from "../src/flow.ts";
 import { legalEntries } from "../src/preview.ts";
 import { presetConfig } from "../src/presets.ts";
 import type { PlayablePack } from "../src/presets.ts";
-import { decodeSettings, encodeSettings, settingsConfig, settingsHash, settingsPack, upgradeLegacyPack } from "../src/settings.ts";
+import { decodeSettings, defaultSettings, encodeSettings, settingsConfig, settingsHash, settingsPack, upgradeLegacyPack } from "../src/settings.ts";
 import { settingsLabel } from "../src/setting-presets.ts";
 import { summaryLine } from "../src/match-summary.ts";
 import { addHistory, clearHistory, downloadText, historyCsv, historyHtml, readHistory } from "./result-history.ts";
@@ -48,6 +48,7 @@ import {
   writeStoredGame,
 } from "./ai-store.ts";
 import type { AiKind, AiSetup, LoadedGame, StoredAiGame, Stores } from "./ai-store.ts";
+import { isPublicSite } from "./site.ts";
 import { aiOwes, decideAiMove, freshMemo, isPacedMove, playAiMove } from "./ai-seat.ts";
 import type { AiMemo } from "./ai-seat.ts";
 import { boardOf } from "./board-snapshot.ts";
@@ -138,7 +139,7 @@ const table = createTable(tableEl, {
 });
 
 table.slots.header.innerHTML = `<div class="brand"><span class="brand-mark" aria-hidden="true">符</span><span class="brand-name">陰陽符陣<small>(仮)</small></span><span class="brand-sub">対 AI</span></div>`;
-table.slots.tools.innerHTML = `<div class="tools"><button type="button" class="rules-badge" id="rulesBadge" title="基準からの変更点">設定を選んで対局開始</button><a class="btn btn-quiet" id="changeRules" href="${rulesHref({ for: "ai-game" })}" hidden>ルール・カードを変える</a><button type="button" class="btn btn-quiet btn-auto" id="autoPlay" aria-pressed="false" title="あなたの席もAIに指させる">AUTO</button><button type="button" class="btn btn-quiet" id="newGame">新しい対局</button></div>`;
+table.slots.tools.innerHTML = `<div class="tools"><button type="button" class="rules-badge" id="rulesBadge" title="基準からの変更点">設定を選んで対局開始</button><a class="btn btn-quiet" id="changeRules" href="${rulesHref({ for: "ai-game" })}" hidden>ルール・カードを変える</a><a class="btn btn-quiet" href="/guide" target="_blank" rel="noopener">遊び方</a><button type="button" class="btn btn-quiet btn-auto" id="autoPlay" aria-pressed="false" title="あなたの席もAIに指させる">AUTO</button><button type="button" class="btn btn-quiet" id="newGame">新しい対局</button></div>`;
 $("newGame").addEventListener("click", () => void openSetup());
 $("autoPlay").addEventListener("click", () => {
   autoOn = !autoOn;
@@ -227,7 +228,9 @@ const refresh = (): void => {
 
 /** The start card's choices (this tab); the settings are kept encoded, as in a share URL. */
 const remembered = readAiSetup(stores);
-let setup: AiSetup = remembered === null ? defaultAiSetup() : { ...remembered, s: upgradeLegacyPack(remembered.s) };
+const rememberedSetup: AiSetup = remembered === null ? defaultAiSetup() : { ...remembered, s: upgradeLegacyPack(remembered.s) };
+// the public build plays the decided rules and cards only, whatever this tab remembered
+let setup: AiSetup = isPublicSite() ? { ...rememberedSetup, s: encodeSettings(defaultSettings()) } : rememberedSetup;
 
 const saveSetup = (next: AiSetup): void => {
   setup = next;
@@ -587,7 +590,8 @@ const resume = (loaded: LoadedGame): void => {
  * match stored by another visit is offered on the start card.
  */
 const init = async (): Promise<void> => {
-  const shared = new URLSearchParams(location.search).get("s");
+  // the public build takes no settings from a link
+  const shared = isPublicSite() ? null : new URLSearchParams(location.search).get("s");
   let problem = "";
   if (shared !== null) {
     const checked = await checkedSettings(upgradeLegacyPack(shared));

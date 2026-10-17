@@ -1,0 +1,36 @@
+/* The public build (online/server.ts --public adds this sheet and
+   <html data-site="public">, see play/site.ts): the printed card faces and
+   backs over the drawn cards, the printed board's squares under the pieces,
+   and no way to the settings. */
+
+/* ---------------------------------------------------------------- settings */
+[data-site="public"] #rulesBadge,
+[data-site="public"] #changeRules,
+[data-site="public"] [data-tool="diff"],
+[data-site="public"] [data-tool="settings"] { display: none !important; }
+
+.entry-public-note { color: var(--sym-ink-soft, inherit); font-size: 14px; opacity: 0.85; flex: 1 1 auto; align-self: center; }
+.entry-public-fine { margin: 10px 0 0; font-size: 12px; opacity: 0.6; }
+
+/* ------------------------------------------------------------- card faces */
+[data-site="public"] .fu.has-face { background: #111; }
+[data-site="public"] .fu > .fu-face {
+  inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; object-position: 50% 50%;
+  border-radius: inherit; z-index: 4; pointer-events: none;
+}
+/* numbers that change in play stay readable over the printed face */
+[data-site="public"] .fu.has-face .fu-c-sum.is-disc { z-index: 5; background: oklch(20% 0.02 60 / 0.9); border-radius: 0.4em; padding: 0 0.2em; }
+[data-site="public"] .fu.has-face.fu-sm .fu-hp { z-index: 5; }
+[data-site="public"] .fu.has-face.fu-sm .fu-hp .num.hurt,
+[data-site="public"] .fu.has-face.fu-sm .fu-hp .num.over { text-shadow: 0 0 0.2em #000, 0 0 0.4em #000; }
+
+/* card backs: the printed back, no drawn mark */
+[data-site="public"] .fu-back.has-face { background: #0d2a2e; }
+
+/* ------------------------------------------------------------------ board */
+[data-site="public"] .cell { background: url("/play/art/board/void.webp") center / cover no-repeat; }
+[data-site="public"] .cell.c-yin { background: url("/play/art/board/yin.webp") center / cover no-repeat; }
+[data-site="public"] .cell.c-yang { background: url("/play/art/board/yang.webp") center / cover no-repeat; }
+[data-site="public"] .cell.c-taiji { background: url("/play/art/board/taiji.webp") center / cover no-repeat; }
+/* the squares carry their own marks */
+[data-site="public"] .raden:not(.chip) { display: none; }

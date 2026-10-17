@@ -7,6 +7,7 @@ import type { CardPack } from "../src/cards.ts";
 import type { PlayablePack } from "../src/presets.ts";
 import { decodeSettings, defaultSettings, encodeSettings, settingsConfig, upgradeLegacyPack } from "../src/settings.ts";
 import type { GameSettings } from "../src/settings.ts";
+import { isPublicSite } from "../play/site.ts";
 import { entryTopHtml, rulesBlockHtml } from "../play/entry-shell.ts";
 import { bindModeSwitch } from "../play/mode-switch.ts";
 import { rulesHref } from "../play/rules-url.ts";
@@ -75,7 +76,8 @@ const remember = (): void => {
 /** Settings from a ?s= share link, validated against the printed pack. */
 const fromShareLink = async (): Promise<void> => {
   const rawShared = new URLSearchParams(location.search).get("s");
-  if (rawShared === null) return;
+  // the public build makes every room with the decided rules and cards
+  if (rawShared === null || isPublicSite()) return;
   const shared = upgradeLegacyPack(rawShared);
   const first = decodeSettings(shared, null);
   if (!first.ok) {
