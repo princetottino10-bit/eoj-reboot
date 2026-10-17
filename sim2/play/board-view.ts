@@ -125,12 +125,12 @@ const cellHtml = (vm: BoardVM, pos: Pos): string => {
   // the glowing squares of a picked hand card say what they do to it (遊びやすくする工夫, 10/17)
   const hint = mark === "summon" ? vm.placeHints?.get(k) : undefined;
   const hintText =
-    hint === undefined ? "" : `${hint.delta === 0 ? "" : ` / 耐久${hint.delta > 0 ? "+" : "−"}${Math.abs(hint.delta)}`}${hint.threats > 0 ? ` / 相手の間合の中(${hint.threats}体)` : ""}`;
+    hint === undefined ? "" : `${hint.delta === 0 ? "" : ` / 耐久${hint.delta > 0 ? "+" : "−"}${Math.abs(hint.delta)}`}${hint.threats > 0 ? ` / 敵間合内(${hint.threats}体)` : ""}`;
   const hintHtml =
     hint === undefined || (hint.delta === 0 && hint.threats === 0)
       ? ""
       : `<span class="cell-hint" aria-hidden="true">${hint.delta === 0 ? "" : `<b class="${hint.delta > 0 ? "is-up" : "is-down"}">耐久${hint.delta > 0 ? "+" : "−"}${Math.abs(hint.delta)}</b>`}${
-          hint.threats > 0 ? `<b class="is-threat">狙われる${hint.threats > 1 ? `×${hint.threats}` : ""}</b>` : ""
+          hint.threats > 0 ? `<b class="is-threat">敵間合内${hint.threats > 1 ? `×${hint.threats}` : ""}</b>` : ""
         }</span>`;
   if (hint !== undefined && hint.threats > 0) cls.push("is-threatened");
   const piece =

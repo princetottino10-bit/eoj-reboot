@@ -188,10 +188,11 @@ const raceNote = (vm: PromptVM): string => {
   const need = controlNeed(vm.ctx, vm.board);
   const occ = occupiedOf(vm.ctx, vm.board, me);
   const line = (cls: string, text: string): string => `<span class="race-note ${cls}">${text}</span> `;
-  if (vm.board.players[opp].reach) return line("is-danger", `相手が制圧チェック中: 相手の制圧数を${need}未満に崩さないと負け`);
-  if (vm.board.players[me].reach) return line("is-good", "制圧チェック中: 相手の番をしのげば勝ち");
-  if (occ >= need) return line("is-good", `制圧数${occ}: このままターンを終えると制圧チェック`);
-  if (need - occ === 1) return line("is-near", `あと制圧力1で制圧チェック(ターン終了時に${need}以上)`);
+  // facts only (10/18): the counts and the rule, no advice on what to do about them
+  const hold = vm.ctx.cfg.controlHold === "next_turn_end" ? "ターン終了時まで" : "ターン開始時に";
+  if (vm.board.players[opp].reach) return line("is-danger", `相手が制圧チェック中(相手の次の${hold}相手の制圧数${need}以上で相手の勝ち)`);
+  if (vm.board.players[me].reach) return line("is-good", `制圧チェック中(次の自分の${hold}制圧数${need}以上で勝ち)`);
+  if (occ >= need - 1) return line(occ >= need ? "is-good" : "is-near", `制圧数${occ}/${need}(ターン終了時に${need}以上で制圧チェック)`);
   return "";
 };
 
@@ -323,7 +324,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
   if (vm.endConfirm) {
     const left = legal.filter((e) => e.action.kind !== "pass").length;
     const mana = vm.viewer === null ? 0 : vm.board.players[vm.viewer].mana;
-    const note = left > 0 ? [`<span class="warn">まだ使える行動があります(霊力 ${mana})</span>`] : [];
+    const note = left > 0 ? [`残り霊力 ${mana}`] : [];
     return bar("confirm", "ターンを終了しますか?", note, [btn("end-yes", `終了する${kbd("(Enter)")}`, "btn-gold"), btn("end-no", `戻る${kbd("(Esc)")}`, "btn-quiet")], f);
   }
   switch (s.kind) {

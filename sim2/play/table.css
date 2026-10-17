@@ -1320,3 +1320,16 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   .yy[data-prompt="mulligan"] .mull-title { font-size: 22px; }
   .yy[data-prompt="mulligan"] .mull-note { display: none; }
 }
+
+/* 敵味方の赤青をはっきり (10/18): my side is always blue, the other red (the seat colours swap
+   for a 後手 viewer), and a piece wears its side's colour as a frame and a pool of light */
+.yy[data-viewer="1"] { --p0: oklch(62% 0.2 28); --p1: oklch(64% 0.17 252); }
+.yy:not([data-viewer="1"]) { --p0: oklch(64% 0.17 252); --p1: oklch(62% 0.2 28); }
+.pc::before {
+  content: ""; position: absolute; inset: 4%; border-radius: 12%; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in oklch, var(--own) 55%, transparent), color-mix(in oklch, var(--own) 18%, transparent) 70%, transparent);
+}
+.pc .fu-sm {
+  box-shadow: 0 0 0 0.09em var(--own), 0 0 0 0.15em oklch(10% 0 0 / 0.7), 0 0.4em 0.7em -0.2em oklch(0% 0 0 / 0.75), 0 0 1.4em 0.05em color-mix(in oklch, var(--own) 80%, transparent);
+}
+.pc-cube { width: 1.4em; height: 1.4em; left: -0.6em; bottom: -0.6em; }

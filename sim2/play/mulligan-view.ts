@@ -25,6 +25,5 @@ export const mulliganPanelHtml = (ctx: Ctx, cards: HandCard[], look: CardLook, m
     <p class="mull-lead">最初の手札を<b>1回だけ</b>入れ替えられます。いらない札をタップ → ${ctx.cfg.mulliganTo === "grave" ? "捨て札にして" : "山札に戻して"}、同じ枚数を引きます。</p>
     <div class="mull-cards">${items}</div>
     <div class="mull-btns">${go}</div>
-    <p class="mull-note">迷ったら、そのまま始めて大丈夫です。</p>
   </div>`;
 };

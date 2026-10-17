@@ -45,7 +45,7 @@ test("the board writes the hints on the glowing squares only", () => {
   };
   const html = boardHtml(vm);
   assert.match(html, new RegExp(`耐久\\+${ctx.cfg.attrBonus}`));
-  assert.match(html, /狙われる/);
+  assert.match(html, /敵間合内/);
   // (0,1) has a hint but no glow: nothing is written there
   assert.doesNotMatch(html, new RegExp(`耐久−${ctx.cfg.attrBonus}`));
 });
@@ -59,11 +59,12 @@ test("the idle prompt says how close either side is to 制圧", () => {
   const need = controlNeed(ctx, s);
   for (let i = 0; i < need - 1; i++) place(s, "sk01", 0, i % 3, Math.floor(i / 3), 0);
   const near = promptHtml(vm({ board: boardView(s), prompt: { kind: "main", legal: legalEntries(ctx, s) } }));
-  assert.match(near, /あと制圧力1で/);
+  assert.match(near, new RegExp(`制圧数${need - 1}/${need}`));
+  assert.doesNotMatch(near, /しないと|しのげば|崩さない/);
   const t = blankState(ctx);
   t.players[1].reach = true;
   const danger = promptHtml(vm({ board: boardView(t), prompt: { kind: "main", legal: legalEntries(ctx, t) } }));
   assert.match(danger, /相手が制圧チェック中/);
   const calm = promptHtml(vm({ board: boardView(blankState(ctx)), prompt: { kind: "main", legal: [] } }));
-  assert.doesNotMatch(calm, /制圧チェック中|あと制圧力/);
+  assert.doesNotMatch(calm, /制圧チェック|制圧数/);
 });

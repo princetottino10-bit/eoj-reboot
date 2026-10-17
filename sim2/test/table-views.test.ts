@@ -66,7 +66,7 @@ test("prompt texts: cell names for placing, a keyboard hint that can be hidden, 
   const idle = promptHtml(vm({ board: boardView(s), hand: ["sk01"], prompt: { kind: "main", legal } }));
   assert.match(idle, /終わったら「ターン終了」<span class="kbd-hint">\(Enter\)<\/span>/);
   const ask = promptHtml(vm({ board: boardView(s), hand: ["sk01"], prompt: { kind: "main", legal }, endConfirm: true }));
-  assert.match(ask, /まだ使える行動があります/);
+  assert.match(ask, /残り霊力 \d+/);
 });
 
 test("acted marks show only on the turn player's pieces; a piece prints no name or seat seal, its owner is a cube", () => {
