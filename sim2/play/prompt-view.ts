@@ -171,15 +171,17 @@ const bar = (kind: string, hint: string, lines: string[], buttons: string[], fla
 const kbd = (text: string): string => `<span class="kbd-hint">${text}</span>`;
 
 /** The board's range colours, the same as the card diagram (旧・隙 = the provisional amber ring). */
-const LEGEND =
-  '<span class="legend"><i class="lg lg-attack"></i>間合 <i class="lg lg-counter"></i>反撃間合 <i class="lg lg-blind"></i>隙 <i class="lg lg-gap"></i>旧・隙</span>';
+const legend = (vm: PromptVM): string =>
+  `<span class="legend"><i class="lg lg-attack"></i>間合 <i class="lg lg-counter"></i>反撃間合 <i class="lg lg-blind"></i>隙${
+    vm.ctx.cfg.counterMode === "gap" ? ' <i class="lg lg-gap"></i>旧・隙' : ""
+  }</span>`;
 
 const unitHint = (vm: PromptVM, uid: number, own: boolean): string => {
   const u = unitById(vm.board, uid);
   if (u === undefined) return "";
   // The gap explanation lives in the detail panel; repeating it here wraps the bar over the board.
   const who = own ? "" : `${esc(vm.names[u.owner])}の`;
-  return `${who}<b>${esc(cardName(vm.ctx, u.cardId))}</b>${own ? ": 丸いメニューから命令を選ぶ" : ""} ${LEGEND}`;
+  return `${who}<b>${esc(cardName(vm.ctx, u.cardId))}</b>${own ? ": 丸いメニューから命令を選ぶ" : ""} ${legend(vm)}`;
 };
 
 /** Confirm lines for a targeted reigu (HTML). */
@@ -332,7 +334,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       const verb = s.mode === "heal" ? "回復" : s.mode === "konshin" ? "渾身攻撃" : s.mode === "regen" ? "再生攻撃" : s.mode === "drink" ? "飲酒攻撃" : "攻撃";
       const e = aimedEntry(legal, s);
       if (e === undefined) {
-        return bar("pick", `${verb}する${s.mode === "heal" ? "味方" : "相手"}を盤上で選ぶ ${LEGEND}`, [], [cancel], f);
+        return bar("pick", `${verb}する${s.mode === "heal" ? "味方" : "相手"}を盤上で選ぶ ${legend(vm)}`, [], [cancel], f);
       }
       const lines = e.preview?.kind === "attack" ? attackSummaryLines(vm.ctx, vm.board, vm.names, s.uid, e.preview) : [];
       const who = unitById(vm.board, s.uid);

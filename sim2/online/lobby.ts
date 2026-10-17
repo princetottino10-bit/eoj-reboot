@@ -138,7 +138,7 @@ const create = async (): Promise<void> => {
   $<HTMLAnchorElement>("enter").href = `/room/${json.code}`;
   $("created").hidden = false;
   // the room is made: another press would only make a second, empty one (they count against the per-address cap)
-  button.textContent = "部屋を作りました(下の「部屋に入る」へ)";
+  button.textContent = "部屋ができました ↓";
 };
 
 const init = async (): Promise<void> => {

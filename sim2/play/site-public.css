@@ -41,3 +41,21 @@
 [data-site="public"] .cell.c-taiji { background: url("/play/art/board/taiji.webp") center / cover no-repeat; }
 /* the squares carry their own marks */
 [data-site="public"] .raden:not(.chip) { display: none; }
+
+/* ------------------------------------------------------------- range */
+/* the printed range diagram is a few px wide on a board piece (a phone read it like an eye chart):
+   the drawn one goes over it, big enough to read at a glance */
+[data-site="public"] .fu-sm.has-face .fu-rblock { z-index: 5; right: 3%; bottom: 3%; height: auto; width: 36%; }
+[data-site="public"] .fu-sm.has-face .fu-range,
+[data-site="public"] .fu-sm.has-face .fu-range.g5 { width: 100%; box-shadow: 0 0 0 0.06em var(--sym-ink), 0 0.15em 0.4em oklch(0% 0 0 / 0.55); }
+@media (max-width: 700px) {
+  [data-site="public"] .fu-sm.has-face .fu-rblock { width: 48%; }
+  /* the hand card's printed range, the same */
+  [data-site="public"] .fu-md.has-face .fu-rblock { z-index: 5; top: auto; right: 4%; bottom: 30%; width: 42%; }
+  [data-site="public"] .fu-md.has-face .fu-type { display: none; }
+  [data-site="public"] .fu-md.has-face .fu-range,
+  [data-site="public"] .fu-md.has-face .fu-range.g5 { width: 100%; box-shadow: 0 0 0 0.06em var(--sym-ink), 0 0.15em 0.4em oklch(0% 0 0 / 0.55); }
+}
+
+/* two ways to play (no 観戦): the switch splits in two, not three with an empty third */
+[data-site="public"] .mode-switch { grid-template-columns: repeat(2, minmax(0, 1fr)); }
