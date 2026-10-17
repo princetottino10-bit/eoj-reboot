@@ -414,11 +414,30 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       return bar("confirm", `<b>${esc(card.nameJa)}</b>を使う:`, lines, [btn("confirm", `使う(霊力−${card.summonCost})`, risky ? "btn-red" : "btn-gold"), retarget, cancel], f);
     }
     default:
-      return bar("idle", `${raceNote(vm)}手札の札か、自分の駒を選ぶ${kbd("(Enter でターン終了)")}`, [], [], f);
+      return bar("idle", `${raceNote(vm)}札を出す・駒で攻撃する・駒を回す。終わったら「ターン終了」${kbd("(Enter)")}`, [], [], f);
   }
 };
 
+/** 今なにをする場面か (10/17): the label that opens the prompt, so a first-timer always knows whose step it is. */
+const stepOf = (vm: PromptVM): { label: string; cls: string } | null => {
+  const p = vm.prompt;
+  if (p.kind === "over" || vm.board.ended) return null;
+  if (p.kind === "mulligan") return { label: "対局前: 手札の引き直し", cls: "is-you" };
+  if (p.kind === "main") return { label: "あなたの番", cls: "is-you" };
+  if (p.kind === "discard") return { label: "あなたの番: 手札整理", cls: "is-you" };
+  if (p.kind !== "idle") return { label: "あなたが選ぶ", cls: "is-you" };
+  if (vm.viewer === null) return null;
+  if (/引き直/.test(p.text)) return { label: "対局前", cls: "is-opp" };
+  return vm.board.turnPlayer === vm.viewer ? null : { label: "相手の番", cls: "is-opp" };
+};
+
 export const promptHtml = (vm: PromptVM): string => {
+  const step = stepOf(vm);
+  const html = promptBody(vm);
+  return step === null ? html : html.replace('<p class="pr-hint">', `<p class="pr-hint"><b class="pr-step ${step.cls}">${step.label}</b>`);
+};
+
+const promptBody = (vm: PromptVM): string => {
   const p = vm.prompt;
   switch (p.kind) {
     case "main":

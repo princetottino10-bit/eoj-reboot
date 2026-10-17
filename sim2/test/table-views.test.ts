@@ -64,7 +64,7 @@ test("prompt texts: cell names for placing, a keyboard hint that can be hidden, 
   assert.match(place1, /灯籠の精<\/b>を右上の空に置く向き/);
   assert.doesNotMatch(place1, /\(2,2\)/);
   const idle = promptHtml(vm({ board: boardView(s), hand: ["sk01"], prompt: { kind: "main", legal } }));
-  assert.match(idle, /<span class="kbd-hint">\(Enter でターン終了\)<\/span>/);
+  assert.match(idle, /終わったら「ターン終了」<span class="kbd-hint">\(Enter\)<\/span>/);
   const ask = promptHtml(vm({ board: boardView(s), hand: ["sk01"], prompt: { kind: "main", legal }, endConfirm: true }));
   assert.match(ask, /まだ使える行動があります/);
 });

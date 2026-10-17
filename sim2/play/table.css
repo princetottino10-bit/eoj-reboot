@@ -1263,3 +1263,60 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .race-note.is-good { background: var(--gold); color: var(--ink); }
 .race-note.is-near { color: var(--gold-hi); border: 1px solid var(--gold-line); }
 @media (max-width: 700px) { .race-note { white-space: normal; display: inline-block; margin-bottom: 0.2em; } }
+
+/* 今なにをする場面か (10/17): the step label that opens the prompt */
+.pr-step {
+  display: inline-block; margin-right: 8px; padding: 1px 9px; border-radius: 999px; vertical-align: 1px;
+  font-family: var(--font-gothic, inherit); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap;
+}
+.pr-hint b.pr-step.is-you { font-family: inherit; color: #1a1408; background: var(--gold-hi); }
+.pr-hint b.pr-step.is-opp { font-family: inherit; color: var(--paper, #efe6d2); background: oklch(40% 0.03 260); }
+
+/* the opening mulligan: a panel of its own over the empty board, the hand large */
+.yy-board { position: relative; }
+.yy[data-prompt="mulligan"] .yy-prompt { display: none; }
+.yy[data-prompt="mulligan"] .yy-hand .hand { visibility: hidden; }
+.mull {
+  position: absolute; left: 0; right: 0; top: 0; min-height: 100%; z-index: 12; container-type: inline-size;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 18px 14px; border-radius: 10px; text-align: center;
+  background: oklch(13% 0.012 60 / 0.92); box-shadow: inset 0 0 0 1px var(--gold-line), 0 18px 40px oklch(0% 0 0 / 0.5);
+  backdrop-filter: blur(3px);
+}
+.mull-step { margin: 0; font-size: 12px; letter-spacing: 0.3em; color: var(--gold-dim); }
+.mull-title { margin: 0; font-family: var(--font-mincho); font-size: clamp(22px, 6.5cqw, 34px); color: var(--gold-hi); letter-spacing: 0.08em; }
+.mull-lead { margin: 0; max-width: 30em; font-size: clamp(13px, 3.3cqw, 15px); line-height: 1.6; text-wrap: balance; }
+.mull-lead b { color: var(--gold-hi); }
+.mull-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 2.4cqw; width: 100%; margin: 6px 0 2px; }
+.mull-card { position: relative; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; transition: transform var(--t-fast, 0.15s); }
+.mull-card .fu { --fu-w: min(150px, 17.4cqw); --lines: 4; }
+.mull-card:hover { transform: translateY(-3px); }
+.mull-card.is-marked { transform: translateY(-6px); }
+.mull-card.is-marked .fu { filter: brightness(0.55) saturate(0.6); box-shadow: 0 0 0 3px var(--vermilion), 0 10px 22px oklch(0% 0 0 / 0.55); }
+.mull-seal {
+  position: absolute; left: 50%; top: 42%; translate: -50% -50%; rotate: -8deg; pointer-events: none;
+  padding: 4px 8px; border: 2px solid var(--vermilion); border-radius: 4px; background: oklch(15% 0.02 30 / 0.85);
+  color: oklch(78% 0.15 35); font-weight: 700; font-size: clamp(12px, 3cqw, 15px); white-space: nowrap; letter-spacing: 0.1em;
+}
+.mull-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.mull-btns .btn { min-height: 44px; padding-inline: 18px; font-size: 15px; }
+.mull-note { margin: 0; font-size: 12px; color: var(--muted, #9a927f); }
+@container (max-width: 520px) {
+  .mull-cards { gap: 10px 3cqw; }
+  .mull-card .fu { --fu-w: 28cqw; --lines: 3; }
+}
+/* phones: the board is empty during the mulligan, so the panel takes its place in the flow
+   (it may be taller than the board) and my side waits below it */
+@media (max-width: 700px), (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  .yy[data-prompt="mulligan"] .yy-board { aspect-ratio: auto; }
+  .yy[data-prompt="mulligan"] .yy-board .bd { display: none; }
+  .yy[data-prompt="mulligan"] .yy-self { display: none; }
+  .yy[data-prompt="mulligan"] .mull { position: static; min-height: 0; padding: 14px 10px 16px; gap: 8px; }
+}
+/* landscape phones: one row of five, so the buttons stay on screen */
+@media (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  .yy[data-prompt="mulligan"] .mull-card .fu { --fu-w: 17.5cqw; --lines: 3; }
+  .yy[data-prompt="mulligan"] .mull { gap: 6px; padding: 10px 10px 12px; }
+  .yy[data-prompt="mulligan"] .mull-title { font-size: 22px; }
+  .yy[data-prompt="mulligan"] .mull-note { display: none; }
+}

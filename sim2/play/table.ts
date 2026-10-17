@@ -25,6 +25,7 @@ import { ensureMarks } from "./marks.ts";
 import type { HandCard, HandMode } from "./hand-view.ts";
 import { detailHtml, endCold, endOcc, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, recapHtml, recapOf, turnHtml } from "./hud.ts";
 import type { CardLook, Focus } from "./hud.ts";
+import { mulliganPanelHtml } from "./mulligan-view.ts";
 import { promptHtml } from "./prompt-view.ts";
 import { esc, resultHow, unitAtPos, unitById } from "./render.ts";
 import { resultStatsHtml, summaryOfView } from "./result-stats.ts";
@@ -980,7 +981,8 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     put(el.pilesOpp, pilesHtml(m.ctx, m.board, top, lk));
     put(el.pilesSelf, pilesHtml(m.ctx, m.board, bottom, lk));
     put(el.turn, turnHtml(m.ctx, m.board, m.names, { phaseText: m.phaseText, mulligan }));
-    put(el.board, boardHtml(boardVM(m)));
+    // the opening mulligan is a panel of its own over the still-empty board (今なにをする場面か, 10/17)
+    put(el.board, boardHtml(boardVM(m)) + (m.prompt.kind === "mulligan" ? mulliganPanelHtml(m.ctx, handCards(m), look(m), marked.size) : ""));
     renderHand(m);
     put(
       el.prompt,
