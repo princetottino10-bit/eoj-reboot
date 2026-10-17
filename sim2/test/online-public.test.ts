@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, rmSync } from "node:fs";
 import { DEFAULT_RULE_PRESET, RULE_PRESETS } from "../src/presets.ts";
-import { createOnlineServer, markPublicHtml, parseServerArgs, publicHidden, PUBLIC_NO_CHANGES, staticTarget } from "../online/server.ts";
+import { createOnlineServer, markPublicHtml, parseServerArgs, publicHidden, PUBLIC_NO_CHANGES, staticTarget, targetFor } from "../online/server.ts";
 import { call, newApp, seatTwo, send, testRecordDir } from "./online-api-helpers.ts";
 
 const DIR = testRecordDir("public");
@@ -47,13 +47,17 @@ test("public build: settings proposals are refused, other inputs pass", () => {
 });
 
 test("public build: the hidden pages and the page mark", () => {
-  for (const p of ["/rules", "/rules/", "/world", "/print", "/records", "/records.csv", "/play/rules.html", "/play/print.html", "/play/world.html"]) {
+  for (const p of ["/rules", "/rules/", "/world", "/print", "/records", "/records.csv", "/play/rules.html", "/play/print.html", "/play/world.html", "/watch", "/play/watch.html"]) {
     assert.ok(publicHidden(p), p);
   }
-  for (const p of ["/", "/ai", "/watch", "/guide", "/room/ABC234", "/play/index.html", "/play/guide.html", "/play/art/face/T-001.webp"]) {
+  for (const p of ["/", "/online", "/ai", "/guide", "/room/ABC234", "/play/index.html", "/play/guide.html", "/play/art/face/T-001.webp"]) {
     assert.ok(!publicHidden(p), p);
   }
   assert.equal(staticTarget("/guide"), "/play/guide.html");
+  // the public front page is the welcome page; the lobby is at /online on both builds
+  assert.equal(targetFor("/", true), "/play/welcome.html");
+  assert.equal(targetFor("/", false), "/online/lobby.html");
+  assert.equal(targetFor("/online", true), "/online/lobby.html");
   const marked = markPublicHtml('<!doctype html>\n<html lang="ja">\n<head>\n<title>x</title>\n</head>\n<body></body></html>');
   assert.match(marked, /<html lang="ja" data-site="public">/);
   assert.match(marked, /<link rel="stylesheet" href="\/play\/site-public.css">\n<\/head>/);
@@ -73,7 +77,7 @@ test("public build over HTTP: marked pages, /rules goes to /guide, records are n
     }
   };
   await run(true, async (base) => {
-    for (const p of ["/", "/ai", "/watch", "/room/ABC234"]) {
+    for (const p of ["/", "/online", "/ai", "/room/ABC234"]) {
       const html = await (await fetch(base + p)).text();
       assert.match(html, /data-site="public"/, p);
       assert.match(html, /\/play\/site-public\.css/, p);
@@ -83,6 +87,9 @@ test("public build over HTTP: marked pages, /rules goes to /guide, records are n
     assert.equal(rules.headers.get("location"), "/guide");
     assert.equal((await fetch(`${base}/records`)).status, 404);
     assert.equal((await fetch(`${base}/print`)).status, 404);
+    assert.equal((await fetch(`${base}/watch`)).status, 404);
+    assert.match(await (await fetch(`${base}/`)).text(), /AIと対戦する/);
+    assert.match(await (await fetch(`${base}/online`)).text(), /部屋を作る/);
     assert.equal((await fetch(`${base}/play/site-public.css`)).status, 200);
     assert.equal((await fetch(`${base}/play/art/face/back.webp`)).status, 200);
     assert.equal((await fetch(`${base}/play/art/board/taiji.webp`)).status, 200);
@@ -91,5 +98,7 @@ test("public build over HTTP: marked pages, /rules goes to /guide, records are n
     const html = await (await fetch(`${base}/ai`)).text();
     assert.doesNotMatch(html, /data-site=/);
     assert.equal((await fetch(`${base}/rules`)).status, 200);
+    assert.match(await (await fetch(`${base}/`)).text(), /部屋を作る/);
+    assert.equal((await fetch(`${base}/watch`)).status, 200);
   });
 });

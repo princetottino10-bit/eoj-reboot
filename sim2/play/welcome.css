@@ -1,0 +1,101 @@
+/* 陰陽符陣 トップ (/ in the public build) — what the game is, and the ways in.
+   Rides on play/guide.css for the tokens, the header and the fonts. */
+
+.w-body { line-height: 1.8; }
+.w-body > main { overflow-x: clip; }
+
+/* ------------------------------------------------------------ hero */
+.w-hero {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: center;
+  max-width: 1180px; margin: 0 auto; padding: 56px 16px 48px;
+}
+.w-hero h1 {
+  font-family: var(--font-mincho); font-weight: 800; font-size: clamp(36px, 5.4vw, 64px); line-height: 1.25;
+  margin: 10px 0 18px; letter-spacing: 0.06em; text-shadow: 0 4px 24px oklch(0% 0 0 / 0.5);
+}
+.w-lead { margin: 0 0 28px; color: var(--text-dim); max-width: 32em; font-size: 17px; }
+.w-lead b { color: var(--text); }
+
+.w-cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; }
+.w-cta.is-center { justify-content: center; }
+.w-btn-main, .w-btn-sub {
+  display: inline-flex; flex-direction: column; justify-content: center; gap: 2px; text-decoration: none;
+  padding: 14px 28px; border-radius: 6px; font-family: var(--font-mincho); font-weight: 800; letter-spacing: 0.08em; line-height: 1.3;
+}
+.w-btn-main small, .w-btn-sub small { font-family: var(--font-gothic); font-weight: 500; font-size: 12px; letter-spacing: 0.02em; opacity: 0.8; }
+.w-btn-main {
+  font-size: 21px; color: var(--bg-deep); background: linear-gradient(180deg, var(--gold-hi), var(--gold) 70%, var(--gold-dim));
+  box-shadow: 0 10px 30px oklch(80% 0.12 85 / 0.25), inset 0 1px 0 oklch(100% 0 0 / 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.w-btn-main:hover { transform: translateY(-2px); box-shadow: 0 14px 36px oklch(80% 0.12 85 / 0.35), inset 0 1px 0 oklch(100% 0 0 / 0.5); }
+.w-btn-sub { font-size: 16px; color: var(--text); border: 1px solid var(--gold-line); background: var(--lacquer); }
+.w-btn-sub:hover { border-color: var(--gold); }
+.w-note { margin: 16px 0 0; font-size: 13.5px; color: var(--text-dim); }
+
+.w-hero-art { position: relative; aspect-ratio: 1 / 1; max-width: 560px; justify-self: center; width: 100%; }
+.w-board {
+  width: 88%; margin: 6% 0 0 6%; border-radius: 8px; transform: perspective(1400px) rotateX(18deg) rotateZ(-4deg);
+  box-shadow: 0 30px 60px oklch(0% 0 0 / 0.6), 0 0 0 1px var(--gold-line);
+}
+.w-card {
+  position: absolute; width: 34%; border-radius: 10px;
+  box-shadow: 0 20px 40px oklch(0% 0 0 / 0.6), 0 0 0 1px oklch(100% 0 0 / 0.1);
+}
+.w-card-a { left: -4%; bottom: -4%; transform: rotate(-10deg); }
+.w-card-b { right: -3%; top: -2%; transform: rotate(8deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .w-card-a { animation: w-float 6s ease-in-out infinite; }
+  .w-card-b { animation: w-float 7s ease-in-out -2s infinite; }
+}
+@keyframes w-float { 50% { translate: 0 -8px; } }
+
+/* ------------------------------------------------------------ sections */
+.w-sec { max-width: 1180px; margin: 0 auto; padding: 56px 16px 24px; border-top: 1px solid oklch(100% 0 0 / 0.06); }
+.w-sec h2, .w-final h2 { font-family: var(--font-mincho); font-weight: 800; font-size: clamp(26px, 3.2vw, 36px); margin: 0 0 20px; letter-spacing: 0.06em; line-height: 1.4; }
+.w-sec-kicker { display: block; font-size: 14px; color: var(--gold); letter-spacing: 0.4em; font-weight: 700; margin-bottom: 4px; }
+.w-sec-lead { color: var(--text-dim); margin: -6px 0 22px; }
+.w-sec-lead b { color: var(--text); }
+.w-more { margin: 18px 0 0; }
+.w-more a { font-size: 14.5px; }
+
+.w-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.w-steps li { position: relative; padding: 22px 22px 18px; background: var(--lacquer); border: 1px solid oklch(100% 0 0 / 0.08); border-radius: 10px; }
+.w-step-num {
+  display: inline-grid; place-items: center; width: 44px; height: 44px; font-family: var(--font-mincho); font-weight: 800; font-size: 20px;
+  color: var(--bg-deep); background: linear-gradient(145deg, var(--gold-hi), var(--gold)); border-radius: 50%;
+}
+.w-steps h3 { font-family: var(--font-mincho); font-weight: 800; font-size: 21px; margin: 10px 0 6px; color: var(--gold-hi); letter-spacing: 0.08em; }
+.w-steps p { margin: 0; font-size: 15px; color: var(--text-dim); }
+.w-steps p b { color: var(--text); }
+
+.w-strip {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 170px; gap: 14px; overflow-x: auto; padding: 6px 2px 16px;
+  scroll-snap-type: x mandatory; scrollbar-color: var(--gold-dim) transparent;
+}
+.w-strip img { width: 170px; border-radius: 9px; scroll-snap-align: start; box-shadow: 0 10px 24px oklch(0% 0 0 / 0.5); transition: transform 0.15s ease; }
+.w-strip img:hover { transform: translateY(-4px); }
+
+.w-final {
+  max-width: 1180px; margin: 48px auto 0; padding: 48px 16px; text-align: center;
+  border-top: 1px solid var(--gold-line); border-bottom: 1px solid var(--gold-line);
+  background: radial-gradient(60% 120% at 50% 0%, oklch(30% 0.05 80 / 0.25), transparent 70%);
+}
+.w-final p { color: var(--text-dim); margin: -6px 0 22px; }
+.w-foot { max-width: 1180px; margin: 0 auto; padding: 24px 16px 40px; text-align: center; font-size: 12.5px; color: var(--text-dim); }
+.w-foot p { margin: 0; }
+
+/* ------------------------------------------------------------ narrow */
+@media (max-width: 920px) {
+  .w-hero { grid-template-columns: minmax(0, 1fr); padding-top: 32px; gap: 28px; }
+  .w-hero-art { max-width: 400px; order: -1; }
+  .w-steps { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 680px) {
+  .w-lead { font-size: 15.5px; }
+  .w-cta { flex-direction: column; }
+  .w-btn-main, .w-btn-sub { align-items: center; text-align: center; }
+  .w-strip { grid-auto-columns: 132px; }
+  .w-strip img { width: 132px; }
+  .w-sec { padding-top: 40px; }
+}

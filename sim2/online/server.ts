@@ -253,6 +253,8 @@ const STATIC_FILES = new Set([
   "play/print.html",
   // 遊び方 (/guide): the rules of the decided version, for the public build and everyone else
   "play/guide.html",
+  // the public build's front page (/ under --public): what the game is, and the ways in
+  "play/welcome.html",
   "online/lobby.html",
   "online/room.html",
   "online/lobby.ts",
@@ -279,7 +281,7 @@ export const onlineStaticAllowed = (rel: string): boolean => {
 };
 
 export const staticTarget = (path: string): string => {
-  if (path === "/" || path === "") return "/online/lobby.html";
+  if (path === "/" || path === "" || path === "/online" || path === "/online/") return "/online/lobby.html";
   if (/^\/room\/[^/]+\/?$/.test(path)) return "/online/room.html";
   if (path === "/ai" || path === "/ai/") return "/play/index.html";
   if (path === "/rules" || path === "/rules/") return "/play/rules.html";
@@ -316,7 +318,11 @@ const SECURITY_HEADERS: Record<string, string> = {
  * 3D world and the print sheets (and their pages under /play/).
  */
 export const publicHidden = (path: string): boolean =>
-  /^\/(?:rules|world|print)\/?$/.test(path) || path.startsWith("/records") || /^\/play\/(?:rules|world|print)\.html$/.test(path);
+  /^\/(?:rules|world|print|watch)\/?$/.test(path) || path.startsWith("/records") || /^\/play\/(?:rules|world|print|watch)\.html$/.test(path);
+
+/** Where a path is served from: the public build's front page is the welcome page, the lobby moves to /online. */
+export const targetFor = (path: string, publicSite: boolean): string =>
+  publicSite && (path === "/" || path === "") ? "/play/welcome.html" : staticTarget(path);
 
 /** The public build's mark on an HTML page: data-site on <html> and the public style sheet. */
 export const markPublicHtml = (html: string): string =>
@@ -554,7 +560,7 @@ const route = async (app: OnlineApp, req: IncomingMessage, res: ServerResponse):
     sendStatic(app, req, res, path, rec, method === "HEAD");
     return;
   }
-  const target = staticTarget(path);
+  const target = targetFor(path, app.publicSite);
   const served = isImagePath(target) ? await serveImage(target, onlineStaticAllowed) : await serveFile(target, onlineStaticAllowed);
   sendStatic(app, req, res, target, served, method === "HEAD");
 };

@@ -182,7 +182,7 @@ const askCloseRoom = async (): Promise<void> => {
   if (!(await closeRoom())) return;
   stopped = true;
   if (token !== null) forgetToken(CODE, token);
-  location.href = "/";
+  location.href = "/online";
 };
 
 /** A button pressed once: it stays disabled until its answer (no double sends from a double click). */
@@ -332,7 +332,7 @@ const renderRoom = (msg: StateMessage): void => {
     g !== null && msg.you.seat !== null && g.phase.kind !== "over" &&
     (g.phase.kind === "mulligan" ? !g.phase.submitted[msg.you.seat] : g.phase.player === msg.you.seat);
   document.title = `${myTurn ? "【あなたの番】" : ""}${BASE_TITLE} ${r.code}`;
-  table.slots.header.innerHTML = `<div class="brand room-brand"><a class="brand-mark" href="/" title="ロビーへ">符</a>
+  table.slots.header.innerHTML = `<div class="brand room-brand"><a class="brand-mark" href="/online" title="ロビーへ">符</a>
     <span class="room-code" title="部屋コード">${esc(r.code)}</span>
     <span class="room-seats">${([0, 1] as PlayerId[])
       .map((p) => {

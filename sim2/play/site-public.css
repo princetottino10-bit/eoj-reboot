@@ -9,6 +9,13 @@
 [data-site="public"] [data-tool="diff"],
 [data-site="public"] [data-tool="settings"] { display: none !important; }
 
+/* the test table's own tools: AUTO, the seed and the AI's policy, watching a room, the sheet line of a result */
+[data-site="public"] #autoPlay,
+[data-site="public"] .entry-more,
+[data-site="public"] #watch,
+[data-site="public"] .yy-rs-steps,
+[data-site="public"] .yy-rs-line { display: none !important; }
+
 .entry-public-note { color: var(--sym-ink-soft, inherit); font-size: 14px; opacity: 0.85; flex: 1 1 auto; align-self: center; }
 .entry-public-fine { margin: 10px 0 0; font-size: 12px; opacity: 0.6; }
 
