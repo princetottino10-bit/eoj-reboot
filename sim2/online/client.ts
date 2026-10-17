@@ -283,7 +283,7 @@ const promptOf = (msg: StateMessage, names: Names): TablePrompt => {
   }
   if (ph.kind === "mulligan") {
     if (seat !== null && !ph.submitted[seat]) return { kind: "mulligan" };
-    return { kind: "idle", text: seat === null ? "両者のマリガン待ち" : "相手のマリガン待ち…" };
+    return { kind: "idle", text: seat === null ? "両者の手札の引き直し待ち" : "相手が手札を引き直しています…" };
   }
   if (ph.kind === "counterOrder" && ph.player !== seat) {
     return { kind: "idle", text: seat === ph.attacker ? "相手が反撃の順番を選んでいます…" : `${names[ph.player]}が反撃の順番を選んでいます…` };

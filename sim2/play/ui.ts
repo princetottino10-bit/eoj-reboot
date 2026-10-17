@@ -160,7 +160,7 @@ const promptOf = (g: Game): TablePrompt => {
     const who = f.state.winner === null ? "引き分け" : f.state.winner === g.human ? "あなたの勝ち" : "AIの勝ち";
     return { kind: "over", text: `対局終了 — ${who}`, winner: f.state.winner };
   }
-  if (ph.kind === "mulligan") return ph.submitted[g.human] ? { kind: "idle", text: "AIのマリガン待ち…" } : { kind: "mulligan" };
+  if (ph.kind === "mulligan") return ph.submitted[g.human] ? { kind: "idle", text: "AIが手札を引き直しています…" } : { kind: "mulligan" };
   if (ph.kind === "counterOrder" && ph.player !== g.human) return { kind: "idle", text: "相手が反撃の順番を選んでいます…" };
   if (ph.kind === "lantern" && ph.player !== g.human) return { kind: "idle", text: "相手が灯籠の精の灯を託す相手を選んでいます…" };
   if (ph.kind === "kyonshi" && ph.player !== g.human) return { kind: "idle", text: "相手が僵尸公主の向きを選んでいます…" };
@@ -224,13 +224,21 @@ const refresh = (): void => {
   table.update(model);
 };
 
+/** The public build's AI choice: two levels named for a first game. */
+const PUBLIC_AI_LABELS: Record<AiKind, string> = { greedy: "ふつう", beam: "ふつう", strong: "つよい" };
+const aiLabel = (k: AiKind): string => (isPublicSite() ? PUBLIC_AI_LABELS[k] : AI_LABELS[k]);
+const aiChoices = (): readonly AiKind[] => (isPublicSite() ? ["greedy", "strong"] : AI_KINDS);
+
 // ------------------------------------------------------------- storage
 
 /** The start card's choices (this tab); the settings are kept encoded, as in a share URL. */
 const remembered = readAiSetup(stores);
 const rememberedSetup: AiSetup = remembered === null ? defaultAiSetup() : { ...remembered, s: upgradeLegacyPack(remembered.s) };
 // the public build plays the decided rules and cards only, whatever this tab remembered
-let setup: AiSetup = isPublicSite() ? { ...rememberedSetup, s: encodeSettings(defaultSettings()) } : rememberedSetup;
+// and offers two AIs: ふつう (greedy; 深い plays about as well) and つよい, ふつう first
+let setup: AiSetup = isPublicSite()
+  ? { ...rememberedSetup, s: encodeSettings(defaultSettings()), ai: remembered === null || rememberedSetup.ai === "beam" ? "greedy" : rememberedSetup.ai }
+  : rememberedSetup;
 
 const saveSetup = (next: AiSetup): void => {
   setup = next;
@@ -430,7 +438,7 @@ const startCardHtml = (settings: GameSettings, printed: CardPack | null, problem
   const encoded = encodeSettings(settings);
   const fields = `<div class="entry-grid">
       <label>あなたの席<select name="seat" data-first>${option("0", "先手", o.human === 0)}${option("1", "後手", o.human === 1)}</select></label>
-      <label>AI<select name="ai">${AI_KINDS.map((k) => option(k, AI_LABELS[k], o.ai === k)).join("")}</select></label>
+      <label>AI<select name="ai">${aiChoices().map((k) => option(k, aiLabel(k), o.ai === k)).join("")}</select></label>
     </div>
     ${moreHtml(`<label>AIの方針<select name="eval">${EVAL_PROFILE_NAMES.map((p) => option(p, p, p === o.evalName)).join("")}</select></label>
       <label>シード<input name="seed" type="number" value="${o.seed}" inputmode="numeric"></label>${
@@ -530,7 +538,7 @@ const renderBadge = (g: Game): void => {
 const aiOf = (start: Start): { ai: AiSeat; label: string } => ({
   // the seed only perturbs exact ties, so the same match still replays identically
   ai: makeAi(start.ai, start.evalName, { seed: start.seed }),
-  label: `AI ${AI_LABELS[start.ai]}`,
+  label: `AI ${aiLabel(start.ai)}`,
 });
 
 /** The table shows a match: the URL loses its ?s= (a reload resumes the match, not the start card). */

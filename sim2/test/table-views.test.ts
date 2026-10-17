@@ -95,7 +95,7 @@ test("acted marks show only on the turn player's pieces; a piece prints no name 
 test("turn panel: both seats during the mulligan, the result once over (no doubled 対局終了), life never below 0", () => {
   const s = blankState(ctx);
   const mull = turnHtml(ctx, boardView(s), NAMES, { phaseText: "マリガン", mulligan: true });
-  assert.match(mull, /マリガン\(両者\)/);
+  assert.match(mull, /手札の引き直し/);
   assert.doesNotMatch(mull, /の番/);
   s.ended = true;
   s.winner = 1;

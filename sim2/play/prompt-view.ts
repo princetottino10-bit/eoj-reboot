@@ -406,12 +406,14 @@ export const promptHtml = (vm: PromptVM): string => {
     case "mulligan": {
       const mull = p.kind === "mulligan";
       const hint = mull
-        ? "マリガン: 山札に戻す札を、手札の札を触って選ぶ(戻した枚数だけ引き直す)"
+        ? vm.ctx.cfg.mulliganTo === "grave"
+          ? "最初の手札を1回だけ引き直せます。入れ替えたい札を触って選んでください(選んだ札は捨て札になり、同じ枚数を引きます)。このままでよければ「このまま始める」"
+          : "最初の手札を1回だけ引き直せます。入れ替えたい札を触って選んでください(選んだ札は山札に戻し、同じ枚数を引きます)。このままでよければ「このまま始める」"
         : vm.ctx.cfg.handMode === "replace_discarded"
           ? "手札整理: 捨てる札を、手札の札を触って選ぶ(0枚でもよい)。捨てた枚数だけ引く"
           : `手札整理: 捨てる札を、手札の札を触って選ぶ(0枚でもよい)。確定すると${vm.ctx.cfg.handRefill}枚まで引く`;
       // nothing chosen yet: "0枚戻して引き直す" would only repeat the other button, so it waits for a choice
-      const confirm = vm.marked === 0 ? [] : [btn("marks", mull ? `${vm.marked}枚戻して引き直す` : `${vm.marked}枚捨てて確定`, "btn-gold")];
+      const confirm = vm.marked === 0 ? [] : [btn("marks", mull ? `${vm.marked}枚を引き直す` : `${vm.marked}枚捨てて確定`, "btn-gold")];
       return bar(p.kind, hint, [], [
         ...confirm,
         btn("marks-none", mull ? "このまま始める" : "捨てずに確定", vm.marked === 0 ? "btn-gold" : "btn-quiet"),
