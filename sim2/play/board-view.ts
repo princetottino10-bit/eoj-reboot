@@ -64,6 +64,8 @@ export type BoardVM = {
    * rotate): the ghost starts at its current facing and the piece under it fades.
    */
   facing: { pos: Pos; cardId: string; options: { facing: Facing; enabled: boolean }[]; turn?: { from: Facing }; preview?: Facing } | null;
+  /** A hand card is picked: per glowing square, its 耐久 change and the enemies that reach it (select.ts placeHints). */
+  placeHints?: Map<string, { delta: number; threats: number }>;
 };
 
 const GLYPH: Record<CommandId, string> = {
@@ -120,11 +122,22 @@ const cellHtml = (vm: BoardVM, pos: Pos): string => {
   const markText =
     mark === "summon" ? " / 召喚できる" : mark === "inherit" ? " / 継承召喚できる" : mark === "target" ? " / 対象にできる" : mark === "heal" ? " / 回復できる" : mark === "proxy" ? " / 回せる" : mark === "move" ? " / ここへ動かされる" : "";
   const rangeText = `${vm.range?.attack.has(k) ? " / 間合" : ""}${vm.range?.counter?.has(k) ? " / 反撃間合" : ""}${vm.range?.blind.has(k) ? " / 隙" : ""}${vm.range?.gap.has(k) ? " / 旧・隙位置" : ""}`;
+  // the glowing squares of a picked hand card say what they do to it (遊びやすくする工夫, 10/17)
+  const hint = mark === "summon" ? vm.placeHints?.get(k) : undefined;
+  const hintText =
+    hint === undefined ? "" : `${hint.delta === 0 ? "" : ` / 耐久${hint.delta > 0 ? "+" : "−"}${Math.abs(hint.delta)}`}${hint.threats > 0 ? ` / 相手の間合の中(${hint.threats}体)` : ""}`;
+  const hintHtml =
+    hint === undefined || (hint.delta === 0 && hint.threats === 0)
+      ? ""
+      : `<span class="cell-hint" aria-hidden="true">${hint.delta === 0 ? "" : `<b class="${hint.delta > 0 ? "is-up" : "is-down"}">耐久${hint.delta > 0 ? "+" : "−"}${Math.abs(hint.delta)}</b>`}${
+          hint.threats > 0 ? `<b class="is-threat">狙われる${hint.threats > 1 ? `×${hint.threats}` : ""}</b>` : ""
+        }</span>`;
+  if (hint !== undefined && hint.threats > 0) cls.push("is-threatened");
   const piece =
     u === undefined ? "" : pieceHtml(vm.ctx, u, { ...vm.look, control: ctl.includes(u.owner), turnPlayer: vm.board.turnPlayer });
   return `<button type="button" class="${cls.join(" ")}" data-act="cell" data-x="${pos.x}" data-y="${pos.y}" style="${gridPlace(pos)}"
-    aria-label="${cellName(pos)}のマス / ${esc(who)}${markText}${rangeText}">
-    <span class="raden${u === undefined ? "" : " chip"}" aria-hidden="true">${markSvg(ATTR_MARK_ID[attr], "raden-mk")}</span>${vm.range?.gap.has(k) ? '<span class="cell-gap">旧・隙</span>' : ""}${piece}
+    aria-label="${cellName(pos)}のマス / ${esc(who)}${markText}${hintText}${rangeText}">
+    <span class="raden${u === undefined ? "" : " chip"}" aria-hidden="true">${markSvg(ATTR_MARK_ID[attr], "raden-mk")}</span>${vm.range?.gap.has(k) ? '<span class="cell-gap">旧・隙</span>' : ""}${hintHtml}${piece}
   </button>`;
 };
 

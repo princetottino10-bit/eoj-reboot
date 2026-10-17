@@ -17,7 +17,7 @@ import type { Ctx } from "../src/state.ts";
 import type { CardDef, ColdWin, Facing, PlayerId, Pos, Unit } from "../src/types.ts";
 import type { BoardView, LogItem } from "../online/protocol.ts";
 import { boardHtml } from "./board-view.ts";
-import type { BoardVM, Prediction } from "./board-view.ts";
+import type { BoardVM, CellMark, Prediction } from "./board-view.ts";
 import { SEAT_SEAL, watchArtErrors } from "./cards-view.ts";
 import { createFx } from "./fx.ts";
 import { handHtml } from "./hand-view.ts";
@@ -37,6 +37,7 @@ import {
   handEntries,
   handPlayable,
   NONE,
+  placeHints,
   predictionOf,
   radialItems,
   rangeSets,
@@ -817,13 +818,18 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       const tu = unitById(m.board, uid);
       if (tu !== undefined) coMarks.set(`${tu.pos.x},${tu.pos.y}`, "target");
     }
+    const marks = main ? cellMarks(m.board, lg, hand, s) : co !== null || lp !== null || kp !== null || spot !== null ? coMarks : new Map<string, CellMark>();
+    // a picked hand card: each glowing square says its 耐久 change and whether an enemy already reaches it
+    const pickedCard = main && s.kind === "hand" && m.viewer !== null ? hand[s.handIndex] : undefined;
+    const summonCells = [...marks].flatMap(([k, mk]) => (mk === "summon" ? [{ x: Number(k.split(",")[0]), y: Number(k.split(",")[1]) }] : []));
     const vm: BoardVM = {
       ctx: m.ctx,
       board: m.board,
       names: m.names,
       look: look(m),
       bottom: m.viewer === 1 ? 1 : 0,
-      marks: main ? cellMarks(m.board, lg, hand, s) : co !== null || lp !== null || kp !== null || spot !== null ? coMarks : new Map(),
+      marks,
+      placeHints: pickedCard === undefined || m.viewer === null ? undefined : placeHints(m.ctx, m.board, pickedCard, m.viewer, summonCells),
       range: s.kind === "unit" || (s.kind === "aim" && s.targetUid === null && !s.area) ? rangeSets(m.ctx, shown) : null,
       selectedUid:
         co !== null

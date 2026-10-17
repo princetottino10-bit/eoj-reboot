@@ -317,6 +317,20 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .cell.mk-summon::after { inset: 0; border-radius: 0.5cqw; box-shadow: inset 0 0 0 1.4cqw oklch(88% 0.1 88 / 0.95), inset 0 0 16cqw oklch(80% 0.12 85 / 0.55); animation: glow-breathe 1.8s ease-in-out infinite; }
 /* while a card waits for its cell, the cells it cannot go to step back, so the lit ones read at a glance on a phone */
 .yy-board:has(.cell.mk-summon, .cell.mk-inherit) .cell:not(.mk-summon, .mk-inherit) { filter: brightness(0.5) saturate(0.55); transition: filter var(--t-fast); }
+/* 遊びやすくする工夫 (10/17): a picked hand card's glowing squares say what they do to it,
+   big enough to read on a 390px phone (cq units of the cell, with a px floor) */
+.cell-hint {
+  position: absolute; left: 50%; bottom: 8cqw; translate: -50% 0; z-index: 3; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 2cqw;
+}
+.cell-hint b {
+  padding: 0.5cqw 3cqw; border-radius: 1.5cqw; white-space: nowrap; font-family: var(--font-mincho); font-weight: 800;
+  font-size: max(11px, 10cqw); line-height: 1.35; box-shadow: 0 0.5cqw 2cqw oklch(0% 0 0 / 0.5);
+}
+.cell-hint .is-up { background: var(--sym-sage); color: var(--ink); }
+.cell-hint .is-down { background: oklch(72% 0.1 30); color: var(--ink); }
+.cell-hint .is-threat { background: var(--sym-verm); color: oklch(98% 0.01 85); }
+.cell.mk-summon.is-threatened::after { box-shadow: inset 0 0 0 1.4cqw oklch(88% 0.1 88 / 0.95), inset 0 0 16cqw oklch(62% 0.18 30 / 0.55); }
 .cell.mk-inherit::after { inset: 3cqw; border: 1cqw dashed var(--violet); border-radius: 3cqw; box-shadow: 0 0 6cqw oklch(72% 0.14 305 / 0.5); animation: glow-breathe 1.8s ease-in-out infinite; }
 .cell.mk-target::after { inset: 3cqw; border: 1.2cqw solid var(--sym-verm-hi); border-radius: 50%; animation: target-pulse 1.1s ease-in-out infinite; }
 .cell.mk-heal::after { inset: 3cqw; border: 1.2cqw solid var(--jade); border-radius: 50%; animation: target-pulse 1.1s ease-in-out infinite; }
@@ -1242,3 +1256,10 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* the race to 制圧 at the head of the idle prompt: the opponent's check reads as a warning */
+.race-note { font-weight: 800; padding: 0.1em 0.5em; border-radius: 0.3em; margin-right: 0.3em; white-space: nowrap; }
+.race-note.is-danger { background: var(--sym-verm); color: oklch(98% 0.01 85); }
+.race-note.is-good { background: var(--gold); color: var(--ink); }
+.race-note.is-near { color: var(--gold-hi); border: 1px solid var(--gold-line); }
+@media (max-width: 700px) { .race-note { white-space: normal; display: inline-block; margin-bottom: 0.2em; } }

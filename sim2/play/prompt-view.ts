@@ -9,12 +9,12 @@ import type { LanternAsk } from "../src/lantern.ts";
 import { kyonshiTurnWord } from "../src/kyonshi.ts";
 import type { KyonshiAsk } from "../src/kyonshi.ts";
 import type { LegalEntry, ReiguPreview } from "../src/preview.ts";
-import { unitHp } from "../src/state.ts";
+import { controlNeed, unitHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { PlayerId } from "../src/types.ts";
 import type { BoardView } from "../online/protocol.ts";
 import { esc } from "./cards-view.ts";
-import { attackSummaryLines, cardName, cellName, inheritSummaryLines, MANA_VALUE_TAG, unitById } from "./render.ts";
+import { attackSummaryLines, cardName, cellName, inheritSummaryLines, MANA_VALUE_TAG, occupiedOf, unitById } from "./render.ts";
 import type { Names } from "./render.ts";
 import { aimedEntry, handEntries, reiguEntry, reiguForecast, summonFacings } from "./select.ts";
 import type { ReiguForecast, Sel } from "./select.ts";
@@ -175,6 +175,25 @@ const legend = (vm: PromptVM): string =>
   `<span class="legend"><i class="lg lg-attack"></i>間合 <i class="lg lg-counter"></i>反撃間合 <i class="lg lg-blind"></i>隙${
     vm.ctx.cfg.counterMode === "gap" ? ' <i class="lg lg-gap"></i>旧・隙' : ""
   }</span>`;
+
+/**
+ * The race to 制圧 in one line at the head of the idle prompt (遊びやすくする工夫, 10/17):
+ * the opponent's check first (it loses the game if left alone), then the viewer's
+ * own check, then how close the viewer is. "" when nothing is close.
+ */
+const raceNote = (vm: PromptVM): string => {
+  const me = vm.viewer;
+  if (me === null || vm.board.ended) return "";
+  const opp: PlayerId = me === 0 ? 1 : 0;
+  const need = controlNeed(vm.ctx, vm.board);
+  const occ = occupiedOf(vm.ctx, vm.board, me);
+  const line = (cls: string, text: string): string => `<span class="race-note ${cls}">${text}</span> `;
+  if (vm.board.players[opp].reach) return line("is-danger", `相手が制圧チェック中: 相手の制圧数を${need}未満に崩さないと負け`);
+  if (vm.board.players[me].reach) return line("is-good", "制圧チェック中: 相手の番をしのげば勝ち");
+  if (occ >= need) return line("is-good", `制圧数${occ}: このままターンを終えると制圧チェック`);
+  if (need - occ === 1) return line("is-near", `あと制圧力1で制圧チェック(ターン終了時に${need}以上)`);
+  return "";
+};
 
 const unitHint = (vm: PromptVM, uid: number, own: boolean): string => {
   const u = unitById(vm.board, uid);
@@ -395,7 +414,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       return bar("confirm", `<b>${esc(card.nameJa)}</b>を使う:`, lines, [btn("confirm", `使う(霊力−${card.summonCost})`, risky ? "btn-red" : "btn-gold"), retarget, cancel], f);
     }
     default:
-      return bar("idle", `手札の札か、自分の駒を選ぶ${kbd("(Enter でターン終了)")}`, [], [], f);
+      return bar("idle", `${raceNote(vm)}手札の札か、自分の駒を選ぶ${kbd("(Enter でターン終了)")}`, [], [], f);
   }
 };
 
