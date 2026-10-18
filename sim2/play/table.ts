@@ -25,6 +25,7 @@ import { ensureMarks } from "./marks.ts";
 import type { HandCard, HandMode } from "./hand-view.ts";
 import { detailHtml, endCold, endOcc, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, recapHtml, recapOf, turnHtml } from "./hud.ts";
 import type { CardLook, Focus } from "./hud.ts";
+import { coachHtml, coachStep } from "./coach.ts";
 import { mulliganPanelHtml } from "./mulligan-view.ts";
 import { promptHtml } from "./prompt-view.ts";
 import { esc, resultHow, unitAtPos, unitById } from "./render.ts";
@@ -290,6 +291,47 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     sel = next;
     endConfirm = false;
     render();
+  };
+
+  // はじめての1局 (10/18): first-turn steps until the viewer's first turn ends, once per browser
+  const COACH_KEY = "yy-coach-done";
+  let coachOn = ((): boolean => {
+    try {
+      return localStorage.getItem(COACH_KEY) !== "1";
+    } catch {
+      return true;
+    }
+  })();
+  let coachPlayed = false;
+  const coachOff = (): void => {
+    coachOn = false;
+    try {
+      localStorage.setItem(COACH_KEY, "1");
+    } catch {
+      // private mode: it stays off for this page only
+    }
+  };
+  const coachFor = (m: TableModel): string => {
+    if (!coachOn || m.viewer === null || m.board.ended) return "";
+    const me = m.viewer;
+    const main = m.prompt.kind === "main";
+    if (main) coachPlayed = true;
+    // my first turn has ended: done for good
+    else if (coachPlayed && m.board.turnPlayer !== me) {
+      coachOff();
+      return "";
+    }
+    const mine = m.board.units.filter((u) => u.owner === me);
+    const lg = main ? legal() : [];
+    const step = coachStep({
+      main,
+      sel: sel.kind,
+      mine: mine.length,
+      canAttack: new Set(lg.flatMap((e) => (e.action.kind === "attack" ? [e.action.uid] : []))).size,
+      attacked: mine.some((u) => u.attackedThisTurn),
+    });
+    root.dataset.coach = step ?? "";
+    return step === null ? "" : coachHtml(step);
   };
 
   const say = (text: string): void => {
@@ -648,6 +690,11 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       return render();
     }
     if (act === "hand") return onHand(Number(target.dataset.i));
+    if (act === "coach-off") {
+      coachOff();
+      root.dataset.coach = "";
+      return render();
+    }
     if (act === "grave") {
       const seat = Number(target.dataset.seat) as PlayerId;
       pinned = { kind: "grave", seat };
@@ -995,7 +1042,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     renderHand(m);
     put(
       el.prompt,
-      promptHtml({
+      coachFor(m) + promptHtml({
         ctx: m.ctx,
         board: m.board,
         names: m.names,

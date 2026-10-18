@@ -209,6 +209,18 @@ const manaFlight = (c: Ctx, uid: number, t: number): void => {
     { opacity: 0, transform: `translate(${dx}px, ${dy}px) scale(0.5)` },
   ], t, 660, "linear");
   pulse(c, d.manaTo, "mana", "fx-up", t + 610);
+  // 10/18: what the kill paid, readable where the piece stood (in the colour of the side that got it)
+  const lw = Math.max(120, old.rect.width * 1.1);
+  const lbox = new DOMRect(from.x - lw / 2, from.y - 22, lw, 44);
+  const who = c.viewer === null ? "" : d.manaTo === c.viewer ? "" : "相手 ";
+  const label = temp(c, `fx-gain o${d.manaTo}`, lbox, `<span>${who}霊力 <b>+${d.manaGain}</b></span>`, t + 1500);
+  label.style.opacity = "0";
+  run(c, label, [
+    { opacity: 0, transform: "translateY(8px) scale(0.7)" },
+    { opacity: 1, transform: "translateY(-6px) scale(1.08)", offset: 0.15 },
+    { opacity: 1, transform: "translateY(-12px) scale(1)", offset: 0.75 },
+    { opacity: 0, transform: "translateY(-24px) scale(1)" },
+  ], t, 1400, "ease-out");
 };
 
 /** A destroyed piece: it burns, and (after a beat) its flame leaves for the owner's plate (or its 霊力価 for the destroyer's). */

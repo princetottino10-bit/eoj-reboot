@@ -1378,3 +1378,24 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 }
 .pc.is-spent .fu-sm { filter: brightness(0.5) saturate(0.4); }
 .cell.can-attack { animation: none; }
+/* はじめての1局 (10/18): the step line over the prompt, and the thing it names glows */
+.coach {
+  display: flex; align-items: center; gap: 8px; margin: 0 auto 6px; padding: 6px 8px 6px 10px; max-width: 100%;
+  border-radius: 8px; background: oklch(88% 0.1 90); color: var(--ink); font-size: 14px; font-weight: 700; line-height: 1.35;
+  box-shadow: 0 6px 18px oklch(0% 0 0 / 0.45); pointer-events: auto;
+}
+.coach-tag { flex: 0 0 auto; font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--ink); color: var(--gold-hi); }
+.coach-n { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--vermilion); color: #fff; font-size: 13px; }
+.coach-t { flex: 1 1 auto; min-width: 0; }
+.coach-off { flex: 0 0 auto; border: 0; background: none; color: var(--ink-soft); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 4px; }
+.yy[data-coach="hand"] .hand-card.is-playable .fu { box-shadow: 0 0 0 3px var(--gold-hi), 0 0 18px oklch(85% 0.12 85 / 0.8); }
+.yy[data-coach="attack"] .cell.can-attack { animation: can-attack 1.4s ease-in-out infinite; }
+.yy[data-coach="end"] .btn-end { box-shadow: 0 0 0 3px var(--gold-hi), 0 0 18px oklch(85% 0.12 85 / 0.8); }
+@media (max-width: 700px), (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  .coach { margin: 0 0 4px; font-size: 13px; padding: 5px 6px 5px 8px; }
+  .coach-tag { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .yy[data-coach="attack"] .cell.can-attack { animation: none; } }
+.yy-prompt:has(.coach) { flex-wrap: wrap; }
+.coach { flex: 1 1 100%; box-sizing: border-box; }
+@media (min-width: 701px) { .coach { flex-basis: auto; max-width: 640px; margin-inline: auto; } .yy-prompt:has(.coach) { flex-direction: column; align-items: center; } }
