@@ -128,15 +128,16 @@ test("board: the looked-at unit's counter range and attack shape are marked like
 
 test("board: the control state puts the 「制」 seal and one lantern per needed cell on the holder's edge; pulses on the other's turn; clears when over", () => {
   const s = blankState(ctx);
-  place(s, "sk09", 1, 0, 2, 2);
-  place(s, "sk02", 1, 1, 2, 2);
+  // the holder really stands on the count (a flag knocked below it shows as broken: phase-clarity.test.ts)
+  const cells: [number, number][] = [[0, 2], [1, 2], [2, 2], [0, 1], [2, 1], [1, 1], [0, 0], [1, 0], [2, 0]];
+  for (const [x, y] of cells.slice(0, ctx.cfg.controlWin)) place(s, "sk02", 1, x, y, 2);
   s.players[1].reach = true;
   s.turnPlayer = 0;
   const html = boardHtml(vmOf({ board: boardView(s), bottom: 0 }));
   assert.match(html, /class="bd ctl-1 ctl-wait"/);
   assert.match(html, /class="bd-ctl bd-ctl-high o1" data-seat="1"/, "the top seat's edge for the viewer at the bottom");
   assert.match(html, /<span class="bd-seal">制<\/span>/);
-  assert.equal(html.split('class="bd-lamp on"').length - 1, 2);
+  assert.equal(html.split('class="bd-lamp on"').length - 1, ctx.cfg.controlWin);
   assert.equal((html.match(/class="bd-lamp( on)?"/g) ?? []).length, ctx.cfg.controlWin);
   s.turnPlayer = 1;
   assert.match(boardHtml(vmOf({ board: boardView(s), bottom: 1 })), /class="bd ctl-1"[\s\S]*bd-ctl-low/);

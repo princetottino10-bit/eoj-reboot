@@ -12,7 +12,7 @@ import type { BoardView } from "../online/protocol.ts";
 import { cardFaceHtml, esc, pieceHtml } from "./cards-view.ts";
 import type { CardLook } from "./hud.ts";
 import { ATTR_MARK_ID, mark as markSvg } from "./marks.ts";
-import { cellName, FACING_LABEL, occupiedOf, unitAtPos } from "./render.ts";
+import { cellName, FACING_LABEL, inCheck, occupiedOf, unitAtPos } from "./render.ts";
 import type { Names } from "./render.ts";
 
 /** move: where an effect will put a unit (茨木の左腕's 拳 / 握), shown with the confirm step. */
@@ -66,6 +66,8 @@ export type BoardVM = {
   facing: { pos: Pos; cardId: string; options: { facing: Facing; enabled: boolean }[]; turn?: { from: Facing }; preview?: Facing } | null;
   /** A hand card is picked: per glowing square, its 耐久 change and the enemies that reach it (select.ts placeHints). */
   placeHints?: Map<string, { delta: number; threats: number }>;
+  /** 10/18: my pieces that can still attack this turn (nothing picked), drawn with a gold ring. */
+  canAttack?: Set<number>;
 };
 
 const GLYPH: Record<CommandId, string> = {
@@ -96,14 +98,14 @@ const ANGLE: Record<CommandId, number> = {
 const gridPlace = (p: Pos): string => `grid-column:${p.x + 1};grid-row:${3 - p.y}`;
 
 /** Seats in the control state; a finished match has none (the result says how it ended). */
-const controlSeats = (board: BoardView): PlayerId[] => (board.ended ? [] : ([0, 1] as PlayerId[]).filter((p) => board.players[p].reach));
+const controlSeats = (ctx: Ctx, board: BoardView): PlayerId[] => ([0, 1] as PlayerId[]).filter((p) => inCheck(ctx, board, p));
 
 const cellHtml = (vm: BoardVM, pos: Pos): string => {
   const k = posKey(pos);
   const attr = cellAttr(pos);
   const u = unitAtPos(vm.board, pos);
   const mark = vm.marks.get(k);
-  const ctl = controlSeats(vm.board);
+  const ctl = controlSeats(vm.ctx, vm.board);
   const cls = ["cell", `c-${attr}`];
   if (mark !== undefined) cls.push(`mk-${mark}`);
   if (vm.range?.attack.has(k)) cls.push("rg-attack", vm.range.aoe === true ? "rg-area" : "rg-single");
@@ -113,12 +115,14 @@ const cellHtml = (vm: BoardVM, pos: Pos): string => {
   if (u !== undefined && u.uid === vm.selectedUid) cls.push("is-selected");
   if (vm.selectedCell !== null && posKey(vm.selectedCell) === k) cls.push("is-selected");
   if (u !== undefined) cls.push("has-unit");
+  const ready = u !== undefined && vm.canAttack?.has(u.uid) === true;
+  if (ready) cls.push("can-attack");
   if (vm.facing?.turn !== undefined && posKey(vm.facing.pos) === k) cls.push("is-turning");
   // the piece prints no name: the label says whose it is, which card, and its HP
   const who =
     u === undefined
       ? "空きマス"
-      : `${vm.names[u.owner]}の駒 ${cardOfUnit(vm.ctx, u).nameJa}(耐久 ${Math.max(0, unitHp(vm.ctx, u))}・${FACING_LABEL[u.facing]}向き)`;
+      : `${vm.names[u.owner]}の駒 ${cardOfUnit(vm.ctx, u).nameJa}(耐久 ${Math.max(0, unitHp(vm.ctx, u))}・${FACING_LABEL[u.facing]}向き)${ready ? " / 攻撃できる" : ""}`;
   const markText =
     mark === "summon" ? " / 召喚できる" : mark === "inherit" ? " / 継承召喚できる" : mark === "target" ? " / 対象にできる" : mark === "heal" ? " / 回復できる" : mark === "proxy" ? " / 回せる" : mark === "move" ? " / ここへ動かされる" : "";
   const rangeText = `${vm.range?.attack.has(k) ? " / 間合" : ""}${vm.range?.counter?.has(k) ? " / 反撃間合" : ""}${vm.range?.blind.has(k) ? " / 隙" : ""}${vm.range?.gap.has(k) ? " / 旧・隙位置" : ""}`;
@@ -230,7 +234,7 @@ const controlHtml = (vm: BoardVM, seats: PlayerId[]): string =>
 export const boardHtml = (vm: BoardVM): string => {
   const cells: string[] = [];
   for (let y = 2; y >= 0; y--) for (let x = 0; x < 3; x++) cells.push(cellHtml(vm, { x, y }));
-  const ctl = controlSeats(vm.board);
+  const ctl = controlSeats(vm.ctx, vm.board);
   const cls = ["bd", ...ctl.map((p) => `ctl-${p}`), ctl.some((p) => p !== vm.board.turnPlayer) ? "ctl-wait" : ""].filter((c) => c !== "").join(" ");
   return `<div class="${cls}">
     <div class="bd-grid">${cells.join("")}</div>

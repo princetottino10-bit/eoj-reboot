@@ -49,3 +49,40 @@ test("a piece that counts 制圧力2 says so on the board", async () => {
   assert.doesNotMatch(pieceHtml(lo, big, { control: false }), /pc-ctl2/);
   void c;
 });
+
+test("a 制圧チェック knocked below the count stops showing as one", async () => {
+  const { inCheck } = await import("../play/render.ts");
+  const { nameplateHtml } = await import("../play/hud.ts");
+  const c = makeCtx(presetConfig("r1007"), SK);
+  const s = blankState(c);
+  s.players[1].reach = true; // declared at its turn end, then knocked down to 0 on my turn
+  const b = boardView(s);
+  assert.equal(inCheck(c, b, 1), false);
+  assert.doesNotMatch(nameplateHtml(c, b, 1, ["あなた", "相手"], false), /is-ctl/);
+  const p = promptHtml({ ...vm({}), ctx: c, board: b });
+  assert.doesNotMatch(p, /相手が制圧チェック中/);
+  assert.match(p, /相手の制圧チェックは崩れています/);
+});
+
+test("a piece says its 耐久 now in a tag of its own, marked when hurt", async () => {
+  const { pieceHtml } = await import("../play/cards-view.ts");
+  const { unitMaxHp } = await import("../src/state.ts");
+  const c = makeCtx(presetConfig("r1007"), SK);
+  const u = { uid: 1, cardId: "sk02", owner: 0 as const, pos: { x: 0, y: 0 }, facing: 0 as const, damage: 0, attackedThisTurn: false, rotatedThisTurn: false, summonedThisTurn: false, hiddenBy: null, atkBuff: 0 };
+  const max = unitMaxHp(c, u);
+  assert.match(pieceHtml(c, u, { control: false }), new RegExp(`class="pc-hp"[^>]*>耐久<b>${max}</b>`));
+  const hurt = pieceHtml(c, { ...u, damage: 1 }, { control: false });
+  assert.match(hurt, new RegExp(`class="pc-hp is-hurt"[^>]*>耐久<b>${max - 1}</b>`));
+});
+
+test("my pieces that can still attack are marked on the board", async () => {
+  const { boardHtml } = await import("../play/board-view.ts");
+  const { place } = await import("./helpers.ts");
+  const s = blankState(ctx);
+  place(s, "sk02", 0, 1, 1, 0);
+  const b = boardView(s);
+  const uid = b.units[0].uid;
+  const base = { ctx, board: b, names: ["あなた", "相手"] as [string, string], look: {}, marks: new Map(), range: null, selectedUid: null, selectedCell: null, prediction: null, radial: null, facing: null };
+  assert.match(boardHtml({ ...base, canAttack: new Set([uid]) }), /can-attack[\s\S]*攻撃できる/);
+  assert.doesNotMatch(boardHtml(base), /can-attack/);
+});

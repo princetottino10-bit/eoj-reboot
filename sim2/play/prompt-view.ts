@@ -190,7 +190,10 @@ const raceNote = (vm: PromptVM): string => {
   const line = (cls: string, text: string): string => `<span class="race-note ${cls}">${text}</span> `;
   // facts only (10/18): the counts and the rule, no advice on what to do about them
   const hold = vm.ctx.cfg.controlHold === "next_turn_end" ? "ターン終了時まで" : "ターン開始時に";
+  const oppOcc = occupiedOf(vm.ctx, vm.board, opp);
+  if (vm.board.players[opp].reach && oppOcc < need) return line("is-good", `相手の制圧チェックは崩れています(相手の制圧数${oppOcc}/${need})`);
   if (vm.board.players[opp].reach) return line("is-danger", `相手が制圧チェック中(相手の次の${hold}相手の制圧数${need}以上で相手の勝ち)`);
+  if (vm.board.players[me].reach && occ < need) return line("is-danger", `自分の制圧チェックは崩れています(制圧数${occ}/${need})`);
   if (vm.board.players[me].reach) return line("is-good", `制圧チェック中(次の自分の${hold}制圧数${need}以上で勝ち)`);
   if (occ >= need - 1) return line(occ >= need ? "is-good" : "is-near", `制圧数${occ}/${need}(ターン終了時に${need}以上で制圧チェック)`);
   return "";
@@ -317,6 +320,9 @@ const summonCostNote = (entries: LegalEntry[]): string => {
   return pv?.kind === "summon" ? ` <span class="pr-disc">霊力−${pv.cost}(本来${pv.costBefore}・劣勢割引)</span>` : "";
 };
 
+/** 手札の札の詳細 (10/18): phones read the card in the sheet (the detail panel is off screen; hidden on wide screens, table.css). */
+const peekBtn = (cardId: string): string => btn("peek", "詳細", "btn-quiet pr-peek", `data-card="${esc(cardId)}"`);
+
 const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
   const s = vm.sel;
   const cancel = btn("cancel", "やめる", "btn-quiet", 'title="Esc"');
@@ -332,7 +338,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       const card = cardOf(vm.ctx.pack, vm.hand[s.handIndex]);
       const inh = handEntries(legal, vm.hand, s.handIndex, "inherit").length > 0;
       const disc = summonDiscountNote(handEntries(legal, vm.hand, s.handIndex, "summon"));
-      return bar("pick", `<b>${esc(card.nameJa)}</b>: 光っているマスに召喚${inh ? ' / <span class="violet">紫の破線</span>の駒に継承召喚' : ""}${disc}`, [], [cancel], f);
+      return bar("pick", `<b>${esc(card.nameJa)}</b>: 光っているマスに召喚${inh ? ' / <span class="violet">紫の破線</span>の駒に継承召喚' : ""}${disc}`, [], [peekBtn(card.id), cancel], f);
     }
     case "place": {
       const card = cardOf(vm.ctx.pack, vm.hand[s.handIndex]);
@@ -399,7 +405,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       const kind = reiguTargeting(fxOf(vm.ctx, card.id));
       if (s.targetUid === null) {
         const what = kind === "unit-own-mode" ? "使う自分の式神" : kind === "unit-own-victim" ? "使う自分の式神(酒呑一門)" : "対象";
-        return bar("pick", `<b>${esc(card.nameJa)}</b>: ${what}を盤上で選ぶ`, [], [cancel], f);
+        return bar("pick", `<b>${esc(card.nameJa)}</b>: ${what}を盤上で選ぶ`, [], [peekBtn(card.id), cancel], f);
       }
       const retarget = btn("retarget", "対象を選び直す", "btn-quiet");
       if (kind === "unit-own-mode") return armBar(vm, legal, s, cancel, retarget);
@@ -415,7 +421,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       return bar("confirm", `<b>${esc(card.nameJa)}</b>を使う:`, lines, [btn("confirm", `使う(霊力−${card.summonCost})`, risky ? "btn-red" : "btn-gold"), retarget, cancel], f);
     }
     default:
-      return bar("idle", `${raceNote(vm)}札を出す・駒で攻撃する・駒を回す。終わったら「ターン終了」${kbd("(Enter)")}`, [], [], f);
+      return bar("idle", `${raceNote(vm)}<span class="pr-how">札を出す・駒で攻撃する・駒を回す。終わったら「ターン終了」${kbd("(Enter)")}</span>`, [], [], f);
   }
 };
 

@@ -3,7 +3,7 @@
 // rules maths (numbers come from engine helpers or from server-side previews).
 import { cardOf } from "../src/cards.ts";
 import type { Ctx } from "../src/state.ts";
-import { cardOfUnit, controlCount, unitHp } from "../src/state.ts";
+import { cardOfUnit, controlCount, controlNeed, unitHp } from "../src/state.ts";
 import { cellAttr, toBoardCells } from "../src/board.ts";
 import { coldCountWords, isAoeAttack } from "../src/combat.ts";
 import { describeChange } from "../src/config-schema.ts";
@@ -52,6 +52,14 @@ export const cardName = (ctx: Ctx, id: string): string => cardOf(ctx.pack, id).n
 
 /** 占拠 as the rules count it (controlCount: a heavy unit may count 2, hidden ones 0). */
 export const occupiedOf = (ctx: Ctx, board: BoardView, p: PlayerId): number => controlCount(ctx, board, p);
+
+/**
+ * Is p's 制圧チェック still standing? Under next_turn_start the engine keeps the
+ * flag until p's turn start (where it is checked), so a check knocked below the
+ * count in the other turn would still read as one: the screen shows it as broken.
+ */
+export const inCheck = (ctx: Ctx, board: BoardView, p: PlayerId): boolean =>
+  !board.ended && board.players[p].reach && controlCount(ctx, board, p) >= controlNeed(ctx, board);
 
 export const unitAtPos = (board: BoardView, pos: Pos): Unit | undefined =>
   board.units.find((u) => u.pos.x === pos.x && u.pos.y === pos.y);

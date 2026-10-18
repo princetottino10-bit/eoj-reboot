@@ -463,12 +463,18 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       render();
       return openSheet({ kind: "card", cardId, fromSeat: null });
     }
-    if (m.prompt.kind !== "main") return render();
+    // not my step: on a phone the tap reads the card (the detail panel is off screen)
+    if (m.prompt.kind !== "main") {
+      render();
+      if (!detailVisible()) openSheet({ kind: "card", cardId, fromSeat: null });
+      return;
+    }
     const card = cardOf(m.ctx.pack, cardId);
     const same = (sel.kind === "hand" || sel.kind === "place" || sel.kind === "inherit" || sel.kind === "reigu") && sel.handIndex === i;
     if (same) return setSel(NONE);
     if (!handPlayable(legal(), m.hand, i, card.kind === "reigu")) {
       say(`${card.nameJa}: 今は使えない(霊力・置き場所・効果の条件を確認)`);
+      if (!detailVisible()) openSheet({ kind: "card", cardId, fromSeat: null });
       return;
     }
     setSel(card.kind === "reigu" ? { kind: "reigu", handIndex: i, targetUid: null } : { kind: "hand", handIndex: i });
@@ -831,6 +837,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       bottom: m.viewer === 1 ? 1 : 0,
       marks,
       placeHints: pickedCard === undefined || m.viewer === null ? undefined : placeHints(m.ctx, m.board, pickedCard, m.viewer, summonCells),
+      canAttack: main && s.kind === "none" ? new Set(lg.flatMap((e) => (e.action.kind === "attack" ? [e.action.uid] : []))) : undefined,
       range: s.kind === "unit" || (s.kind === "aim" && s.targetUid === null && !s.area) ? rangeSets(m.ctx, shown) : null,
       selectedUid:
         co !== null

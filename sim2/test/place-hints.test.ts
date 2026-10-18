@@ -62,6 +62,7 @@ test("the idle prompt says how close either side is to 制圧", () => {
   assert.match(near, new RegExp(`制圧数${need - 1}/${need}`));
   assert.doesNotMatch(near, /しないと|しのげば|崩さない/);
   const t = blankState(ctx);
+  for (let i = 0; i < need; i++) place(t, "sk01", 1, i % 3, Math.floor(i / 3), 2);
   t.players[1].reach = true;
   const danger = promptHtml(vm({ board: boardView(t), prompt: { kind: "main", legal: legalEntries(ctx, t) } }));
   assert.match(danger, /相手が制圧チェック中/);
