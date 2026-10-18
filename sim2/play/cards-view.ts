@@ -379,7 +379,7 @@ export const pieceHtml = (
   const max = unitMaxHp(ctx, u);
   const current = opts.turnPlayer === undefined || opts.turnPlayer === u.owner;
   const spent = current && (u.attackedThisTurn || u.rotatedThisTurn);
-  const flag = !current ? "" : u.attackedThisTurn ? "攻" : u.rotatedThisTurn ? "回" : "";
+  const flag = !current ? "" : u.attackedThisTurn ? "攻撃済" : u.rotatedThisTurn ? "回転済" : "";
   const flagTip = u.attackedThisTurn ? "このターン攻撃済み" : "このターン回転済み";
   const cls = ["pc", `o${u.owner}`, `f${u.facing}`, spent ? "is-spent" : "", isHidden(u) ? "is-hidden" : "", opts.control ? "is-ctl" : ""].join(" ");
   const buff = u.atkBuff > 0 ? `<span class="pc-buff" title="このターン攻撃力+${u.atkBuff}">攻撃力+${u.atkBuff}</span>` : "";

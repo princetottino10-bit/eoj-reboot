@@ -1370,3 +1370,11 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 /* whose 制圧チェック: the badge wears that side's colour (my blue / their red) */
 .turn-ctl.o0 { background: var(--p0); color: #fff; }
 .turn-ctl.o1 { background: var(--p1); color: #fff; }
+/* 10/18 攻撃済み・回転済みを読める札に (was a small 「攻」 disc); the ring of can-attack stays still */
+.pc-flag {
+  width: auto; height: auto; padding: 0.4cqw 2cqw 0.6cqw; border-radius: 2cqw; right: 2.5cqw; top: 2.5cqh;
+  font-family: var(--font-gothic); font-size: max(10px, 7cqw); font-weight: 700; line-height: 1.15; letter-spacing: 0.02em;
+  color: #fff; background: oklch(30% 0.01 260 / 0.95); border: 1px solid oklch(70% 0.01 260 / 0.8);
+}
+.pc.is-spent .fu-sm { filter: brightness(0.5) saturate(0.4); }
+.cell.can-attack { animation: none; }

@@ -77,7 +77,7 @@ test("acted marks show only on the turn player's pieces; a piece prints no name 
   u.attackedThisTurn = true;
   const theirTurn = pieceHtml(ctx, u, { control: false, turnPlayer: 1 });
   const myTurn = pieceHtml(ctx, u, { control: false, turnPlayer: 0 });
-  assert.match(theirTurn, /class="pc-flag"[^>]*>攻</);
+  assert.match(theirTurn, /class="pc-flag"[^>]*>攻撃済</);
   assert.match(theirTurn, /is-spent/);
   assert.doesNotMatch(myTurn, /pc-flag/);
   assert.doesNotMatch(myTurn, /is-spent/);
