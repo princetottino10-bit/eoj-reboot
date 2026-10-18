@@ -9,12 +9,12 @@ import type { LanternAsk } from "../src/lantern.ts";
 import { kyonshiTurnWord } from "../src/kyonshi.ts";
 import type { KyonshiAsk } from "../src/kyonshi.ts";
 import type { LegalEntry, ReiguPreview } from "../src/preview.ts";
-import { unitHp } from "../src/state.ts";
+import { controlNeed, unitHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { PlayerId } from "../src/types.ts";
 import type { BoardView } from "../online/protocol.ts";
 import { esc } from "./cards-view.ts";
-import { attackSummaryLines, cardName, cellName, inheritSummaryLines, MANA_VALUE_TAG, unitById } from "./render.ts";
+import { attackSummaryLines, cardName, cellName, inheritSummaryLines, MANA_VALUE_TAG, occupiedOf, unitById } from "./render.ts";
 import type { Names } from "./render.ts";
 import { aimedEntry, handEntries, reiguEntry, reiguForecast, summonFacings } from "./select.ts";
 import type { ReiguForecast, Sel } from "./select.ts";
@@ -171,15 +171,37 @@ const bar = (kind: string, hint: string, lines: string[], buttons: string[], fla
 const kbd = (text: string): string => `<span class="kbd-hint">${text}</span>`;
 
 /** The board's range colours, the same as the card diagram (旧・隙 = the provisional amber ring). */
-const LEGEND =
-  '<span class="legend"><i class="lg lg-attack"></i>間合 <i class="lg lg-counter"></i>反撃間合 <i class="lg lg-blind"></i>隙 <i class="lg lg-gap"></i>旧・隙</span>';
+const legend = (vm: PromptVM): string =>
+  `<span class="legend"><i class="lg lg-attack"></i>間合 <i class="lg lg-counter"></i>反撃間合 <i class="lg lg-blind"></i>隙${
+    vm.ctx.cfg.counterMode === "gap" ? ' <i class="lg lg-gap"></i>旧・隙' : ""
+  }</span>`;
+
+/**
+ * The race to 制圧 in one line at the head of the idle prompt (遊びやすくする工夫, 10/17):
+ * the opponent's check first (it loses the game if left alone), then the viewer's
+ * own check, then how close the viewer is. "" when nothing is close.
+ */
+const raceNote = (vm: PromptVM): string => {
+  const me = vm.viewer;
+  if (me === null || vm.board.ended) return "";
+  const opp: PlayerId = me === 0 ? 1 : 0;
+  const need = controlNeed(vm.ctx, vm.board);
+  const occ = occupiedOf(vm.ctx, vm.board, me);
+  const line = (cls: string, text: string): string => `<span class="race-note ${cls}">${text}</span> `;
+  // facts only (10/18): the counts and the rule, no advice on what to do about them
+  const hold = vm.ctx.cfg.controlHold === "next_turn_end" ? "ターン終了時まで" : "ターン開始時に";
+  if (vm.board.players[opp].reach) return line("is-danger", `相手が制圧チェック中(相手の次の${hold}相手の制圧数${need}以上で相手の勝ち)`);
+  if (vm.board.players[me].reach) return line("is-good", `制圧チェック中(次の自分の${hold}制圧数${need}以上で勝ち)`);
+  if (occ >= need - 1) return line(occ >= need ? "is-good" : "is-near", `制圧数${occ}/${need}(ターン終了時に${need}以上で制圧チェック)`);
+  return "";
+};
 
 const unitHint = (vm: PromptVM, uid: number, own: boolean): string => {
   const u = unitById(vm.board, uid);
   if (u === undefined) return "";
   // The gap explanation lives in the detail panel; repeating it here wraps the bar over the board.
   const who = own ? "" : `${esc(vm.names[u.owner])}の`;
-  return `${who}<b>${esc(cardName(vm.ctx, u.cardId))}</b>${own ? ": 丸いメニューから命令を選ぶ" : ""} ${LEGEND}`;
+  return `${who}<b>${esc(cardName(vm.ctx, u.cardId))}</b>${own ? ": 丸いメニューから命令を選ぶ" : ""} ${legend(vm)}`;
 };
 
 /** Confirm lines for a targeted reigu (HTML). */
@@ -302,7 +324,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
   if (vm.endConfirm) {
     const left = legal.filter((e) => e.action.kind !== "pass").length;
     const mana = vm.viewer === null ? 0 : vm.board.players[vm.viewer].mana;
-    const note = left > 0 ? [`<span class="warn">まだ使える行動があります(霊力 ${mana})</span>`] : [];
+    const note = left > 0 ? [`残り霊力 ${mana}`] : [];
     return bar("confirm", "ターンを終了しますか?", note, [btn("end-yes", `終了する${kbd("(Enter)")}`, "btn-gold"), btn("end-no", `戻る${kbd("(Esc)")}`, "btn-quiet")], f);
   }
   switch (s.kind) {
@@ -332,7 +354,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       const verb = s.mode === "heal" ? "回復" : s.mode === "konshin" ? "渾身攻撃" : s.mode === "regen" ? "再生攻撃" : s.mode === "drink" ? "飲酒攻撃" : "攻撃";
       const e = aimedEntry(legal, s);
       if (e === undefined) {
-        return bar("pick", `${verb}する${s.mode === "heal" ? "味方" : "相手"}を盤上で選ぶ ${LEGEND}`, [], [cancel], f);
+        return bar("pick", `${verb}する${s.mode === "heal" ? "味方" : "相手"}を盤上で選ぶ ${legend(vm)}`, [], [cancel], f);
       }
       const lines = e.preview?.kind === "attack" ? attackSummaryLines(vm.ctx, vm.board, vm.names, s.uid, e.preview) : [];
       const who = unitById(vm.board, s.uid);
@@ -393,11 +415,30 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       return bar("confirm", `<b>${esc(card.nameJa)}</b>を使う:`, lines, [btn("confirm", `使う(霊力−${card.summonCost})`, risky ? "btn-red" : "btn-gold"), retarget, cancel], f);
     }
     default:
-      return bar("idle", `手札の札か、自分の駒を選ぶ${kbd("(Enter でターン終了)")}`, [], [], f);
+      return bar("idle", `${raceNote(vm)}札を出す・駒で攻撃する・駒を回す。終わったら「ターン終了」${kbd("(Enter)")}`, [], [], f);
   }
 };
 
+/** 今なにをする場面か (10/17): the label that opens the prompt, so a first-timer always knows whose step it is. */
+const stepOf = (vm: PromptVM): { label: string; cls: string } | null => {
+  const p = vm.prompt;
+  if (p.kind === "over" || vm.board.ended) return null;
+  if (p.kind === "mulligan") return { label: "対局前: 手札の引き直し", cls: "is-you" };
+  if (p.kind === "main") return { label: "あなたの番", cls: "is-you" };
+  if (p.kind === "discard") return { label: "あなたの番: 手札整理", cls: "is-you" };
+  if (p.kind !== "idle") return { label: "あなたが選ぶ", cls: "is-you" };
+  if (vm.viewer === null) return null;
+  if (/引き直/.test(p.text)) return { label: "対局前", cls: "is-opp" };
+  return vm.board.turnPlayer === vm.viewer ? null : { label: "相手の番", cls: "is-opp" };
+};
+
 export const promptHtml = (vm: PromptVM): string => {
+  const step = stepOf(vm);
+  const html = promptBody(vm);
+  return step === null ? html : html.replace('<p class="pr-hint">', `<p class="pr-hint"><b class="pr-step ${step.cls}">${step.label}</b>`);
+};
+
+const promptBody = (vm: PromptVM): string => {
   const p = vm.prompt;
   switch (p.kind) {
     case "main":
@@ -406,12 +447,14 @@ export const promptHtml = (vm: PromptVM): string => {
     case "mulligan": {
       const mull = p.kind === "mulligan";
       const hint = mull
-        ? "マリガン: 山札に戻す札を、手札の札を触って選ぶ(戻した枚数だけ引き直す)"
+        ? vm.ctx.cfg.mulliganTo === "grave"
+          ? "最初の手札を1回だけ引き直せます。入れ替えたい札を触って選んでください(選んだ札は捨て札になり、同じ枚数を引きます)。このままでよければ「このまま始める」"
+          : "最初の手札を1回だけ引き直せます。入れ替えたい札を触って選んでください(選んだ札は山札に戻し、同じ枚数を引きます)。このままでよければ「このまま始める」"
         : vm.ctx.cfg.handMode === "replace_discarded"
           ? "手札整理: 捨てる札を、手札の札を触って選ぶ(0枚でもよい)。捨てた枚数だけ引く"
           : `手札整理: 捨てる札を、手札の札を触って選ぶ(0枚でもよい)。確定すると${vm.ctx.cfg.handRefill}枚まで引く`;
       // nothing chosen yet: "0枚戻して引き直す" would only repeat the other button, so it waits for a choice
-      const confirm = vm.marked === 0 ? [] : [btn("marks", mull ? `${vm.marked}枚戻して引き直す` : `${vm.marked}枚捨てて確定`, "btn-gold")];
+      const confirm = vm.marked === 0 ? [] : [btn("marks", mull ? `${vm.marked}枚を引き直す` : `${vm.marked}枚捨てて確定`, "btn-gold")];
       return bar(p.kind, hint, [], [
         ...confirm,
         btn("marks-none", mull ? "このまま始める" : "捨てずに確定", vm.marked === 0 ? "btn-gold" : "btn-quiet"),

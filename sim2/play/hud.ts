@@ -160,7 +160,7 @@ export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInf
   const who = board.ended
     ? "対局終了"
     : info.mulligan === true
-      ? "マリガン(両者)"
+      ? "手札の引き直し"
       : `<span class="turn-seal">${SEAT_SEAL[p]}</span><span><span class="turn-name${turnName(names[p], p) === "あなた" ? " is-you" : ""}">${esc(turnName(names[p], p))}</span>の番</span>`;
   const how = board.ended ? resultHow(board.winType, board.winner, names, endOcc(ctx, board), endCold(ctx, board)) : null;
   const result =

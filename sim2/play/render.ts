@@ -248,8 +248,8 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
     case "mulligan":
       return {
         text: e.returned > 0
-          ? `${seat(e.player)}: マリガンで${e.returned}枚戻して引き直し`
-          : `${seat(e.player)}: マリガンなし`,
+          ? `${seat(e.player)}: 手札を${e.returned}枚引き直し`
+          : `${seat(e.player)}: 手札の引き直しなし`,
         cls: "",
       };
     case "mulliganCards":

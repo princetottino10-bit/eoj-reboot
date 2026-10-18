@@ -3,7 +3,7 @@
 // play/server.ts.
 //
 //   node --experimental-strip-types sim2/online/server.ts [--port 8788] [--host 127.0.0.1]
-//        [--record-dir sim2/out/online] [--trust-proxy]
+//        [--record-dir sim2/out/online] [--trust-proxy] [--public]
 //
 // API (JSON; POST bodies must be application/json and at most 16KB):
 //   POST /api/rooms                  create -> { code, token, seat }
@@ -25,6 +25,7 @@ import { gzipSync } from "node:zlib";
 import { isImagePath, serveFile, serveImage } from "../play/server.ts";
 import type { Served, ServedBytes } from "../play/server.ts";
 import { isPlayablePack, isRulePresetId } from "../src/presets.ts";
+import { defaultSettings } from "../src/settings.ts";
 import { checkRecordDir, packFor, printedPack } from "./match.ts";
 import { recordsResponse } from "./records.ts";
 import { loadRooms, restoredSummary, saveAllRooms } from "./room-store.ts";
@@ -82,10 +83,16 @@ export type OnlineApp = {
   startedAt: number;
   /** Set by shutdown(): new requests are turned away with 503 while the process winds down. */
   shuttingDown: boolean;
+  /**
+   * The public build (--public): only the decided rules and cards (rooms are made with the default
+   * settings whatever a request asks, no proposals), no settings page, records, /world or /print,
+   * and every page is marked data-site="public" (play/site.ts) with play/site-public.css added.
+   */
+  publicSite: boolean;
 };
 
 export const createOnlineApp = (
-  opts: Partial<LobbyOptions> & { trustProxy?: boolean; flyProxy?: boolean } = {},
+  opts: Partial<LobbyOptions> & { trustProxy?: boolean; flyProxy?: boolean; publicSite?: boolean } = {},
 ): OnlineApp => {
   const lobby = createLobby({ ...opts, recordDir: opts.recordDir ?? DEFAULT_RECORD_DIR });
   return {
@@ -95,6 +102,7 @@ export const createOnlineApp = (
     streams: new Set(),
     startedAt: lobby.opts.now(),
     shuttingDown: false,
+    publicSite: opts.publicSite === true,
   };
 };
 
@@ -140,6 +148,9 @@ const readJson = (req: ApiRequest): { ok: true; value: unknown } | { ok: false; 
   }
 };
 
+/** The public build's answer to a settings change. */
+export const PUBLIC_NO_CHANGES = "公開版ではルールとカードを変えられません";
+
 const ROOM_ROUTE = /^\/api\/rooms\/([^/]+)(?:\/(join|whoami|view|input|stream|close))?$/;
 
 /** Liveness for the host's health check: cheap counters, no room codes, no names. */
@@ -165,7 +176,8 @@ export const handleApi = (app: OnlineApp, req: ApiRequest): ApiResponse | null =
     if (!body.ok) return body.res;
     const parsed = parseCreateRoom(body.value, isRulePresetId, isPlayablePack, packFor);
     if (!parsed.ok) return err(400, parsed.error);
-    return fromOutcome(createRoom(lobby, parsed.value, req.ip));
+    const request = app.publicSite ? { ...parsed.value, settings: defaultSettings() } : parsed.value;
+    return fromOutcome(createRoom(lobby, request, req.ip));
   }
   const m = ROOM_ROUTE.exec(req.path);
   if (m === null) return req.path.startsWith("/api/") ? err(404, "not found") : null;
@@ -207,6 +219,7 @@ export const handleApi = (app: OnlineApp, req: ApiRequest): ApiResponse | null =
     if (!body.ok) return body.res;
     const parsed = parseClientInput(body.value);
     if (!parsed.ok) return err(400, parsed.error);
+    if (app.publicSite && parsed.value.type === "propose") return err(403, PUBLIC_NO_CHANGES);
     return fromOutcome(roomInput(lobby, ms, parsed.value));
   }
   if (sub === "close") {
@@ -238,6 +251,10 @@ const STATIC_FILES = new Set([
   "play/world.html",
   // the printable cards (/print): A4 sheets of true-size cards and the 早見表
   "play/print.html",
+  // 遊び方 (/guide): the rules of the decided version, for the public build and everyone else
+  "play/guide.html",
+  // the public build's front page (/ under --public): what the game is, and the ways in
+  "play/welcome.html",
   "online/lobby.html",
   "online/room.html",
   "online/lobby.ts",
@@ -264,13 +281,14 @@ export const onlineStaticAllowed = (rel: string): boolean => {
 };
 
 export const staticTarget = (path: string): string => {
-  if (path === "/" || path === "") return "/online/lobby.html";
+  if (path === "/" || path === "" || path === "/online" || path === "/online/") return "/online/lobby.html";
   if (/^\/room\/[^/]+\/?$/.test(path)) return "/online/room.html";
   if (path === "/ai" || path === "/ai/") return "/play/index.html";
   if (path === "/rules" || path === "/rules/") return "/play/rules.html";
   if (path === "/watch" || path === "/watch/") return "/play/watch.html";
   if (path === "/world" || path === "/world/") return "/play/world.html";
   if (path === "/print" || path === "/print/") return "/play/print.html";
+  if (path === "/guide" || path === "/guide/") return "/play/guide.html";
   return path;
 };
 
@@ -294,6 +312,21 @@ const SECURITY_HEADERS: Record<string, string> = {
   "Cache-Control": "no-store",
   "Content-Security-Policy": CSP,
 };
+
+/**
+ * Paths the public build does not serve: the settings page, the records, the
+ * 3D world and the print sheets (and their pages under /play/).
+ */
+export const publicHidden = (path: string): boolean =>
+  /^\/(?:rules|world|print|watch)\/?$/.test(path) || path.startsWith("/records") || /^\/play\/(?:rules|world|print|watch)\.html$/.test(path);
+
+/** Where a path is served from: the public build's front page is the welcome page, the lobby moves to /online. */
+export const targetFor = (path: string, publicSite: boolean): string =>
+  publicSite && (path === "/" || path === "") ? "/play/welcome.html" : staticTarget(path);
+
+/** The public build's mark on an HTML page: data-site on <html> and the public style sheet. */
+export const markPublicHtml = (html: string): string =>
+  html.replace(/<html lang="ja">/, '<html lang="ja" data-site="public">').replace(/<\/head>/, '<link rel="stylesheet" href="/play/site-public.css">\n</head>');
 
 /** Behind a TLS-terminating proxy (--trust-proxy) the site is HTTPS-only, so browsers may pin that. */
 const headersFor = (app: OnlineApp): Record<string, string> =>
@@ -343,7 +376,7 @@ const sendStatic = (
     "Cache-Control": served.code === 200 ? staticCacheControl(target) : "no-store",
     Vary: "Accept-Encoding",
   };
-  const body = served.body;
+  const body = app.publicSite && typeof served.body === "string" && target.endsWith(".html") ? markPublicHtml(served.body) : served.body;
   const bytes = Buffer.byteLength(body);
   // SSE never comes through here; a body this small is not worth a gzip header,
   // and images (the only binary bodies) are compressed already
@@ -512,6 +545,14 @@ const route = async (app: OnlineApp, req: IncomingMessage, res: ServerResponse):
     sendJson(res, err(405, "method not allowed"), app);
     return;
   }
+  if (app.publicSite && publicHidden(path)) {
+    // the settings page's old links land on the rules of the decided version
+    if (/^\/rules\/?$/.test(path)) {
+      res.writeHead(302, { ...headersFor(app), Location: "/guide" });
+      res.end();
+    } else sendJson(res, err(404, "not found"), app, method === "HEAD");
+    return;
+  }
   // /records and /records.csv: the finished games' numbers, read-only
   const rec = recordsResponse(path, url.searchParams, app.lobby.opts.recordDir, printedPack);
   if (rec !== null) {
@@ -519,7 +560,7 @@ const route = async (app: OnlineApp, req: IncomingMessage, res: ServerResponse):
     sendStatic(app, req, res, path, rec, method === "HEAD");
     return;
   }
-  const target = staticTarget(path);
+  const target = targetFor(path, app.publicSite);
   const served = isImagePath(target) ? await serveImage(target, onlineStaticAllowed) : await serveFile(target, onlineStaticAllowed);
   sendStatic(app, req, res, target, served, method === "HEAD");
 };
@@ -614,7 +655,7 @@ const argValue = (argv: string[], key: string): string | undefined => {
 
 export const parseServerArgs = (
   argv: string[],
-): { port: number; host: string; recordDir: string; trustProxy: boolean } => {
+): { port: number; host: string; recordDir: string; trustProxy: boolean; publicSite: boolean } => {
   const portArg = argValue(argv, "--port");
   const port = portArg === undefined ? DEFAULT_PORT : Number(portArg);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -622,7 +663,7 @@ export const parseServerArgs = (
   }
   const host = argValue(argv, "--host") ?? DEFAULT_HOST;
   const recordDir = argValue(argv, "--record-dir") ?? DEFAULT_RECORD_DIR;
-  return { port, host, recordDir, trustProxy: argv.includes("--trust-proxy") };
+  return { port, host, recordDir, trustProxy: argv.includes("--trust-proxy"), publicSite: argv.includes("--public") };
 };
 
 const isEntry = (): boolean => {
@@ -635,6 +676,7 @@ if (isEntry()) {
   const app = createOnlineApp({
     recordDir: args.recordDir,
     trustProxy: args.trustProxy,
+    publicSite: args.publicSite,
     log: (line) => process.stdout.write(`${line}\n`),
     roomDir: join(args.recordDir, "rooms"),
   });

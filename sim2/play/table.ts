@@ -17,7 +17,7 @@ import type { Ctx } from "../src/state.ts";
 import type { CardDef, ColdWin, Facing, PlayerId, Pos, Unit } from "../src/types.ts";
 import type { BoardView, LogItem } from "../online/protocol.ts";
 import { boardHtml } from "./board-view.ts";
-import type { BoardVM, Prediction } from "./board-view.ts";
+import type { BoardVM, CellMark, Prediction } from "./board-view.ts";
 import { SEAT_SEAL, watchArtErrors } from "./cards-view.ts";
 import { createFx } from "./fx.ts";
 import { handHtml } from "./hand-view.ts";
@@ -25,6 +25,7 @@ import { ensureMarks } from "./marks.ts";
 import type { HandCard, HandMode } from "./hand-view.ts";
 import { detailHtml, endCold, endOcc, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, recapHtml, recapOf, turnHtml } from "./hud.ts";
 import type { CardLook, Focus } from "./hud.ts";
+import { mulliganPanelHtml } from "./mulligan-view.ts";
 import { promptHtml } from "./prompt-view.ts";
 import { esc, resultHow, unitAtPos, unitById } from "./render.ts";
 import { resultStatsHtml, summaryOfView } from "./result-stats.ts";
@@ -37,6 +38,7 @@ import {
   handEntries,
   handPlayable,
   NONE,
+  placeHints,
   predictionOf,
   radialItems,
   rangeSets,
@@ -817,13 +819,18 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       const tu = unitById(m.board, uid);
       if (tu !== undefined) coMarks.set(`${tu.pos.x},${tu.pos.y}`, "target");
     }
+    const marks = main ? cellMarks(m.board, lg, hand, s) : co !== null || lp !== null || kp !== null || spot !== null ? coMarks : new Map<string, CellMark>();
+    // a picked hand card: each glowing square says its 耐久 change and whether an enemy already reaches it
+    const pickedCard = main && s.kind === "hand" && m.viewer !== null ? hand[s.handIndex] : undefined;
+    const summonCells = [...marks].flatMap(([k, mk]) => (mk === "summon" ? [{ x: Number(k.split(",")[0]), y: Number(k.split(",")[1]) }] : []));
     const vm: BoardVM = {
       ctx: m.ctx,
       board: m.board,
       names: m.names,
       look: look(m),
       bottom: m.viewer === 1 ? 1 : 0,
-      marks: main ? cellMarks(m.board, lg, hand, s) : co !== null || lp !== null || kp !== null || spot !== null ? coMarks : new Map(),
+      marks,
+      placeHints: pickedCard === undefined || m.viewer === null ? undefined : placeHints(m.ctx, m.board, pickedCard, m.viewer, summonCells),
       range: s.kind === "unit" || (s.kind === "aim" && s.targetUid === null && !s.area) ? rangeSets(m.ctx, shown) : null,
       selectedUid:
         co !== null
@@ -967,6 +974,8 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const lk = look(m);
     root.dataset.viewer = m.viewer === null ? "watch" : String(m.viewer);
     root.dataset.prompt = m.prompt.kind;
+    // 自分=青・相手=赤 (10/18): the seat colours follow the viewer, so a 後手 player is blue too
+    root.dataset.viewer = m.viewer === 1 ? "1" : "0";
     const mulligan = m.phaseText === "マリガン" || m.prompt.kind === "mulligan";
     put(el.oppPlate, nameplateHtml(m.ctx, m.board, top, m.names, false, mulligan));
     put(el.oppHand, m.viewer === null && m.oppHand !== undefined && m.oppHand !== null ? openHandHtml(m.ctx, m.oppHand, m.names[top]) : oppHandHtml(m.board.players[top].handCount));
@@ -974,7 +983,8 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     put(el.pilesOpp, pilesHtml(m.ctx, m.board, top, lk));
     put(el.pilesSelf, pilesHtml(m.ctx, m.board, bottom, lk));
     put(el.turn, turnHtml(m.ctx, m.board, m.names, { phaseText: m.phaseText, mulligan }));
-    put(el.board, boardHtml(boardVM(m)));
+    // the opening mulligan is a panel of its own over the still-empty board (今なにをする場面か, 10/17)
+    put(el.board, boardHtml(boardVM(m)) + (m.prompt.kind === "mulligan" ? mulliganPanelHtml(m.ctx, handCards(m), look(m), marked.size) : ""));
     renderHand(m);
     put(
       el.prompt,

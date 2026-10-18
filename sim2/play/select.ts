@@ -269,3 +269,28 @@ export const selStillValid = (sel: Sel, board: BoardView, hand: string[] | null,
       return hand !== null && sel.handIndex < hand.length;
   }
 };
+
+/** What a square does to a card summoned there: its 耐久 change, and how many enemy pieces already reach it. */
+export type PlaceHint = { delta: number; threats: number };
+
+/**
+ * The hints on the squares a hand card may be summoned to (遊びやすくする工夫, 10/17):
+ * the 耐久 change from the square's attribute against the card's, and the
+ * enemies whose 間合 covers the square now. Hidden pieces are left out so the
+ * hint tells nothing the board does not show.
+ */
+export const placeHints = (ctx: Ctx, board: BoardView, cardId: string, owner: PlayerId, cells: readonly Pos[]): Map<string, PlaceHint> => {
+  const ghost = (pos: Pos): Unit => ({
+    uid: -1, cardId, owner, pos, facing: 0, damage: 0, attackedThisTurn: false, rotatedThisTurn: false, summonedThisTurn: true, hiddenBy: null, atkBuff: 0,
+  });
+  // (0,0) is a plain (空) square: the card's 耐久 with no attribute change
+  const base = unitMaxHp(ctx, ghost({ x: 0, y: 0 }));
+  const enemies = board.units.filter((u) => u.owner !== owner && !isHidden(u));
+  const reach = enemies.map((u) => new Set(attackCells(ctx, u).map(posKey)));
+  const out = new Map<string, PlaceHint>();
+  for (const pos of cells) {
+    const k = posKey(pos);
+    out.set(k, { delta: unitMaxHp(ctx, ghost(pos)) - base, threats: reach.filter((r) => r.has(k)).length });
+  }
+  return out;
+};
