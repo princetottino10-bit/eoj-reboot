@@ -19,7 +19,7 @@ import type { CardOverrides } from "../src/card-overrides.ts";
 import { cardOf } from "../src/cards.ts";
 import { hasFreeSummonAttack, isAoeAttack } from "../src/combat.ts";
 import { effectTextOf, rotateIsFree } from "../src/effects.ts";
-import { cardOfUnit, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
+import { cardOfUnit, controlWeight, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { CardDef, Config, Facing, PlayerId, Pos, Unit } from "../src/types.ts";
 import { ATTR_MARK_ID, flames, mark } from "./marks.ts";
@@ -385,11 +385,13 @@ export const pieceHtml = (
   const buff = u.atkBuff > 0 ? `<span class="pc-buff" title="このターン攻撃力+${u.atkBuff}">攻撃力+${u.atkBuff}</span>` : "";
   // freeSummonAttack: the summon-turn attack that costs no attack cost is still there
   const free = current && hasFreeSummonAttack(ctx, u) ? '<span class="pc-free" title="召喚攻撃は消費霊力0(このターンの1回目の攻撃)">0</span>' : "";
+  // 制圧力2 (10/18): the piece says it counts two, as a fact on the board
+  const ctl2 = controlWeight(ctx, u) >= 2 ? `<span class="pc-ctl2" title="制圧力2(${ctx.cfg.controlCount === "cost" ? "召☆" : "耐久"}${ctx.cfg.controlCountThreshold}以上)">制2</span>` : "";
   return `<div class="${cls}" data-uid="${u.uid}">
     <div class="pc-dir f${u.facing}" aria-hidden="true"><i class="pc-arrow"></i></div>
     <div class="pc-body">${cardFaceHtml(ctx, card.id, { size: "sm", mods: opts.mods, printed: opts.printed, facing: u.facing, hp: { now: hp, max } })}${mark("cube", "pc-cube")}</div>
     ${flag === "" ? "" : `<span class="pc-flag" title="${flagTip}">${flag}</span>`}
-    ${buff}${free}
+    ${buff}${free}${ctl2}
     ${isHidden(u) ? `<span class="pc-fog" aria-hidden="true"></span><span class="pc-hidden">隠</span>` : ""}
   </div>`;
 };

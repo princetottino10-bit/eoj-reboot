@@ -38,3 +38,14 @@ test("the mulligan panel: the hand, what a tap does, and one button that fits th
   assert.match(one, /data-act="marks"[^>]*>1枚を引き直して始める/);
   assert.match(one, /引き直す/);
 });
+
+test("a piece that counts 制圧力2 says so on the board", async () => {
+  const { pieceHtml } = await import("../play/cards-view.ts");
+  const c = makeCtx(presetConfig("r1007"), SK);
+  const big = { uid: 1, cardId: "sk01", owner: 0 as const, pos: { x: 0, y: 0 }, facing: 0 as const, damage: 0, attackedThisTurn: false, rotatedThisTurn: false, summonedThisTurn: false, hiddenBy: null, atkBuff: 0 };
+  const hc = makeCtx({ ...presetConfig("r1007"), controlCountThreshold: 1 }, SK);
+  assert.match(pieceHtml(hc, big, { control: false }), /pc-ctl2[^>]*>制2/);
+  const lo = makeCtx({ ...presetConfig("r1007"), controlCountThreshold: 99 }, SK);
+  assert.doesNotMatch(pieceHtml(lo, big, { control: false }), /pc-ctl2/);
+  void c;
+});

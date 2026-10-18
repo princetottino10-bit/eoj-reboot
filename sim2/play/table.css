@@ -1333,3 +1333,10 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   box-shadow: 0 0 0 0.09em var(--own), 0 0 0 0.15em oklch(10% 0 0 / 0.7), 0 0.4em 0.7em -0.2em oklch(0% 0 0 / 0.75), 0 0 1.4em 0.05em color-mix(in oklch, var(--own) 80%, transparent);
 }
 .pc-cube { width: 1.4em; height: 1.4em; left: -0.6em; bottom: -0.6em; }
+/* 制圧力2 (10/18): a gold tag at the bottom middle of the cell */
+.pc-ctl2 {
+  position: absolute; left: 50%; bottom: 2cqh; translate: -50% 0; z-index: 2; pointer-events: none;
+  padding: 0.2cqw 2.2cqw; border-radius: 1.5cqw; white-space: nowrap;
+  font-family: var(--font-mincho); font-weight: 800; font-size: max(10px, 8cqw); line-height: 1.25;
+  color: var(--ink); background: var(--gold-hi); box-shadow: 0 0 0 1px oklch(30% 0.02 85 / 0.7), 0 0 2.5cqw oklch(85% 0.12 85 / 0.6);
+}
