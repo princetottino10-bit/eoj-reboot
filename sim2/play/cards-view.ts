@@ -372,7 +372,7 @@ export const SEAT_SEAL = ["先", "後"];
 export const pieceHtml = (
   ctx: Ctx,
   u: Unit,
-  opts: { mods?: CardOverrides; printed?: (id: string) => CardDef | undefined; control: boolean; turnPlayer?: PlayerId },
+  opts: { mods?: CardOverrides; printed?: (id: string) => CardDef | undefined; control: boolean; turnPlayer?: PlayerId; tile?: boolean },
 ): string => {
   const card = cardOfUnit(ctx, u);
   const hp = Math.max(0, unitHp(ctx, u));
@@ -389,6 +389,24 @@ export const pieceHtml = (
   const hpTag = `<span class="pc-hp${hp < max ? " is-hurt" : hp > max ? " is-over" : ""}" title="今の耐久 ${hp}(最大 ${max})">耐久<b>${hp}</b></span>`;
   // 制圧力2 (10/18): the piece says it counts two, as a fact on the board
   const ctl2 = controlWeight(ctx, u) >= 2 ? `<span class="pc-ctl2" title="制圧力2(${ctx.cfg.controlCount === "cost" ? "召☆" : "耐久"}${ctx.cfg.controlCountThreshold}以上)">制2</span>` : "";
+  if (opts.tile === true) {
+    // 試作 10/21 (スマホ): the art stays upright on the left, only the range turns with the piece,
+    // the numbers sit in a row and the name band wears the side's colour
+    const aoe = isAoeAttack(ctx, card);
+    const gap = ctx.cfg.counterMode === "gap" && aoe ? (card.gapCell ?? null) : null;
+    const range = rangeSvg(card.attackRange, card.blindSpots, gap, u.facing, { counter: counterCellsOf(ctx.cfg, card), aoe });
+    return `<div class="${cls} pc-tile" data-uid="${u.uid}">
+    <div class="pc-body">
+      <span class="pt-art">${illustrationHtml(card, "sm")}</span>
+      <span class="pt-range f${u.facing}">${range}</span>
+      <span class="pt-stats"><span class="pt-hp${hp < max ? " is-hurt" : ""}">耐<b>${hp}</b></span><span class="pt-atk">攻<b>${card.atk + u.atkBuff}</b></span></span>
+      <span class="pt-name">${esc(card.nameJa)}</span>
+    </div>
+    ${flag === "" ? "" : `<span class="pc-flag" title="${flagTip}">${flag}</span>`}
+    ${free}${ctl2}
+    ${isHidden(u) ? `<span class="pc-fog" aria-hidden="true"></span><span class="pc-hidden">隠</span>` : ""}
+  </div>`;
+  }
   return `<div class="${cls}" data-uid="${u.uid}">
     <div class="pc-dir f${u.facing}" aria-hidden="true"><i class="pc-arrow"></i></div>
     <div class="pc-body">${cardFaceHtml(ctx, card.id, { size: "sm", mods: opts.mods, printed: opts.printed, facing: u.facing, hp: { now: hp, max } })}${mark("cube", "pc-cube")}</div>

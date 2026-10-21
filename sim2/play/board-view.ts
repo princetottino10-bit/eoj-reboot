@@ -68,6 +68,8 @@ export type BoardVM = {
   placeHints?: Map<string, { delta: number; threats: number }>;
   /** 10/18: my pieces that can still attack this turn (nothing picked), drawn with a gold ring. */
   canAttack?: Set<number>;
+  /** 試作 10/21: pieces as tiles (art upright, range turned); see pieceHtml. */
+  tile?: boolean;
 };
 
 const GLYPH: Record<CommandId, string> = {
@@ -138,7 +140,7 @@ const cellHtml = (vm: BoardVM, pos: Pos): string => {
         }</span>`;
   if (hint !== undefined && hint.threats > 0) cls.push("is-threatened");
   const piece =
-    u === undefined ? "" : pieceHtml(vm.ctx, u, { ...vm.look, control: ctl.includes(u.owner), turnPlayer: vm.board.turnPlayer });
+    u === undefined ? "" : pieceHtml(vm.ctx, u, { ...vm.look, control: ctl.includes(u.owner), turnPlayer: vm.board.turnPlayer, tile: vm.tile === true });
   return `<button type="button" class="${cls.join(" ")}" data-act="cell" data-x="${pos.x}" data-y="${pos.y}" style="${gridPlace(pos)}"
     aria-label="${cellName(pos)}のマス / ${esc(who)}${markText}${hintText}${rangeText}">
     <span class="raden${u === undefined ? "" : " chip"}" aria-hidden="true">${markSvg(ATTR_MARK_ID[attr], "raden-mk")}</span>${vm.range?.gap.has(k) ? '<span class="cell-gap">旧・隙</span>' : ""}${hintHtml}${piece}

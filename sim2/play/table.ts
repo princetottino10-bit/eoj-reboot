@@ -293,6 +293,23 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     render();
   };
 
+  // 試作 10/21: ?piece=tile shows the pieces as tiles (art upright, range turned with the piece); ?piece=card goes back
+  const TILE_KEY = "yy-piece-tile";
+  try {
+    const q = new URLSearchParams(location.search).get("piece");
+    if (q === "tile") sessionStorage.setItem(TILE_KEY, "1");
+    if (q === "card") sessionStorage.removeItem(TILE_KEY);
+  } catch {
+    /* storage blocked: cards as before */
+  }
+  const pieceTile = (): boolean => {
+    try {
+      return sessionStorage.getItem(TILE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  };
+
   // はじめての1局 (10/18): first-turn steps until the viewer's first turn ends, once per browser
   const COACH_KEY = "yy-coach-done";
   let coachOn = ((): boolean => {
@@ -884,6 +901,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       bottom: m.viewer === 1 ? 1 : 0,
       marks,
       placeHints: pickedCard === undefined || m.viewer === null ? undefined : placeHints(m.ctx, m.board, pickedCard, m.viewer, summonCells),
+      tile: pieceTile(),
       canAttack: main && s.kind === "none" ? new Set(lg.flatMap((e) => (e.action.kind === "attack" ? [e.action.uid] : []))) : undefined,
       range: s.kind === "unit" || (s.kind === "aim" && s.targetUid === null && !s.area) ? rangeSets(m.ctx, shown) : null,
       selectedUid:
