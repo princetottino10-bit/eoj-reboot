@@ -1428,3 +1428,9 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 /* the cell's 陰/陽/空 stays readable over a tile, in the corner of the range panel */
 .cell:has(.pc-tile) .raden.chip { left: auto; right: 3cqw; top: 3cqh; width: 13cqw; height: 13cqw; z-index: 3; pointer-events: none; }
 .pc-tile .pc-flag { top: 30cqh; left: 22cqw; right: auto; translate: -50% 0; }
+/* the facing on a tile (10/21): the art stays upright, so the front is a side-coloured bar along the
+   tile's front edge with a big arrow outside it */
+.pc-tile .pc-body { width: 86cqw; height: 86cqh; }
+.pc-tile .pc-dir { z-index: 2; }
+.pc-tile .pc-dir::before { content: ""; position: absolute; left: 7cqw; right: 7cqw; top: 5cqh; height: 3.6cqh; border-radius: 1cqw; background: var(--gold-hi); box-shadow: 0 0 2cqw oklch(85% 0.12 85 / 0.9); }
+.pc-tile .pc-arrow { top: -1cqh; width: 36cqw; height: 11cqh; margin-left: -18cqw; clip-path: polygon(50% 0, 100% 100%, 0 100%); filter: drop-shadow(0 0 1.5cqw oklch(85% 0.12 85 / 0.9)); }

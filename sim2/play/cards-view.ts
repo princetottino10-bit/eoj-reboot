@@ -396,6 +396,7 @@ export const pieceHtml = (
     const gap = ctx.cfg.counterMode === "gap" && aoe ? (card.gapCell ?? null) : null;
     const range = rangeSvg(card.attackRange, card.blindSpots, gap, u.facing, { counter: counterCellsOf(ctx.cfg, card), aoe });
     return `<div class="${cls} pc-tile" data-uid="${u.uid}">
+    <div class="pc-dir f${u.facing}" aria-hidden="true"><i class="pc-arrow"></i></div>
     <div class="pc-body">
       <span class="pt-art">${illustrationHtml(card, "sm")}</span>
       <span class="pt-range f${u.facing}">${range}</span>
