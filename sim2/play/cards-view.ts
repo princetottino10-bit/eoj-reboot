@@ -398,7 +398,7 @@ export const pieceHtml = (
     return `<div class="${cls} pc-tile" data-uid="${u.uid}">
     <div class="pc-dir f${u.facing}" aria-hidden="true"><i class="pc-arrow"></i></div>
     <div class="pc-body">
-      <span class="pt-art">${illustrationHtml(card, "sm")}</span>
+      <span class="pt-art">${illustrationHtml(card, "sm")}<span class="pt-way f${u.facing}" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 4 L94 52 L66 52 L66 96 L34 96 L34 52 L6 52 Z"/></svg></span></span>
       <span class="pt-range f${u.facing}">${range}</span>
       <span class="pt-stats"><span class="pt-hp${hp < max ? " is-hurt" : ""}">耐<b>${hp}</b></span><span class="pt-atk">攻<b>${card.atk + u.atkBuff}</b></span></span>
       <span class="pt-name">${esc(card.nameJa)}</span>

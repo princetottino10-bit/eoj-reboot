@@ -297,14 +297,16 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
   const TILE_KEY = "yy-piece-tile";
   try {
     const q = new URLSearchParams(location.search).get("piece");
-    if (q === "tile") sessionStorage.setItem(TILE_KEY, "1");
+    if (q !== null && q.startsWith("tile")) sessionStorage.setItem(TILE_KEY, q === "tile" ? "1" : q.slice(5));
     if (q === "card") sessionStorage.removeItem(TILE_KEY);
   } catch {
     /* storage blocked: cards as before */
   }
   const pieceTile = (): boolean => {
     try {
-      return sessionStorage.getItem(TILE_KEY) === "1";
+      const v = sessionStorage.getItem(TILE_KEY);
+      root.dataset.tile = v ?? "";
+      return v !== null;
     } catch {
       return false;
     }

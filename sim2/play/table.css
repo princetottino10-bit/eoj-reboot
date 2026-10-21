@@ -1434,3 +1434,17 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .pc-tile .pc-dir { z-index: 2; }
 .pc-tile .pc-dir::before { content: ""; position: absolute; left: 7cqw; right: 7cqw; top: 5cqh; height: 3.6cqh; border-radius: 1cqw; background: var(--gold-hi); box-shadow: 0 0 2cqw oklch(85% 0.12 85 / 0.9); }
 .pc-tile .pc-arrow { top: -1cqh; width: 36cqw; height: 11cqh; margin-left: -18cqw; clip-path: polygon(50% 0, 100% 100%, 0 100%); filter: drop-shadow(0 0 1.5cqw oklch(85% 0.12 85 / 0.9)); }
+/* 向きの見せ方の見比べ (10/21): ?piece=tile-rot turns the whole tile, ?piece=tile-arrow lays a big arrow over the art */
+.yy[data-tile="rot"] .pc-tile .pc-body { transition: rotate var(--t-mid) var(--ease-out); }
+.yy[data-tile="rot"] .pc-tile.f1 .pc-body { rotate: 90deg; }
+.yy[data-tile="rot"] .pc-tile.f2 .pc-body { rotate: 180deg; }
+.yy[data-tile="rot"] .pc-tile.f3 .pc-body { rotate: 270deg; }
+.yy[data-tile="rot"] .pt-range svg { rotate: none !important; }
+.yy[data-tile="rot"] .pc-tile .pc-dir::before { display: none; }
+.pt-art .pt-way { display: none; }
+.yy[data-tile="arrow"] .pt-art .pt-way { display: block; position: absolute; inset: 8%; z-index: 1; pointer-events: none; }
+.yy[data-tile="arrow"] .pt-way svg { width: 100%; height: 100%; overflow: visible; }
+.yy[data-tile="arrow"] .pt-way.f1 { rotate: 90deg; }
+.yy[data-tile="arrow"] .pt-way.f2 { rotate: 180deg; }
+.yy[data-tile="arrow"] .pt-way.f3 { rotate: 270deg; }
+.pt-way path { fill: var(--own); stroke: #fff; stroke-width: 5; stroke-linejoin: round; opacity: 0.92; }
