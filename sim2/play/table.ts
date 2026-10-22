@@ -293,32 +293,25 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     render();
   };
 
-  // 試作 10/21: ?piece=tile shows the pieces as tiles (art upright, range turned with the piece); ?piece=card goes back
+  // スマホは駒をタイルで出す (10/22): art upright on the left, the range turned to the facing.
+  // Phones only (the same width as the phone layout in table.css); ?piece=tile|card forces it for a check.
   const TILE_KEY = "yy-piece-tile";
   try {
     const q = new URLSearchParams(location.search).get("piece");
-    if (q !== null && q.startsWith("tile")) sessionStorage.setItem(TILE_KEY, q === "tile" ? "1" : q.slice(5));
-    if (q === "card") sessionStorage.removeItem(TILE_KEY);
+    if (q === "tile" || q === "card") sessionStorage.setItem(TILE_KEY, q);
   } catch {
-    /* storage blocked: cards as before */
+    /* storage blocked: follow the screen width */
   }
-  // 試作 10/21: ?mark=arrow draws the piece's forward mark in every range diagram as an arrow (PC and phone alike)
-  try {
-    const mk = new URLSearchParams(location.search).get("mark");
-    if (mk === "arrow") sessionStorage.setItem("yy-mark-arrow", "1");
-    if (mk === "tri") sessionStorage.removeItem("yy-mark-arrow");
-    if (sessionStorage.getItem("yy-mark-arrow") === "1") document.documentElement.dataset.mark = "arrow";
-  } catch {
-    /* storage blocked: triangle as before */
-  }
+  const phoneQuery = typeof matchMedia === "function" ? matchMedia("(max-width: 700px), (max-height: 520px) and (min-aspect-ratio: 4/3)") : null;
+  phoneQuery?.addEventListener("change", () => render());
   const pieceTile = (): boolean => {
+    let forced: string | null = null;
     try {
-      const v = sessionStorage.getItem(TILE_KEY);
-      root.dataset.tile = v ?? "";
-      return v !== null;
+      forced = sessionStorage.getItem(TILE_KEY);
     } catch {
-      return false;
+      /* storage blocked */
     }
+    return forced === "tile" ? true : forced === "card" ? false : phoneQuery?.matches === true;
   };
 
   // はじめての1局 (10/18): first-turn steps until the viewer's first turn ends, once per browser

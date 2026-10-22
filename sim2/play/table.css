@@ -1333,13 +1333,6 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   box-shadow: 0 0 0 0.09em var(--own), 0 0 0 0.15em oklch(10% 0 0 / 0.7), 0 0.4em 0.7em -0.2em oklch(0% 0 0 / 0.75), 0 0 1.4em 0.05em color-mix(in oklch, var(--own) 80%, transparent);
 }
 .pc-cube { width: 1.4em; height: 1.4em; left: -0.6em; bottom: -0.6em; }
-/* 制圧力2 (10/18): a gold tag at the bottom middle of the cell */
-.pc-ctl2 {
-  position: absolute; left: 50%; bottom: 2cqh; translate: -50% 0; z-index: 2; pointer-events: none;
-  padding: 0.2cqw 2.2cqw; border-radius: 1.5cqw; white-space: nowrap;
-  font-family: var(--font-mincho); font-weight: 800; font-size: max(10px, 8cqw); line-height: 1.25;
-  color: var(--ink); background: var(--gold-hi); box-shadow: 0 0 0 1px oklch(30% 0.02 85 / 0.7), 0 0 2.5cqw oklch(85% 0.12 85 / 0.6);
-}
 /* 耐久 now (10/18): an upright tag at the top left of the cell, red once the piece is hurt */
 .pc-hp {
   position: absolute; left: 2.5cqw; top: 2.5cqh; z-index: 3; pointer-events: none;
@@ -1400,7 +1393,7 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .coach { flex: 1 1 100%; box-sizing: border-box; }
 @media (min-width: 701px) { .coach { flex-basis: auto; max-width: 640px; margin-inline: auto; } .yy-prompt:has(.coach) { flex-direction: column; align-items: center; } }
 
-/* 試作 10/21 (?piece=tile): the piece as a tile — art upright on the left, the range on the right
+/* スマホの駒 (10/22, table.ts pieceTile): the piece as a tile — art upright on the left, the range on the right
    turned to the facing, 耐/攻 in a row, the name band in the side's colour */
 .pc-tile .pc-body {
   rotate: none; width: 94cqw; height: 94cqh; display: grid; grid-template-columns: 44% 56%; grid-template-rows: minmax(0, 1fr) auto auto;
@@ -1423,31 +1416,10 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .pt-atk b { color: oklch(80% 0.14 60); }
 .pt-name { grid-area: 3 / 1 / 4 / 3; padding: 0.6cqw 2cqw 1cqw; background: var(--own); color: #fff; font-size: max(9px, 7.5cqw); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
 .pc-tile .pc-flag { top: 2cqh; right: 2cqw; }
-.pc-tile .pc-ctl2 { bottom: auto; top: 2cqh; left: 2cqw; translate: none; }
 .pc-tile.is-spent .pc-body { filter: brightness(0.55) saturate(0.5); }
 /* the cell's 陰/陽/空 stays readable over a tile, in the corner of the range panel */
 .cell:has(.pc-tile) .raden.chip { left: auto; right: 3cqw; top: 3cqh; width: 13cqw; height: 13cqw; z-index: 3; pointer-events: none; }
 .pc-tile .pc-flag { top: 30cqh; left: 22cqw; right: auto; translate: -50% 0; }
-/* the facing on a tile (10/21): the art stays upright, so the front is a side-coloured bar along the
-   tile's front edge with a big arrow outside it */
+/* a tile keeps the board's own facing arrow at the cell edge, so the body leaves room for it */
 .pc-tile .pc-body { width: 86cqw; height: 86cqh; }
 .pc-tile .pc-dir { z-index: 2; }
-.pc-tile .pc-dir::before { content: ""; position: absolute; left: 7cqw; right: 7cqw; top: 5cqh; height: 3.6cqh; border-radius: 1cqw; background: var(--gold-hi); box-shadow: 0 0 2cqw oklch(85% 0.12 85 / 0.9); }
-.pc-tile .pc-arrow { top: -1cqh; width: 36cqw; height: 11cqh; margin-left: -18cqw; clip-path: polygon(50% 0, 100% 100%, 0 100%); filter: drop-shadow(0 0 1.5cqw oklch(85% 0.12 85 / 0.9)); }
-/* 向きの見せ方の見比べ (10/21): ?piece=tile-rot turns the whole tile, ?piece=tile-arrow lays a big arrow over the art */
-.yy[data-tile="rot"] .pc-tile .pc-body { transition: rotate var(--t-mid) var(--ease-out); }
-.yy[data-tile="rot"] .pc-tile.f1 .pc-body { rotate: 90deg; }
-.yy[data-tile="rot"] .pc-tile.f2 .pc-body { rotate: 180deg; }
-.yy[data-tile="rot"] .pc-tile.f3 .pc-body { rotate: 270deg; }
-.yy[data-tile="rot"] .pt-range svg { rotate: none !important; }
-.yy[data-tile="rot"] .pc-tile .pc-dir::before { display: none; }
-.pt-art .pt-way { display: none; }
-.yy[data-tile="arrow"] .pt-art .pt-way { display: block; position: absolute; inset: 8%; z-index: 1; pointer-events: none; }
-.yy[data-tile="arrow"] .pt-way svg { width: 100%; height: 100%; overflow: visible; }
-.yy[data-tile="arrow"] .pt-way.f1 { rotate: 90deg; }
-.yy[data-tile="arrow"] .pt-way.f2 { rotate: 180deg; }
-.yy[data-tile="arrow"] .pt-way.f3 { rotate: 270deg; }
-.pt-way path { fill: var(--own); stroke: #fff; stroke-width: 5; stroke-linejoin: round; opacity: 0.92; }
-.fu-range .rs-arw { display: none; fill: var(--washi-hi); }
-:root[data-mark="arrow"] .fu-range .rs-fwd { display: none; }
-:root[data-mark="arrow"] .fu-range .rs-arw { display: inline; }

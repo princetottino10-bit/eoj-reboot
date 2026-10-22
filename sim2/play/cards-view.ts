@@ -19,7 +19,7 @@ import type { CardOverrides } from "../src/card-overrides.ts";
 import { cardOf } from "../src/cards.ts";
 import { hasFreeSummonAttack, isAoeAttack } from "../src/combat.ts";
 import { effectTextOf, rotateIsFree } from "../src/effects.ts";
-import { cardOfUnit, controlWeight, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
+import { cardOfUnit, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { CardDef, Config, Facing, PlayerId, Pos, Unit } from "../src/types.ts";
 import { ATTR_MARK_ID, flames, mark } from "./marks.ts";
@@ -158,7 +158,7 @@ const CELL = 10;
  * counter range = sage (a full-cell square for area attackers, an inscribed
  * circle for single), attack = vermilion at 50% of the cell (square = area,
  * circle = single), blind spot = khaki full cell, the piece = ink with a white
- * forward triangle. The system has no gap (旧・隙) mark yet: an amber ring stands
+ * forward arrow. The system has no gap (旧・隙) mark yet: an amber ring stands
  * in for it (provisional). 3x3 when everything is adjacent, 5x5 when something
  * reaches two cells (the unused outer ring then shrinks to dots so the core
  * reads first). The diagram is always printed forward = up; on the board the
@@ -184,10 +184,9 @@ export const rangeSvg = (range: readonly Pos[], blind: readonly Pos[], gap: Pos 
       const rect = (cls: string, inset = 0): string =>
         `<rect class="${cls}" x="${x + inset}" y="${y + inset}" width="${CELL - inset * 2}" height="${CELL - inset * 2}"/>`;
       if (dx === 0 && dy === 0) {
+        // the piece's front as an arrow (10/22, PC and phone alike; was a triangle)
         cells.push(
-          `${rect("rs-self")}<path class="rs-fwd" d="M${x + c} ${y + 2.4}L${x + 7.8} ${y + 7.2}L${x + 2.2} ${y + 7.2}Z"/>` +
-            // 試作 10/21: the same forward mark as an arrow, shown instead of the triangle with ?mark=arrow
-            `<path class="rs-arw" d="M${x + c} ${y + 1}L${x + 9} ${y + 5.2}L${x + 6.5} ${y + 5.2}L${x + 6.5} ${y + 9}L${x + 3.5} ${y + 9}L${x + 3.5} ${y + 5.2}L${x + 1} ${y + 5.2}Z"/>`,
+          `${rect("rs-self")}<path class="rs-fwd" d="M${x + c} ${y + 1}L${x + 9} ${y + 5.2}L${x + 6.5} ${y + 5.2}L${x + 6.5} ${y + 9}L${x + 3.5} ${y + 9}L${x + 3.5} ${y + 5.2}L${x + 1} ${y + 5.2}Z"/>`,
         );
         continue;
       }
@@ -392,7 +391,6 @@ export const pieceHtml = (
   // 耐久 now (10/18): the card's printed 耐久 is the big number on it, so the current one gets a tag that stays upright
   const hpTag = `<span class="pc-hp${hp < max ? " is-hurt" : hp > max ? " is-over" : ""}" title="今の耐久 ${hp}(最大 ${max})">耐久<b>${hp}</b></span>`;
   // 制圧力2 (10/18): the piece says it counts two, as a fact on the board
-  const ctl2 = controlWeight(ctx, u) >= 2 ? `<span class="pc-ctl2" title="制圧力2(${ctx.cfg.controlCount === "cost" ? "召☆" : "耐久"}${ctx.cfg.controlCountThreshold}以上)">制2</span>` : "";
   if (opts.tile === true) {
     // 試作 10/21 (スマホ): the art stays upright on the left, only the range turns with the piece,
     // the numbers sit in a row and the name band wears the side's colour
@@ -402,13 +400,13 @@ export const pieceHtml = (
     return `<div class="${cls} pc-tile" data-uid="${u.uid}">
     <div class="pc-dir f${u.facing}" aria-hidden="true"><i class="pc-arrow"></i></div>
     <div class="pc-body">
-      <span class="pt-art">${illustrationHtml(card, "sm")}<span class="pt-way f${u.facing}" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="M50 4 L94 52 L66 52 L66 96 L34 96 L34 52 L6 52 Z"/></svg></span></span>
+      <span class="pt-art">${illustrationHtml(card, "sm")}</span>
       <span class="pt-range f${u.facing}">${range}</span>
       <span class="pt-stats"><span class="pt-hp${hp < max ? " is-hurt" : ""}">耐<b>${hp}</b></span><span class="pt-atk">攻<b>${card.atk + u.atkBuff}</b></span></span>
       <span class="pt-name">${esc(card.nameJa)}</span>
     </div>
     ${flag === "" ? "" : `<span class="pc-flag" title="${flagTip}">${flag}</span>`}
-    ${free}${ctl2}
+    ${free}
     ${isHidden(u) ? `<span class="pc-fog" aria-hidden="true"></span><span class="pc-hidden">隠</span>` : ""}
   </div>`;
   }
@@ -416,7 +414,7 @@ export const pieceHtml = (
     <div class="pc-dir f${u.facing}" aria-hidden="true"><i class="pc-arrow"></i></div>
     <div class="pc-body">${cardFaceHtml(ctx, card.id, { size: "sm", mods: opts.mods, printed: opts.printed, facing: u.facing, hp: { now: hp, max } })}${mark("cube", "pc-cube")}</div>
     ${flag === "" ? "" : `<span class="pc-flag" title="${flagTip}">${flag}</span>`}
-    ${hpTag}${buff}${free}${ctl2}
+    ${hpTag}${buff}${free}
     ${isHidden(u) ? `<span class="pc-fog" aria-hidden="true"></span><span class="pc-hidden">隠</span>` : ""}
   </div>`;
 };

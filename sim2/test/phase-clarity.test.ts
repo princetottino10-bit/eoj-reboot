@@ -39,15 +39,24 @@ test("the mulligan panel: the hand, what a tap does, and one button that fits th
   assert.match(one, /引き直す/);
 });
 
-test("a piece that counts 制圧力2 says so on the board", async () => {
+test("board pieces carry no 制2 tag (10/22: 制圧力 lives on the summary card only)", async () => {
   const { pieceHtml } = await import("../play/cards-view.ts");
-  const c = makeCtx(presetConfig("r1007"), SK);
   const big = { uid: 1, cardId: "sk01", owner: 0 as const, pos: { x: 0, y: 0 }, facing: 0 as const, damage: 0, attackedThisTurn: false, rotatedThisTurn: false, summonedThisTurn: false, hiddenBy: null, atkBuff: 0 };
   const hc = makeCtx({ ...presetConfig("r1007"), controlCountThreshold: 1 }, SK);
-  assert.match(pieceHtml(hc, big, { control: false }), /pc-ctl2[^>]*>制2/);
-  const lo = makeCtx({ ...presetConfig("r1007"), controlCountThreshold: 99 }, SK);
-  assert.doesNotMatch(pieceHtml(lo, big, { control: false }), /pc-ctl2/);
-  void c;
+  assert.doesNotMatch(pieceHtml(hc, big, { control: false }), /制2/);
+  assert.doesNotMatch(pieceHtml(hc, big, { control: false, tile: true }), /制2/);
+});
+
+test("the range diagram marks the piece's front with an arrow, and a tile turns only the diagram", async () => {
+  const { pieceHtml, rangeSvg } = await import("../play/cards-view.ts");
+  const svg = rangeSvg([{ x: 0, y: 1 }], [{ x: 0, y: -1 }], null);
+  assert.match(svg, /class="rs-fwd" d="M[\d.]+ [\d.]+L[^"]*Z"/);
+  assert.equal((svg.match(/class="rs-fwd" d="([^"]*)"/)?.[1].match(/L/g) ?? []).length, 6);
+  const turned = { uid: 1, cardId: "sk01", owner: 0 as const, pos: { x: 0, y: 0 }, facing: 1 as const, damage: 0, attackedThisTurn: false, rotatedThisTurn: false, summonedThisTurn: false, hiddenBy: null, atkBuff: 0 };
+  const tile = pieceHtml(makeCtx(presetConfig("r1007"), SK), turned, { control: false, tile: true });
+  assert.match(tile, /pc-tile/);
+  assert.match(tile, /class="pt-range f1"/);
+  assert.match(tile, /class="pc-dir f1"/);
 });
 
 test("a 制圧チェック knocked below the count stops showing as one", async () => {
