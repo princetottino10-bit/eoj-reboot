@@ -539,7 +539,11 @@
       "aoe": false,
       "attackRange": "2",
       "counterRange": "2",
-      "blindSpots": "8"
+      "blindSpots": "8",
+      "art": {
+        "card": "play/art/tanuki/tn01.webp",
+        "square": "play/art/tanuki/tn01-sq.webp"
+      }
     },
     {
       "id": "tn02",
@@ -558,7 +562,11 @@
       "aoe": false,
       "attackRange": "",
       "counterRange": "",
-      "blindSpots": "8"
+      "blindSpots": "8",
+      "art": {
+        "card": "play/art/tanuki/tn02.webp",
+        "square": "play/art/tanuki/tn02-sq.webp"
+      }
     },
     {
       "id": "tn03",
@@ -577,7 +585,11 @@
       "aoe": false,
       "attackRange": "2",
       "counterRange": "2",
-      "blindSpots": "8"
+      "blindSpots": "8",
+      "art": {
+        "card": "play/art/tanuki/tn03.webp",
+        "square": "play/art/tanuki/tn03-sq.webp"
+      }
     },
     {
       "id": "tn04",
@@ -596,7 +608,11 @@
       "aoe": false,
       "attackRange": "13",
       "counterRange": "13",
-      "blindSpots": "8"
+      "blindSpots": "8",
+      "art": {
+        "card": "play/art/tanuki/tn04.webp",
+        "square": "play/art/tanuki/tn04-sq.webp"
+      }
     },
     {
       "id": "tn05",
@@ -615,7 +631,11 @@
       "aoe": false,
       "attackRange": "23",
       "counterRange": "3",
-      "blindSpots": "48"
+      "blindSpots": "48",
+      "art": {
+        "card": "play/art/tanuki/tn05.webp",
+        "square": "play/art/tanuki/tn05-sq.webp"
+      }
     },
     {
       "id": "tn06",
@@ -634,7 +654,11 @@
       "aoe": false,
       "attackRange": "2",
       "counterRange": "12346",
-      "blindSpots": "789"
+      "blindSpots": "789",
+      "art": {
+        "card": "play/art/tanuki/tn06.webp",
+        "square": "play/art/tanuki/tn06-sq.webp"
+      }
     },
     {
       "id": "tn07",
@@ -653,7 +677,11 @@
       "aoe": false,
       "attackRange": "-223",
       "counterRange": "-223",
-      "blindSpots": "4"
+      "blindSpots": "4",
+      "art": {
+        "card": "play/art/tanuki/tn07.webp",
+        "square": "play/art/tanuki/tn07-sq.webp"
+      }
     },
     {
       "id": "tn08",
@@ -672,7 +700,11 @@
       "aoe": true,
       "attackRange": "123",
       "counterRange": "2",
-      "blindSpots": "789"
+      "blindSpots": "789",
+      "art": {
+        "card": "play/art/tanuki/tn08.webp",
+        "square": "play/art/tanuki/tn08-sq.webp"
+      }
     },
     {
       "id": "tn09",
@@ -691,7 +723,11 @@
       "aoe": true,
       "attackRange": "28",
       "counterRange": "28",
-      "blindSpots": ""
+      "blindSpots": "",
+      "art": {
+        "card": "play/art/tanuki/tn09.webp",
+        "square": "play/art/tanuki/tn09-sq.webp"
+      }
     },
     {
       "id": "tn10",
@@ -710,7 +746,11 @@
       "aoe": false,
       "attackRange": "",
       "counterRange": "",
-      "blindSpots": ""
+      "blindSpots": "",
+      "art": {
+        "card": "play/art/tanuki/tn10.webp",
+        "square": "play/art/tanuki/tn10-sq.webp"
+      }
     },
     {
       "id": "tn11",
@@ -729,7 +769,11 @@
       "aoe": false,
       "attackRange": "",
       "counterRange": "",
-      "blindSpots": ""
+      "blindSpots": "",
+      "art": {
+        "card": "play/art/tanuki/tn11.webp",
+        "square": "play/art/tanuki/tn11-sq.webp"
+      }
     },
     {
       "id": "tn12",
@@ -748,7 +792,11 @@
       "aoe": false,
       "attackRange": "",
       "counterRange": "",
-      "blindSpots": ""
+      "blindSpots": "",
+      "art": {
+        "card": "play/art/tanuki/tn12.webp",
+        "square": "play/art/tanuki/tn12-sq.webp"
+      }
     }
   ],
   "decks": [
