@@ -364,8 +364,8 @@ export const applyCardOverrides = (pack: CardPack, ov: CardOverrides): CardPack 
   const total = normalizeCardOverrides(printed, mergeOverrides(current, ov));
   if (cardChangeCount(total) === 0) return printed;
   const next = packFromCards(printed.packId, printed.cards.map((c) => editedCard(c, total[c.id])));
-  // the deck in pack order, one entry per copy (枚数 edits included)
-  return { ...next, printed };
+  // the deck in pack order, one entry per copy (枚数 edits included); per-seat decks stay as printed
+  return { ...next, ...(printed.decks !== undefined ? { decks: printed.decks } : {}), printed };
 };
 
 // ----------------------------------------------------------------- changes

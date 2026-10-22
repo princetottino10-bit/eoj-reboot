@@ -7,7 +7,7 @@ import { cardOf } from "./cards.ts";
 import { counterOrderChoice } from "./counter-order.ts";
 import { armDamage, clubDamage, forwardEnemy, fxOf, isTansuAction, reiguTargeting, summonHpOverwrite } from "./effects.ts";
 import { applyAction, legalActions } from "./rules.ts";
-import { inheritCostAt, inheritCostFor, inheritRefund, summonCostAt, summonCostFor } from "./rules.ts";
+import { inheritCostAt, inheritCostFor, inheritRefund, placeCostFor, summonCostAt, summonCostFor } from "./rules.ts";
 import { unitByUid, unitHp, unitMaxHp } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import type { Action, AttackVariant, GameEvent, GameState, PlayerId, Pos } from "./types.ts";
@@ -82,9 +82,11 @@ export type ReiguPreview = {
 export type SummonPreview = {
   kind: "summon";
   cost: number;
-  /** summonCostAt: the cost before the 劣勢割引 (scale and 太極 included). */
+  /** summonCostAt: the cost before 【加勢】 and the 劣勢割引 (scale and 太極 included). */
   costBefore: number;
   underdogDiscount: number;
+  /** 狸一門 【加勢】: what it took off beyond 太極 (absent when 0). */
+  kasei?: number;
 };
 
 export type InheritPreview = {
@@ -254,8 +256,10 @@ export const previewSummon = (ctx: Ctx, s: GameState, a: Action): SummonPreview 
   if (cardId === undefined) return null;
   const card = cardOf(ctx.pack, cardId);
   const costBefore = summonCostAt(ctx, card, a.pos);
+  const placed = placeCostFor(ctx, s, s.turnPlayer, card, a.pos);
   const cost = summonCostFor(ctx, s, s.turnPlayer, card, a.pos);
-  return cost < costBefore ? { kind: "summon", cost, costBefore, underdogDiscount: costBefore - cost } : null;
+  if (cost >= costBefore) return null;
+  return { kind: "summon", cost, costBefore, underdogDiscount: placed - cost, ...(placed < costBefore ? { kasei: costBefore - placed } : {}) };
 };
 
 export const previewAction = (ctx: Ctx, s: GameState, a: Action): ActionPreview | null => {

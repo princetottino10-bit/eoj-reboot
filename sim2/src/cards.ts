@@ -107,6 +107,11 @@ export type CardPack = {
   byId: Map<string, CardDef>;
   /** cardId list, one entry per copy, in pack order. */
   deckList: string[];
+  /**
+   * Per-seat decks (cardId lists, one entry per copy), seat 0 then seat 1.
+   * Absent = both seats shuffle deckList. 狸一門 10/22案: 狸 against 10/13.
+   */
+  decks?: [string[], string[]];
   /** The pack as loaded that card overrides made this one from. Absent = this pack is the printed one. */
   printed?: CardPack;
 };
@@ -278,6 +283,18 @@ export const parsePack = (input: unknown): CardPack => {
     typeof raw.packId === "string" ? raw.packId : "unnamed",
     raw.cards.map((c, i) => parseCard(c, i, opts)),
   );
+  if (raw.decks !== undefined) {
+    const d = raw.decks;
+    if (!Array.isArray(d) || d.length !== 2) throw new Error("pack: `decks` must be [seat0, seat1]");
+    const seat = (v: unknown, i: number): string[] => {
+      if (!Array.isArray(v) || v.length === 0) throw new Error(`pack: decks[${i}] must be a non-empty list of card ids`);
+      for (const id of v) {
+        if (typeof id !== "string" || !pack.byId.has(id)) throw new Error(`pack: decks[${i}]: unknown card id ${String(id)}`);
+      }
+      return v.slice() as string[];
+    };
+    pack.decks = [seat(d[0], 0), seat(d[1], 1)];
+  }
   const printIds = new Set<string>();
   for (const c of pack.cards) {
     if (c.printId === undefined) continue;

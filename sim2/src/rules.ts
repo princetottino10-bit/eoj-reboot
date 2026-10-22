@@ -18,7 +18,7 @@ import type { Ctx } from "./state.ts";
 import {
   applyReigu,
   canUseVariant,
-  clubVictims,
+  reiguVictims,
   effectsOn,
   fxOf,
   hasTansuAttack,
@@ -34,6 +34,8 @@ import {
   rotateIsFree,
 } from "./effects.ts";
 import { resolveTansuAttack } from "./tansu-attack.ts";
+import { checkDeckOut, drawOne } from "./draw.ts";
+import { kaseiDiscount, noInherit, onTanukiSummon, spendHayashi } from "./tanuki.ts";
 import type {
   Action,
   ApplyResult,
@@ -80,12 +82,23 @@ export const underdogSummonDiscount = (ctx: Ctx, s: UnderdogView, p: PlayerId, c
     : 0;
 
 /**
- * What p pays to summon (or inherit-summon) `card` onto `pos` right now:
- * summonCostAt (scale, then 太極), then 劣勢時の大型割引 on top, floor 1.
+ * The cost of summoning `card` onto `pos` before 劣勢時の大型割引: summonCostAt
+ * (scale, then 太極), or 【加勢】 (狸一門, src/tanuki.ts) off the scaled cost
+ * when that is cheaper - the two never stack, the larger applies. Floor 1.
+ */
+export const placeCostFor = (ctx: Ctx, s: GameState, p: PlayerId, card: CardDef, pos: Pos): number => {
+  const at = summonCostAt(ctx, card, pos);
+  const k = kaseiDiscount(ctx, s, p, card, pos).amount;
+  return k === 0 ? at : Math.min(at, Math.max(1, baseSummonCost(ctx, card) - k));
+};
+
+/**
+ * What p pays to summon `card` onto `pos` right now: placeCostFor (太極 or
+ * 【加勢】), then 劣勢時の大型割引 on top, floor 1.
  * Every legality check, the apply, the previews and the AI go through this.
  */
-export const summonCostFor = (ctx: Ctx, s: UnderdogView, p: PlayerId, card: CardDef, pos: Pos): number => {
-  const cost = summonCostAt(ctx, card, pos);
+export const summonCostFor = (ctx: Ctx, s: GameState, p: PlayerId, card: CardDef, pos: Pos): number => {
+  const cost = placeCostFor(ctx, s, p, card, pos);
   const off = underdogSummonDiscount(ctx, s, p, card);
   return off === 0 ? cost : Math.max(1, cost - off);
 };
@@ -190,6 +203,7 @@ const inheritAttrOk = (a: CardDef, b: CardDef): boolean =>
 export const canInherit = (ctx: Ctx, s: GameState, card: CardDef, target: Unit): boolean => {
   if (!ctx.cfg.inheritSummon) return false;
   if (card.kind !== "shikigami") return false;
+  if (noInherit(card)) return false; // 狸一門: ordinary summons only
   if (summonsExhausted(ctx, s)) return false;
   if (target.owner !== s.turnPlayer || isHidden(target)) return false;
   const old = cardOf(ctx.pack, target.cardId);
@@ -254,6 +268,7 @@ const applyInherit = (
   s.nextUid += 1;
   s.units = s.units.map((u) => (u.uid === old.uid ? unit : u));
   s.summonsThisTurn += 1;
+  spendHayashi(s, p);
   events.push({
     t: "summon",
     player: p,
@@ -464,7 +479,7 @@ const allLegalActions = (ctx: Ctx, s: GameState): Action[] => {
         } else if (targeting === "unit-own-mode") {
           for (const mode of REIGU_MODES) out.push({ kind: "reigu", handIndex: i, targetUid: t.uid, facing: null, mode });
         } else if (targeting === "unit-own-victim") {
-          for (const v of clubVictims(ctx, s, t)) out.push({ kind: "reigu", handIndex: i, targetUid: t.uid, facing: null, victimUid: v.uid });
+          for (const v of reiguVictims(ctx, s, cardId, t)) out.push({ kind: "reigu", handIndex: i, targetUid: t.uid, facing: null, victimUid: v.uid });
         } else {
           out.push({ kind: "reigu", handIndex: i, targetUid: t.uid, facing: null });
         }
@@ -565,7 +580,11 @@ const applyActionCore = (
     const cardId = ps.hand[a.handIndex];
     const card = cardOf(ctx.pack, cardId);
     const cost = summonCostFor(ctx, s, p, card, a.pos);
-    const discount = summonCostAt(ctx, card, a.pos) - cost;
+    const placed = placeCostFor(ctx, s, p, card, a.pos);
+    const discount = placed - cost;
+    const kasei = kaseiDiscount(ctx, s, p, card, a.pos);
+    // 【加勢】 took over from 太極 (or stood alone): its own log line
+    const kaseiOff = kasei.amount > 0 && placed < summonCostAt(ctx, card, a.pos) ? baseSummonCost(ctx, card) - placed : 0;
     ps.mana -= cost;
     ps.hand = ps.hand.filter((_, i) => i !== a.handIndex);
     const unit: Unit = {
@@ -585,6 +604,7 @@ const applyActionCore = (
     s.nextUid += 1;
     s.units.push(unit);
     s.summonsThisTurn += 1;
+    spendHayashi(s, p);
     events.push({
       t: "summon",
       player: p,
@@ -597,8 +617,12 @@ const applyActionCore = (
       baseCost: card.summonCost,
       ...(discount > 0 ? { underdogDiscount: discount } : {}),
     });
+    if (kaseiOff > 0) {
+      events.push({ t: "effect", player: p, source: cardId, uid: unit.uid, text: `【加勢 −${kaseiOff}】${kasei.label}` });
+    }
     if (discount > 0) events.push(underdogDiscountEvent(p, discount));
     onSummon(ctx, s, unit, events); // tm11 Ungaikyo
+    onTanukiSummon(ctx, s, unit, kasei.amount > 0, events); // 狸一門
     return;
   }
   if (a.kind === "reigu") {
@@ -626,6 +650,12 @@ const applyActionCore = (
       // killRewardCondition "upset": the reigu's use cost is the destroying cost
       (victim) => destroyUnit(ctx, s, victim, events, p, { cost: card.summonCost }),
       { mode: a.mode, victimUid: a.victimUid },
+      // 分福茶釜 tn11 draws (a deck-out end follows the usual rule)
+      () => {
+        const drew = drawOne(ctx, s, p, events);
+        checkDeckOut(ctx, s, events);
+        return drew;
+      },
     );
     checkLifeLoss(ctx, s, events);
     return;
