@@ -1448,3 +1448,6 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .yy[data-tile="arrow"] .pt-way.f2 { rotate: 180deg; }
 .yy[data-tile="arrow"] .pt-way.f3 { rotate: 270deg; }
 .pt-way path { fill: var(--own); stroke: #fff; stroke-width: 5; stroke-linejoin: round; opacity: 0.92; }
+.fu-range .rs-arw { display: none; fill: var(--washi-hi); }
+:root[data-mark="arrow"] .fu-range .rs-fwd { display: none; }
+:root[data-mark="arrow"] .fu-range .rs-arw { display: inline; }

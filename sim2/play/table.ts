@@ -302,6 +302,15 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
   } catch {
     /* storage blocked: cards as before */
   }
+  // 試作 10/21: ?mark=arrow draws the piece's forward mark in every range diagram as an arrow (PC and phone alike)
+  try {
+    const mk = new URLSearchParams(location.search).get("mark");
+    if (mk === "arrow") sessionStorage.setItem("yy-mark-arrow", "1");
+    if (mk === "tri") sessionStorage.removeItem("yy-mark-arrow");
+    if (sessionStorage.getItem("yy-mark-arrow") === "1") document.documentElement.dataset.mark = "arrow";
+  } catch {
+    /* storage blocked: triangle as before */
+  }
   const pieceTile = (): boolean => {
     try {
       const v = sessionStorage.getItem(TILE_KEY);

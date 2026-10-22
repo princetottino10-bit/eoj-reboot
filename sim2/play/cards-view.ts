@@ -184,7 +184,11 @@ export const rangeSvg = (range: readonly Pos[], blind: readonly Pos[], gap: Pos 
       const rect = (cls: string, inset = 0): string =>
         `<rect class="${cls}" x="${x + inset}" y="${y + inset}" width="${CELL - inset * 2}" height="${CELL - inset * 2}"/>`;
       if (dx === 0 && dy === 0) {
-        cells.push(`${rect("rs-self")}<path class="rs-fwd" d="M${x + c} ${y + 2.4}L${x + 7.8} ${y + 7.2}L${x + 2.2} ${y + 7.2}Z"/>`);
+        cells.push(
+          `${rect("rs-self")}<path class="rs-fwd" d="M${x + c} ${y + 2.4}L${x + 7.8} ${y + 7.2}L${x + 2.2} ${y + 7.2}Z"/>` +
+            // 試作 10/21: the same forward mark as an arrow, shown instead of the triangle with ?mark=arrow
+            `<path class="rs-arw" d="M${x + c} ${y + 1}L${x + 9} ${y + 5.2}L${x + 6.5} ${y + 5.2}L${x + 6.5} ${y + 9}L${x + 3.5} ${y + 9}L${x + 3.5} ${y + 5.2}L${x + 1} ${y + 5.2}Z"/>`,
+        );
         continue;
       }
       const inAtk = has(range, dx, dy);
