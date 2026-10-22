@@ -47,11 +47,13 @@ test("board pieces carry no 制2 tag (10/22: 制圧力 lives on the summary card
   assert.doesNotMatch(pieceHtml(hc, big, { control: false, tile: true }), /制2/);
 });
 
-test("the range diagram marks the piece's front with an arrow, and a tile turns only the diagram", async () => {
+test("the range diagram marks the piece's front with the printed card's triangle, and a tile turns only the diagram", async () => {
   const { pieceHtml, rangeSvg } = await import("../play/cards-view.ts");
   const svg = rangeSvg([{ x: 0, y: 1 }], [{ x: 0, y: -1 }], null);
   assert.match(svg, /class="rs-fwd" d="M[\d.]+ [\d.]+L[^"]*Z"/);
-  assert.equal((svg.match(/class="rs-fwd" d="([^"]*)"/)?.[1].match(/L/g) ?? []).length, 6);
+  assert.equal((svg.match(/class="rs-fwd" d="([^"]*)"/)?.[1].match(/L/g) ?? []).length, 2, "a triangle, as on the printed card");
+  assert.match(svg, /class="rs-blind"[^>]*\/><path class="rs-hatch" d="M/, "隙 is the printed card's striped cell");
+  assert.doesNotMatch(svg, /url\(#/, "no id references (they break when the first svg is hidden)");
   const turned = { uid: 1, cardId: "sk01", owner: 0 as const, pos: { x: 0, y: 0 }, facing: 1 as const, damage: 0, attackedThisTurn: false, rotatedThisTurn: false, summonedThisTurn: false, hiddenBy: null, atkBuff: 0 };
   const tile = pieceHtml(makeCtx(presetConfig("r1007"), SK), turned, { control: false, tile: true });
   assert.match(tile, /pc-tile/);

@@ -157,14 +157,42 @@ const CELL = 10;
  * The range diagram with the primitives of the 記号体系 (forward = up):
  * counter range = sage (a full-cell square for area attackers, an inscribed
  * circle for single), attack = vermilion at 50% of the cell (square = area,
- * circle = single), blind spot = khaki full cell, the piece = ink with a white
- * forward arrow. The system has no gap (旧・隙) mark yet: an amber ring stands
+ * circle = single), blind spot = striped full cell, the piece = white with an ink
+ * forward triangle, on dark cells: the printed card's look (10/22). The system has no gap (旧・隙) mark yet: an amber ring stands
  * in for it (provisional). 3x3 when everything is adjacent, 5x5 when something
  * reaches two cells (the unused outer ring then shrinks to dots so the core
  * reads first). The diagram is always printed forward = up; on the board the
  * whole card turns with the piece, and `facing` only adds the current facing
  * to the label.
  */
+/**
+ * 隙 as on the printed card (10/22): ink stripes over gold, drawn as plain polygons
+ * (a <pattern> would need an id, and Chrome drops it when its first copy sits in a hidden svg).
+ */
+const hatch = (x: number, y: number): string => {
+  const clip = (pts: [number, number][], keep: (p: [number, number]) => number): [number, number][] => {
+    const out: [number, number][] = [];
+    pts.forEach((p, k) => {
+      const q = pts[(k + 1) % pts.length];
+      const dp = keep(p);
+      const dq = keep(q);
+      if (dp >= 0) out.push(p);
+      if (dp >= 0 !== dq >= 0) {
+        const t = dp / (dp - dq);
+        out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
+      }
+    });
+    return out;
+  };
+  const sq: [number, number][] = [[0, 0], [CELL, 0], [CELL, CELL], [0, CELL]];
+  const bands: string[] = [];
+  for (let a = -CELL; a < CELL * 2; a += 3.4) {
+    const poly = clip(clip(sq, ([px, py]) => px + py - a), ([px, py]) => a + 1.5 - (px + py));
+    if (poly.length > 2) bands.push(`M${poly.map(([px, py]) => `${(x + px).toFixed(2)} ${(y + py).toFixed(2)}`).join("L")}Z`);
+  }
+  return `<path class="rs-hatch" d="${bands.join("")}"/>`;
+};
+
 export const rangeSvg = (range: readonly Pos[], blind: readonly Pos[], gap: Pos | null, facing: Facing = 0, opts: RangeOpts = {}): string => {
   const counter = opts.counter ?? [];
   const aoe = opts.aoe ?? false;
@@ -184,10 +212,7 @@ export const rangeSvg = (range: readonly Pos[], blind: readonly Pos[], gap: Pos 
       const rect = (cls: string, inset = 0): string =>
         `<rect class="${cls}" x="${x + inset}" y="${y + inset}" width="${CELL - inset * 2}" height="${CELL - inset * 2}"/>`;
       if (dx === 0 && dy === 0) {
-        // the piece's front as an arrow (10/22, PC and phone alike; was a triangle)
-        cells.push(
-          `${rect("rs-self")}<path class="rs-fwd" d="M${x + c} ${y + 1}L${x + 9} ${y + 5.2}L${x + 6.5} ${y + 5.2}L${x + 6.5} ${y + 9}L${x + 3.5} ${y + 9}L${x + 3.5} ${y + 5.2}L${x + 1} ${y + 5.2}Z"/>`,
-        );
+        cells.push(`${rect("rs-self")}<path class="rs-fwd" d="M${x + c} ${y + 2.2}L${x + 8} ${y + 7.6}L${x + 2} ${y + 7.6}Z"/>`);
         continue;
       }
       const inAtk = has(range, dx, dy);
@@ -199,7 +224,7 @@ export const rangeSvg = (range: readonly Pos[], blind: readonly Pos[], gap: Pos 
         continue;
       }
       const parts = [rect("rs-cell")];
-      if (inBlind) parts.push(rect("rs-blind"));
+      if (inBlind) parts.push(rect("rs-blind"), hatch(x, y));
       if (inCtr) parts.push(aoe ? rect("rs-ctr") : `<circle class="rs-ctr" cx="${x + c}" cy="${y + c}" r="${c}"/>`);
       if (inAtk) parts.push(aoe ? rect("rs-atk", CELL / 4) : `<circle class="rs-atk" cx="${x + c}" cy="${y + c}" r="${CELL / 4}"/>`);
       if (isGap) parts.push(rect("rs-gap", 1.3));

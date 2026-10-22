@@ -475,14 +475,16 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .fu-rblock { display: flex; flex-direction: column; align-items: flex-end; }
 .fu-type { display: flex; align-items: center; white-space: nowrap; border-radius: 0.2em; background: var(--washi); box-shadow: 0 0 0 0.07em var(--sym-ink); font-weight: 700; color: var(--sym-ink); }
 .fu-type .mk { flex: none; }
-.fu-range { display: block; aspect-ratio: 1; border-radius: 0.15em; background: var(--washi); box-shadow: 0 0 0 0.07em var(--sym-ink); }
-.fu-range .rs-cell { fill: var(--washi-hi); stroke: var(--sym-ink); stroke-width: 0.5; }
-.fu-range .rs-dot { fill: oklch(45% 0.03 70 / 0.5); }
-.fu-range .rs-self { fill: var(--sym-ink); }
-.fu-range .rs-fwd { fill: var(--washi-hi); }
-.fu-range .rs-blind { fill: var(--sym-khaki); }
-.fu-range .rs-ctr { fill: var(--sym-sage); }
-.fu-range .rs-atk { fill: var(--sym-verm); }
+/* the range diagram as printed on the card (10/22): dark cells, white self with an ink ▲, 朱 attack, green counter ring, striped 隙 */
+.fu-range { display: block; aspect-ratio: 1; border-radius: 0.15em; background: #2b2a2e; box-shadow: 0 0 0 0.07em #b08a4a; }
+.fu-range .rs-cell { fill: #2e2d32; stroke: #9a979f; stroke-width: 0.5; }
+.fu-range .rs-dot { fill: oklch(70% 0.01 270 / 0.45); }
+.fu-range .rs-self { fill: #fbf8f1; stroke: #9a979f; stroke-width: 0.5; }
+.fu-range .rs-fwd { fill: #141316; }
+.fu-range .rs-blind { fill: #d9a441; stroke: #9a979f; stroke-width: 0.5; }
+.fu-range .rs-hatch { fill: #1d1b19; }
+.fu-range .rs-ctr { fill: #6fcf9e; }
+.fu-range .rs-atk { fill: #e2523c; }
 .fu-range .rs-gap { fill: none; stroke: var(--sym-amber); stroke-width: 1.1; }
 .fu-text { border-radius: 0.3em; background: #fbf8f0; box-shadow: inset 0 0 0 1px oklch(26% 0.01 260 / 0.22); overflow: hidden; color: #2c2b30; }
 .fu-tx { display: block; overflow: hidden; }
@@ -1404,7 +1406,7 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .pt-art .fu-art { position: absolute; inset: 0; display: grid; place-items: center; }
 .pt-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .pt-art .fu-glyph { font-family: var(--font-mincho); font-size: 22cqw; color: oklch(70% 0.02 60 / 0.6); }
-.pt-range { grid-area: 1 / 2; display: grid; place-items: center; padding: 2cqw; min-height: 0; background: oklch(96% 0.01 90); }
+.pt-range { grid-area: 1 / 2; display: grid; place-items: center; padding: 2cqw; min-height: 0; background: #1d1c20; }
 .pt-range svg { width: 100%; height: auto; max-height: 100%; transition: rotate var(--t-mid) var(--ease-out); }
 .pt-range.f1 svg { rotate: 90deg; }
 .pt-range.f2 svg { rotate: 180deg; }
