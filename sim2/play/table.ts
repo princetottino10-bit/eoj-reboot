@@ -17,7 +17,7 @@ import type { Ctx } from "../src/state.ts";
 import type { CardDef, ColdWin, Facing, PlayerId, Pos, Unit } from "../src/types.ts";
 import type { BoardView, LogItem } from "../online/protocol.ts";
 import { boardHtml } from "./board-view.ts";
-import type { BoardVM, Prediction } from "./board-view.ts";
+import type { BoardVM, CellMark, Prediction } from "./board-view.ts";
 import { SEAT_SEAL, watchArtErrors } from "./cards-view.ts";
 import { createFx } from "./fx.ts";
 import { handHtml } from "./hand-view.ts";
@@ -25,6 +25,8 @@ import { ensureMarks } from "./marks.ts";
 import type { HandCard, HandMode } from "./hand-view.ts";
 import { detailHtml, endCold, endOcc, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, recapHtml, recapOf, turnHtml } from "./hud.ts";
 import type { CardLook, Focus } from "./hud.ts";
+import { coachHtml, coachStep } from "./coach.ts";
+import { mulliganPanelHtml } from "./mulligan-view.ts";
 import { promptHtml } from "./prompt-view.ts";
 import { esc, resultHow, unitAtPos, unitById } from "./render.ts";
 import { resultStatsHtml, summaryOfView } from "./result-stats.ts";
@@ -37,6 +39,7 @@ import {
   handEntries,
   handPlayable,
   NONE,
+  placeHints,
   predictionOf,
   radialItems,
   rangeSets,
@@ -290,6 +293,68 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     render();
   };
 
+  // スマホは駒をタイルで出す (10/22): art upright on the left, the range turned to the facing.
+  // Phones only (the same width as the phone layout in table.css); ?piece=tile|card forces it for a check.
+  const TILE_KEY = "yy-piece-tile";
+  try {
+    const q = new URLSearchParams(location.search).get("piece");
+    if (q === "tile" || q === "card") sessionStorage.setItem(TILE_KEY, q);
+  } catch {
+    /* storage blocked: follow the screen width */
+  }
+  const phoneQuery = typeof matchMedia === "function" ? matchMedia("(max-width: 700px), (max-height: 520px) and (min-aspect-ratio: 4/3)") : null;
+  phoneQuery?.addEventListener("change", () => render());
+  const pieceTile = (): boolean => {
+    let forced: string | null = null;
+    try {
+      forced = sessionStorage.getItem(TILE_KEY);
+    } catch {
+      /* storage blocked */
+    }
+    return forced === "tile" ? true : forced === "card" ? false : phoneQuery?.matches === true;
+  };
+
+  // はじめての1局 (10/18): first-turn steps until the viewer's first turn ends, once per browser
+  const COACH_KEY = "yy-coach-done";
+  let coachOn = ((): boolean => {
+    try {
+      return localStorage.getItem(COACH_KEY) !== "1";
+    } catch {
+      return true;
+    }
+  })();
+  let coachPlayed = false;
+  const coachOff = (): void => {
+    coachOn = false;
+    try {
+      localStorage.setItem(COACH_KEY, "1");
+    } catch {
+      // private mode: it stays off for this page only
+    }
+  };
+  const coachFor = (m: TableModel): string => {
+    if (!coachOn || m.viewer === null || m.board.ended) return "";
+    const me = m.viewer;
+    const main = m.prompt.kind === "main";
+    if (main) coachPlayed = true;
+    // my first turn has ended: done for good
+    else if (coachPlayed && m.board.turnPlayer !== me) {
+      coachOff();
+      return "";
+    }
+    const mine = m.board.units.filter((u) => u.owner === me);
+    const lg = main ? legal() : [];
+    const step = coachStep({
+      main,
+      sel: sel.kind,
+      mine: mine.length,
+      canAttack: new Set(lg.flatMap((e) => (e.action.kind === "attack" ? [e.action.uid] : []))).size,
+      attacked: mine.some((u) => u.attackedThisTurn),
+    });
+    root.dataset.coach = step ?? "";
+    return step === null ? "" : coachHtml(step);
+  };
+
   const say = (text: string): void => {
     flash = text;
     if (flashTimer !== null) clearTimeout(flashTimer);
@@ -461,12 +526,18 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       render();
       return openSheet({ kind: "card", cardId, fromSeat: null });
     }
-    if (m.prompt.kind !== "main") return render();
+    // not my step: on a phone the tap reads the card (the detail panel is off screen)
+    if (m.prompt.kind !== "main") {
+      render();
+      if (!detailVisible()) openSheet({ kind: "card", cardId, fromSeat: null });
+      return;
+    }
     const card = cardOf(m.ctx.pack, cardId);
     const same = (sel.kind === "hand" || sel.kind === "place" || sel.kind === "inherit" || sel.kind === "reigu") && sel.handIndex === i;
     if (same) return setSel(NONE);
     if (!handPlayable(legal(), m.hand, i, card.kind === "reigu")) {
       say(`${card.nameJa}: 今は使えない(霊力・置き場所・効果の条件を確認)`);
+      if (!detailVisible()) openSheet({ kind: "card", cardId, fromSeat: null });
       return;
     }
     setSel(card.kind === "reigu" ? { kind: "reigu", handIndex: i, targetUid: null } : { kind: "hand", handIndex: i });
@@ -640,6 +711,11 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       return render();
     }
     if (act === "hand") return onHand(Number(target.dataset.i));
+    if (act === "coach-off") {
+      coachOff();
+      root.dataset.coach = "";
+      return render();
+    }
     if (act === "grave") {
       const seat = Number(target.dataset.seat) as PlayerId;
       pinned = { kind: "grave", seat };
@@ -817,13 +893,20 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       const tu = unitById(m.board, uid);
       if (tu !== undefined) coMarks.set(`${tu.pos.x},${tu.pos.y}`, "target");
     }
+    const marks = main ? cellMarks(m.board, lg, hand, s) : co !== null || lp !== null || kp !== null || spot !== null ? coMarks : new Map<string, CellMark>();
+    // a picked hand card: each glowing square says its 耐久 change and whether an enemy already reaches it
+    const pickedCard = main && s.kind === "hand" && m.viewer !== null ? hand[s.handIndex] : undefined;
+    const summonCells = [...marks].flatMap(([k, mk]) => (mk === "summon" ? [{ x: Number(k.split(",")[0]), y: Number(k.split(",")[1]) }] : []));
     const vm: BoardVM = {
       ctx: m.ctx,
       board: m.board,
       names: m.names,
       look: look(m),
       bottom: m.viewer === 1 ? 1 : 0,
-      marks: main ? cellMarks(m.board, lg, hand, s) : co !== null || lp !== null || kp !== null || spot !== null ? coMarks : new Map(),
+      marks,
+      placeHints: pickedCard === undefined || m.viewer === null ? undefined : placeHints(m.ctx, m.board, pickedCard, m.viewer, summonCells),
+      tile: pieceTile(),
+      canAttack: main && s.kind === "none" ? new Set(lg.flatMap((e) => (e.action.kind === "attack" ? [e.action.uid] : []))) : undefined,
       range: s.kind === "unit" || (s.kind === "aim" && s.targetUid === null && !s.area) ? rangeSets(m.ctx, shown) : null,
       selectedUid:
         co !== null
@@ -967,6 +1050,8 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const lk = look(m);
     root.dataset.viewer = m.viewer === null ? "watch" : String(m.viewer);
     root.dataset.prompt = m.prompt.kind;
+    // 自分=青・相手=赤 (10/18): the seat colours follow the viewer, so a 後手 player is blue too
+    root.dataset.viewer = m.viewer === 1 ? "1" : "0";
     const mulligan = m.phaseText === "マリガン" || m.prompt.kind === "mulligan";
     put(el.oppPlate, nameplateHtml(m.ctx, m.board, top, m.names, false, mulligan));
     put(el.oppHand, m.viewer === null && m.oppHand !== undefined && m.oppHand !== null ? openHandHtml(m.ctx, m.oppHand, m.names[top]) : oppHandHtml(m.board.players[top].handCount));
@@ -974,11 +1059,12 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     put(el.pilesOpp, pilesHtml(m.ctx, m.board, top, lk));
     put(el.pilesSelf, pilesHtml(m.ctx, m.board, bottom, lk));
     put(el.turn, turnHtml(m.ctx, m.board, m.names, { phaseText: m.phaseText, mulligan }));
-    put(el.board, boardHtml(boardVM(m)));
+    // the opening mulligan is a panel of its own over the still-empty board (今なにをする場面か, 10/17)
+    put(el.board, boardHtml(boardVM(m)) + (m.prompt.kind === "mulligan" ? mulliganPanelHtml(m.ctx, handCards(m), look(m), marked.size) : ""));
     renderHand(m);
     put(
       el.prompt,
-      promptHtml({
+      coachFor(m) + promptHtml({
         ctx: m.ctx,
         board: m.board,
         names: m.names,

@@ -514,7 +514,7 @@ a.btn { text-decoration: none; }
 
 /* the foot: one gold button across the panel, quiet text buttons under it */
 .entry-panel .err { margin: 0; }
-.entry-primary { width: 100%; min-height: 50px; font-size: 16px; letter-spacing: 0.12em; }
+.entry-primary { width: 100%; min-height: 50px; font-size: 16px; letter-spacing: 0.12em; white-space: normal; text-wrap: balance; } /* a long label wrapped off both edges on a 390px phone */
 .entry-secondary { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; margin-top: -6px; }
 .entry-secondary:empty { display: none; }
 .btn-text {

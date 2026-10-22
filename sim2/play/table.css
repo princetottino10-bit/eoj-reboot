@@ -317,6 +317,20 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .cell.mk-summon::after { inset: 0; border-radius: 0.5cqw; box-shadow: inset 0 0 0 1.4cqw oklch(88% 0.1 88 / 0.95), inset 0 0 16cqw oklch(80% 0.12 85 / 0.55); animation: glow-breathe 1.8s ease-in-out infinite; }
 /* while a card waits for its cell, the cells it cannot go to step back, so the lit ones read at a glance on a phone */
 .yy-board:has(.cell.mk-summon, .cell.mk-inherit) .cell:not(.mk-summon, .mk-inherit) { filter: brightness(0.5) saturate(0.55); transition: filter var(--t-fast); }
+/* 遊びやすくする工夫 (10/17): a picked hand card's glowing squares say what they do to it,
+   big enough to read on a 390px phone (cq units of the cell, with a px floor) */
+.cell-hint {
+  position: absolute; left: 50%; bottom: 8cqw; translate: -50% 0; z-index: 3; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 2cqw;
+}
+.cell-hint b {
+  padding: 0.5cqw 3cqw; border-radius: 1.5cqw; white-space: nowrap; font-family: var(--font-mincho); font-weight: 800;
+  font-size: max(11px, 10cqw); line-height: 1.35; box-shadow: 0 0.5cqw 2cqw oklch(0% 0 0 / 0.5);
+}
+.cell-hint .is-up { background: var(--sym-sage); color: var(--ink); }
+.cell-hint .is-down { background: oklch(72% 0.1 30); color: var(--ink); }
+.cell-hint .is-threat { background: var(--sym-verm); color: oklch(98% 0.01 85); }
+.cell.mk-summon.is-threatened::after { box-shadow: inset 0 0 0 1.4cqw oklch(88% 0.1 88 / 0.95), inset 0 0 16cqw oklch(62% 0.18 30 / 0.55); }
 .cell.mk-inherit::after { inset: 3cqw; border: 1cqw dashed var(--violet); border-radius: 3cqw; box-shadow: 0 0 6cqw oklch(72% 0.14 305 / 0.5); animation: glow-breathe 1.8s ease-in-out infinite; }
 .cell.mk-target::after { inset: 3cqw; border: 1.2cqw solid var(--sym-verm-hi); border-radius: 50%; animation: target-pulse 1.1s ease-in-out infinite; }
 .cell.mk-heal::after { inset: 3cqw; border: 1.2cqw solid var(--jade); border-radius: 50%; animation: target-pulse 1.1s ease-in-out infinite; }
@@ -461,14 +475,16 @@ button.pile:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 3
 .fu-rblock { display: flex; flex-direction: column; align-items: flex-end; }
 .fu-type { display: flex; align-items: center; white-space: nowrap; border-radius: 0.2em; background: var(--washi); box-shadow: 0 0 0 0.07em var(--sym-ink); font-weight: 700; color: var(--sym-ink); }
 .fu-type .mk { flex: none; }
-.fu-range { display: block; aspect-ratio: 1; border-radius: 0.15em; background: var(--washi); box-shadow: 0 0 0 0.07em var(--sym-ink); }
-.fu-range .rs-cell { fill: var(--washi-hi); stroke: var(--sym-ink); stroke-width: 0.5; }
-.fu-range .rs-dot { fill: oklch(45% 0.03 70 / 0.5); }
-.fu-range .rs-self { fill: var(--sym-ink); }
-.fu-range .rs-fwd { fill: var(--washi-hi); }
-.fu-range .rs-blind { fill: var(--sym-khaki); }
-.fu-range .rs-ctr { fill: var(--sym-sage); }
-.fu-range .rs-atk { fill: var(--sym-verm); }
+/* the range diagram as printed on the card (10/22): dark cells, white self with an ink ▲, 朱 attack, green counter ring, striped 隙 */
+.fu-range { display: block; aspect-ratio: 1; border-radius: 0.15em; background: #2b2a2e; box-shadow: 0 0 0 0.07em #b08a4a; }
+.fu-range .rs-cell { fill: #2e2d32; stroke: #9a979f; stroke-width: 0.5; }
+.fu-range .rs-dot { fill: oklch(70% 0.01 270 / 0.45); }
+.fu-range .rs-self { fill: #fbf8f1; stroke: #9a979f; stroke-width: 0.5; }
+.fu-range .rs-fwd { fill: #141316; }
+.fu-range .rs-blind { fill: #d9a441; stroke: #9a979f; stroke-width: 0.5; }
+.fu-range .rs-hatch { fill: #1d1b19; }
+.fu-range .rs-ctr { fill: #6fcf9e; }
+.fu-range .rs-atk { fill: #e2523c; }
 .fu-range .rs-gap { fill: none; stroke: var(--sym-amber); stroke-width: 1.1; }
 .fu-text { border-radius: 0.3em; background: #fbf8f0; box-shadow: inset 0 0 0 1px oklch(26% 0.01 260 / 0.22); overflow: hidden; color: #2c2b30; }
 .fu-tx { display: block; overflow: hidden; }
@@ -1242,3 +1258,190 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* the race to 制圧 at the head of the idle prompt: the opponent's check reads as a warning */
+.race-note { font-weight: 800; padding: 0.1em 0.5em; border-radius: 0.3em; margin-right: 0.3em; white-space: nowrap; }
+.race-note.is-danger { background: var(--sym-verm); color: oklch(98% 0.01 85); }
+.race-note.is-good { background: var(--gold); color: var(--ink); }
+.race-note.is-near { color: var(--gold-hi); border: 1px solid var(--gold-line); }
+@media (max-width: 700px) { .race-note { white-space: normal; display: inline-block; margin-bottom: 0.2em; } }
+
+/* 今なにをする場面か (10/17): the step label that opens the prompt */
+.pr-step {
+  display: inline-block; margin-right: 8px; padding: 1px 9px; border-radius: 999px; vertical-align: 1px;
+  font-family: var(--font-gothic, inherit); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap;
+}
+.pr-hint b.pr-step.is-you { font-family: inherit; color: #1a1408; background: var(--gold-hi); }
+.pr-hint b.pr-step.is-opp { font-family: inherit; color: var(--paper, #efe6d2); background: oklch(40% 0.03 260); }
+
+/* the opening mulligan: a panel of its own over the empty board, the hand large */
+.yy-board { position: relative; }
+.yy[data-prompt="mulligan"] .yy-prompt { display: none; }
+.yy[data-prompt="mulligan"] .yy-hand .hand { visibility: hidden; }
+.mull {
+  position: absolute; left: 0; right: 0; top: 0; min-height: 100%; z-index: 12; container-type: inline-size;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 18px 14px; border-radius: 10px; text-align: center;
+  background: oklch(13% 0.012 60 / 0.92); box-shadow: inset 0 0 0 1px var(--gold-line), 0 18px 40px oklch(0% 0 0 / 0.5);
+  backdrop-filter: blur(3px);
+}
+.mull-step { margin: 0; font-size: 12px; letter-spacing: 0.3em; color: var(--gold-dim); }
+.mull-title { margin: 0; font-family: var(--font-mincho); font-size: clamp(22px, 6.5cqw, 34px); color: var(--gold-hi); letter-spacing: 0.08em; }
+.mull-lead { margin: 0; max-width: 30em; font-size: clamp(13px, 3.3cqw, 15px); line-height: 1.6; text-wrap: balance; }
+.mull-lead b { color: var(--gold-hi); }
+.mull-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 2.4cqw; width: 100%; margin: 6px 0 2px; }
+.mull-card { position: relative; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 6px; transition: transform var(--t-fast, 0.15s); }
+.mull-card .fu { --fu-w: min(150px, 17.4cqw); --lines: 4; }
+.mull-card:hover { transform: translateY(-3px); }
+.mull-card.is-marked { transform: translateY(-6px); }
+.mull-card.is-marked .fu { filter: brightness(0.55) saturate(0.6); box-shadow: 0 0 0 3px var(--vermilion), 0 10px 22px oklch(0% 0 0 / 0.55); }
+.mull-seal {
+  position: absolute; left: 50%; top: 42%; translate: -50% -50%; rotate: -8deg; pointer-events: none;
+  padding: 4px 8px; border: 2px solid var(--vermilion); border-radius: 4px; background: oklch(15% 0.02 30 / 0.85);
+  color: oklch(78% 0.15 35); font-weight: 700; font-size: clamp(12px, 3cqw, 15px); white-space: nowrap; letter-spacing: 0.1em;
+}
+.mull-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.mull-btns .btn { min-height: 44px; padding-inline: 18px; font-size: 15px; }
+.mull-note { margin: 0; font-size: 12px; color: var(--muted, #9a927f); }
+@container (max-width: 520px) {
+  .mull-cards { gap: 10px 3cqw; }
+  .mull-card .fu { --fu-w: 28cqw; --lines: 3; }
+}
+/* phones: the board is empty during the mulligan, so the panel takes its place in the flow
+   (it may be taller than the board) and my side waits below it */
+@media (max-width: 700px), (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  .yy[data-prompt="mulligan"] .yy-board { aspect-ratio: auto; }
+  .yy[data-prompt="mulligan"] .yy-board .bd { display: none; }
+  .yy[data-prompt="mulligan"] .yy-self { display: none; }
+  .yy[data-prompt="mulligan"] .mull { position: static; min-height: 0; padding: 14px 10px 16px; gap: 8px; }
+}
+/* landscape phones: one row of five, so the buttons stay on screen */
+@media (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  .yy[data-prompt="mulligan"] .mull-card .fu { --fu-w: 17.5cqw; --lines: 3; }
+  .yy[data-prompt="mulligan"] .mull { gap: 6px; padding: 10px 10px 12px; }
+  .yy[data-prompt="mulligan"] .mull-title { font-size: 22px; }
+  .yy[data-prompt="mulligan"] .mull-note { display: none; }
+}
+
+/* 敵味方の赤青をはっきり (10/18): my side is always blue, the other red (the seat colours swap
+   for a 後手 viewer), and a piece wears its side's colour as a frame and a pool of light */
+.yy[data-viewer="1"] { --p0: oklch(62% 0.2 28); --p1: oklch(64% 0.17 252); }
+.yy:not([data-viewer="1"]) { --p0: oklch(64% 0.17 252); --p1: oklch(62% 0.2 28); }
+.pc::before {
+  content: ""; position: absolute; inset: 4%; border-radius: 12%; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in oklch, var(--own) 55%, transparent), color-mix(in oklch, var(--own) 18%, transparent) 70%, transparent);
+}
+.pc .fu-sm {
+  box-shadow: 0 0 0 0.09em var(--own), 0 0 0 0.15em oklch(10% 0 0 / 0.7), 0 0.4em 0.7em -0.2em oklch(0% 0 0 / 0.75), 0 0 1.4em 0.05em color-mix(in oklch, var(--own) 80%, transparent);
+}
+.pc-cube { width: 1.4em; height: 1.4em; left: -0.6em; bottom: -0.6em; }
+/* 耐久 now (10/18): an upright tag at the top left of the cell, red once the piece is hurt */
+.pc-hp {
+  position: absolute; left: 2.5cqw; top: 2.5cqh; z-index: 3; pointer-events: none;
+  display: inline-flex; align-items: baseline; gap: 0.6cqw; padding: 0.4cqw 2cqw 0.6cqw; border-radius: 2cqw;
+  font-size: max(9px, 6.5cqw); font-weight: 700; line-height: 1.1; white-space: nowrap;
+  color: var(--ink); background: oklch(94% 0.03 150); box-shadow: 0 0 0 1px oklch(25% 0.02 150 / 0.8), 0 0.5cqw 1.5cqw oklch(0% 0 0 / 0.5);
+}
+.pc-hp b { font-size: max(13px, 11cqw); font-variant-numeric: tabular-nums; }
+.pc-hp.is-hurt { color: #fff; background: oklch(55% 0.2 28); }
+.pc-hp.is-over { background: oklch(88% 0.12 95); }
+.pc-free { top: 20cqh; }
+/* 10/18 スマホで遊んで: the 詳細 button only where the detail panel is off screen */
+.pr-peek { display: none; }
+@media (max-width: 700px), (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  .pr-peek { display: inline-flex; }
+  /* with a 制圧チェック badge the round gives way, so 「あなたの番」 is never cut to 「あな」 */
+  .turn:has(.turn-ctl) .turn-round { display: none; }
+  .turn-who { flex-shrink: 0; }
+  /* a short prompt keeps the board large: the recap on one line, the how-to line gives way to a race note */
+  .recap span { -webkit-line-clamp: 1; }
+  .pr-hint:has(.race-note) .pr-how { display: none; }
+  .race-note { font-size: 12px; }
+}
+/* 10/18: my pieces that can still attack this turn wear a gold ring (nothing picked) */
+.cell.can-attack { box-shadow: inset 0 0 0 0.6cqw var(--gold-hi), inset 0 0 4cqw oklch(85% 0.12 85 / 0.45); animation: can-attack 1.8s ease-in-out infinite; }
+@keyframes can-attack { 50% { box-shadow: inset 0 0 0 0.6cqw var(--gold), inset 0 0 1.5cqw oklch(85% 0.12 85 / 0.2); } }
+@media (prefers-reduced-motion: reduce) { .cell.can-attack { animation: none; } }
+/* whose 制圧チェック: the badge wears that side's colour (my blue / their red) */
+.turn-ctl.o0 { background: var(--p0); color: #fff; }
+.turn-ctl.o1 { background: var(--p1); color: #fff; }
+/* 10/18 攻撃済み・回転済みを読める札に (was a small 「攻」 disc); the ring of can-attack stays still */
+.pc-flag {
+  width: auto; height: auto; padding: 0.4cqw 2cqw 0.6cqw; border-radius: 2cqw; right: 2.5cqw; top: 2.5cqh;
+  font-family: var(--font-gothic); font-size: max(10px, 7cqw); font-weight: 700; line-height: 1.15; letter-spacing: 0.02em;
+  color: #fff; background: oklch(30% 0.01 260 / 0.95); border: 1px solid oklch(70% 0.01 260 / 0.8);
+}
+.pc.is-spent .fu-sm { filter: brightness(0.5) saturate(0.4); }
+.cell.can-attack { animation: none; }
+/* はじめての1局 (10/18): the step line over the prompt, and the thing it names glows */
+.coach {
+  display: flex; align-items: center; gap: 8px; margin: 0 auto 6px; padding: 6px 8px 6px 10px; max-width: 100%;
+  border-radius: 8px; background: oklch(88% 0.1 90); color: var(--ink); font-size: 14px; font-weight: 700; line-height: 1.35;
+  box-shadow: 0 6px 18px oklch(0% 0 0 / 0.45); pointer-events: auto;
+}
+.coach-tag { flex: 0 0 auto; font-size: 11px; padding: 1px 6px; border-radius: 4px; background: var(--ink); color: var(--gold-hi); }
+.coach-n { flex: 0 0 auto; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--vermilion); color: #fff; font-size: 13px; }
+.coach-t { flex: 1 1 auto; min-width: 0; }
+.coach-off { flex: 0 0 auto; border: 0; background: none; color: var(--ink-soft); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 4px; }
+.yy[data-coach="hand"] .hand-card.is-playable .fu { box-shadow: 0 0 0 3px var(--gold-hi), 0 0 18px oklch(85% 0.12 85 / 0.8); }
+.yy[data-coach="attack"] .cell.can-attack { animation: can-attack 1.4s ease-in-out infinite; }
+.yy[data-coach="end"] .btn-end { box-shadow: 0 0 0 3px var(--gold-hi), 0 0 18px oklch(85% 0.12 85 / 0.8); }
+@media (max-width: 700px), (max-height: 520px) and (min-aspect-ratio: 4/3) {
+  .coach { margin: 0 0 4px; font-size: 13px; padding: 5px 6px 5px 8px; }
+  .coach-tag { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .yy[data-coach="attack"] .cell.can-attack { animation: none; } }
+.yy-prompt:has(.coach) { flex-wrap: wrap; }
+.coach { flex: 1 1 100%; box-sizing: border-box; }
+@media (min-width: 701px) { .coach { flex-basis: auto; max-width: 640px; margin-inline: auto; } .yy-prompt:has(.coach) { flex-direction: column; align-items: center; } }
+
+/* スマホの駒 (10/22, table.ts pieceTile): the piece as a tile — art upright on the left, the range on the right
+   turned to the facing, 耐/攻 in a row, the name band in the side's colour */
+.pc-tile .pc-body {
+  rotate: none; width: 94cqw; height: 94cqh; display: grid; grid-template-columns: 44% 56%; grid-template-rows: minmax(0, 1fr) auto auto;
+  border-radius: 3cqw; overflow: hidden; background: oklch(18% 0.01 260);
+  box-shadow: 0 0 0 0.8cqw var(--own), 0 1cqw 3cqw oklch(0% 0 0 / 0.6);
+}
+.pt-art { grid-area: 1 / 1; min-height: 0; position: relative; overflow: hidden; background: oklch(25% 0.02 60); }
+.pt-art .fu-art { position: absolute; inset: 0; display: grid; place-items: center; }
+.pt-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pt-art .fu-glyph { font-family: var(--font-mincho); font-size: 22cqw; color: oklch(70% 0.02 60 / 0.6); }
+.pt-range { grid-area: 1 / 2; display: grid; place-items: center; padding: 2cqw; min-height: 0; background: #1d1c20; }
+.pt-range svg { width: 100%; height: auto; max-height: 100%; transition: rotate var(--t-mid) var(--ease-out); }
+.pt-range.f1 svg { rotate: 90deg; }
+.pt-range.f2 svg { rotate: 180deg; }
+.pt-range.f3 svg { rotate: 270deg; }
+.pt-stats { grid-area: 2 / 1 / 3 / 3; display: flex; justify-content: space-around; align-items: baseline; padding: 0 2cqw; background: oklch(22% 0.01 260); color: var(--text); font-size: 9cqw; font-weight: 700; line-height: 1; }
+.pt-stats b { font-size: 24cqw; margin-left: 0.6cqw; font-variant-numeric: tabular-nums; letter-spacing: -0.04em; text-shadow: 0 0.5cqw 0 oklch(0% 0 0 / 0.6); }
+.pt-hp b { color: oklch(85% 0.12 150); }
+.pt-hp.is-hurt b { color: oklch(72% 0.19 28); }
+.pt-atk b { color: oklch(80% 0.14 60); }
+.pt-name { grid-area: 3 / 1 / 4 / 3; padding: 0.6cqw 2cqw 1cqw; background: var(--own); color: #fff; font-size: max(9px, 7.5cqw); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+.pc-tile .pc-flag { top: 2cqh; right: 2cqw; }
+.pc-tile.is-spent .pc-body { filter: brightness(0.55) saturate(0.5); }
+/* the cell's 陰/陽/空 stays readable over a tile, in the corner of the range panel */
+.pc-tile .pc-flag { top: 30cqh; left: 22cqw; right: auto; translate: -50% 0; }
+/* a tile keeps the board's own facing arrow at the cell edge, so the body leaves room for it */
+.pc-tile .pc-body { width: 86cqw; height: 86cqh; }
+.pc-tile .pc-dir { z-index: 2; }
+/* the cell's 陰/陽/空/太極 over a tile (10/22): a tag at the top-left of the art, in the cell's own colours */
+.cell:has(.pc-tile) .raden.chip { display: none; }
+.cell-attr {
+  position: absolute; left: 7cqw; top: 7cqh; z-index: 3; pointer-events: none; display: flex; align-items: center; gap: 1cqw;
+  padding: 0.8cqw 2.4cqw 0.8cqw 1.2cqw; border-radius: 0 0 2.4cqw 0;
+  font-family: var(--font-mincho); font-weight: 800; font-size: max(11px, 11cqw); line-height: 1;
+  box-shadow: 0 0.6cqw 1.6cqw oklch(0% 0 0 / 0.55);
+}
+.cell-attr .ca-mk { width: 1em; height: 1em; }
+.cell-attr.a-yin { background: #1c2339; color: oklch(92% 0.02 260); box-shadow: inset 0 0 0 1px oklch(70% 0.05 260 / 0.7), 0 0.6cqw 1.6cqw oklch(0% 0 0 / 0.55); }
+.cell-attr.a-yang { background: oklch(93% 0.04 85); color: oklch(25% 0.03 60); }
+.cell-attr.a-empty { background: oklch(40% 0.04 200); color: oklch(95% 0.01 200); }
+.cell-attr.a-taiji { background: linear-gradient(135deg, var(--gold-hi), var(--gold)); color: var(--ink); }
+/* 見比べ用 (10/22, ?piece=tile with sessionStorage yy-tile-shape=wide): a shorter tile, so a strip of the cell shows above it */
+:root[data-tile-shape="wide"] .pc-tile .pc-body { height: 70cqh; translate: 0 10cqh; }
+:root[data-tile-shape="wide"] .pc-tile .pt-range svg { max-height: 100%; width: auto; height: 100%; }
+:root[data-tile-shape="wide"] .cell:has(.pc-tile) .cell-attr { top: 2cqh; left: 4cqw; border-radius: 2cqw; background: none; box-shadow: none; color: inherit; font-size: max(11px, 12cqw); text-shadow: 0 0 1.5cqw oklch(0% 0 0 / 0.8); }
+:root[data-tile-shape="wide"] .cell.c-yin:has(.pc-tile) .cell-attr { color: oklch(88% 0.04 260); }
+:root[data-tile-shape="wide"] .cell.c-yang:has(.pc-tile) .cell-attr { color: oklch(92% 0.06 85); }
+:root[data-tile-shape="wide"] .cell.c-empty:has(.pc-tile) .cell-attr { color: oklch(88% 0.04 200); }
+:root[data-tile-shape="wide"] .cell.c-taiji:has(.pc-tile) .cell-attr { color: var(--gold-hi); }

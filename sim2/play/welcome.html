@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>陰陽符陣(仮) オンライン テスト卓</title>
+<meta name="description" content="九つのマスに式神を置き、盤を取り合う2人対戦ゲーム「陰陽符陣(仮)」。ブラウザで、AIと対戦したり、招待URLで友だちと遊べます。">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%230b0b0e'/%3E%3Ccircle cx='32' cy='32' r='27.5' fill='none' stroke='%23d7b565' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='23' fill='%231b2340'/%3E%3Cpath d='M32 9A23 23 0 0 1 32 55A11.5 11.5 0 0 1 32 32A11.5 11.5 0 0 0 32 9Z' fill='%23f5f1e2'/%3E%3Ccircle cx='32' cy='43.5' r='4.4' fill='%231b2340'/%3E%3Ccircle cx='32' cy='20.5' r='4.4' fill='%23f5f1e2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="/play/guide.css">
+<link rel="stylesheet" href="/play/welcome.css">
+</head>
+<body class="w-body">
+<header class="g-head">
+  <a class="g-brand" href="/"><span class="g-mark" aria-hidden="true">符</span><span class="g-name">陰陽符陣<small>(仮)</small></span></a>
+  <nav class="g-links" aria-label="遊ぶ">
+    <a href="/guide">遊び方</a>
+    <a href="/ai" class="is-gold">AIと対戦</a>
+  </nav>
+</header>
+
+<main>
+<section class="w-hero">
+  <div class="w-hero-text">
+    <p class="g-kicker">2人対戦の陰陽師ゲーム</p>
+    <h1>九つのマスに、<br>式神を置く。</h1>
+    <p class="w-lead">符から式神を呼び出し、3×3の<b>九宮盤</b>へ。どのマスに、どの向きで置くか。その一手で、攻め筋も、突かれる<b>隙</b>も変わります。先に盤を<b>制圧</b>した陰陽師の勝ちです。</p>
+    <div class="w-cta">
+      <a class="w-btn-main" href="/ai">AIと対戦する<small>ひとりで、すぐに遊べます</small></a>
+      <a class="w-btn-sub" href="/online">友だちとオンライン対戦<small>部屋を作り、招待URLを送ります</small></a>
+    </div>
+    <p class="w-note">登録なし・ブラウザだけで遊べます。<a href="/guide">はじめての方は遊び方へ</a></p>
+  </div>
+  <div class="w-hero-art" aria-hidden="true">
+    <img class="w-board" src="/play/art/site/board-play.webp" alt="" width="880" height="880">
+    <img class="w-card w-card-a" src="/play/art/face/O-009.webp" alt="" width="600" height="850">
+    <img class="w-card w-card-b" src="/play/art/face/T-006.webp" alt="" width="600" height="850">
+  </div>
+</section>
+
+<section class="w-sec" aria-labelledby="w-how">
+  <h2 id="w-how"><span class="w-sec-kicker">ルールは3つ</span>呼ぶ、突く、制す。</h2>
+  <ol class="w-steps">
+    <li>
+      <span class="w-step-num">一</span>
+      <h3>召喚する</h3>
+      <p>霊力を払って式神を呼び、空いているマスに好きな向きで置きます。中央の<b>太極</b>に置くと少し安く呼べます。</p>
+    </li>
+    <li>
+      <span class="w-step-num">二</span>
+      <h3>攻撃する</h3>
+      <p>式神は<b>間合</b>にいる敵を攻撃します。攻撃された側は、届く相手なら反撃します。ただし<b>隙</b>から突けば、ダメージ+2で反撃もされません。</p>
+    </li>
+    <li>
+      <span class="w-step-num">三</span>
+      <h3>制圧する</h3>
+      <p>盤に並べた式神の数が<b>総制圧力</b>。5以上でターンを終えると<b>チェック</b>。相手のターンをしのげば勝ちです。</p>
+    </li>
+  </ol>
+  <p class="w-more"><a href="/guide">くわしい遊び方を読む</a></p>
+</section>
+
+<section class="w-sec" aria-labelledby="w-cards">
+  <h2 id="w-cards"><span class="w-sec-kicker">式神たち</span>鬼と付喪神、23枚の山札。</h2>
+  <p class="w-sec-lead">山札は、鬼の<b>酒呑一門</b>12枚と、付喪神の<b>玖龍一門</b>11枚。2人とも同じ23枚で戦います。</p>
+  <div class="w-strip" role="list">
+    <img role="listitem" src="/play/art/face/O-001.webp" alt="影鬼" width="600" height="850" loading="lazy">
+    <img role="listitem" src="/play/art/face/T-001.webp" alt="灯籠の精" width="600" height="850" loading="lazy">
+    <img role="listitem" src="/play/art/face/O-005.webp" alt="首引の姫鬼" width="600" height="850" loading="lazy">
+    <img role="listitem" src="/play/art/face/T-002.webp" alt="提灯お化け" width="600" height="850" loading="lazy">
+    <img role="listitem" src="/play/art/face/O-008.webp" alt="茨木童子" width="600" height="850" loading="lazy">
+    <img role="listitem" src="/play/art/face/T-004.webp" alt="古箪笥" width="600" height="850" loading="lazy">
+    <img role="listitem" src="/play/art/face/O-003.webp" alt="鎖鬼" width="600" height="850" loading="lazy">
+    <img role="listitem" src="/play/art/face/T-008.webp" alt="玖龍街" width="600" height="850" loading="lazy">
+  </div>
+  <p class="w-more"><a href="/guide#cards">全23枚を見る</a></p>
+</section>
+
+<section class="w-final">
+  <h2>まずは1局、AIと。</h2>
+  <p>迷ったら、手札の札を触ってみてください。置けるマスが光ります。</p>
+  <div class="w-cta is-center">
+    <a class="w-btn-main" href="/ai">AIと対戦する</a>
+    <a class="w-btn-sub" href="/online">友だちとオンライン対戦</a>
+  </div>
+</section>
+</main>
+
+<footer class="w-foot">
+  <p>開発中のテスト版です。札の絵・盤・ルールは、製品版までに変わることがあります。</p>
+</footer>
+</body>
+</html>

@@ -23,6 +23,7 @@ import { cardOfUnit, isHidden, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
 import type { CardDef, Config, Facing, PlayerId, Pos, Unit } from "../src/types.ts";
 import { ATTR_MARK_ID, flames, mark } from "./marks.ts";
+import { BACK_URL, faceUrl, isPublicSite } from "./site.ts";
 
 export type CardSize = "sm" | "md" | "lg";
 
@@ -156,14 +157,42 @@ const CELL = 10;
  * The range diagram with the primitives of the 記号体系 (forward = up):
  * counter range = sage (a full-cell square for area attackers, an inscribed
  * circle for single), attack = vermilion at 50% of the cell (square = area,
- * circle = single), blind spot = khaki full cell, the piece = ink with a white
- * forward triangle. The system has no gap (旧・隙) mark yet: an amber ring stands
+ * circle = single), blind spot = striped full cell, the piece = white with an ink
+ * forward triangle, on dark cells: the printed card's look (10/22). The system has no gap (旧・隙) mark yet: an amber ring stands
  * in for it (provisional). 3x3 when everything is adjacent, 5x5 when something
  * reaches two cells (the unused outer ring then shrinks to dots so the core
  * reads first). The diagram is always printed forward = up; on the board the
  * whole card turns with the piece, and `facing` only adds the current facing
  * to the label.
  */
+/**
+ * 隙 as on the printed card (10/22): ink stripes over gold, drawn as plain polygons
+ * (a <pattern> would need an id, and Chrome drops it when its first copy sits in a hidden svg).
+ */
+const hatch = (x: number, y: number): string => {
+  const clip = (pts: [number, number][], keep: (p: [number, number]) => number): [number, number][] => {
+    const out: [number, number][] = [];
+    pts.forEach((p, k) => {
+      const q = pts[(k + 1) % pts.length];
+      const dp = keep(p);
+      const dq = keep(q);
+      if (dp >= 0) out.push(p);
+      if (dp >= 0 !== dq >= 0) {
+        const t = dp / (dp - dq);
+        out.push([p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]);
+      }
+    });
+    return out;
+  };
+  const sq: [number, number][] = [[0, 0], [CELL, 0], [CELL, CELL], [0, CELL]];
+  const bands: string[] = [];
+  for (let a = -CELL; a < CELL * 2; a += 3.4) {
+    const poly = clip(clip(sq, ([px, py]) => px + py - a), ([px, py]) => a + 1.5 - (px + py));
+    if (poly.length > 2) bands.push(`M${poly.map(([px, py]) => `${(x + px).toFixed(2)} ${(y + py).toFixed(2)}`).join("L")}Z`);
+  }
+  return `<path class="rs-hatch" d="${bands.join("")}"/>`;
+};
+
 export const rangeSvg = (range: readonly Pos[], blind: readonly Pos[], gap: Pos | null, facing: Facing = 0, opts: RangeOpts = {}): string => {
   const counter = opts.counter ?? [];
   const aoe = opts.aoe ?? false;
@@ -183,7 +212,7 @@ export const rangeSvg = (range: readonly Pos[], blind: readonly Pos[], gap: Pos 
       const rect = (cls: string, inset = 0): string =>
         `<rect class="${cls}" x="${x + inset}" y="${y + inset}" width="${CELL - inset * 2}" height="${CELL - inset * 2}"/>`;
       if (dx === 0 && dy === 0) {
-        cells.push(`${rect("rs-self")}<path class="rs-fwd" d="M${x + c} ${y + 2.4}L${x + 7.8} ${y + 7.2}L${x + 2.2} ${y + 7.2}Z"/>`);
+        cells.push(`${rect("rs-self")}<path class="rs-fwd" d="M${x + c} ${y + 2.2}L${x + 8} ${y + 7.6}L${x + 2} ${y + 7.6}Z"/>`);
         continue;
       }
       const inAtk = has(range, dx, dy);
@@ -195,7 +224,7 @@ export const rangeSvg = (range: readonly Pos[], blind: readonly Pos[], gap: Pos 
         continue;
       }
       const parts = [rect("rs-cell")];
-      if (inBlind) parts.push(rect("rs-blind"));
+      if (inBlind) parts.push(rect("rs-blind"), hatch(x, y));
       if (inCtr) parts.push(aoe ? rect("rs-ctr") : `<circle class="rs-ctr" cx="${x + c}" cy="${y + c}" r="${c}"/>`);
       if (inAtk) parts.push(aoe ? rect("rs-atk", CELL / 4) : `<circle class="rs-atk" cx="${x + c}" cy="${y + c}" r="${CELL / 4}"/>`);
       if (isGap) parts.push(rect("rs-gap", 1.3));
@@ -333,7 +362,10 @@ export const cardFaceHtml = (ctx: Ctx, cardId: string, opts: CardFaceOpts): stri
   const card = cardOf(ctx.pack, cardId);
   const size = opts.size;
   const pid = printIdHtml(card, size);
-  const cls = ["fu", `fu-${size}`, `k-${card.kind}`, `a-${card.attribute}`, `m-${motifOf(card)}`, card.art === undefined ? "" : "has-art", pid === "" ? "" : "has-pid", opts.extraClass ?? ""]
+  // the public build lays the printed face over the drawn parts (they stay for screen readers and for the
+  // numbers that change in play: the board piece's 耐久, a discounted summon cost)
+  const face = isPublicSite() && card.printId !== undefined ? `<img class="fu-face" src="${faceUrl(card.printId)}" alt="" loading="lazy" decoding="async">` : "";
+  const cls = ["fu", `fu-${size}`, `k-${card.kind}`, `a-${card.attribute}`, `m-${motifOf(card)}`, card.art === undefined ? "" : "has-art", pid === "" ? "" : "has-pid", face === "" ? "" : "has-face", opts.extraClass ?? ""]
     .filter((c) => c !== "")
     .join(" ");
   // board pieces carry no name (the detail panel and the cell's label have it)
@@ -343,14 +375,16 @@ export const cardFaceHtml = (ctx: Ctx, cardId: string, opts: CardFaceOpts): stri
   const attr = attrHtml(card, opts);
   const text = size === "sm" ? "" : textHtml(ctx, card, opts);
   if (card.kind === "reigu") {
-    return `<div class="${cls}" data-card="${esc(card.id)}">${art}${cost}${attr}${name}${text}${pid}</div>`;
+    return `<div class="${cls}" data-card="${esc(card.id)}">${art}${cost}${attr}${name}${text}${pid}${face}</div>`;
   }
   const body = `${statsHtml(card, opts)}${rangeBlockHtml(ctx, card, opts)}`;
-  return `<div class="${cls}" data-card="${esc(card.id)}">${art}${cost}${attr}${manaValueHtml(ctx, card, opts)}${name}${body}${text}${pid}</div>`;
+  return `<div class="${cls}" data-card="${esc(card.id)}">${art}${cost}${attr}${manaValueHtml(ctx, card, opts)}${name}${body}${text}${pid}${face}</div>`;
 };
 
 export const cardBackHtml = (extraClass = ""): string =>
-  `<div class="fu fu-back ${extraClass}" aria-hidden="true"><span class="fu-back-mark">符</span></div>`;
+  isPublicSite()
+    ? `<div class="fu fu-back has-face ${extraClass}" aria-hidden="true"><img class="fu-face" src="${BACK_URL}" alt="" decoding="async"></div>`
+    : `<div class="fu fu-back ${extraClass}" aria-hidden="true"><span class="fu-back-mark">符</span></div>`;
 
 export const SEAT_SEAL = ["先", "後"];
 
@@ -366,24 +400,46 @@ export const SEAT_SEAL = ["先", "後"];
 export const pieceHtml = (
   ctx: Ctx,
   u: Unit,
-  opts: { mods?: CardOverrides; printed?: (id: string) => CardDef | undefined; control: boolean; turnPlayer?: PlayerId },
+  opts: { mods?: CardOverrides; printed?: (id: string) => CardDef | undefined; control: boolean; turnPlayer?: PlayerId; tile?: boolean },
 ): string => {
   const card = cardOfUnit(ctx, u);
   const hp = Math.max(0, unitHp(ctx, u));
   const max = unitMaxHp(ctx, u);
   const current = opts.turnPlayer === undefined || opts.turnPlayer === u.owner;
   const spent = current && (u.attackedThisTurn || u.rotatedThisTurn);
-  const flag = !current ? "" : u.attackedThisTurn ? "攻" : u.rotatedThisTurn ? "回" : "";
+  const flag = !current ? "" : u.attackedThisTurn ? "攻撃済" : u.rotatedThisTurn ? "回転済" : "";
   const flagTip = u.attackedThisTurn ? "このターン攻撃済み" : "このターン回転済み";
   const cls = ["pc", `o${u.owner}`, `f${u.facing}`, spent ? "is-spent" : "", isHidden(u) ? "is-hidden" : "", opts.control ? "is-ctl" : ""].join(" ");
   const buff = u.atkBuff > 0 ? `<span class="pc-buff" title="このターン攻撃力+${u.atkBuff}">攻撃力+${u.atkBuff}</span>` : "";
   // freeSummonAttack: the summon-turn attack that costs no attack cost is still there
   const free = current && hasFreeSummonAttack(ctx, u) ? '<span class="pc-free" title="召喚攻撃は消費霊力0(このターンの1回目の攻撃)">0</span>' : "";
+  // 耐久 now (10/18): the card's printed 耐久 is the big number on it, so the current one gets a tag that stays upright
+  const hpTag = `<span class="pc-hp${hp < max ? " is-hurt" : hp > max ? " is-over" : ""}" title="今の耐久 ${hp}(最大 ${max})">耐久<b>${hp}</b></span>`;
+  // 制圧力2 (10/18): the piece says it counts two, as a fact on the board
+  if (opts.tile === true) {
+    // 試作 10/21 (スマホ): the art stays upright on the left, only the range turns with the piece,
+    // the numbers sit in a row and the name band wears the side's colour
+    const aoe = isAoeAttack(ctx, card);
+    const gap = ctx.cfg.counterMode === "gap" && aoe ? (card.gapCell ?? null) : null;
+    const range = rangeSvg(card.attackRange, card.blindSpots, gap, u.facing, { counter: counterCellsOf(ctx.cfg, card), aoe });
+    return `<div class="${cls} pc-tile" data-uid="${u.uid}">
+    <div class="pc-dir f${u.facing}" aria-hidden="true"><i class="pc-arrow"></i></div>
+    <div class="pc-body">
+      <span class="pt-art">${illustrationHtml(card, "sm")}</span>
+      <span class="pt-range f${u.facing}">${range}</span>
+      <span class="pt-stats"><span class="pt-hp${hp < max ? " is-hurt" : ""}">耐<b>${hp}</b></span><span class="pt-atk">攻<b>${card.atk + u.atkBuff}</b></span></span>
+      <span class="pt-name">${esc(card.nameJa)}</span>
+    </div>
+    ${flag === "" ? "" : `<span class="pc-flag" title="${flagTip}">${flag}</span>`}
+    ${free}
+    ${isHidden(u) ? `<span class="pc-fog" aria-hidden="true"></span><span class="pc-hidden">隠</span>` : ""}
+  </div>`;
+  }
   return `<div class="${cls}" data-uid="${u.uid}">
     <div class="pc-dir f${u.facing}" aria-hidden="true"><i class="pc-arrow"></i></div>
     <div class="pc-body">${cardFaceHtml(ctx, card.id, { size: "sm", mods: opts.mods, printed: opts.printed, facing: u.facing, hp: { now: hp, max } })}${mark("cube", "pc-cube")}</div>
     ${flag === "" ? "" : `<span class="pc-flag" title="${flagTip}">${flag}</span>`}
-    ${buff}${free}
+    ${hpTag}${buff}${free}
     ${isHidden(u) ? `<span class="pc-fog" aria-hidden="true"></span><span class="pc-hidden">隠</span>` : ""}
   </div>`;
 };
