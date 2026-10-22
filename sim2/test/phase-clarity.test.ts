@@ -95,3 +95,17 @@ test("my pieces that can still attack are marked on the board", async () => {
   assert.match(boardHtml({ ...base, canAttack: new Set([uid]) }), /can-attack[\s\S]*攻撃できる/);
   assert.doesNotMatch(boardHtml(base), /can-attack/);
 });
+
+test("a tile names the attribute of the cell it stands on (10/22)", async () => {
+  const { boardHtml } = await import("../play/board-view.ts");
+  const { place } = await import("./helpers.ts");
+  const s = blankState(ctx);
+  place(s, "sk02", 0, 1, 1, 0); // 太極 (centre)
+  place(s, "sk02", 0, 0, 0, 0); // a corner = 空
+  const b = boardView(s);
+  const base = { ctx, board: b, names: ["あなた", "相手"] as [string, string], look: {}, marks: new Map(), range: null, selectedUid: null, selectedCell: null, prediction: null, radial: null, facing: null };
+  const tile = boardHtml({ ...base, tile: true });
+  assert.match(tile, /class="cell-attr a-taiji"[^>]*>[\s\S]*?<b>太極<\/b>/);
+  assert.match(tile, /class="cell-attr a-empty"[^>]*>[\s\S]*?<b>空<\/b>/);
+  assert.doesNotMatch(boardHtml(base), /cell-attr/);
+});

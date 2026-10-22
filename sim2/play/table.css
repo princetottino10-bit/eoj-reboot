@@ -1418,8 +1418,28 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .pc-tile .pc-flag { top: 2cqh; right: 2cqw; }
 .pc-tile.is-spent .pc-body { filter: brightness(0.55) saturate(0.5); }
 /* the cell's 陰/陽/空 stays readable over a tile, in the corner of the range panel */
-.cell:has(.pc-tile) .raden.chip { left: auto; right: 3cqw; top: 3cqh; width: 13cqw; height: 13cqw; z-index: 3; pointer-events: none; }
 .pc-tile .pc-flag { top: 30cqh; left: 22cqw; right: auto; translate: -50% 0; }
 /* a tile keeps the board's own facing arrow at the cell edge, so the body leaves room for it */
 .pc-tile .pc-body { width: 86cqw; height: 86cqh; }
 .pc-tile .pc-dir { z-index: 2; }
+/* the cell's 陰/陽/空/太極 over a tile (10/22): a tag at the top-left of the art, in the cell's own colours */
+.cell:has(.pc-tile) .raden.chip { display: none; }
+.cell-attr {
+  position: absolute; left: 7cqw; top: 7cqh; z-index: 3; pointer-events: none; display: flex; align-items: center; gap: 1cqw;
+  padding: 0.8cqw 2.4cqw 0.8cqw 1.2cqw; border-radius: 0 0 2.4cqw 0;
+  font-family: var(--font-mincho); font-weight: 800; font-size: max(11px, 11cqw); line-height: 1;
+  box-shadow: 0 0.6cqw 1.6cqw oklch(0% 0 0 / 0.55);
+}
+.cell-attr .ca-mk { width: 1em; height: 1em; }
+.cell-attr.a-yin { background: #1c2339; color: oklch(92% 0.02 260); box-shadow: inset 0 0 0 1px oklch(70% 0.05 260 / 0.7), 0 0.6cqw 1.6cqw oklch(0% 0 0 / 0.55); }
+.cell-attr.a-yang { background: oklch(93% 0.04 85); color: oklch(25% 0.03 60); }
+.cell-attr.a-empty { background: oklch(40% 0.04 200); color: oklch(95% 0.01 200); }
+.cell-attr.a-taiji { background: linear-gradient(135deg, var(--gold-hi), var(--gold)); color: var(--ink); }
+/* 見比べ用 (10/22, ?piece=tile with sessionStorage yy-tile-shape=wide): a shorter tile, so a strip of the cell shows above it */
+:root[data-tile-shape="wide"] .pc-tile .pc-body { height: 70cqh; translate: 0 10cqh; }
+:root[data-tile-shape="wide"] .pc-tile .pt-range svg { max-height: 100%; width: auto; height: 100%; }
+:root[data-tile-shape="wide"] .cell:has(.pc-tile) .cell-attr { top: 2cqh; left: 4cqw; border-radius: 2cqw; background: none; box-shadow: none; color: inherit; font-size: max(11px, 12cqw); text-shadow: 0 0 1.5cqw oklch(0% 0 0 / 0.8); }
+:root[data-tile-shape="wide"] .cell.c-yin:has(.pc-tile) .cell-attr { color: oklch(88% 0.04 260); }
+:root[data-tile-shape="wide"] .cell.c-yang:has(.pc-tile) .cell-attr { color: oklch(92% 0.06 85); }
+:root[data-tile-shape="wide"] .cell.c-empty:has(.pc-tile) .cell-attr { color: oklch(88% 0.04 200); }
+:root[data-tile-shape="wide"] .cell.c-taiji:has(.pc-tile) .cell-attr { color: var(--gold-hi); }

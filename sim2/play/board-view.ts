@@ -7,7 +7,7 @@ import { cellAttr } from "../src/board.ts";
 import type { CommandId } from "../src/commands.ts";
 import { cardOfUnit, controlNeed, unitHp, unitMaxHp } from "../src/state.ts";
 import type { Ctx } from "../src/state.ts";
-import type { Facing, PlayerId, Pos } from "../src/types.ts";
+import type { CellAttr, Facing, PlayerId, Pos } from "../src/types.ts";
 import type { BoardView } from "../online/protocol.ts";
 import { cardFaceHtml, esc, pieceHtml } from "./cards-view.ts";
 import type { CardLook } from "./hud.ts";
@@ -102,6 +102,9 @@ const gridPlace = (p: Pos): string => `grid-column:${p.x + 1};grid-row:${3 - p.y
 /** Seats in the control state; a finished match has none (the result says how it ended). */
 const controlSeats = (ctx: Ctx, board: BoardView): PlayerId[] => ([0, 1] as PlayerId[]).filter((p) => inCheck(ctx, board, p));
 
+/** スマホのタイル (10/22): the cell's attribute, named over the tile that covers the cell. */
+const CELL_ATTR_WORD: Record<CellAttr, string> = { yin: "陰", yang: "陽", empty: "空", taiji: "太極" };
+
 const cellHtml = (vm: BoardVM, pos: Pos): string => {
   const k = posKey(pos);
   const attr = cellAttr(pos);
@@ -143,7 +146,7 @@ const cellHtml = (vm: BoardVM, pos: Pos): string => {
     u === undefined ? "" : pieceHtml(vm.ctx, u, { ...vm.look, control: ctl.includes(u.owner), turnPlayer: vm.board.turnPlayer, tile: vm.tile === true });
   return `<button type="button" class="${cls.join(" ")}" data-act="cell" data-x="${pos.x}" data-y="${pos.y}" style="${gridPlace(pos)}"
     aria-label="${cellName(pos)}のマス / ${esc(who)}${markText}${hintText}${rangeText}">
-    <span class="raden${u === undefined ? "" : " chip"}" aria-hidden="true">${markSvg(ATTR_MARK_ID[attr], "raden-mk")}</span>${vm.range?.gap.has(k) ? '<span class="cell-gap">旧・隙</span>' : ""}${hintHtml}${piece}
+    <span class="raden${u === undefined ? "" : " chip"}" aria-hidden="true">${markSvg(ATTR_MARK_ID[attr], "raden-mk")}</span>${u !== undefined && vm.tile === true ? `<span class="cell-attr a-${attr}" aria-hidden="true">${markSvg(ATTR_MARK_ID[attr], "ca-mk")}<b>${CELL_ATTR_WORD[attr]}</b></span>` : ""}${vm.range?.gap.has(k) ? '<span class="cell-gap">旧・隙</span>' : ""}${hintHtml}${piece}
   </button>`;
 };
 
