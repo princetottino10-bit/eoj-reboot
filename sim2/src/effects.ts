@@ -33,7 +33,7 @@
 // of damage (src/tansu-attack.ts). tm07 stays as it was for every older pack.
 import { inBoard, posEq, rotateRel, toBoardCells } from "./board.ts";
 import { cardOf, effectKeyOf } from "./cards.ts";
-import { healGain, healUnit, isHidden, unitAt, unitHp, unitMaxHp, visibleUnitAt } from "./state.ts";
+import { gainMana, healGain, healUnit, isHidden, unitAt, unitHp, unitMaxHp, visibleUnitAt } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import { chooseLanternTarget, lanternAmount } from "./lantern.ts";
 import type { Action, AttackVariant, GameEvent, GameState, PlayerId, Pos, ReiguMode, Unit } from "./types.ts";
@@ -138,6 +138,19 @@ export const EFFECT_TEXT: Record<string, string> = {
   ac23: "【霊具】式神1体(敵味方を問わず)の耐久を10にする(下がることもある)。【飲酒】をもつ式神なら15にする",
   // 10/13 古箪笥 (pack-adopted-1013): keyed by the EFFECT key, since the card id ac05 is shared with 10/3-10/6
   tm07b: "この式神に攻撃を命じた際、ダメージを与える代わりに、次のいずれか1つを行う。・耐久を1消費し、霊力を1得る ・カードを1枚引く",
+  // 狸一門 (10/22案, src/tanuki.ts). 狸は継承召喚で出せない(盤の狸は入れ替えられる側にはなれる)
+  tn01: "【加勢】の条件で味方を数えるとき、この式神は2体と数える",
+  tn02: "この式神はダメージを与えられない。(狸囃子と組む)",
+  tn03: "【加勢 -1】味方2体以上の隣。そうしたとき、隣の味方1体の耐久+2",
+  tn04: "【加勢 -1】敵の隙のマス。【化け】召喚時、正面の式神の間合・反撃間合・単体/範囲を写す(全域は写さない)",
+  tn05: "【加勢 -2】敵2体以上の隣。盤上に自分の金長狸がいる間、攻撃力+1",
+  tn06: "【加勢 -2】味方3体以上の隣。そうしたとき、隣の味方全員の耐久+1",
+  tn07: "【加勢 -3】相手がリーチ中",
+  tn08: "【加勢 -3】盤上の式神が相手の方が多い、または小鷹狸の隣。そうしたとき、この手番 隣の味方全員の攻撃力+1",
+  tn09: "【加勢】盤上の自分の式神1体につき-1(最大-3)",
+  tn10: "【霊具】この手番、次に召喚する式神は【加勢】の条件を満たしたものとする。盤上に腹鼓の子狸がいれば、この手番に召喚する式神すべてに効く",
+  tn11: "【霊具】霊力+2。盤上に茶釜狸がいれば、代わりに霊力+4と1枚引く",
+  tn12: "【霊具】自分の式神1体と、その隣の味方1体の位置を入れ替える(向きはそのまま)",
 };
 
 /**
@@ -240,7 +253,9 @@ export const effectiveAtk = (
 ): number => {
   let atk = baseAtkOf(ctx, s, u);
   if (effectsOn(ctx)) {
-    atk += u.atkBuff; // tm16, set by a reigu this turn
+    atk += u.atkBuff; // tm16, set by a reigu this turn; 金長狸 tn08 on summon
+    // 小鷹狸 tn05: +1 while its owner has a 金長狸 on the board
+    if (fxOf(ctx, u.cardId) === "tn05" && s.units.some((k) => k.owner === u.owner && !isHidden(k) && fxOf(ctx, k.cardId) === "tn08")) atk += 1;
     if (variant === "konshin") atk += 1; // tm09
     if (variant === "drink") atk += 1; // ad16【飲酒】
   }
@@ -583,6 +598,16 @@ export const clubVictims = (ctx: Ctx, s: GameState, u: Unit): Unit[] => {
 
 // ------------------------------------------------------------------ reigu
 
+/** 木の葉の小判 (tn12): the visible allies on the 8 cells around `u`, whom it may swap places with. */
+export const swapPartners = (s: GameState, u: Unit): Unit[] =>
+  s.units.filter(
+    (v) => v.uid !== u.uid && v.owner === u.owner && !isHidden(v) && Math.max(Math.abs(v.pos.x - u.pos.x), Math.abs(v.pos.y - u.pos.y)) === 1,
+  );
+
+/** The second unit a unit-own-victim reigu picks: 閻魔獄卒棒's enemy, 木の葉の小判's ally. */
+export const reiguVictims = (ctx: Ctx, s: GameState, cardId: string, target: Unit): Unit[] =>
+  fxOf(ctx, cardId) === "tn12" ? swapPartners(s, target) : clubVictims(ctx, s, target);
+
 export const REIGU_IDS = ["tm18", "tm19", "tm20", "tm21", "tm22"] as const;
 
 /**
@@ -611,6 +636,9 @@ const REIGU_TARGETING: ReadonlyMap<string, ReiguTargeting> = new Map<string, Rei
   ["ad21", "unit-own-mode"],
   ["ad22", "unit-own-victim"],
   ["ac23", "unit-any"],
+  ["tn10", "none"],
+  ["tn11", "none"],
+  ["tn12", "unit-own-victim"],
 ]);
 
 /** The modes a unit-own-mode reigu offers. */
@@ -656,6 +684,8 @@ export const reiguTargetOk = (ctx: Ctx, s: GameState, cardId: string, target: Un
       if (cardOf(ctx.pack, target.cardId).clan !== param(CLUB_CLAN, "ad22")) return false;
       return clubVictims(ctx, s, target).length > 0;
     }
+    case "tn12":
+      return target.owner === p && swapPartners(s, target).length > 0;
     default:
       return false;
   }
@@ -675,7 +705,7 @@ export const reiguChoiceOk = (ctx: Ctx, s: GameState, cardId: string, target: Un
   }
   if (targeting === "unit-own-victim") {
     if (choice.mode !== undefined || choice.victimUid === undefined || target === null) return false;
-    return clubVictims(ctx, s, target).some((v) => v.uid === choice.victimUid);
+    return reiguVictims(ctx, s, cardId, target).some((v) => v.uid === choice.victimUid);
   }
   return choice.mode === undefined && choice.victimUid === undefined;
 };
@@ -701,6 +731,7 @@ export const applyReigu = (
   events: GameEvent[],
   destroy: (u: Unit) => void,
   choice: ReiguChoice = {},
+  draw: () => boolean = () => false,
 ): void => {
   const p = s.turnPlayer;
   const nameOf = (u: Unit): string => cardOf(ctx.pack, u.cardId).nameJa;
@@ -811,6 +842,34 @@ export const applyReigu = (
       if (unitHp(ctx, target) <= 0) destroy(target);
       return;
     }
+    case "tn10": {
+      const all = s.units.some((u) => u.owner === p && !isHidden(u) && fxOf(ctx, u.cardId) === "tn02");
+      s.kaseiFree = { player: p, all };
+      log(events, p, cardId, null, all ? "狸囃子: 腹鼓に合わせて、この手番の召喚はすべて【加勢】" : "狸囃子: 次の召喚は【加勢】");
+      return;
+    }
+    case "tn11": {
+      const kama = s.units.some((u) => u.owner === p && !isHidden(u) && fxOf(ctx, u.cardId) === "tn03");
+      const got = gainMana(s.players[p], kama ? 4 : 2, ctx.cfg.manaCap);
+      const drew = kama && draw();
+      log(events, p, cardId, null, `分福茶釜: 霊力+${got}${kama ? (drew ? "・1枚引く(茶釜狸)" : "(茶釜狸・山札なし)") : ""}`);
+      return;
+    }
+    case "tn12": {
+      if (target === null || choice.victimUid === undefined) return;
+      const mate = swapPartners(s, target).find((v) => v.uid === choice.victimUid);
+      if (mate === undefined) return;
+      const a = { x: target.pos.x, y: target.pos.y };
+      const b = { x: mate.pos.x, y: mate.pos.y };
+      target.pos = b;
+      mate.pos = a;
+      events.push({ t: "move", player: p, uid: target.uid, from: a, to: { x: b.x, y: b.y }, source: cardId });
+      events.push({ t: "move", player: p, uid: mate.uid, from: b, to: { x: a.x, y: a.y }, source: cardId });
+      log(events, p, cardId, target.uid, `木の葉の小判: ${nameOf(target)}と${nameOf(mate)}が入れ替わった`);
+      // a new cell's attribute applies at once (as 茨木の左腕)
+      for (const u of [target, mate]) if (unitHp(ctx, u) <= 0) destroy(u);
+      return;
+    }
     case "ad22": {
       if (target === null || choice.victimUid === undefined) return;
       const victim = clubVictims(ctx, s, target).find((v) => v.uid === choice.victimUid);
@@ -848,6 +907,7 @@ export const clearExpiredHidden = (s: GameState, p: PlayerId, events: GameEvent[
 };
 
 export const clearTurnBuffs = (s: GameState): void => {
+  delete s.kaseiFree; // 狸囃子 lasts the turn
   for (const u of s.units) {
     u.atkBuff = 0;
     // an unused free summon attack (freeSummonAttack) does not outlive its turn

@@ -101,6 +101,11 @@ export type Unit = {
    * and at the end of the turn. Absent = none pending.
    */
   freeAttack?: true;
+  /**
+   * 化け狸 (狸一門 10/22案): the card whose 間合・反撃間合・単体/範囲 this unit
+   * copied from the unit in front of it when it was summoned. Absent = its own.
+   */
+  borrow?: string;
 };
 
 export type PlayerState = {
@@ -137,6 +142,12 @@ export type GameState = {
    * else happens this turn (null / absent = no such obligation).
    */
   forcedAttackUid?: number | null;
+  /**
+   * 狸囃子 (狸一門 10/22案): this turn `player`'s next summon (all = every
+   * summon this turn) counts as meeting its【加勢】condition. Cleared at the
+   * end of the turn. Absent / null = none.
+   */
+  kaseiFree?: { player: PlayerId; all: boolean } | null;
 };
 
 export type ChipMode = "one_per_turn" | "catch_up";

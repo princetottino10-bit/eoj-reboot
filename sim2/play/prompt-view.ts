@@ -276,23 +276,29 @@ const clubBar = (vm: PromptVM, legal: LegalEntry[], s: Extract<Sel, { kind: "rei
   const t = s.targetUid === null ? undefined : unitById(vm.board, s.targetUid);
   const tName = t === undefined ? "" : esc(cardName(vm.ctx, t.cardId));
   if ((s.victimUid ?? null) === null) {
-    return bar("pick", `<b>${esc(card.nameJa)}</b>: <b>${tName}</b>の隣(隙以外)の敵を盤上で選ぶ`, [], [retarget, cancel], f);
+    const swap = fxOf(vm.ctx, card.id) === "tn12";
+    return bar("pick", `<b>${esc(card.nameJa)}</b>: <b>${tName}</b>の${swap ? "隣の、入れ替える味方" : "隣(隙以外)の敵"}を盤上で選ぶ`, [], [retarget, cancel], f);
   }
   const e = reiguEntry(legal, vm.hand, s);
   const lines = e?.preview?.kind === "reigu" ? reiguPreviewLines(vm, e.preview) : [];
-  return bar("confirm", `<b>${esc(card.nameJa)}</b>を使う(${tName}から):`, lines, [btn("confirm", `使う(霊力−${card.summonCost})`, "btn-gold"), btn("revictim", "敵を選び直す", "btn-quiet"), retarget, cancel], f);
+  return bar("confirm", `<b>${esc(card.nameJa)}</b>を使う(${tName}から):`, lines, [btn("confirm", `使う(霊力−${card.summonCost})`, "btn-gold"), btn("revictim", fxOf(vm.ctx, card.id) === "tn12" ? "味方を選び直す" : "敵を選び直す", "btn-quiet"), retarget, cancel], f);
 };
 
-/** 劣勢時の大型割引 on a summon, from the legal list's summon previews: " (劣勢割引 −3)", "" when none. */
+/** 劣勢時の大型割引 / 【加勢】 on a summon, from the legal list's summon previews: " (劣勢割引 −3)", "" when none. */
 const summonDiscountNote = (entries: LegalEntry[]): string => {
-  const off = Math.max(0, ...entries.map((e) => (e.preview?.kind === "summon" ? e.preview.underdogDiscount : 0)));
-  return off > 0 ? ` <span class="pr-disc">(劣勢割引 −${off})</span>` : "";
+  const pvs = entries.map((e) => e.preview).filter((x) => x?.kind === "summon");
+  const off = Math.max(0, ...pvs.map((x) => (x?.kind === "summon" ? x.underdogDiscount : 0)));
+  const kasei = Math.max(0, ...pvs.map((x) => (x?.kind === "summon" ? (x.kasei ?? 0) : 0)));
+  const parts = [...(kasei > 0 ? [`【加勢】で最大 −${kasei}`] : []), ...(off > 0 ? [`劣勢割引 −${off}`] : [])];
+  return parts.length > 0 ? ` <span class="pr-disc">(${parts.join("・")})</span>` : "";
 };
 
-/** The cost of summoning onto one cell, when 劣勢時の大型割引 changes it: " 霊力−10(本来13・劣勢割引)". */
+/** The cost of summoning onto one cell, when 劣勢時の大型割引 / 【加勢】 changes it: " 霊力−10(本来13・劣勢割引)". */
 const summonCostNote = (entries: LegalEntry[]): string => {
   const pv = entries.map((e) => e.preview).find((x) => x?.kind === "summon");
-  return pv?.kind === "summon" ? ` <span class="pr-disc">霊力−${pv.cost}(本来${pv.costBefore}・劣勢割引)</span>` : "";
+  if (pv?.kind !== "summon") return "";
+  const why = [...((pv.kasei ?? 0) > 0 ? ["【加勢】"] : []), ...(pv.underdogDiscount > 0 ? ["劣勢割引"] : [])].join("・");
+  return ` <span class="pr-disc">霊力−${pv.cost}(本来${pv.costBefore}・${why})</span>`;
 };
 
 const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
@@ -376,7 +382,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       }
       const kind = reiguTargeting(fxOf(vm.ctx, card.id));
       if (s.targetUid === null) {
-        const what = kind === "unit-own-mode" ? "使う自分の式神" : kind === "unit-own-victim" ? "使う自分の式神(酒呑一門)" : "対象";
+        const what = kind === "unit-own-mode" ? "使う自分の式神" : kind === "unit-own-victim" ? (fxOf(vm.ctx, card.id) === "tn12" ? "入れ替える自分の式神" : "使う自分の式神(酒呑一門)") : "対象";
         return bar("pick", `<b>${esc(card.nameJa)}</b>: ${what}を盤上で選ぶ`, [], [cancel], f);
       }
       const retarget = btn("retarget", "対象を選び直す", "btn-quiet");
