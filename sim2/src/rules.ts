@@ -618,7 +618,7 @@ const applyActionCore = (
       ...(discount > 0 ? { underdogDiscount: discount } : {}),
     });
     if (kaseiOff > 0) {
-      events.push({ t: "effect", player: p, source: cardId, uid: unit.uid, text: `【加勢 −${kaseiOff}】${kasei.label}` });
+      events.push({ t: "effect", player: p, source: cardId, uid: unit.uid, text: `【加勢】${kasei.label}: 召喚霊力−${kaseiOff}` });
     }
     if (discount > 0) events.push(underdogDiscountEvent(p, discount));
     onSummon(ctx, s, unit, events); // tm11 Ungaikyo

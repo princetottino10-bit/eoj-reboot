@@ -1,7 +1,7 @@
 // 狸一門 (10/22案, packs tanuki-1022k / tanuki-1022s). Design note: the project
 // file new-ichimon-1016/狸一門_1016案3.md with its 10/22 additions.
 //
-// 【加勢 -N】(条件): a 狸 summoned where its condition holds costs N less. The
+// 【加勢】(条件で召喚霊力-N): a 狸 summoned where its condition holds costs N less. The
 // 太極 discount and 【加勢】 never stack: the larger one applies (rules.ts
 // summonCostFor). 狸囃子 (tn10) makes the next summon (every summon this turn
 // with 腹鼓の子狸 on the board) count as meeting the condition.
