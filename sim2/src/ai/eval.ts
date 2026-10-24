@@ -1,4 +1,5 @@
-import { attackCells, isBlindShot } from "../combat.ts";
+import { attackCells, enemiesInRange, isBlindShot } from "../combat.ts";
+import { effectiveAtk } from "../effects.ts";
 import { boardHpTotal, controlCount, controlNeed, instantWinCountOf, opponent } from "../state.ts";
 import type { Ctx } from "../state.ts";
 import { posEq } from "../board.ts";
@@ -157,5 +158,24 @@ export const evaluate = (
   // 2回目の山札切れ is near: the side ahead on 占拠 then wins
   score += deckOutTerm(ctx, s, occP, occO, w.occ, w.reach);
   score -= w.threat * threatAgainst(ctx, s, p);
+  score += kaseiTerm(ctx, s, p, w.boardHp);
   return score;
+};
+
+/**
+ * 狸一門【加勢】: free attacks p may still make this turn are worth about the
+ * damage they would do (per grant group, the hardest hitter that has a target),
+ * so a one-step search summons where the condition holds and then uses them.
+ */
+const kaseiTerm = (ctx: Ctx, s: GameState, p: PlayerId, perHp: number): number => {
+  if (s.kaseiLeft === undefined || s.turnPlayer !== p) return 0;
+  const best = new Map<number, number>();
+  for (const u of s.units) {
+    if (u.owner !== p || u.kasei === undefined || enemiesInRange(ctx, s, u).length === 0) continue;
+    const g = u.kasei.group;
+    best.set(g, Math.max(best.get(g) ?? 0, effectiveAtk(ctx, s, u) * Math.min(3, s.kaseiLeft[g] ?? 1)));
+  }
+  let v = 0;
+  for (const x of best.values()) v += x;
+  return perHp * v;
 };

@@ -35,7 +35,7 @@ import {
 } from "./effects.ts";
 import { resolveTansuAttack } from "./tansu-attack.ts";
 import { checkDeckOut, drawOne } from "./draw.ts";
-import { kaseiDiscount, noInherit, onTanukiSummon, spendHayashi } from "./tanuki.ts";
+import { chainKasei, kaseiDiscount, noInherit, onTanukiSummon, spendHayashi } from "./tanuki.ts";
 import type {
   Action,
   ApplyResult,
@@ -83,14 +83,11 @@ export const underdogSummonDiscount = (ctx: Ctx, s: UnderdogView, p: PlayerId, c
 
 /**
  * The cost of summoning `card` onto `pos` before 劣勢時の大型割引: summonCostAt
- * (scale, then 太極), or 【加勢】 (狸一門, src/tanuki.ts) off the scaled cost
- * when that is cheaper - the two never stack, the larger applies. Floor 1.
+ * (scale, then 太極). 【加勢】 (狸一門) no longer discounts (10/25 袋叩き案:
+ * it grants free attacks instead, src/tanuki.ts); s and p stay for callers.
  */
-export const placeCostFor = (ctx: Ctx, s: GameState, p: PlayerId, card: CardDef, pos: Pos): number => {
-  const at = summonCostAt(ctx, card, pos);
-  const k = kaseiDiscount(ctx, s, p, card, pos).amount;
-  return k === 0 ? at : Math.min(at, Math.max(1, baseSummonCost(ctx, card) - k));
-};
+export const placeCostFor = (ctx: Ctx, _s: GameState, _p: PlayerId, card: CardDef, pos: Pos): number =>
+  summonCostAt(ctx, card, pos);
 
 /**
  * What p pays to summon `card` onto `pos` right now: placeCostFor (太極 or
@@ -363,7 +360,7 @@ export const isLegal = (ctx: Ctx, s: GameState, a: Action): boolean => {
   }
   // attack
   const variant = a.variant ?? "normal";
-  if (u.attackedThisTurn) return false;
+  if (u.attackedThisTurn && u.kasei === undefined) return false; // 【加勢】 may attack again
   // 古箪笥 tm07b: no target, no range, no cost, no counter order
   if (isTansuVariant(variant)) return canUseVariant(ctx, u, variant) && a.targetUid === null && a.counterOrder === undefined;
   if (!canAttack(card)) return false;
@@ -490,7 +487,7 @@ const allLegalActions = (ctx: Ctx, s: GameState): Action[] => {
   for (const u of s.units) {
     if (u.owner !== p || isHidden(u)) continue;
     const card = cardOf(ctx.pack, u.cardId);
-    if (!u.attackedThisTurn) {
+    if (!u.attackedThisTurn || u.kasei !== undefined) {
       // 古箪笥 tm07b: the attack command is the choice (cost 0, no target)
       if (hasTansuAttack(ctx, u)) {
         out.push({ kind: "attack", uid: u.uid, targetUid: null, variant: "tansuMana" });
@@ -582,9 +579,7 @@ const applyActionCore = (
     const cost = summonCostFor(ctx, s, p, card, a.pos);
     const placed = placeCostFor(ctx, s, p, card, a.pos);
     const discount = placed - cost;
-    const kasei = kaseiDiscount(ctx, s, p, card, a.pos);
-    // 【加勢】 took over from 太極 (or stood alone): its own log line
-    const kaseiOff = kasei.amount > 0 && placed < summonCostAt(ctx, card, a.pos) ? baseSummonCost(ctx, card) - placed : 0;
+    const kasei = kaseiDiscount(ctx, s, p, card, a.pos); // before the unit stands there
     ps.mana -= cost;
     ps.hand = ps.hand.filter((_, i) => i !== a.handIndex);
     const unit: Unit = {
@@ -617,9 +612,6 @@ const applyActionCore = (
       baseCost: card.summonCost,
       ...(discount > 0 ? { underdogDiscount: discount } : {}),
     });
-    if (kaseiOff > 0) {
-      events.push({ t: "effect", player: p, source: cardId, uid: unit.uid, text: `【加勢】${kasei.label}: 召喚霊力−${kaseiOff}` });
-    }
     if (discount > 0) events.push(underdogDiscountEvent(p, discount));
     onSummon(ctx, s, unit, events); // tm11 Ungaikyo
     onTanukiSummon(ctx, s, unit, kasei.amount > 0, events); // 狸一門
@@ -694,7 +686,11 @@ const applyActionCore = (
     resolveTansuAttack(ctx, s, a.uid, a.variant, events);
     return;
   }
+  // 狸一門【加勢】の連鎖: a 【加勢】 attack that destroys an enemy passes one more on
+  const striker = unitByUid(s, a.uid);
+  const chain = striker?.kasei === undefined ? null : { pos: { ...striker.pos }, card: striker.cardId, foes: s.units.filter((x) => x.owner !== p).map((x) => x.uid) };
   resolveAttack(ctx, s, a.uid, a.targetUid, events, a.variant ?? "normal", { counterOrder: a.counterOrder });
+  if (chain !== null && chain.foes.some((id) => unitByUid(s, id) === undefined)) chainKasei(ctx, s, p, a.uid, chain.card, chain.pos, events);
 };
 
 /** Pure wrapper: clones, applies, returns the new state plus its events. */

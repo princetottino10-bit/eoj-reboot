@@ -106,6 +106,15 @@ export type Unit = {
    * copied from the unit in front of it when it was summoned. Absent = its own.
    */
   borrow?: string;
+  /**
+   * 【加勢】 (狸一門 10/25 袋叩き案): a free attack this turn, granted by the 狸
+   * `src` summoned on its condition - no attack cost, allowed even after this
+   * unit attacked. `group` names the grant: units sharing it share
+   * GameState.kaseiLeft[group] attacks between them. Cleared at turn end.
+   */
+  kasei?: { src: string; group: number };
+  /** The attack being resolved is a 【加勢】 attack (腹鼓の子狸 reads it). */
+  kaseiStrike?: true;
 };
 
 export type PlayerState = {
@@ -148,6 +157,8 @@ export type GameState = {
    * end of the turn. Absent / null = none.
    */
   kaseiFree?: { player: PlayerId; all: boolean } | null;
+  /** 【加勢】 grants still open this turn: group -> attacks left (see Unit.kasei). */
+  kaseiLeft?: Record<number, number>;
 };
 
 export type ChipMode = "one_per_turn" | "catch_up";

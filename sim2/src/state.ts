@@ -35,6 +35,8 @@ const cloneUnit = (u: Unit): Unit => ({
   atkBuff: u.atkBuff,
   ...(u.freeAttack === true ? { freeAttack: true as const } : {}),
   ...(u.borrow !== undefined ? { borrow: u.borrow } : {}),
+  ...(u.kasei !== undefined ? { kasei: { ...u.kasei } } : {}),
+  ...(u.kaseiStrike === true ? { kaseiStrike: true as const } : {}),
 });
 
 export const cloneState = (s: GameState): GameState => ({
@@ -50,6 +52,7 @@ export const cloneState = (s: GameState): GameState => ({
   summonsThisTurn: s.summonsThisTurn,
   forcedAttackUid: s.forcedAttackUid ?? null,
   ...(s.kaseiFree ? { kaseiFree: { ...s.kaseiFree } } : {}),
+  ...(s.kaseiLeft ? { kaseiLeft: { ...s.kaseiLeft } } : {}),
 });
 
 export const createGame = (ctx: Ctx, seed: number): GameState => {

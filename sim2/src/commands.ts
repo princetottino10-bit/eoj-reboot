@@ -54,7 +54,7 @@ const attackReason = (ctx: Ctx, s: GameState, u: Unit, variant: AttackVariant): 
   const mana = s.players[u.owner].mana;
   const cost = attackCostFor(ctx, u, variant);
   if (!canAttack(card)) return "攻撃手段がない";
-  if (u.attackedThisTurn) return "攻撃済み";
+  if (u.attackedThisTurn && u.kasei === undefined) return "攻撃済み";
   if (mana < cost) return short(cost, mana);
   if (variant === "heal") return alliesInRange(ctx, s, u).length === 0 ? "間合に味方がいない" : "今は使えない";
   return enemiesInRange(ctx, s, u).length === 0 ? "間合に敵がいない" : "今は使えない";

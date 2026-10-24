@@ -138,16 +138,16 @@ export const EFFECT_TEXT: Record<string, string> = {
   ac23: "【霊具】式神1体(敵味方を問わず)の耐久を10にする(下がることもある)。【飲酒】をもつ式神なら15にする",
   // 10/13 古箪笥 (pack-adopted-1013): keyed by the EFFECT key, since the card id ac05 is shared with 10/3-10/6
   tm07b: "この式神に攻撃を命じた際、ダメージを与える代わりに、次のいずれか1つを行う。・耐久を1消費し、霊力を1得る ・カードを1枚引く",
-  // 狸一門 (10/22案, src/tanuki.ts). 狸は継承召喚で出せない(盤の狸は入れ替えられる側にはなれる)
+  // 狸一門 (10/25 袋叩き案, src/tanuki.ts). 【加勢】(条件): 条件を満たして召喚すると、隣の味方1体が攻撃霊力なしで攻撃する(攻撃済みでもよい). 狸は継承召喚で出せない(盤の狸は入れ替えられる側にはなれる)
   tn01: "【加勢】の条件で味方を数えるとき、この式神は2体と数える",
-  tn02: "この式神はダメージを与えられない。(狸囃子と組む)",
-  tn03: "【加勢】味方2体以上と隣り合うマスなら、召喚霊力-1。【加勢】で召喚したとき、隣の味方1体の耐久+2",
-  tn04: "【加勢】敵の隙のマスなら、召喚霊力-1。召喚時、正面の式神の間合・反撃間合・単体/範囲を写す(全域は写さない)",
-  tn05: "【加勢】敵2体以上と隣り合うマスなら、召喚霊力-2。盤上に自分の金長狸がいる間、攻撃力+1",
-  tn06: "【加勢】味方3体以上と隣り合うマスなら、召喚霊力-2。【加勢】で召喚したとき、隣の味方全員の耐久+1",
-  tn07: "【加勢】相手がリーチ中なら、召喚霊力-3",
-  tn08: "【加勢】相手の式神の方が多いか、小鷹狸の隣なら、召喚霊力-3。【加勢】で召喚したとき、この手番は隣の味方全員の攻撃力+1",
-  tn09: "【加勢】盤上の自分の式神1体につき、召喚霊力-1(最大-3)",
+  tn02: "この式神はダメージを与えられない。隣の味方が【加勢】で攻撃するとき、その攻撃力+1",
+  tn03: "【加勢】味方と隣り合うマス。【加勢】で攻撃する味方の耐久+2",
+  tn04: "【加勢】敵の隙のマス。召喚時、正面の式神の間合・反撃間合・単体/範囲を写す(全域は写さない)",
+  tn05: "【加勢】敵と隣り合うマス。隣の味方の代わりにこの式神が攻撃してもよい。盤上に自分の金長狸がいる間、攻撃力+1",
+  tn06: "【加勢】味方2体以上と隣り合うマス。1体ではなく、隣の味方全員が攻撃する",
+  tn07: "【加勢】相手がリーチ中。1体ではなく、隣の味方全員が攻撃する",
+  tn08: "【加勢】相手の式神の方が多いか、小鷹狸の隣。この手番、隣の味方全員の攻撃力+1",
+  tn09: "【加勢】盤上の自分の式神2体以上。隣でなくてよい自分の式神3体までが攻撃する",
   tn10: "【霊具】この手番、次に召喚する式神は【加勢】の条件を満たしたものとする。盤上に腹鼓の子狸がいれば、この手番に召喚する式神すべてに効く",
   tn11: "【霊具】霊力+2。盤上に茶釜狸がいれば、代わりに霊力+4と1枚引く",
   tn12: "【霊具】自分の式神1体と、その隣の味方1体の位置を入れ替える(向きはそのまま)",
@@ -256,6 +256,8 @@ export const effectiveAtk = (
     atk += u.atkBuff; // tm16, set by a reigu this turn; 金長狸 tn08 on summon
     // 小鷹狸 tn05: +1 while its owner has a 金長狸 on the board
     if (fxOf(ctx, u.cardId) === "tn05" && s.units.some((k) => k.owner === u.owner && !isHidden(k) && fxOf(ctx, k.cardId) === "tn08")) atk += 1;
+    // 腹鼓の子狸 tn02: +1 to a neighbour's 【加勢】 attack (each 腹鼓 next to it)
+    if (u.kaseiStrike === true) atk += s.units.filter((k) => k.owner === u.owner && !isHidden(k) && fxOf(ctx, k.cardId) === "tn02" && Math.max(Math.abs(k.pos.x - u.pos.x), Math.abs(k.pos.y - u.pos.y)) === 1).length;
     if (variant === "konshin") atk += 1; // tm09
     if (variant === "drink") atk += 1; // ad16【飲酒】
   }
@@ -908,8 +910,11 @@ export const clearExpiredHidden = (s: GameState, p: PlayerId, events: GameEvent[
 
 export const clearTurnBuffs = (s: GameState): void => {
   delete s.kaseiFree; // 狸囃子 lasts the turn
+  delete s.kaseiLeft; // 【加勢】 attacks last the turn
   for (const u of s.units) {
     u.atkBuff = 0;
+    delete u.kasei;
+    delete u.kaseiStrike;
     // an unused free summon attack (freeSummonAttack) does not outlive its turn
     delete u.freeAttack;
   }
