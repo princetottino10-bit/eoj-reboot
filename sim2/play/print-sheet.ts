@@ -193,6 +193,7 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
       }`,
     });
   }
+  if (cfg.summonAttackTiming === "right_after") rows.push({ label: "召喚攻撃", text: "召喚 (継承召喚も) した式神がそのターンに攻撃できるのは、召喚のすぐあとだけ。ほかの行動 (ほかの式神の召喚・攻撃・回転、霊具、その式神の回転) をはさんだら、そのターンは攻撃できない。次の自分のターンからはふつうに攻撃できる。" });
   if (cfg.summonAttackForced) rows.push({ label: "必ず攻撃", text: "召喚 (継承召喚も) した式神は、間合に敵がいて攻撃の霊力が払えるなら、ほかの行動の前にすぐ攻撃する (単体攻撃で敵が複数なら相手は選べる)。" });
   if (cfg.summonLimit !== null) rows.push({ label: "召喚", text: `1ターンに${cfg.summonLimit}回まで。` });
   rows.push({ label: "効果", text: cfg.effects ? "各カードの文面のとおり。" : "カードの効果は使わない。" });

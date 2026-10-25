@@ -353,7 +353,9 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
     case "unit": {
       const u = unitById(vm.board, s.uid);
       const own = u !== undefined && u.owner === vm.viewer;
-      const hint = s.summonAttack ? `召喚攻撃ができる: ${unitHint(vm, s.uid, true)}` : unitHint(vm, s.uid, own);
+      // 10/26案: the summon attack lapses with any other action
+      const now = vm.ctx.cfg.summonAttackTiming === "right_after" ? "(ほかの行動をすると、このターンは攻撃できない)" : "";
+      const hint = s.summonAttack ? `召喚攻撃ができる${now}: ${unitHint(vm, s.uid, true)}` : unitHint(vm, s.uid, own);
       return bar("unit", hint, [], [btn("cancel", s.summonAttack ? "召喚攻撃をしない" : "選択を解く", "btn-quiet", 'title="Esc"')], f);
     }
     case "aim": {
