@@ -64,6 +64,7 @@ export const startTurn = (
   const p = s.turnPlayer;
   s.summonsThisTurn = 0;
   s.forcedAttackUid = null;
+  s.summonAttackUid = null;
   for (const u of s.units) {
     if (u.owner === p) {
       u.attackedThisTurn = false;
