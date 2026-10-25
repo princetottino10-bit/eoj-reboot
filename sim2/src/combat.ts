@@ -5,7 +5,6 @@ import {
   controlCount,
   controlNeed,
   gainMana,
-  healGain as healUnitGain,
   healUnit,
   instantWinCountOf,
   isHidden,
@@ -417,22 +416,17 @@ const counterKillMove = (ctx: Ctx, s: GameState, u: Unit, at: Pos, events: GameE
  * (summed, simultaneous) -> attacker destruction check.
  */
 /**
- * 狸一門【加勢】: the attacker uses its pending free attack, if it has one.
+ * 狸一門【袋叩き】: the attacker uses its pending free attack, if it has one.
  * One attack off its group; when the group runs out every other unit sharing
- * it loses the grant. 茶釜狸 tn03's grant heals the attacker +2 as it strikes.
+ * it loses the grant.
  */
-const spendKasei = (ctx: Ctx, s: GameState, u: Unit, events: GameEvent[]): Unit["kasei"] => {
+const spendKasei = (s: GameState, u: Unit): Unit["kasei"] => {
   const k = u.kasei;
   if (k === undefined) return undefined;
   delete u.kasei;
   const left = (s.kaseiLeft?.[k.group] ?? 1) - 1;
   if (s.kaseiLeft !== undefined) s.kaseiLeft[k.group] = left;
   if (left <= 0) for (const o of s.units) if (o.kasei?.group === k.group) delete o.kasei;
-  if (k.src === "tn03" && healUnitGain(ctx, u, 2) > 0) {
-    const g = healUnitGain(ctx, u, 2);
-    healUnit(ctx, u, 2);
-    events.push({ t: "effect", player: u.owner, source: k.src, uid: u.uid, text: `茶釜狸: 【加勢】で攻撃する${cardOf(ctx.pack, u.cardId).nameJa}の耐久+${g}` });
-  }
   return k;
 };
 
@@ -455,7 +449,7 @@ export const resolveAttack = (
   const attackCost = attackCostFor(ctx, attacker, variant);
   s.players[attacker.owner].mana -= attackCost;
   attacker.attackedThisTurn = true;
-  const kasei = spendKasei(ctx, s, attacker, events); // 狸一門【加勢】
+  const kasei = spendKasei(s, attacker); // 狸一門【袋叩き】
   if (kasei !== undefined) attacker.kaseiStrike = true;
   else delete attacker.kaseiStrike;
   // only the first attack is free: a later one (should a rule allow it) pays

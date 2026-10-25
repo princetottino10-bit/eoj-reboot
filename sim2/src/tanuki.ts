@@ -1,18 +1,21 @@
 // 狸一門 (packs tanuki-1022k / tanuki-1022s). Design notes: the project files
 // new-ichimon-1016/狸一門_1016案3.md and 狸一門_袋叩き案_1025.md.
 //
-// 【加勢】(条件) - 10/25 袋叩き案: a 狸 summoned where its condition holds lets
-// a neighbouring ally attack at once, free of attack cost, even one that has
-// attacked this turn (Unit.kasei; spent in combat.ts). Some 狸 grant more.
-// The 10/22案 discount is gone. 狸囃子 (tn10) makes the next summon (every
-// summon this turn with 腹鼓の子狸 on the board) count as meeting the condition.
+// 【加勢】(条件で召喚霊力-N): a 狸 summoned where its condition holds costs N
+// less. The 太極 discount and 【加勢】 never stack: the larger one applies
+// (rules.ts summonCostFor). 狸囃子 (tn10) makes the next summon (every summon
+// this turn with 腹鼓の子狸 on the board) count as meeting the condition.
+// 【袋叩き】 (10/25, 小鷹・太三郎・団三郎・隠神刑部): summoned by 【加勢】, it lets
+// allies attack at once, free of attack cost, even after attacking this turn
+// (Unit.kasei; spent in combat.ts); a kill by such an attack passes one more
+// to a neighbour of the attacker (連鎖). 召3 = printed 召喚霊力 3, any clan.
 // "隣" is the 8 cells around (orthogonal and diagonal), as for 閻魔獄卒棒.
 // 豆狸 (tn01) counts as 2 wherever 【加勢】 counts allies.
 //
 // Keyed by effect key, like effects.ts. Cards without an entry have no 【加勢】.
 import { blindCells } from "./combat.ts";
 import { fxOf } from "./effects.ts";
-import { cardOfUnit, isHidden, occupied, opponent, unitAt } from "./state.ts";
+import { cardOfUnit, healGain, healUnit, isHidden, occupied, opponent, unitAt } from "./state.ts";
 import type { Ctx } from "./state.ts";
 import { posEq, toBoardCells } from "./board.ts";
 import { cardOf, parseTenkey, TENKEY_ALL } from "./cards.ts";
@@ -31,6 +34,12 @@ const near = (a: Pos, b: Pos): boolean => !posEq(a, b) && Math.max(Math.abs(a.x 
 const around = (s: GameState, pos: Pos, owner: PlayerId): Unit[] =>
   s.units.filter((u) => u.owner === owner && !isHidden(u) && near(u.pos, pos));
 
+/**
+ * 子狸 (10/25): a unit whose printed 召喚霊力 is 3, of any clan - the swarm the
+ * big 狸 count and lead.
+ */
+export const isSmall = (ctx: Ctx, u: Unit): boolean => cardOf(ctx.pack, u.cardId).summonCost === 3;
+
 /** Allies as 【加勢】 counts them: 豆狸 is 2. */
 const allyWeight = (ctx: Ctx, us: readonly Unit[]): number =>
   us.reduce((n, u) => n + (fxOf(ctx, u.cardId) === "tn01" ? 2 : 1), 0);
@@ -44,7 +53,11 @@ const KASEI: Record<string, Kasei> = {
       s.units.some((u) => u.owner !== p && !isHidden(u) && blindCells(ctx, u).some((c) => posEq(c, pos))) ? 1 : 0,
   },
   tn05: { max: 2, label: "敵1体以上の隣", amount: (_ctx, s, p, pos) => (around(s, pos, opponent(p)).length >= 1 ? 2 : 0) },
-  tn06: { max: 2, label: "味方2体以上の隣", amount: (ctx, s, p, pos) => (allyWeight(ctx, around(s, pos, p)) >= 2 ? 2 : 0) },
+  tn06: {
+    max: 2,
+    label: "召3の味方2体以上の隣",
+    amount: (ctx, s, p, pos) => (allyWeight(ctx, around(s, pos, p).filter((u) => isSmall(ctx, u))) >= 2 ? 2 : 0),
+  },
   tn07: { max: 3, label: "相手がリーチ中", amount: (_ctx, s, p) => (s.players[opponent(p)].reach ? 3 : 0) },
   tn08: {
     max: 3,
@@ -53,9 +66,9 @@ const KASEI: Record<string, Kasei> = {
       occupied(s, opponent(p)) > occupied(s, p) || around(s, pos, p).some((u) => fxOf(ctx, u.cardId) === "tn05") ? 3 : 0,
   },
   tn09: {
-    max: 1,
-    label: "盤上の自分の式神2体以上",
-    amount: (ctx, s, p) => (allyWeight(ctx, s.units.filter((u) => u.owner === p && !isHidden(u))) >= 2 ? 1 : 0),
+    max: 3,
+    label: "盤上の召3の味方1体につき",
+    amount: (ctx, s, p) => Math.min(3, allyWeight(ctx, s.units.filter((u) => u.owner === p && !isHidden(u) && isSmall(ctx, u)))),
   },
 };
 
@@ -94,6 +107,9 @@ const log = (events: GameEvent[], u: Unit, text: string): void => {
   events.push({ t: "effect", player: u.owner, source: u.cardId, uid: u.uid, text });
 };
 
+/** The 狸 with 【袋叩き】 (10/25): on a 【加勢】 summon, allies attack free (Unit.kasei). */
+const BUKURO = new Set(["tn05", "tn06", "tn07", "tn09"]);
+
 /** A group id no grant this turn uses yet (and the map to hold it). */
 const freshGroup = (s: GameState): number => {
   s.kaseiLeft ??= {};
@@ -114,7 +130,7 @@ export const chainKasei = (ctx: Ctx, s: GameState, p: PlayerId, from: number, fr
   const g = freshGroup(s);
   s.kaseiLeft![g] = 1;
   for (const a of pool) a.kasei = { src: "chain", group: g };
-  events.push({ t: "effect", player: p, source: fromCard, uid: from, text: "【加勢】連鎖: 倒した味方の隣の味方1体が、続けて攻撃霊力なしで攻撃できる" });
+  events.push({ t: "effect", player: p, source: fromCard, uid: from, text: "【袋叩き】連鎖: 倒した味方の隣の味方1体が、続けて攻撃霊力なしで攻撃できる" });
 };
 
 /** 化け狸: what it may copy from the unit in front - a card that attacks, not one with 全域. */
@@ -123,7 +139,8 @@ const copiable = (card: CardDef): boolean =>
 
 /**
  * The 狸's on-summon effects, after the summon was paid. `kasei`: its
- * 【加勢】 condition held (or 狸囃子 made it hold): grant the free attacks.
+ * 【加勢】 condition held (or 狸囃子 made it hold) - the "【加勢】で召喚したとき"
+ * effects need it, whichever discount the cost actually took.
  */
 export const onTanukiSummon = (ctx: Ctx, s: GameState, u: Unit, kasei: boolean, events: GameEvent[]): void => {
   if (!ctx.cfg.effects) return;
@@ -139,14 +156,37 @@ export const onTanukiSummon = (ctx: Ctx, s: GameState, u: Unit, kasei: boolean, 
     }
   }
   if (!kasei || !hasKasei(ctx, cardOf(ctx.pack, u.cardId))) return;
-  // who may take the free attack: allies that can attack at all
+  // the "【加勢】で召喚したとき" effects
+  if (fx === "tn03") {
+    // the ally the heal helps most; ties to the earlier summon
+    let best: Unit | null = null;
+    for (const a of around(s, u.pos, u.owner)) {
+      if (healGain(ctx, a, 2) > 0 && (best === null || healGain(ctx, a, 2) > healGain(ctx, best, 2))) best = a;
+    }
+    if (best === null) return;
+    const gain = healGain(ctx, best, 2);
+    healUnit(ctx, best, 2);
+    log(events, u, `茶釜狸: 隣の${nameOf(best)}の耐久+${gain}`);
+    return;
+  }
+  if (fx === "tn08") {
+    let n = 0;
+    for (const a of s.units) if (a.owner === u.owner && !isHidden(a) && isSmall(ctx, a)) (a.atkBuff += 1), n++;
+    if (n > 0) log(events, u, "金長狸: この手番、盤上の召3の味方全員の攻撃力+1");
+    return;
+  }
+  if (!BUKURO.has(fx)) return;
+  // 【袋叩き】: who may take the free attack - allies that can attack at all.
+  // tn06 太三郎 / tn07 団三郎: every neighbour. tn05 小鷹: one neighbour or
+  // itself. tn09 隠神刑部: three 召3 allies, anywhere.
   const attackers = (us: Unit[]): Unit[] => us.filter((a) => a.uid !== u.uid && cardOfUnit(ctx, a).atk > 0);
   const allies = attackers(around(s, u.pos, u.owner));
-  if (fx === "tn08") for (const a of allies) a.atkBuff += 1;
-  // tn06 太三郎 / tn07 団三郎: every neighbour attacks. tn05 小鷹: it may take
-  // the one attack itself. tn09 隠神刑部: three of its own, anywhere.
   const pool =
-    fx === "tn09" ? attackers(s.units.filter((a) => a.owner === u.owner && !isHidden(a))) : fx === "tn05" ? [...allies, u] : allies;
+    fx === "tn09"
+      ? attackers(s.units.filter((a) => a.owner === u.owner && !isHidden(a) && isSmall(ctx, a)))
+      : fx === "tn05"
+        ? [...allies, u]
+        : allies;
   if (pool.length === 0) return;
   const each = fx === "tn06" || fx === "tn07";
   const count = fx === "tn09" ? 3 : 1;
@@ -157,6 +197,6 @@ export const onTanukiSummon = (ctx: Ctx, s: GameState, u: Unit, kasei: boolean, 
     a.kasei = { src: fx, group };
     s.kaseiLeft![group] = each ? 1 : count;
   }
-  const who = each ? "隣の味方全員" : fx === "tn09" ? "自分の式神から3体まで" : fx === "tn05" ? "隣の味方かこの式神の1体" : "隣の味方1体";
-  log(events, u, `${nameOf(u)}【加勢】: ${who}が攻撃霊力なしで攻撃できる${fx === "tn08" ? "(この手番、隣の味方全員の攻撃力+1)" : ""}`);
+  const who = each ? "隣の味方全員" : fx === "tn09" ? "召3の味方から3体まで" : "隣の味方かこの式神の1体";
+  log(events, u, `${nameOf(u)}【袋叩き】: ${who}が攻撃霊力なしで攻撃できる`);
 };

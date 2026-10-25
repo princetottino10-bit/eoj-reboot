@@ -83,11 +83,14 @@ export const underdogSummonDiscount = (ctx: Ctx, s: UnderdogView, p: PlayerId, c
 
 /**
  * The cost of summoning `card` onto `pos` before 劣勢時の大型割引: summonCostAt
- * (scale, then 太極). 【加勢】 (狸一門) no longer discounts (10/25 袋叩き案:
- * it grants free attacks instead, src/tanuki.ts); s and p stay for callers.
+ * (scale, then 太極), or 【加勢】 (狸一門, src/tanuki.ts) off the scaled cost
+ * when that is cheaper - the two never stack, the larger applies. Floor 1.
  */
-export const placeCostFor = (ctx: Ctx, _s: GameState, _p: PlayerId, card: CardDef, pos: Pos): number =>
-  summonCostAt(ctx, card, pos);
+export const placeCostFor = (ctx: Ctx, s: GameState, p: PlayerId, card: CardDef, pos: Pos): number => {
+  const at = summonCostAt(ctx, card, pos);
+  const k = kaseiDiscount(ctx, s, p, card, pos).amount;
+  return k === 0 ? at : Math.min(at, Math.max(1, baseSummonCost(ctx, card) - k));
+};
 
 /**
  * What p pays to summon `card` onto `pos` right now: placeCostFor (太極 or
@@ -580,6 +583,8 @@ const applyActionCore = (
     const placed = placeCostFor(ctx, s, p, card, a.pos);
     const discount = placed - cost;
     const kasei = kaseiDiscount(ctx, s, p, card, a.pos); // before the unit stands there
+    // 【加勢】 took over from 太極 (or stood alone): its own log line
+    const kaseiOff = kasei.amount > 0 && placed < summonCostAt(ctx, card, a.pos) ? baseSummonCost(ctx, card) - placed : 0;
     ps.mana -= cost;
     ps.hand = ps.hand.filter((_, i) => i !== a.handIndex);
     const unit: Unit = {
@@ -612,6 +617,9 @@ const applyActionCore = (
       baseCost: card.summonCost,
       ...(discount > 0 ? { underdogDiscount: discount } : {}),
     });
+    if (kaseiOff > 0) {
+      events.push({ t: "effect", player: p, source: cardId, uid: unit.uid, text: `【加勢】${kasei.label}: 召喚霊力−${kaseiOff}` });
+    }
     if (discount > 0) events.push(underdogDiscountEvent(p, discount));
     onSummon(ctx, s, unit, events); // tm11 Ungaikyo
     onTanukiSummon(ctx, s, unit, kasei.amount > 0, events); // 狸一門

@@ -1,7 +1,8 @@
 // 狸一門 (10/22案, packs tanuki-1022k / tanuki-1022s). The design note is the
 // project file new-ichimon-1016/狸一門_1016案3.md (10/22 additions included):
-// 【加勢】(条件) - since the 10/25 袋叩き案 (狸一門_袋叩き案_1025.md) a free
-// attack for the neighbours instead of a discount, chaining on a kill. 狸 never arrive by 継承召喚 (a 狸 on the board may be
+// 【加勢】(条件で召喚霊力-N), 太極 and 【加勢】 never stack (the larger applies);
+// 10/25: 【袋叩き】 (free attacks on a 【加勢】 summon, chaining on a kill) and
+// the 召3 allies the big 狸 count and lead (狸一門_袋叩き案_1025.md). 狸 never arrive by 継承召喚 (a 狸 on the board may be
 // replaced), and the four combos (化け狸 / 分福茶釜×茶釜狸 / 金長×小鷹 / 狸囃子×腹鼓).
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -89,22 +90,31 @@ test("【加勢】味方の数: 茶釜狸は味方1体以上、太三郎は2体�
   assert.equal(met(c, e, "tn03", { x: 1, y: 0 }), false);
 });
 
-test("【加勢】は割引しない(10/25 袋叩き案): 召喚霊力は太極だけで決まる", () => {
+test("【加勢】は召喚霊力を下げる。太極とは重ならず大きい方(r1007 の太極は−1)", () => {
   const { c, s } = scene([]);
-  place(s, "tn01", 0, 0, 0, 0);
-  place(s, "ac02", 0, 2, 2, 0);
-  assert.equal(met(c, s, "tn03", { x: 1, y: 0 }), true);
-  assert.equal(cost(c, s, "tn03", { x: 1, y: 0 }), 4);
-  assert.equal(cost(c, s, "tn03", { x: 1, y: 1 }), 3); // 太極 -1
+  place(s, "ac02", 0, 0, 0, 0);
+  assert.equal(cost(c, s, "tn03", { x: 1, y: 0 }), 2); // 召3 -1
+  assert.equal(cost(c, s, "tn03", { x: 2, y: 2 }), 3);
+  place(s, "ac03", 0, 0, 2, 0);
+  assert.equal(cost(c, s, "tn06", { x: 0, y: 1 }), 4); // two 召3 allies: -2
+  assert.equal(cost(c, s, "tn06", { x: 1, y: 1 }), 4); // and 太極 -1: the larger
+  assert.equal(cost(c, s, "tn02", { x: 1, y: 1 }), 2); // no 【加勢】: 太極 as usual
 });
 
-test("【加勢】の条件: 化け狸は敵の隙、小鷹は敵1体以上の隣、団三郎はリーチ、金長は式神の数か小鷹の隣、隠神刑部は自分の式神2体以上", () => {
+test("【加勢】の条件: 化け狸は敵の隙、小鷹は敵の隣、太三郎は召3の味方2体、団三郎はリーチ、金長は式神の数か小鷹の隣、隠神刑部は召3の味方1体につき", () => {
   const { c, s } = scene([]);
   place(s, "ac03", 1, 1, 2, 0); // its 隙 is (1,1)
   assert.equal(met(c, s, "tn04", { x: 1, y: 1 }), true);
   assert.equal(met(c, s, "tn04", { x: 0, y: 0 }), false);
   assert.equal(met(c, s, "tn05", { x: 2, y: 0 }), false);
-  assert.equal(met(c, s, "tn05", { x: 0, y: 1 }), true); // one enemy next to it
+  assert.equal(met(c, s, "tn05", { x: 0, y: 1 }), true);
+  const big = scene([]);
+  place(big.s, "tn05", 0, 0, 0, 0); // 召5: not 召3
+  place(big.s, "ac04", 0, 0, 2, 0);
+  assert.equal(met(big.c, big.s, "tn06", { x: 0, y: 1 }), false);
+  place(big.s, "tn01", 0, 2, 2, 0); // 豆狸 counts 2 but is not next to (0,1)
+  assert.equal(met(big.c, big.s, "tn06", { x: 0, y: 1 }), false);
+  assert.equal(met(big.c, big.s, "tn06", { x: 1, y: 1 }), true);
   const r = scene([]);
   assert.equal(met(r.c, r.s, "tn07", { x: 0, y: 0 }), false);
   r.s.players[1].reach = true;
@@ -115,13 +125,28 @@ test("【加勢】の条件: 化け狸は敵の隙、小鷹は敵1体以上の�
   assert.equal(met(r.c, r.s, "tn08", { x: 0, y: 0 }), false);
   place(r.s, "tn05", 0, 1, 0, 0);
   assert.equal(met(r.c, r.s, "tn08", { x: 0, y: 0 }), true); // next to 小鷹
-  assert.equal(met(r.c, r.s, "tn09", { x: 0, y: 2 }), true); // 2 体
-  const one = scene([]);
-  place(one.s, "ac02", 0, 2, 0, 0);
-  assert.equal(met(one.c, one.s, "tn09", { x: 0, y: 2 }), false);
+  assert.equal(cost(r.c, r.s, "tn09", { x: 0, y: 2 }), 9 - 1); // one 召3 (提灯お化け); 小鷹 is 召5
+  place(r.s, "tn01", 0, 1, 2, 0);
+  assert.equal(cost(r.c, r.s, "tn09", { x: 0, y: 2 }), 9 - 3); // 豆狸 counts 2
 });
 
-/** Seat 0: 影鬼 at (1,1) facing north at 提灯お化け (enemy, (1,2)); 豆狸 at (0,0). */
+test("茶釜狸: 【加勢】で召喚したとき、隣の味方1体の耐久+2", () => {
+  const { c, s } = scene(["tn03", "tn03"], 10);
+  const a = place(s, "tn01", 0, 0, 0, 0);
+  unitByUid(s, a)!.damage = 2;
+  let n = summon(c, s, 0, { x: 1, y: 0 });
+  assert.equal(n.players[0].mana, 8);
+  assert.equal(unitByUid(n, a)!.damage, 0);
+  const b = blankState(c, 10);
+  b.players[0].hand = ["tn03"];
+  const lone = place(b, "ac02", 0, 2, 2, 0);
+  unitByUid(b, lone)!.damage = 1;
+  n = summon(c, b, 0, { x: 0, y: 0 });
+  assert.equal(n.players[0].mana, 7);
+  assert.equal(unitByUid(n, lone)!.damage, 1);
+});
+
+/** Seat 0: 影鬼 (召3) at (1,1) facing north at 提灯お化け (enemy, (1,2)); 豆狸 at (0,0). */
 const strikeScene = (hand: string[]) => {
   const { c, s } = scene(hand, 10);
   const kage = place(s, "ac03", 0, 1, 1, 0);
@@ -130,36 +155,37 @@ const strikeScene = (hand: string[]) => {
   return { c, s, kage, mame, foe };
 };
 
-test("【加勢】: 条件を満たして召喚すると、隣の味方1体が攻撃霊力なしで攻撃できる(攻撃済みでもよい)。茶釜狸はその味方の耐久+2", () => {
-  const { c, s, kage, mame, foe } = strikeScene(["tn03"]);
+test("【袋叩き】: 【加勢】で召喚したとき、味方が攻撃霊力なしで攻撃できる(攻撃済みでもよい)。小鷹は隣の味方か自分の1体", () => {
+  const { c, s, kage, mame, foe } = strikeScene(["tn05"]);
   unitByUid(s, kage)!.attackedThisTurn = true;
-  unitByUid(s, kage)!.damage = 1;
   assert.equal(attacksOf(c, s, kage).length, 0);
-  let n = summon(c, s, 0, { x: 0, y: 1 });
-  assert.equal(n.players[0].mana, 6);
-  assert.ok(unitByUid(n, kage)!.kasei && unitByUid(n, mame)!.kasei, "both neighbours may take it");
+  let n = summon(c, s, 0, { x: 0, y: 1 }); // next to the enemy: 【加勢】 -2
+  assert.equal(n.players[0].mana, 10 - 3);
+  const small = at(n, { x: 0, y: 1 });
+  assert.ok(unitByUid(n, kage)!.kasei && unitByUid(n, mame)!.kasei && small.kasei, "two neighbours and 小鷹 itself");
+  const hp = unitHp(c, unitByUid(n, foe)!);
   const hit = attacksOf(c, n, kage).find((a) => a.kind === "attack" && a.targetUid === foe)!;
   assert.ok(hit, "影鬼 may attack again");
   n = applyAction(c, n, hit).state;
-  assert.equal(n.players[0].mana, 6, "free");
+  assert.equal(n.players[0].mana, 7, "free");
   assert.equal(unitByUid(n, mame)!.kasei, undefined, "one attack between them");
-  assert.equal(unitByUid(n, foe)!.damage, 2);
-  assert.equal(unitByUid(n, kage)!.damage, 1 - 2 + 2, "healed +2 before the counter of 2");
+  const left = unitByUid(n, foe);
+  assert.ok(left === undefined || left.damage === 3, `影鬼 2 + 小鷹の隣 1 (HP ${hp})`);
   // turn end clears what is left
-  const t = strikeScene(["tn03"]);
+  const t = strikeScene(["tn05"]);
   const m = summon(t.c, t.s, 0, { x: 0, y: 1 });
   endTurn(t.c, m, []);
   assert.equal(unitByUid(m, t.mame)!.kasei, undefined);
-  // condition not met: nothing
-  const f = scene(["tn03"], 10);
-  const lone = place(f.s, "ac03", 0, 2, 2, 0);
+  // no 【加勢】: no 【袋叩き】
+  const f = scene(["tn05"], 10);
+  const lone = place(f.s, "ac03", 0, 0, 1, 0);
   const q = summon(f.c, f.s, 0, { x: 0, y: 0 });
   assert.equal(unitByUid(q, lone)!.kasei, undefined);
 });
 
-test("【加勢】連鎖: 【加勢】の攻撃で敵を倒すと、攻撃した味方の隣の味方1体が続けて攻撃できる", () => {
-  const { c, s, kage, foe } = strikeScene(["tn03"]);
-  unitByUid(s, foe)!.damage = unitHp(c, unitByUid(s, foe)!) - 2; // 2 left: 影鬼's 2 destroys it
+test("【袋叩き】連鎖: その攻撃で敵を倒すと、攻撃した味方の隣の味方1体が続けて攻撃できる", () => {
+  const { c, s, kage, foe } = strikeScene(["tn05"]);
+  unitByUid(s, foe)!.damage = unitHp(c, unitByUid(s, foe)!) - 3; // 3 left: 影鬼 2 + 1 destroys it
   let n = summon(c, s, 0, { x: 0, y: 1 });
   n = applyAction(c, n, attacksOf(c, n, kage).find((a) => a.kind === "attack" && a.targetUid === foe)!).state;
   assert.equal(unitByUid(n, foe), undefined);
@@ -168,53 +194,52 @@ test("【加勢】連鎖: 【加勢】の攻撃で敵を倒すと、攻撃した
   assert.ok(chained.every((u) => u.uid !== kage));
 });
 
-test("腹鼓の子狸: 隣の味方の【加勢】の攻撃は攻撃力+1", () => {
-  const { c, s, kage, foe } = strikeScene(["tn03"]);
+test("腹鼓の子狸: 隣の味方の【袋叩き】の攻撃は攻撃力+1", () => {
+  const { c, s, kage } = strikeScene([]);
   place(s, "tn02", 0, 2, 1, 0); // next to 影鬼
-  unitByUid(s, foe)!.damage = unitHp(c, unitByUid(s, foe)!) - 3; // 3 left
-  let n = summon(c, s, 0, { x: 0, y: 1 });
-  n = applyAction(c, n, attacksOf(c, n, kage).find((a) => a.kind === "attack" && a.targetUid === foe)!).state;
-  assert.equal(unitByUid(n, foe), undefined, "2+1 destroys it with 3 left");
+  const u = unitByUid(s, kage)!;
+  assert.equal(effectiveAtk(c, s, u), 2);
+  u.kaseiStrike = true;
+  assert.equal(effectiveAtk(c, s, u), 3);
 });
 
-test("太三郎・団三郎は隣の味方全員、小鷹は自分も、隠神刑部はどこの式神でも3体まで、金長は隣の攻撃力+1", () => {
+test("太三郎・団三郎は隣の味方全員、隠神刑部は盤上の召3の味方3体まで、金長は盤上の召3の味方全員の攻撃力+1", () => {
   const { c, s } = scene(["tn06"]);
   const ids = [place(s, "ac03", 0, 0, 0, 0), place(s, "ac04", 0, 1, 0, 0), place(s, "ac02", 0, 2, 0, 0)];
   const n = summon(c, s, 0, { x: 1, y: 1 });
   const groups = new Set(ids.map((id) => unitByUid(n, id)!.kasei!.group));
   assert.equal(groups.size, 3, "one attack each");
 
-  const k = scene(["tn05"]);
-  place(k.s, "ac03", 1, 1, 0, 0);
-  place(k.s, "ac04", 1, 1, 2, 0);
-  const ally = place(k.s, "ac02", 0, 0, 1, 0);
-  const m = summon(k.c, k.s, 0, { x: 0, y: 0 });
-  assert.equal(at(m, { x: 0, y: 0 }).kasei?.group, unitByUid(m, ally)!.kasei?.group);
-
   const g = scene(["tn09"]);
   const far = [place(g.s, "ac03", 0, 0, 0, 0), place(g.s, "ac04", 0, 2, 0, 0), place(g.s, "ac02", 0, 1, 2, 0)];
+  const big = place(g.s, "tn05", 0, 0, 2, 0);
   const h = summon(g.c, g.s, 0, { x: 2, y: 2 });
+  assert.equal(h.players[0].mana, 20 - 6);
   assert.ok(far.every((id) => unitByUid(h, id)!.kasei !== undefined));
+  assert.equal(unitByUid(h, big)!.kasei, undefined, "小鷹 is 召5");
   assert.equal(h.kaseiLeft![unitByUid(h, far[0])!.kasei!.group], 3);
 
   const j = scene(["tn08"]);
   const kotaka = place(j.s, "tn05", 0, 0, 0, 0);
   const away = place(j.s, "ac03", 0, 2, 2, 0);
   const o = summon(j.c, j.s, 0, { x: 1, y: 0 });
-  assert.equal(o.players[0].mana, 20 - 8);
-  assert.equal(unitByUid(o, kotaka)!.atkBuff, 1);
-  assert.ok(unitByUid(o, kotaka)!.kasei);
-  assert.equal(unitByUid(o, away)!.atkBuff, 0);
+  assert.equal(o.players[0].mana, 20 - 5);
+  assert.equal(unitByUid(o, kotaka)!.atkBuff, 0, "小鷹 is 召5");
+  assert.equal(unitByUid(o, away)!.atkBuff, 1, "anywhere on the board");
 });
 
-test("小鷹狸: 盤上に自分の金長狸がいる間、攻撃力+1", () => {
+test("小鷹狸: 隣の召3の味方の攻撃力+1", () => {
   const { c, s } = scene([]);
-  const kotaka = place(s, "tn05", 0, 0, 0, 0);
-  assert.equal(effectiveAtk(c, s, unitByUid(s, kotaka)!), 3);
-  place(s, "tn08", 1, 2, 2, 0); // an enemy 金長 does not count
-  assert.equal(effectiveAtk(c, s, unitByUid(s, kotaka)!), 3);
-  place(s, "tn08", 0, 2, 0, 0);
-  assert.equal(effectiveAtk(c, s, unitByUid(s, kotaka)!), 4);
+  const near = place(s, "ac03", 0, 0, 0, 0);
+  const big = place(s, "tn06", 0, 1, 0, 0); // 召6
+  const far = place(s, "ac04", 0, 2, 2, 0);
+  assert.equal(effectiveAtk(c, s, unitByUid(s, near)!), 2);
+  place(s, "tn05", 0, 1, 1, 0);
+  assert.equal(effectiveAtk(c, s, unitByUid(s, near)!), 3);
+  assert.equal(effectiveAtk(c, s, unitByUid(s, big)!), 2);
+  assert.equal(effectiveAtk(c, s, unitByUid(s, far)!), 4); // 鉈鬼 3, (2,2) is next to (1,1)
+  place(s, "tn05", 1, 2, 0, 0); // an enemy 小鷹 does not help
+  assert.equal(effectiveAtk(c, s, unitByUid(s, near)!), 3);
 });
 
 test("化け狸: 召喚時、正面の式神の間合・反撃間合・単体/範囲を写す(全域は写さない)", () => {
@@ -255,20 +280,19 @@ test("狸囃子: 次の召喚は【加勢】の条件を満たす。盤に腹鼓
   const { c, s } = scene(["tn10", "tn03", "tn06"], 20);
   let n = applyAction(c, s, { kind: "reigu", handIndex: 0, targetUid: null, facing: null }).state;
   assert.equal(n.players[0].mana, 18);
-  assert.equal(met(c, n, "tn03", { x: 0, y: 0 }), true);
-  const ally = place(n, "ac03", 0, 1, 0, 0);
+  assert.equal(cost(c, n, "tn03", { x: 0, y: 0 }), 2);
   n = summon(c, n, 0, { x: 0, y: 0 });
-  assert.ok(unitByUid(n, ally)!.kasei, "alone, yet it counts as 【加勢】");
-  assert.equal(met(c, n, "tn06", { x: 2, y: 2 }), false); // used up
+  assert.equal(n.players[0].mana, 16);
+  assert.equal(cost(c, n, "tn06", { x: 2, y: 2 }), 6); // used up
 
   const t = scene(["tn10", "tn03", "tn06"], 20);
   place(t.s, "tn02", 0, 2, 2, 0);
   let m = applyAction(t.c, t.s, { kind: "reigu", handIndex: 0, targetUid: null, facing: null }).state;
   m = summon(t.c, m, 0, { x: 0, y: 0 });
-  assert.equal(met(t.c, m, "tn06", { x: 0, y: 2 }), true);
+  assert.equal(cost(t.c, m, "tn06", { x: 0, y: 2 }), 4);
   endTurn(t.c, m, []);
   m.turnPlayer = 0;
-  assert.equal(met(t.c, m, "tn06", { x: 0, y: 2 }), false);
+  assert.equal(cost(t.c, m, "tn06", { x: 0, y: 2 }), 6);
 });
 
 test("分福茶釜: 霊力+2。盤上に茶釜狸がいれば、代わりに霊力+4と1枚引く", () => {
