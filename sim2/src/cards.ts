@@ -144,7 +144,7 @@ const sameCellSet = (a: readonly Pos[], b: readonly Pos[]): boolean =>
   a.length === b.length && a.every((c) => b.some((d) => d.x === c.x && d.y === c.y));
 
 /** Print-kit card number: one capital letter, a hyphen, three digits ("T-001"). */
-export const PRINT_ID = /^[A-Z]{1,2}-\d{2,3}$/; // T-001, TN-01 (狸一門)
+export const PRINT_ID = /^(?:[A-Z]-\d{3}|TN-\d{2})$/; // T-001, TN-01 (狸一門)
 
 /**
  * Card art path: relative to sim2/, under play/art/ only, plain segments (no
