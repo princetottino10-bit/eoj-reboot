@@ -524,6 +524,7 @@
     },
     {
       "id": "tn01",
+      "printId": "TN-01",
       "name": "Mame-Danuki",
       "nameJa": "豆狸",
       "kind": "shikigami",
@@ -547,6 +548,7 @@
     },
     {
       "id": "tn02",
+      "printId": "TN-02",
       "name": "Haratsuzumi-no-Kodanuki",
       "nameJa": "腹鼓の子狸",
       "kind": "shikigami",
@@ -570,6 +572,7 @@
     },
     {
       "id": "tn03",
+      "printId": "TN-03",
       "name": "Chagama-Danuki",
       "nameJa": "茶釜狸",
       "kind": "shikigami",
@@ -593,6 +596,7 @@
     },
     {
       "id": "tn04",
+      "printId": "TN-04",
       "name": "Bake-Danuki",
       "nameJa": "化け狸",
       "kind": "shikigami",
@@ -616,6 +620,7 @@
     },
     {
       "id": "tn05",
+      "printId": "TN-05",
       "name": "Kotaka-Danuki",
       "nameJa": "小鷹狸",
       "kind": "shikigami",
@@ -639,6 +644,7 @@
     },
     {
       "id": "tn06",
+      "printId": "TN-06",
       "name": "Tasaburo-Danuki",
       "nameJa": "太三郎狸",
       "kind": "shikigami",
@@ -662,6 +668,7 @@
     },
     {
       "id": "tn07",
+      "printId": "TN-07",
       "name": "Danzaburo-Danuki",
       "nameJa": "団三郎狸",
       "kind": "shikigami",
@@ -685,6 +692,7 @@
     },
     {
       "id": "tn08",
+      "printId": "TN-08",
       "name": "Kincho-Danuki",
       "nameJa": "金長狸",
       "kind": "shikigami",
@@ -708,6 +716,7 @@
     },
     {
       "id": "tn09",
+      "printId": "TN-09",
       "name": "Inugami-Gyobu",
       "nameJa": "隠神刑部",
       "kind": "shikigami",
@@ -731,6 +740,7 @@
     },
     {
       "id": "tn10",
+      "printId": "TN-10",
       "name": "Tanuki-Bayashi",
       "nameJa": "狸囃子",
       "kind": "reigu",
@@ -754,6 +764,7 @@
     },
     {
       "id": "tn11",
+      "printId": "TN-11",
       "name": "Bunbuku-Chagama",
       "nameJa": "分福茶釜",
       "kind": "reigu",
@@ -777,6 +788,7 @@
     },
     {
       "id": "tn12",
+      "printId": "TN-12",
       "name": "Konoha-no-Koban",
       "nameJa": "木の葉の小判",
       "kind": "reigu",
