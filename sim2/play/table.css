@@ -1476,3 +1476,9 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   .cell.rg-counter:not([class*="mk-"])::after { inset: 3cqw; border: 1.6cqw solid #6fcf9e; border-radius: 50%; box-shadow: 0 0 3cqw oklch(80% 0.12 155 / 0.6); }
   .cell.rg-attack.rg-counter:not([class*="mk-"])::after { inset: 1cqw; }
 }
+/* 触っている駒 (10/25): on a tile, a thick gold ring with a glow, lifted a little; the other tiles step back */
+.cell.is-selected .pc-tile .pc-body {
+  box-shadow: 0 0 0 0.8cqw var(--own), 0 0 0 3.2cqw var(--gold-hi), 0 0 9cqw 2cqw oklch(85% 0.14 85 / 0.85), 0 3cqw 6cqw oklch(0% 0 0 / 0.7);
+  scale: 1.05; transition: scale var(--t-mid) var(--ease-out);
+}
+.bd:has(.cell.is-selected .pc-tile) .cell:not(.is-selected) .pc-tile .pc-body { filter: brightness(0.72) saturate(0.8); }
