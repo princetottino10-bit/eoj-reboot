@@ -2,7 +2,8 @@
 // lifts a card, selecting lifts it further; in the discard / mulligan prompts
 // a marked card rises with a seal. Pure string builder.
 import type { Ctx } from "../src/state.ts";
-import { cardFaceHtml } from "./cards-view.ts";
+import { cardOf } from "../src/cards.ts";
+import { cardFaceHtml, handTileHtml } from "./cards-view.ts";
 import type { CardLook } from "./hud.ts";
 
 export type HandCard = {
@@ -19,7 +20,7 @@ export type HandCard = {
 
 export type HandMode = "play" | "discard" | "mulligan" | "idle";
 
-export const handHtml = (ctx: Ctx, cards: HandCard[], mode: HandMode, look: CardLook): string => {
+export const handHtml = (ctx: Ctx, cards: HandCard[], mode: HandMode, look: CardLook, opts: { tile?: boolean } = {}): string => {
   if (cards.length === 0) return `<div class="hand is-empty"><span class="muted">手札なし</span></div>`;
   const n = cards.length;
   const mid = (n - 1) / 2;
@@ -37,9 +38,19 @@ export const handHtml = (ctx: Ctx, cards: HandCard[], mode: HandMode, look: Card
       const verb = mode === "mulligan" ? "戻す札に選ぶ" : mode === "discard" ? "捨てる札に選ぶ" : c.playable ? "使う" : "詳しく見る";
       return `<button type="button" class="${cls}" data-act="hand" data-i="${c.index}" style="--i:${off.toFixed(2)};--n:${n}"
         aria-pressed="${c.selected || c.marked}" aria-label="手札${c.index + 1}枚目: ${verb}">
-        ${cardFaceHtml(ctx, c.cardId, { size: "md", ...look, ...(c.costNow === undefined ? {} : { costNow: c.costNow }) })}${c.marked ? `<span class="hand-seal">${seal}</span>` : ""}
+        ${
+          opts.tile === true
+            ? handTileHtml(ctx, c.cardId, c.costNow === undefined ? {} : { costNow: c.costNow })
+            : cardFaceHtml(ctx, c.cardId, { size: "md", ...look, ...(c.costNow === undefined ? {} : { costNow: c.costNow }) })
+        }${c.marked ? `<span class="hand-seal">${seal}</span>` : ""}
       </button>`;
     })
     .join("");
-  return `<div class="hand mode-${mode}">${items}</div>`;
+  return `<div class="hand mode-${mode}${opts.tile === true ? " is-tile" : ""}">${items}</div>`;
 };
+
+/** The use button under a hand card opened large on a phone (10/25): 召喚する / 使う, or nothing. */
+export const sheetUseHtml = (ctx: Ctx, cardId: string, handIndex: number, usable: boolean): string =>
+  usable
+    ? `<button type="button" class="btn btn-gold" data-act="sheet-use" data-i="${handIndex}">${cardOf(ctx.pack, cardId).kind === "reigu" ? "使う" : "召喚する"}</button>`
+    : "";

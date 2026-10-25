@@ -10,13 +10,14 @@ import type { AiKind } from "../src/ai/index.ts";
 import { diffPatch } from "../src/config-schema.ts";
 import { presetConfig } from "../src/presets.ts";
 import type { PlayablePack } from "../src/presets.ts";
-import { decodeSettings, encodeSettings, settingsConfig, settingsPack, upgradeLegacyPack } from "../src/settings.ts";
+import { decodeSettings, defaultSettings, encodeSettings, settingsConfig, settingsPack, upgradeLegacyPack } from "../src/settings.ts";
 import { settingsLabel } from "../src/setting-presets.ts";
 import type { GameSettings } from "../src/settings.ts";
 import { overridesBetween } from "../src/card-overrides.ts";
 import { makeCtx } from "../src/state.ts";
 import type { LogItem } from "../online/protocol.ts";
 import { DEFAULT_EVAL, defaultAiSetup, readAiSetup, storageOr } from "./ai-store.ts";
+import { isPublicSite } from "./site.ts";
 import type { Stores } from "./ai-store.ts";
 import { boardOf } from "./board-snapshot.ts";
 import { esc, seatWord } from "./render.ts";
@@ -74,10 +75,12 @@ const readSetup = (): WatchSetup | null => {
 };
 
 const rememberedWatch = readSetup();
-let setup: WatchSetup =
+const rememberedSetup: WatchSetup =
   rememberedWatch === null
     ? defaultWatchSetup(upgradeLegacyPack((readAiSetup(stores) ?? defaultAiSetup()).s))
     : { ...rememberedWatch, s: upgradeLegacyPack(rememberedWatch.s) };
+// the public build plays the decided rules and cards only, whatever this tab remembered
+let setup: WatchSetup = isPublicSite() ? { ...rememberedSetup, s: encodeSettings(defaultSettings()) } : rememberedSetup;
 
 const saveSetup = (next: WatchSetup): void => {
   setup = next;
@@ -544,7 +547,8 @@ const showDiff = (): void => {
 
 /** ?s= (from the AI table's start card) sets the rules and cards; the card opens to pick the AIs. */
 const init = async (): Promise<void> => {
-  const shared = new URLSearchParams(location.search).get("s");
+  // the public build takes no settings from a link
+  const shared = isPublicSite() ? null : new URLSearchParams(location.search).get("s");
   let problem = "";
   if (shared !== null) {
     const checked = await checkedSettings(upgradeLegacyPack(shared));

@@ -114,7 +114,7 @@ export const serveFile = async (
   return { code: 200, body: raw, type: TYPES[ext] };
 };
 
-/** Page routes of the local server: the AI table at / and /ai, the settings page at /rules, 観戦 at /watch, the 3D world at /world, the printable cards at /print. */
+/** Page routes of the local server: the AI table at / and /ai, the settings page at /rules, 観戦 at /watch, the 3D world at /world, the printable cards at /print, 遊び方 at /guide. */
 export const playTarget = (urlPath: string): string => {
   const path = urlPath.split("?")[0].split("#")[0];
   if (path === "/" || path === "" || path === "/ai" || path === "/ai/") return "/play/index.html";
@@ -122,6 +122,7 @@ export const playTarget = (urlPath: string): string => {
   if (path === "/watch" || path === "/watch/") return "/play/watch.html";
   if (path === "/world" || path === "/world/") return "/play/world.html";
   if (path === "/print" || path === "/print/") return "/play/print.html";
+  if (path === "/guide" || path === "/guide/") return "/play/guide.html";
   return path;
 };
 

@@ -17,6 +17,7 @@ import { boardView, logView } from "../online/view.ts";
 import { settingsToCarry } from "../play/ai-store.ts";
 import { describeEvent } from "../play/render.ts";
 import { turnHtml } from "../play/hud.ts";
+import { place } from "./helpers.ts";
 import { SK } from "./online-helpers.ts";
 import { bothKeep, newApp, roomOf, seatTwo, send, testRecordDir, view } from "./online-api-helpers.ts";
 
@@ -154,8 +155,11 @@ test("a new game uses the rules last chosen on the start card, not the resumed m
 // ---------------------------------------------------- turn chip (15)
 
 test("a finished match shows no 制圧中 badges on the turn chip", () => {
-  const ctx = makeCtx(presetConfig("r0914"), SK);
+  // controlWin 1: one piece each really holds the count (a broken flag shows as none)
+  const ctx = makeCtx({ ...presetConfig("r0914"), controlWin: 1 }, SK);
   const f = createFlow(ctx, 3);
+  place(f.state, "sk02", 0, 0, 0, 0);
+  place(f.state, "sk02", 1, 2, 2, 2);
   f.state.players[0].reach = true;
   f.state.players[1].reach = true;
   const live = turnHtml(ctx, boardView(f.state), ["あなた", "相手"], { phaseText: "行動中" });

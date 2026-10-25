@@ -64,9 +64,9 @@ test("prompt texts: cell names for placing, a keyboard hint that can be hidden, 
   assert.match(place1, /灯籠の精<\/b>を右上の空に置く向き/);
   assert.doesNotMatch(place1, /\(2,2\)/);
   const idle = promptHtml(vm({ board: boardView(s), hand: ["sk01"], prompt: { kind: "main", legal } }));
-  assert.match(idle, /<span class="kbd-hint">\(Enter でターン終了\)<\/span>/);
+  assert.match(idle, /終わったら「ターン終了」<span class="kbd-hint">\(Enter\)<\/span>/);
   const ask = promptHtml(vm({ board: boardView(s), hand: ["sk01"], prompt: { kind: "main", legal }, endConfirm: true }));
-  assert.match(ask, /まだ使える行動があります/);
+  assert.match(ask, /残り霊力 \d+/);
 });
 
 test("acted marks show only on the turn player's pieces; a piece prints no name or seat seal, its owner is a cube", () => {
@@ -77,7 +77,7 @@ test("acted marks show only on the turn player's pieces; a piece prints no name 
   u.attackedThisTurn = true;
   const theirTurn = pieceHtml(ctx, u, { control: false, turnPlayer: 1 });
   const myTurn = pieceHtml(ctx, u, { control: false, turnPlayer: 0 });
-  assert.match(theirTurn, /class="pc-flag"[^>]*>攻</);
+  assert.match(theirTurn, /class="pc-flag"[^>]*>攻撃済</);
   assert.match(theirTurn, /is-spent/);
   assert.doesNotMatch(myTurn, /pc-flag/);
   assert.doesNotMatch(myTurn, /is-spent/);
@@ -95,7 +95,7 @@ test("acted marks show only on the turn player's pieces; a piece prints no name 
 test("turn panel: both seats during the mulligan, the result once over (no doubled 対局終了), life never below 0", () => {
   const s = blankState(ctx);
   const mull = turnHtml(ctx, boardView(s), NAMES, { phaseText: "マリガン", mulligan: true });
-  assert.match(mull, /マリガン\(両者\)/);
+  assert.match(mull, /手札の引き直し/);
   assert.doesNotMatch(mull, /の番/);
   s.ended = true;
   s.winner = 1;

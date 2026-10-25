@@ -89,3 +89,13 @@
 @media (prefers-reduced-motion: reduce) {
   .fx-cell, .fx-burst, .fx-slash, .fx-word, .fx-flash, .fx-burn-edge, .fx-embers, .fx-flame, .fx-band, .fx-rim { display: none !important; }
 }
+/* 10/18: 「霊力 +2」 where a destroyed piece stood, in the colour of the side that got it */
+.fx-gain { position: fixed; display: grid; place-items: center; pointer-events: none; z-index: 6; }
+.fx-gain span {
+  padding: 4px 12px; border-radius: 999px; white-space: nowrap;
+  font-family: var(--font-gothic); font-weight: 700; font-size: 16px; color: #fff;
+  background: oklch(20% 0.02 260 / 0.92); box-shadow: 0 0 0 2px var(--own, var(--gold)), 0 6px 18px oklch(0% 0 0 / 0.6);
+}
+.fx-gain b { font-size: 22px; color: var(--gold-hi); }
+.fx-gain.o0 { --own: var(--p0); }
+.fx-gain.o1 { --own: var(--p1); }

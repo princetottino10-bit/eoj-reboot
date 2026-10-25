@@ -200,6 +200,7 @@ export const createRoomTools = (opts: RoomToolsOptions): { render: (msg: StateMe
     const html = `<div class="tools">
       <button type="button" class="rules-badge" data-tool="diff" title="基準からの変更点を見る">${badgeHtml(look(msg))}</button>
       ${canPropose ? `<a class="btn btn-quiet" data-tool="settings" href="${esc(rulesHref({ for: "room", code: msg.room.code, seat: msg.you.seat }))}">${label}</a>` : ""}
+      <a class="btn btn-quiet" data-tool="guide" href="/guide" target="_blank" rel="noopener">遊び方</a>
       ${canClose ? `<button type="button" class="btn btn-quiet" data-tool="close" title="部屋を削除して、この接続元の部屋数の枠を空けます">部屋を閉じる</button>` : ""}
     </div>`;
     if (toolsHtml !== html) {

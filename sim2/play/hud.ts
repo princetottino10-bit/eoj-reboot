@@ -11,7 +11,7 @@ import type { CardDef, ColdWin, PlayerId, Unit } from "../src/types.ts";
 import type { BoardView, LogItem } from "../online/protocol.ts";
 import { cardBackHtml, cardFaceHtml, cardThumbHtml, esc, SEAT_SEAL } from "./cards-view.ts";
 import { orderLog } from "./log-order.ts";
-import { controlLabel, describeEvent, FACING_LABEL, gapNote, occupiedOf, resultHow } from "./render.ts";
+import { controlLabel, describeEvent, FACING_LABEL, gapNote, inCheck, occupiedOf, resultHow } from "./render.ts";
 import type { LogNote, Names } from "./render.ts";
 
 export type CardLook = { mods?: CardOverrides; printed?: (id: string) => CardDef | undefined };
@@ -82,7 +82,7 @@ const pointsHtml = (ctx: Ctx, points: number | undefined): string =>
 export const nameplateHtml = (ctx: Ctx, board: BoardView, p: PlayerId, names: Names, you: boolean, mulligan = false): string => {
   const ps = board.players[p];
   const turn = board.turnPlayer === p && !board.ended && !mulligan;
-  const ctl = ps.reach && !board.ended;
+  const ctl = inCheck(ctx, board, p);
   const occ = occupiedOf(ctx, board, p);
   const need = controlNeed(ctx, board);
   const late = need !== ctx.cfg.controlWin;
@@ -156,11 +156,11 @@ const turnName = (name: string, p: PlayerId): string => {
 export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInfo): string => {
   const p = board.turnPlayer;
   // a finished match has no control state to watch: the result says how it ended
-  const holders = board.ended ? [] : ([0, 1] as PlayerId[]).filter((x) => board.players[x].reach);
+  const holders = ([0, 1] as PlayerId[]).filter((x) => inCheck(ctx, board, x));
   const who = board.ended
     ? "対局終了"
     : info.mulligan === true
-      ? "マリガン(両者)"
+      ? "手札の引き直し"
       : `<span class="turn-seal">${SEAT_SEAL[p]}</span><span><span class="turn-name${turnName(names[p], p) === "あなた" ? " is-you" : ""}">${esc(turnName(names[p], p))}</span>の番</span>`;
   const how = board.ended ? resultHow(board.winType, board.winner, names, endOcc(ctx, board), endCold(ctx, board)) : null;
   const result =

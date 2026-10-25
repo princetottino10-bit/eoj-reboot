@@ -7,6 +7,7 @@ import type { CardPack } from "../src/cards.ts";
 import type { PlayablePack } from "../src/presets.ts";
 import { decodeSettings, defaultSettings, encodeSettings, settingsConfig, upgradeLegacyPack } from "../src/settings.ts";
 import type { GameSettings } from "../src/settings.ts";
+import { isPublicSite } from "../play/site.ts";
 import { entryTopHtml, rulesBlockHtml } from "../play/entry-shell.ts";
 import { bindModeSwitch } from "../play/mode-switch.ts";
 import { rulesHref } from "../play/rules-url.ts";
@@ -75,7 +76,8 @@ const remember = (): void => {
 /** Settings from a ?s= share link, validated against the printed pack. */
 const fromShareLink = async (): Promise<void> => {
   const rawShared = new URLSearchParams(location.search).get("s");
-  if (rawShared === null) return;
+  // the public build makes every room with the decided rules and cards
+  if (rawShared === null || isPublicSite()) return;
   const shared = upgradeLegacyPack(rawShared);
   const first = decodeSettings(shared, null);
   if (!first.ok) {
@@ -136,7 +138,7 @@ const create = async (): Promise<void> => {
   $<HTMLAnchorElement>("enter").href = `/room/${json.code}`;
   $("created").hidden = false;
   // the room is made: another press would only make a second, empty one (they count against the per-address cap)
-  button.textContent = "部屋を作りました(下の「部屋に入る」へ)";
+  button.textContent = "部屋ができました ↓";
 };
 
 const init = async (): Promise<void> => {

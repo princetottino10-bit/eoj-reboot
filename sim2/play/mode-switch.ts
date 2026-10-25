@@ -5,6 +5,7 @@
 // as ?s= (all three pages read it). Markup is a pure string builder; the one
 // DOM helper only wires clicks.
 import { esc } from "./cards-view.ts";
+import { isPublicSite } from "./site.ts";
 
 export type PlayMode = "ai" | "online" | "watch";
 
@@ -22,11 +23,11 @@ export const watchHref = (s: string | null): string => withS("/watch", s);
 
 /** The entry page of a mode, with the settings `s` (encodeSettings) when given. */
 export const modeHref = (mode: PlayMode, s: string | null): string =>
-  mode === "ai" ? withS("/ai", s) : mode === "online" ? withS("/", s) : watchHref(s);
+  mode === "ai" ? withS("/ai", s) : mode === "online" ? withS(isPublicSite() ? "/online" : "/", s) : watchHref(s);
 
 /** The switch: three links, the current one marked with aria-current. */
 export const modeSwitchHtml = (active: PlayMode, s: string | null): string =>
-  `<nav class="mode-switch" aria-label="遊び方を選ぶ">${PLAY_MODES.map(({ mode, label, hint }) => {
+  `<nav class="mode-switch" aria-label="遊び方を選ぶ">${PLAY_MODES.filter(({ mode }) => mode !== "watch" || !isPublicSite()).map(({ mode, label, hint }) => {
     const current = mode === active;
     return `<a class="mode-item${current ? " is-current" : ""}" data-mode="${mode}" href="${esc(modeHref(mode, s))}"${
       current ? ' aria-current="page"' : ""
