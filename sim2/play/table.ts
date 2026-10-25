@@ -20,7 +20,7 @@ import { boardHtml } from "./board-view.ts";
 import type { BoardVM, CellMark, Prediction } from "./board-view.ts";
 import { SEAT_SEAL, watchArtErrors } from "./cards-view.ts";
 import { createFx } from "./fx.ts";
-import { handHtml } from "./hand-view.ts";
+import { handHtml, sheetUseHtml } from "./hand-view.ts";
 import { ensureMarks } from "./marks.ts";
 import type { HandCard, HandMode } from "./hand-view.ts";
 import { detailHtml, endCold, endOcc, logHtml, nameplateHtml, openHandHtml, oppHandHtml, pilesHtml, recapHtml, recapOf, turnHtml } from "./hud.ts";
@@ -143,7 +143,7 @@ const SKELETON = `
   <dialog class="yy-dialog yy-sheet" aria-label="詳しく見る"></dialog>
   <div class="yy-fx" aria-hidden="true"></div>`;
 
-type SheetView = { kind: "grave"; seat: PlayerId } | { kind: "card"; cardId: string; fromSeat: PlayerId | null };
+type SheetView = { kind: "grave"; seat: PlayerId } | { kind: "card"; cardId: string; fromSeat: PlayerId | null; use?: { handIndex: number; usable: boolean } };
 
 /** The 即勝ち the match ended with: the log's gameEnd says it exactly (with 「N体目を置いて」), else read off the board. */
 const coldOf = (m: TableModel): ColdWin | undefined => {
@@ -535,6 +535,21 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const card = cardOf(m.ctx.pack, cardId);
     const same = (sel.kind === "hand" || sel.kind === "place" || sel.kind === "inherit" || sel.kind === "reigu") && sel.handIndex === i;
     if (same) return setSel(NONE);
+    // スマホ (10/25): a tap opens the card large, with 召喚する / 使う in it
+    if (pieceTile() && !detailVisible()) {
+      render();
+      return openSheet({ kind: "card", cardId, fromSeat: null, use: { handIndex: i, usable: handPlayable(legal(), m.hand, i, card.kind === "reigu") } });
+    }
+    useHand(i);
+  };
+
+  /** Pick hand card i to summon / use (the board then shows where it can go). */
+  const useHand = (i: number): void => {
+    const m = model;
+    if (m === null || m.hand === null || m.prompt.kind !== "main") return;
+    const cardId = m.hand[i];
+    if (cardId === undefined) return;
+    const card = cardOf(m.ctx.pack, cardId);
     if (!handPlayable(legal(), m.hand, i, card.kind === "reigu")) {
       say(`${card.nameJa}: 今は使えない(霊力・置き場所・効果の条件を確認)`);
       if (!detailVisible()) openSheet({ kind: "card", cardId, fromSeat: null });
@@ -742,6 +757,10 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       }
       return;
     }
+    if (act === "sheet-use") {
+      el.sheet.close();
+      return useHand(Number(target.dataset.i));
+    }
     if (act === "sheet-close") {
       el.sheet.close();
       return;
@@ -831,10 +850,11 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     const f = sheet;
     if (m === null || f === null) return;
     const back = f.kind === "card" && f.fromSeat !== null;
+    const use = f.kind === "card" && f.use !== undefined && m.prompt.kind === "main" ? sheetUseHtml(m.ctx, f.cardId, f.use.handIndex, f.use.usable) : "";
     const body = detailHtml(m.ctx, m.board, m.names, f.kind === "card" ? { kind: "card", cardId: f.cardId } : f, look(m));
     put(
       el.sheet,
-      `<div class="sheet">${body}<div class="sheet-btns">${back ? '<button type="button" class="btn btn-quiet" data-act="sheet-back">一覧へ戻る</button>' : ""}<button type="button" class="btn" data-act="sheet-close">閉じる</button></div></div>`,
+      `<div class="sheet">${body}<div class="sheet-btns">${back ? '<button type="button" class="btn btn-quiet" data-act="sheet-back">一覧へ戻る</button>' : ""}${use}<button type="button" class="btn" data-act="sheet-close">閉じる</button></div></div>`,
     );
   };
 
@@ -1016,7 +1036,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
       el.hand,
       m.hand === null
         ? `<div class="hand is-watch"><span class="muted">観戦中: 手札は見えません(${esc(m.names[0])} ${m.board.players[0].handCount}枚 / ${esc(m.names[1])} ${m.board.players[1].handCount}枚)</span></div>`
-        : handHtml(m.ctx, handCards(m), mode, look(m)),
+        : handHtml(m.ctx, handCards(m), mode, look(m), { tile: pieceTile() }),
     );
     const row = el.hand.querySelector<HTMLElement>(".hand");
     if (row === null) return;

@@ -381,6 +381,34 @@ export const cardFaceHtml = (ctx: Ctx, cardId: string, opts: CardFaceOpts): stri
   return `<div class="${cls}" data-card="${esc(card.id)}">${art}${cost}${attr}${manaValueHtml(ctx, card, opts)}${name}${body}${text}${pid}${face}</div>`;
 };
 
+/**
+ * スマホの手札 (10/25): a hand card as the board's tile, upright — art on the left, the range on the
+ * right, 召喚霊力 / 耐 / 攻 in a row, the name below. A reigu shows 霊具 where the range would be.
+ */
+export const handTileHtml = (ctx: Ctx, cardId: string, opts: { costNow?: number } = {}): string => {
+  const card = cardOf(ctx.pack, cardId);
+  const cost = opts.costNow ?? card.summonCost;
+  const disc = opts.costNow !== undefined && opts.costNow !== card.summonCost;
+  const costHtml = `<span class="pt-cost${disc ? " is-disc" : ""}" title="召喚霊力 ${cost}${disc ? `(元は${card.summonCost})` : ""}">${mark("mana-ring", "pt-cost-mk")}<b>${cost}</b></span>`;
+  if (card.kind === "reigu") {
+    return `<span class="ht-tile k-reigu"><span class="pc-body">
+      <span class="pt-art">${illustrationHtml(card, "sm")}</span>
+      <span class="pt-range pt-kind">霊具</span>
+      <span class="pt-stats">${costHtml}</span>
+      <span class="pt-name">${esc(card.nameJa)}</span>
+    </span></span>`;
+  }
+  const aoe = isAoeAttack(ctx, card);
+  const gap = ctx.cfg.counterMode === "gap" && aoe ? (card.gapCell ?? null) : null;
+  const range = rangeSvg(card.attackRange, card.blindSpots, gap, 0, { counter: counterCellsOf(ctx.cfg, card), aoe });
+  return `<span class="ht-tile"><span class="pc-body">
+      <span class="pt-art">${illustrationHtml(card, "sm")}</span>
+      <span class="pt-range f0">${range}</span>
+      <span class="pt-stats">${costHtml}<span class="pt-hp">耐<b>${card.hp}</b></span><span class="pt-atk">攻<b>${card.atk}</b></span></span>
+      <span class="pt-name">${esc(card.nameJa)}</span>
+    </span></span>`;
+};
+
 export const cardBackHtml = (extraClass = ""): string =>
   isPublicSite()
     ? `<div class="fu fu-back has-face ${extraClass}" aria-hidden="true"><img class="fu-face" src="${BACK_URL}" alt="" decoding="async"></div>`
