@@ -30,6 +30,7 @@ const publicUnit = (u: Unit): Unit => ({
   hiddenBy: u.hiddenBy,
   atkBuff: u.atkBuff,
   ...(u.freeAttack === true ? { freeAttack: true as const } : {}),
+  ...(u.borrow !== undefined ? { borrow: u.borrow } : {}),
 });
 
 const publicPlayer = (p: PlayerState): PublicPlayer => ({

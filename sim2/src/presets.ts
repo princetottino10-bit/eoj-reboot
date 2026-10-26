@@ -196,12 +196,14 @@ RULE_PRESETS.r1006.overrides = RULE_PRESETS.r1003.overrides;
 RULE_PRESETS.r1007.overrides = { ...RULE_PRESETS.r1003.overrides, incomeMode: "current", chipIncomeSteps: [4, 5], taijiDiscount: 1 };
 
 /** Packs selectable from the play UI and the online lobby. */
-export const PLAYABLE_PACKS = ["adopted-1013", "adopted-1006", "adopted-1006a", "adopted-1004", "adopted-1003", "adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const;
+export const PLAYABLE_PACKS = ["adopted-1013", "tanuki-1022k", "tanuki-1022s", "adopted-1006", "adopted-1006a", "adopted-1004", "adopted-1003", "adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const;
 export type PlayablePack = (typeof PLAYABLE_PACKS)[number];
 
 /** What a pack is called on screen (the ids stay in files, URLs and records). */
 export const PACK_LABELS: Record<PlayablePack, string> = {
   "adopted-1013": "10/13案の札(古箪笥の新効果)",
+  "tanuki-1022k": "狸一門の試し(先手=狸+玖龍街 / 後手=10/13案)",
+  "tanuki-1022s": "狸一門の試し(先手=狸+酒呑 / 後手=10/13案)",
   "adopted-1006": "10/6案その2の札(範囲2マス・前の古箪笥)",
   "adopted-1006a": "10/6案その1の札",
   "adopted-1004": "10/4採用版の札",

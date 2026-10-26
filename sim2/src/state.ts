@@ -34,6 +34,9 @@ const cloneUnit = (u: Unit): Unit => ({
   hiddenBy: u.hiddenBy,
   atkBuff: u.atkBuff,
   ...(u.freeAttack === true ? { freeAttack: true as const } : {}),
+  ...(u.borrow !== undefined ? { borrow: u.borrow } : {}),
+  ...(u.kasei !== undefined ? { kasei: { ...u.kasei } } : {}),
+  ...(u.kaseiStrike === true ? { kaseiStrike: true as const } : {}),
 });
 
 export const cloneState = (s: GameState): GameState => ({
@@ -48,6 +51,8 @@ export const cloneState = (s: GameState): GameState => ({
   ended: s.ended,
   summonsThisTurn: s.summonsThisTurn,
   forcedAttackUid: s.forcedAttackUid ?? null,
+  ...(s.kaseiFree ? { kaseiFree: { ...s.kaseiFree } } : {}),
+  ...(s.kaseiLeft ? { kaseiLeft: { ...s.kaseiLeft } } : {}),
 });
 
 export const createGame = (ctx: Ctx, seed: number): GameState => {
@@ -55,7 +60,8 @@ export const createGame = (ctx: Ctx, seed: number): GameState => {
   let rng = seedRng(seed);
   const players: PlayerState[] = [];
   for (let i = 0; i < 2; i++) {
-    const [deck, r] = shuffle(pack.deckList, rng);
+    // a pack with per-seat decks (狸一門 10/22案) deals each seat its own
+    const [deck, r] = shuffle(pack.decks?.[i] ?? pack.deckList, rng);
     rng = r;
     const hand = deck.slice(0, cfg.handRefill);
     const rest = deck.slice(cfg.handRefill);
@@ -106,7 +112,36 @@ export const unitByUid = (s: GameState, uid: number): Unit | undefined =>
 export const occupied = (s: GameState, p: PlayerId): number =>
   s.units.reduce((n, u) => (u.owner === p && !isHidden(u) ? n + 1 : n), 0);
 
-export const cardOfUnit = (ctx: Ctx, u: Unit): CardDef => cardOf(ctx.pack, u.cardId);
+/** 化け狸's cards with a borrowed shape, one per (pack, own card, borrowed card). */
+const borrowed = new WeakMap<CardPack, Map<string, CardDef>>();
+
+/**
+ * The card a unit acts as: its own, except that a 化け狸 that copied the unit
+ * in front of it (Unit.borrow) uses that card's 間合・反撃間合・単体/範囲.
+ */
+export const cardOfUnit = (ctx: Ctx, u: Unit): CardDef => {
+  const own = cardOf(ctx.pack, u.cardId);
+  if (u.borrow === undefined) return own;
+  let byKey = borrowed.get(ctx.pack);
+  if (byKey === undefined) {
+    byKey = new Map();
+    borrowed.set(ctx.pack, byKey);
+  }
+  const key = `${u.cardId}|${u.borrow}`;
+  const hit = byKey.get(key);
+  if (hit !== undefined) return hit;
+  const from = cardOf(ctx.pack, u.borrow);
+  const card: CardDef = {
+    ...own,
+    attackRange: from.attackRange,
+    counterRange: from.counterRange,
+    counterFollowsAttack: from.counterFollowsAttack,
+    aoe: from.aoe,
+    ...(from.gapCell !== undefined ? { gapCell: from.gapCell } : {}),
+  };
+  byKey.set(key, card);
+  return card;
+};
 
 /**
  * What one unit adds to its owner's 占拠 under controlCount: 0 while hidden,

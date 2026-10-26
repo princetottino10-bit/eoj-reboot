@@ -80,7 +80,7 @@ export const hasFreeSummonAttack = (ctx: Ctx, u: Unit): boolean =>
  */
 export const attackCostFor = (ctx: Ctx, u: Unit, variant: AttackVariant = "normal"): number =>
   // 古箪笥 tm07b: its 攻撃霊力 is "-" on the sheet, so its attack command costs nothing
-  isTansuVariant(variant) ? 0 : (hasFreeSummonAttack(ctx, u) ? 0 : attackCostOf(ctx, cardOfUnit(ctx, u))) + variantExtraCost(ctx, u, variant);
+  isTansuVariant(variant) ? 0 : (hasFreeSummonAttack(ctx, u) || u.kasei !== undefined ? 0 : attackCostOf(ctx, cardOfUnit(ctx, u))) + variantExtraCost(ctx, u, variant);
 
 /**
  * EXP-0913 aoeMode. "off" downgrades range cards to single-target attacks;
@@ -415,6 +415,21 @@ const counterKillMove = (ctx: Ctx, s: GameState, u: Unit, at: Pos, events: GameE
  * destructions resolved simultaneously -> surviving enemy targets counter
  * (summed, simultaneous) -> attacker destruction check.
  */
+/**
+ * 狸一門【袋叩き】: the attacker uses its pending free attack, if it has one.
+ * One attack off its group; when the group runs out every other unit sharing
+ * it loses the grant.
+ */
+const spendKasei = (s: GameState, u: Unit): Unit["kasei"] => {
+  const k = u.kasei;
+  if (k === undefined) return undefined;
+  delete u.kasei;
+  const left = (s.kaseiLeft?.[k.group] ?? 1) - 1;
+  if (s.kaseiLeft !== undefined) s.kaseiLeft[k.group] = left;
+  if (left <= 0) for (const o of s.units) if (o.kasei?.group === k.group) delete o.kasei;
+  return k;
+};
+
 export const resolveAttack = (
   ctx: Ctx,
   s: GameState,
@@ -434,6 +449,9 @@ export const resolveAttack = (
   const attackCost = attackCostFor(ctx, attacker, variant);
   s.players[attacker.owner].mana -= attackCost;
   attacker.attackedThisTurn = true;
+  const kasei = spendKasei(s, attacker); // 狸一門【袋叩き】
+  if (kasei !== undefined) attacker.kaseiStrike = true;
+  else delete attacker.kaseiStrike;
   // only the first attack is free: a later one (should a rule allow it) pays
   delete attacker.freeAttack;
 

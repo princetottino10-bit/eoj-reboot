@@ -83,7 +83,8 @@ test("printId and art are optional, validated card fields", () => {
   // a .jpg is fine too, and deeper folders under play/art/
   assert.equal(parsePack(packOf({ art: { card: "play/art/x/y/a.jpg", square: "play/art/x/y/a-sq.jpg" } })).cards[0].art?.card, "play/art/x/y/a.jpg");
 
-  for (const bad of ["T-1", "t-001", "TT-001", "T001", "T-0001", "T-00a", " T-001", "", 1, null]) {
+  assert.equal(parsePack(packOf({ printId: "TN-01" })).cards[0].printId, "TN-01");
+  for (const bad of ["T-1", "t-001", "TT-001", "TN-001", "TT-01", "T001", "T-0001", "T-00a", " T-001", "", 1, null]) {
     assert.throws(() => parsePack(packOf({ printId: bad })), /printId/, String(bad));
   }
   assert.throws(() => parsePack(packOf({ printId: "T-001" }, { printId: "T-001" })), /duplicate printId T-001/);
