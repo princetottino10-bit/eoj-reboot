@@ -35,7 +35,7 @@ import {
 } from "./effects.ts";
 import { resolveTansuAttack } from "./tansu-attack.ts";
 import { checkDeckOut, drawOne } from "./draw.ts";
-import { chainKasei, kaseiDiscount, noInherit, onTanukiSummon, spendHayashi } from "./tanuki.ts";
+import { kaseiDiscount, noInherit, onTanukiSummon, spendHayashi } from "./tanuki.ts";
 import type {
   Action,
   ApplyResult,
@@ -363,7 +363,7 @@ export const isLegal = (ctx: Ctx, s: GameState, a: Action): boolean => {
   }
   // attack
   const variant = a.variant ?? "normal";
-  if (u.attackedThisTurn && u.kasei === undefined) return false; // 【加勢】 may attack again
+  if (u.attackedThisTurn) return false;
   // 古箪笥 tm07b: no target, no range, no cost, no counter order
   if (isTansuVariant(variant)) return canUseVariant(ctx, u, variant) && a.targetUid === null && a.counterOrder === undefined;
   if (!canAttack(card)) return false;
@@ -490,7 +490,7 @@ const allLegalActions = (ctx: Ctx, s: GameState): Action[] => {
   for (const u of s.units) {
     if (u.owner !== p || isHidden(u)) continue;
     const card = cardOf(ctx.pack, u.cardId);
-    if (!u.attackedThisTurn || u.kasei !== undefined) {
+    if (!u.attackedThisTurn) {
       // 古箪笥 tm07b: the attack command is the choice (cost 0, no target)
       if (hasTansuAttack(ctx, u)) {
         out.push({ kind: "attack", uid: u.uid, targetUid: null, variant: "tansuMana" });
@@ -694,11 +694,7 @@ const applyActionCore = (
     resolveTansuAttack(ctx, s, a.uid, a.variant, events);
     return;
   }
-  // 狸一門【加勢】の連鎖: a 【加勢】 attack that destroys an enemy passes one more on
-  const striker = unitByUid(s, a.uid);
-  const chain = striker?.kasei === undefined ? null : { pos: { ...striker.pos }, card: striker.cardId, foes: s.units.filter((x) => x.owner !== p).map((x) => x.uid) };
   resolveAttack(ctx, s, a.uid, a.targetUid, events, a.variant ?? "normal", { counterOrder: a.counterOrder });
-  if (chain !== null && chain.foes.some((id) => unitByUid(s, id) === undefined)) chainKasei(ctx, s, p, a.uid, chain.card, chain.pos, events);
 };
 
 /** Pure wrapper: clones, applies, returns the new state plus its events. */
