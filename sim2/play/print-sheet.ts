@@ -109,7 +109,7 @@ export const cardSheetHtml = (ctx: Ctx, cards: readonly CardDef[], page: number,
 
 /** The back of a card: the 太極 mark and the game's name on the night lacquer. */
 export const cardBackPrintHtml = (): string =>
-  `<div class="pr-back"><span class="pr-back-frame"></span>${mark("taiji", "pr-back-mark")}<span class="pr-back-name">陰陽符陣</span></div>`;
+  `<div class="pr-back"><span class="pr-back-frame"></span>${mark("taiji", "pr-back-mark")}<span class="pr-back-name">式神符陣</span></div>`;
 
 /**
  * One sheet of nine backs on the same grid. The grid is centred, so turning
@@ -138,7 +138,7 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
   const [first, second] = cfg.startMana;
   const timing = cfg.incomeTiming === "turn_end" ? "自分のターン終了時" : "自分のターン開始時";
   const steps = cfg.chipIncomeSteps.length === 0 ? "" : `制圧チップ${chipStepsText(cfg.chipIncomeSteps, cfg.baseIncome)}。`;
-  const ratchet = cfg.incomeMode === "ratchet" ? "チップはターン終了時の制圧数まで増え、減らない (収入も下がらない)。" : "収入はその時の制圧数で決まる。";
+  const ratchet = cfg.incomeMode === "ratchet" ? "チップはターン終了時の総制圧力まで増え、減らない (収入も下がらない)。" : "収入はその時の総制圧力で決まる。";
   const taiji = `太極のマスに召喚すると召喚霊力−${cfg.taijiDiscount} (${cfg.taijiFloor}より下がらない)。`;
   const attr = `同じ属性のマスで耐久+${cfg.attrBonus}、反対の属性のマスで耐久−${cfg.attrBonus}。`;
   const twoCells =
@@ -148,10 +148,10 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
         ? `召☆${cfg.controlCountThreshold}以上の式神は制圧力2と数える。`
         : "";
   const keep = cfg.controlHold === "next_turn_end"
-    ? `自分のターン終了時に制圧数が${cfg.controlWin}以上なら制圧が成立。次の自分のターン終了時まで保てば勝ち (途中で下回れば解ける)。`
-    : `自分のターン終了時に制圧数が${cfg.controlWin}以上なら制圧が成立。次の自分のターン開始時にまだ制圧数が${cfg.controlWin}以上なら勝ち。`;
-  const big = cfg.controlBigCells > 0 ? `、制圧数${cfg.controlBigCells}以上なら${cfg.controlBigPoints}点` : "";
-  const points = `自分のターン終了時に制圧数が${cfg.controlWin}以上なら制圧点1点${big} (減らない)。${cfg.controlPointsToWin}点先取で勝ち。`;
+    ? `自分のターン終了時に総制圧力が${cfg.controlWin}以上なら制圧が成立。次の自分のターン終了時まで保てば勝ち (途中で下回れば解ける)。`
+    : `自分のターン終了時に総制圧力が${cfg.controlWin}以上なら制圧が成立。次の自分のターン開始時にまだ総制圧力が${cfg.controlWin}以上なら勝ち。`;
+  const big = cfg.controlBigCells > 0 ? `、総制圧力${cfg.controlBigCells}以上なら${cfg.controlBigPoints}点` : "";
+  const points = `自分のターン終了時に総制圧力が${cfg.controlWin}以上なら制圧点1点${big} (減らない)。${cfg.controlPointsToWin}点先取で勝ち。`;
   const hold =
     cfg.controlWinMode === "points" ? points : cfg.controlWinMode === "hold_points" ? `${keep}また、${points}` : keep;
   const reward =
@@ -179,8 +179,8 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
     { label: "範囲攻撃", text: aoe },
     { label: "反撃", text: counter },
     { label: "撃破", text: reward },
-    { label: "制圧", text: `自分の式神がいるマスを制圧と数える (式神1体の制圧力はふつう1、その合計が制圧数)。${twoCells}` },
-    { label: "勝ち", text: cfg.deckOutMode === "second" ? `${hold}どちらかが2回目の山札切れを起こしたら、その補充が終わったところで終了。制圧数の多い方の勝ち (同じなら引き分け)。` : hold },
+    { label: "制圧", text: `自分の式神がいるマスを制圧と数える (式神1体の制圧力はふつう1、その合計が総制圧力)。${twoCells}` },
+    { label: "勝ち", text: cfg.deckOutMode === "second" ? `${hold}どちらかが2回目の山札切れを起こしたら、その補充が終わったところで終了。総制圧力の多い方の勝ち (同じなら引き分け)。` : hold },
     { label: "生命", text: cfg.lifeValueEnabled ? `生命${cfg.startLife}。撃破された式神の(旧)生命価だけ減り、0で負け。` : "(旧)生命価なし (生命の増減・生命での勝ち負けはない)。" },
     { label: "手札", text: hand },
   ];

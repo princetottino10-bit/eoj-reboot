@@ -59,7 +59,7 @@ test("the idle prompt says how close either side is to 制圧", () => {
   const need = controlNeed(ctx, s);
   for (let i = 0; i < need - 1; i++) place(s, "sk01", 0, i % 3, Math.floor(i / 3), 0);
   const near = promptHtml(vm({ board: boardView(s), prompt: { kind: "main", legal: legalEntries(ctx, s) } }));
-  assert.match(near, new RegExp(`制圧数${need - 1}/${need}`));
+  assert.match(near, new RegExp(`総制圧力${need - 1}/${need}`));
   assert.doesNotMatch(near, /しないと|しのげば|崩さない/);
   const t = blankState(ctx);
   for (let i = 0; i < need; i++) place(t, "sk01", 1, i % 3, Math.floor(i / 3), 2);
@@ -67,5 +67,5 @@ test("the idle prompt says how close either side is to 制圧", () => {
   const danger = promptHtml(vm({ board: boardView(t), prompt: { kind: "main", legal: legalEntries(ctx, t) } }));
   assert.match(danger, /相手が制圧チェック中/);
   const calm = promptHtml(vm({ board: boardView(blankState(ctx)), prompt: { kind: "main", legal: [] } }));
-  assert.doesNotMatch(calm, /制圧チェック|制圧数/);
+  assert.doesNotMatch(calm, /制圧チェック|総制圧力/);
 });

@@ -118,7 +118,7 @@ const actionLine = (ctx: Ctx, e: Ev, before: Before, name: (id: string) => strin
 
 /** The turn-end details: 「占拠3・チップ3枚・2枚補充」. */
 const turnEndBits = (e: Extract<GameEvent, { t: "turnEnd" }>): string => {
-  const bits = [`制圧数${e.occupied}`, `チップ${e.chips}枚`];
+  const bits = [`総制圧力${e.occupied}`, `チップ${e.chips}枚`];
   if (e.discarded > 0) bits.push(`${e.discarded}枚捨てて${e.drawn}枚補充`);
   else if (e.drawn > 0) bits.push(`${e.drawn}枚補充`);
   return bits.join("・");

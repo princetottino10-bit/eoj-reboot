@@ -191,11 +191,11 @@ const raceNote = (vm: PromptVM): string => {
   // facts only (10/18): the counts and the rule, no advice on what to do about them
   const hold = vm.ctx.cfg.controlHold === "next_turn_end" ? "ターン終了時まで" : "ターン開始時に";
   const oppOcc = occupiedOf(vm.ctx, vm.board, opp);
-  if (vm.board.players[opp].reach && oppOcc < need) return line("is-good", `相手の制圧チェックは崩れています(相手の制圧数${oppOcc}/${need})`);
-  if (vm.board.players[opp].reach) return line("is-danger", `相手が制圧チェック中(相手の次の${hold}相手の制圧数${need}以上で相手の勝ち)`);
-  if (vm.board.players[me].reach && occ < need) return line("is-danger", `自分の制圧チェックは崩れています(制圧数${occ}/${need})`);
-  if (vm.board.players[me].reach) return line("is-good", `制圧チェック中(次の自分の${hold}制圧数${need}以上で勝ち)`);
-  if (occ >= need - 1) return line(occ >= need ? "is-good" : "is-near", `制圧数${occ}/${need}(ターン終了時に${need}以上で制圧チェック)`);
+  if (vm.board.players[opp].reach && oppOcc < need) return line("is-good", `相手の制圧チェックは崩れています(相手の総制圧力${oppOcc}/${need})`);
+  if (vm.board.players[opp].reach) return line("is-danger", `相手が制圧チェック中(相手の次の${hold}相手の総制圧力${need}以上で相手の勝ち)`);
+  if (vm.board.players[me].reach && occ < need) return line("is-danger", `自分の制圧チェックは崩れています(総制圧力${occ}/${need})`);
+  if (vm.board.players[me].reach) return line("is-good", `制圧チェック中(次の自分の${hold}総制圧力${need}以上で勝ち)`);
+  if (occ >= need - 1) return line(occ >= need ? "is-good" : "is-near", `総制圧力${occ}/${need}(ターン終了時に${need}以上で制圧チェック)`);
   return "";
 };
 

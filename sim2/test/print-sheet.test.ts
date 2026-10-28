@@ -135,7 +135,7 @@ test("the backs: one sheet of nine on the same grid", () => {
   const html = backSheetHtml("10/3テスト案");
   assert.equal(count(html, 'class="pr-back"'), 9);
   assert.equal(count(html, 'class="pr-slot"'), 9);
-  assert.match(html, /陰陽符陣/);
+  assert.match(html, /式神符陣/);
   assert.equal(printDocHtml(CTX, "10/3テスト案", "back"), html);
 });
 
@@ -151,7 +151,7 @@ test("the 早見表 reads every number from the r1003 preset", () => {
   assert.match(text("隙"), /ダメージ\+2/);
   assert.match(text("耐久の上限"), /19まで/);
   assert.match(text("制圧"), /耐久11以上の式神は制圧力2/);
-  assert.match(text("勝ち"), /制圧数が5以上なら制圧が成立。次の自分のターン開始時にまだ制圧数が5以上なら勝ち/);
+  assert.match(text("勝ち"), /総制圧力が5以上なら制圧が成立。次の自分のターン開始時にまだ総制圧力が5以上なら勝ち/);
   assert.match(text("生命"), /\(旧\)生命価なし/);
   assert.match(text("手札"), /山札は23枚/);
   assert.match(text("効果"), /各カードの文面/);

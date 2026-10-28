@@ -21,7 +21,7 @@ const incomeTip = (ctx: Ctx, board: BoardView, p: PlayerId): string => {
   const inc = incomeParts(ctx, board, p);
   const bits = [`収入 ${inc.total}`];
   if (inc.underdog > 0) bits.push(`うち劣勢ボーナス+${inc.underdog}`);
-  if (ctx.cfg.incomeMode === "current") bits.push("今の制圧数で判定");
+  if (ctx.cfg.incomeMode === "current") bits.push("今の総制圧力で判定");
   return bits.join("・");
 };
 
@@ -69,7 +69,7 @@ export const endOcc = (ctx: Ctx, board: BoardView): [number, number] | undefined
  */
 const deckOutHtml = (ctx: Ctx, reshuffles: number): string =>
   ctx.cfg.deckOutMode === "second"
-    ? `<span class="np-stat np-deckout${reshuffles >= 1 ? " is-late" : ""}" data-stat="deckout" title="山札切れ(墓地を山札に戻した回数)。どちらかが2回目を起こしたら、その補充が終わったところで終了し、制圧数の多い方の勝ち"><i>山札切れ</i><b>${Math.min(reshuffles, 2)}</b><small>/2</small></span>`
+    ? `<span class="np-stat np-deckout${reshuffles >= 1 ? " is-late" : ""}" data-stat="deckout" title="山札切れ(墓地を山札に戻した回数)。どちらかが2回目を起こしたら、その補充が終わったところで終了し、総制圧力の多い方の勝ち"><i>山札切れ</i><b>${Math.min(reshuffles, 2)}</b><small>/2</small></span>`
     : "";
 
 /** controlWinMode "points": 「制圧点 1/2」. Nothing under "hold". */
@@ -94,7 +94,7 @@ export const nameplateHtml = (ctx: Ctx, board: BoardView, p: PlayerId, names: Na
     }</span>
     ${ctx.cfg.lifeValueEnabled ? `<span class="np-stat np-life" data-stat="life" title="生命"><i>生命</i><b>${Math.max(0, ps.life)}</b></span>` : ""}
     <span class="np-stat np-mana" data-stat="mana" title="霊力(上限 ${ctx.cfg.manaCap})"><i>霊力</i><b>${ps.mana}</b></span>
-    <span class="np-stat np-occ${late ? " is-late" : ""}" data-need="${need}" title="制圧数 / 制圧に必要な数${late ? "(終盤)" : ""}${occTip(ctx)}"><i>制圧</i><b>${occ}</b><small>/${need}</small></span>
+    <span class="np-stat np-occ${late ? " is-late" : ""}" data-need="${need}" title="総制圧力 / 制圧に必要な数${late ? "(終盤)" : ""}${occTip(ctx)}"><i>制圧</i><b>${occ}</b><small>/${need}</small></span>
     ${pointsHtml(ctx, ps.controlPoints)}
     ${deckOutHtml(ctx, ps.reshuffleCount)}
     ${chipsHtml(ctx, board, p)}
@@ -175,7 +175,7 @@ export const turnHtml = (ctx: Ctx, board: BoardView, names: Names, info: TurnInf
     <span class="turn-round">第${board.round}ラウンド</span>
     <span class="turn-who">${who}</span>
     ${phase === "" ? "" : `<span class="turn-phase${phaseText === "行動中" ? " is-plain" : ""}">${phase}</span>`}
-    ${holders.map((h) => `<span class="turn-ctl o${h}" title="${esc(names[h])} ${controlLabel(ctx)}(制圧数${occupiedOf(ctx, board, h)})"><span class="turn-ctl-who">${esc(turnName(names[h], h) || names[h])} </span>${controlLabel(ctx)}<span class="turn-ctl-occ">(制圧数${occupiedOf(ctx, board, h)})</span></span>`).join("")}
+    ${holders.map((h) => `<span class="turn-ctl o${h}" title="${esc(names[h])} ${controlLabel(ctx)}(総制圧力${occupiedOf(ctx, board, h)})"><span class="turn-ctl-who">${esc(turnName(names[h], h) || names[h])} </span>${controlLabel(ctx)}<span class="turn-ctl-occ">(総制圧力${occupiedOf(ctx, board, h)})</span></span>`).join("")}
   </div>`;
 };
 

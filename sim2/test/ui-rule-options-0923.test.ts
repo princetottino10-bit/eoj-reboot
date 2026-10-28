@@ -56,7 +56,7 @@ test("占拠 in the HUD counts a HP 11+ unit as 2 under controlCount hp (and 1 u
   // the turn panel and the board lanterns read the same weighted count
   s.players[0].reach = true;
   const b2 = boardView(s);
-  assert.match(turnHtml(hp, b2, NAMES, { phaseText: "" }), /制圧数5/);
+  assert.match(turnHtml(hp, b2, NAMES, { phaseText: "" }), /総制圧力5/);
   const vm: BoardVM = {
     ctx: hp, board: b2, names: NAMES, look: {}, marks: new Map(), range: null, bottom: 0,
     selectedUid: null, selectedCell: null, prediction: null, radial: null, facing: null,

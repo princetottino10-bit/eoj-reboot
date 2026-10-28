@@ -285,7 +285,7 @@ const addControlPoint = (ctx: Ctx, s: GameState, p: PlayerId, occ: number, event
     player: p,
     source: "rule",
     uid: null,
-    text: `${seatWord(p)}: 制圧点 +${gain}(計${ps.controlPoints}/${ctx.cfg.controlPointsToWin}点・制圧数${occ})`,
+    text: `${seatWord(p)}: 制圧点 +${gain}(計${ps.controlPoints}/${ctx.cfg.controlPointsToWin}点・総制圧力${occ})`,
   });
   if (ps.controlPoints < ctx.cfg.controlPointsToWin) return false;
   controlWinNow(ctx, s, p, events);

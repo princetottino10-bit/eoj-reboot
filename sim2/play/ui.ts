@@ -138,7 +138,7 @@ const table = createTable(tableEl, {
   },
 });
 
-table.slots.header.innerHTML = `<div class="brand"><span class="brand-mark" aria-hidden="true">符</span><span class="brand-name">陰陽符陣<small>(仮)</small></span><span class="brand-sub">対 AI</span></div>`;
+table.slots.header.innerHTML = `<div class="brand"><span class="brand-mark" aria-hidden="true">符</span><span class="brand-name">式神符陣</span><span class="brand-sub">対 AI</span></div>`;
 table.slots.tools.innerHTML = `<div class="tools"><button type="button" class="rules-badge" id="rulesBadge" title="基準からの変更点">設定を選んで対局開始</button><a class="btn btn-quiet" id="changeRules" href="${rulesHref({ for: "ai-game" })}" hidden>ルール・カードを変える</a><a class="btn btn-quiet" href="/guide" target="_blank" rel="noopener">遊び方</a><button type="button" class="btn btn-quiet btn-auto" id="autoPlay" aria-pressed="false" title="あなたの席もAIに指させる">AUTO</button><button type="button" class="btn btn-quiet" id="newGame">新しい対局</button></div>`;
 $("newGame").addEventListener("click", () => void openSetup());
 $("autoPlay").addEventListener("click", () => {
