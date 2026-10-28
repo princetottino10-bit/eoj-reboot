@@ -175,7 +175,7 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
     label: "8/28ルール",
     experiment: "K8ts",
     defaultPack: "shuten-kyuryu",
-    note: "8/28ルール = K8ts: 撃破された側に還付・継承なし・反撃は範囲内全員・マリガンなし・制圧チェックはターン開始時判定。太極の軽減は1。",
+    note: "8/28ルール = K8ts: 撃破された側に還付・継承なし・反撃は範囲内全員・マリガンなし・チェックはターン開始時判定。太極の軽減は1。",
     overrides: {
       taijiDiscount: BASE_TAIJI_DISCOUNT,
       chipMode: "catch_up",

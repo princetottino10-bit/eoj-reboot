@@ -230,7 +230,7 @@ const table = createTable($("table"), {
         box.appendChild(note);
       }
       const cf = cfLink();
-      if (cf !== null) box.appendChild(cf);
+      if (cf !== null) box.prepend(cf);
       return;
     }
     const r = document.createElement("button");

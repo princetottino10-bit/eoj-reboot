@@ -174,7 +174,7 @@ export const quickRules = (cfg: Config, deckSize: number): QuickRow[] => {
     { label: "太極", text: taiji },
     { label: "属性", text: attr },
     { label: "隙", text: `隙からの攻撃はダメージ+${cfg.blindBonus} (【術式】を除く)。` },
-    { label: "耐久の上限", text: `盤上の耐久は${cfg.maxHp}まで。回復はカードの耐久を超えて${cfg.maxHp}まで伸びる。`},
+    { label: "耐久の上限", text: `盤面の耐久は${cfg.maxHp}まで。回復はカードの耐久を超えて${cfg.maxHp}まで伸びる。`},
     { label: "回転", text: `回転命令は霊力${cfg.rotateCost}で90度。` },
     { label: "範囲攻撃", text: aoe },
     { label: "反撃", text: counter },

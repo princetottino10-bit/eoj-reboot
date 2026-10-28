@@ -14,9 +14,10 @@ primary_region = "nrt"
 [build]
   dockerfile = "Dockerfile"
 
-# 「クラウドファンディング実施中 ▶ 支援ページへ」 (top page, rules page, end of a match): add
-#   --cf-url https://camp-fire.jp/projects/<number>
-# to the line below once the page is public. Without it the links stay hidden.
+# 「クラウドファンディング実施中 ▶ 支援ページへ」 (top page, rules page, before and at the end of a
+# match): once the CAMPFIRE page is public, add to the line below
+#   --cf-url https://camp-fire.jp/projects/992243/view
+# Without the flag the links stay hidden.
 [processes]
   app = "node --experimental-strip-types online/server.ts --host 0.0.0.0 --port 8080 --trust-proxy --record-dir /app/out/online --public"
 

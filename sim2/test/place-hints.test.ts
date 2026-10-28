@@ -65,7 +65,7 @@ test("the idle prompt says how close either side is to 制圧", () => {
   for (let i = 0; i < need; i++) place(t, "sk01", 1, i % 3, Math.floor(i / 3), 2);
   t.players[1].reach = true;
   const danger = promptHtml(vm({ board: boardView(t), prompt: { kind: "main", legal: legalEntries(ctx, t) } }));
-  assert.match(danger, /相手が制圧チェック中/);
+  assert.match(danger, /相手がチェック中/);
   const calm = promptHtml(vm({ board: boardView(blankState(ctx)), prompt: { kind: "main", legal: [] } }));
-  assert.doesNotMatch(calm, /制圧チェック|総制圧力/);
+  assert.doesNotMatch(calm, /チェック|総制圧力/);
 });

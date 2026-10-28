@@ -293,7 +293,7 @@ export const createTable = (root: HTMLElement, handlers: TableHandlers): Table =
     render();
   };
 
-  // スマホは駒をタイルで出す (10/22): art upright on the left, the range turned to the facing.
+  // スマホは式神をタイルで出す (10/22): art upright on the left, the range turned to the facing.
   // Phones only (the same width as the phone layout in table.css); ?piece=tile|card forces it for a check.
   const TILE_KEY = "yy-piece-tile";
   try {

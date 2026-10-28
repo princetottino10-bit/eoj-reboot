@@ -127,7 +127,7 @@ const cellHtml = (vm: BoardVM, pos: Pos): string => {
   const who =
     u === undefined
       ? "空きマス"
-      : `${vm.names[u.owner]}の駒 ${cardOfUnit(vm.ctx, u).nameJa}(耐久 ${Math.max(0, unitHp(vm.ctx, u))}・${FACING_LABEL[u.facing]}向き)${ready ? " / 攻撃できる" : ""}`;
+      : `${vm.names[u.owner]}の式神 ${cardOfUnit(vm.ctx, u).nameJa}(耐久 ${Math.max(0, unitHp(vm.ctx, u))}・${FACING_LABEL[u.facing]}向き)${ready ? " / 攻撃できる" : ""}`;
   const markText =
     mark === "summon" ? " / 召喚できる" : mark === "inherit" ? " / 継承召喚できる" : mark === "target" ? " / 対象にできる" : mark === "heal" ? " / 回復できる" : mark === "proxy" ? " / 回せる" : mark === "move" ? " / ここへ動かされる" : "";
   const rangeText = `${vm.range?.attack.has(k) ? " / 間合" : ""}${vm.range?.counter?.has(k) ? " / 反撃間合" : ""}${vm.range?.blind.has(k) ? " / 隙" : ""}${vm.range?.gap.has(k) ? " / 旧・隙位置" : ""}`;
@@ -168,7 +168,7 @@ const radialHtml = (vm: BoardVM): string => {
       </button>`;
     })
     .join("");
-  return `<div class="rd" data-x="${u.pos.x}" style="${gridPlace(u.pos)}" role="menu" aria-label="駒への命令">${items}</div>`;
+  return `<div class="rd" data-x="${u.pos.x}" style="${gridPlace(u.pos)}" role="menu" aria-label="式神への命令">${items}</div>`;
 };
 
 const facingHtml = (vm: BoardVM): string => {

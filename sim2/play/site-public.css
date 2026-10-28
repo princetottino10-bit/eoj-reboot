@@ -73,5 +73,26 @@ html[data-cf-url] .cf-link {
 html[data-cf-url] .cf-link:hover { background: rgba(215, 181, 101, 0.28); }
 .cf-link .cf-tag { color: #f5f1e2; }
 .cf-link .cf-go { color: #d7b565; white-space: nowrap; }
-html[data-cf-url] .yy-result-actions .cf-link { box-sizing: border-box; flex-basis: 100%; max-width: 420px; margin: 0 auto; padding: 8px 12px; font-size: 0.92em; background: rgba(24, 20, 14, 0.9); }
+/* at the end of a match it leads the result, before もう一戦: a solid gold banner that pulses gently */
+html[data-cf-url] .yy-result-actions .cf-link {
+  box-sizing: border-box; flex-basis: 100%; max-width: 440px; margin: 2px auto 6px; padding: 12px 16px;
+  flex-direction: column; gap: 2px;
+  background: linear-gradient(180deg, #f3d98f, #d7b565 55%, #b8913f); border: 1px solid #fbeab8;
+  color: #1a1408; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 6px 22px rgba(215, 181, 101, 0.45);
+  animation: cf-glow 2.4s ease-in-out infinite;
+}
+html[data-cf-url] .yy-result-actions .cf-link:hover { background: linear-gradient(180deg, #f8e3a8, #e0c071 55%, #c39b48); }
+html[data-cf-url] .yy-result-actions .cf-link .cf-tag { color: #3a2a0c; font-size: 0.82em; letter-spacing: 0.08em; }
+html[data-cf-url] .yy-result-actions .cf-link .cf-go { color: #1a1408; font-size: 1.25em; letter-spacing: 0.06em; }
+@keyframes cf-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 6px 22px rgba(215, 181, 101, 0.35); }
+  50% { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 6px 30px rgba(243, 217, 143, 0.75); }
+}
+@media (prefers-reduced-motion: reduce) { html[data-cf-url] .yy-result-actions .cf-link { animation: none; } }
 html[data-cf-url] .entry-rules-public .cf-link { margin: 12px 0 0; max-width: none; }
+/* on a phone the result sits on a small board: a slimmer banner keeps もう一戦 on it */
+@media (max-width: 700px) {
+  html[data-cf-url] .yy-result-actions .cf-link { padding: 6px 10px; max-width: 300px; }
+  html[data-cf-url] .yy-result-actions .cf-link .cf-tag { font-size: 0.72em; }
+  html[data-cf-url] .yy-result-actions .cf-link .cf-go { font-size: 1.05em; }
+}

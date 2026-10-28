@@ -65,7 +65,7 @@ const counterOrderBar = (vm: PromptVM, p: Extract<PromptKind, { kind: "counterOr
       `<span class="co-row"><b class="co-n">${i + 1}</b>${nm(uid)}<button type="button" class="co-mv" data-act="co-up" data-i="${i}" aria-label="${i + 1}番目を上へ"${i === 0 ? " disabled" : ""}>▲</button><button type="button" class="co-mv" data-act="co-down" data-i="${i}" aria-label="${i + 1}番目を下へ"${i === pick.length - 1 ? " disabled" : ""}>▼</button></span>`,
   );
   const out = p.outcomes.find((o) => sameOrder(o.order, pick));
-  const lines = [`<span class="co-list" title="▲▼か、盤上の駒を反撃させたい順にタップ">${rows.join("")}</span>`];
+  const lines = [`<span class="co-list" title="▲▼か、盤面の式神を反撃させたい順にタップ">${rows.join("")}</span>`];
   if (out !== undefined) {
     const skipped = pick.length - out.landed.length;
     const kill = out.killer === null ? "攻撃側は撃破されない" : `<b>${nm(out.killer)}</b>の反撃で撃破${skipped > 0 ? `(残り${skipped}体は反撃しない)` : ""}`;
@@ -149,7 +149,7 @@ const kyonshiBar = (vm: PromptVM, p: Extract<PromptKind, { kind: "kyonshi" }>): 
   if (same) notes.push(`どの向きでも間合に入る敵は同じです(${reachOf(ask.options[0].targets)})`);
   return bar(
     "confirm kyonshi",
-    `<b>${me}の向き</b>: ${cause}、${esc(cellName(ask.to))}へ移動します。向きを90度変えられます(盤上の矢印でも選べます)`,
+    `<b>${me}の向き</b>: ${cause}、${esc(cellName(ask.to))}へ移動します。向きを90度変えられます(盤面の矢印でも選べます)`,
     notes,
     buttons,
     vm.flash,
@@ -191,11 +191,11 @@ const raceNote = (vm: PromptVM): string => {
   // facts only (10/18): the counts and the rule, no advice on what to do about them
   const hold = vm.ctx.cfg.controlHold === "next_turn_end" ? "ターン終了時まで" : "ターン開始時に";
   const oppOcc = occupiedOf(vm.ctx, vm.board, opp);
-  if (vm.board.players[opp].reach && oppOcc < need) return line("is-good", `相手の制圧チェックは崩れています(相手の総制圧力${oppOcc}/${need})`);
-  if (vm.board.players[opp].reach) return line("is-danger", `相手が制圧チェック中(相手の次の${hold}相手の総制圧力${need}以上で相手の勝ち)`);
-  if (vm.board.players[me].reach && occ < need) return line("is-danger", `自分の制圧チェックは崩れています(総制圧力${occ}/${need})`);
-  if (vm.board.players[me].reach) return line("is-good", `制圧チェック中(次の自分の${hold}総制圧力${need}以上で勝ち)`);
-  if (occ >= need - 1) return line(occ >= need ? "is-good" : "is-near", `総制圧力${occ}/${need}(ターン終了時に${need}以上で制圧チェック)`);
+  if (vm.board.players[opp].reach && oppOcc < need) return line("is-good", `相手のチェックは崩れています(相手の総制圧力${oppOcc}/${need})`);
+  if (vm.board.players[opp].reach) return line("is-danger", `相手がチェック中(相手の次の${hold}相手の総制圧力${need}以上で相手の勝ち)`);
+  if (vm.board.players[me].reach && occ < need) return line("is-danger", `自分のチェックは崩れています(総制圧力${occ}/${need})`);
+  if (vm.board.players[me].reach) return line("is-good", `チェック中(次の自分の${hold}総制圧力${need}以上で勝ち)`);
+  if (occ >= need - 1) return line(occ >= need ? "is-good" : "is-near", `総制圧力${occ}/${need}(ターン終了時に${need}以上でチェック)`);
   return "";
 };
 
@@ -301,7 +301,7 @@ const clubBar = (vm: PromptVM, legal: LegalEntry[], s: Extract<Sel, { kind: "rei
   const t = s.targetUid === null ? undefined : unitById(vm.board, s.targetUid);
   const tName = t === undefined ? "" : esc(cardName(vm.ctx, t.cardId));
   if ((s.victimUid ?? null) === null) {
-    return bar("pick", `<b>${esc(card.nameJa)}</b>: <b>${tName}</b>の隣(隙以外)の敵を盤上で選ぶ`, [], [retarget, cancel], f);
+    return bar("pick", `<b>${esc(card.nameJa)}</b>: <b>${tName}</b>の隣(隙以外)の敵を盤面で選ぶ`, [], [retarget, cancel], f);
   }
   const e = reiguEntry(legal, vm.hand, s);
   const lines = e?.preview?.kind === "reigu" ? reiguPreviewLines(vm, e.preview) : [];
@@ -338,12 +338,12 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       const card = cardOf(vm.ctx.pack, vm.hand[s.handIndex]);
       const inh = handEntries(legal, vm.hand, s.handIndex, "inherit").length > 0;
       const disc = summonDiscountNote(handEntries(legal, vm.hand, s.handIndex, "summon"));
-      return bar("pick", `<b>${esc(card.nameJa)}</b>: 光っているマスに召喚${inh ? ' / <span class="violet">紫の破線</span>の駒に継承召喚' : ""}${disc}`, [], [peekBtn(card.id), cancel], f);
+      return bar("pick", `<b>${esc(card.nameJa)}</b>: 光っているマスに召喚${inh ? ' / <span class="violet">紫の破線</span>の式神に継承召喚' : ""}${disc}`, [], [peekBtn(card.id), cancel], f);
     }
     case "place": {
       const card = cardOf(vm.ctx.pack, vm.hand[s.handIndex]);
       const at = summonFacings(legal, vm.hand, s.handIndex, s.pos).flatMap((o) => (o.entry === undefined ? [] : [o.entry]));
-      return bar("pick", `<b>${esc(card.nameJa)}</b>を${esc(cellName(s.pos))}に置く向きを、盤上の矢印で選ぶ${summonCostNote(at)}`, [], [cancel], f);
+      return bar("pick", `<b>${esc(card.nameJa)}</b>を${esc(cellName(s.pos))}に置く向きを、盤面の矢印で選ぶ${summonCostNote(at)}`, [], [cancel], f);
     }
     case "inherit": {
       const e = handEntries(legal, vm.hand, s.handIndex, "inherit").find((x) => x.action.kind === "inherit" && x.action.targetUid === s.targetUid);
@@ -360,7 +360,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       const verb = s.mode === "heal" ? "回復" : s.mode === "konshin" ? "渾身攻撃" : s.mode === "regen" ? "再生攻撃" : s.mode === "drink" ? "飲酒攻撃" : "攻撃";
       const e = aimedEntry(legal, s);
       if (e === undefined) {
-        return bar("pick", `${verb}する${s.mode === "heal" ? "味方" : "相手"}を盤上で選ぶ ${legend(vm)}`, [], [cancel], f);
+        return bar("pick", `${verb}する${s.mode === "heal" ? "味方" : "相手"}を盤面で選ぶ ${legend(vm)}`, [], [cancel], f);
       }
       const lines = e.preview?.kind === "attack" ? attackSummaryLines(vm.ctx, vm.board, vm.names, s.uid, e.preview) : [];
       const who = unitById(vm.board, s.uid);
@@ -388,13 +388,13 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       ], f);
     }
     case "proxy": {
-      if (s.targetUid === null) return bar("pick", "代理回転: 回す式神を盤上で選ぶ", [], [cancel], f);
+      if (s.targetUid === null) return bar("pick", "代理回転: 回す式神を盤面で選ぶ", [], [cancel], f);
       const t = unitById(vm.board, s.targetUid);
-      return bar("pick", `代理回転: <b>${t === undefined ? "" : esc(cardName(vm.ctx, t.cardId))}</b>の向きを盤上の矢印で選ぶ`, [], [btn("retarget", "対象を選び直す", "btn-quiet"), cancel], f);
+      return bar("pick", `代理回転: <b>${t === undefined ? "" : esc(cardName(vm.ctx, t.cardId))}</b>の向きを盤面の矢印で選ぶ`, [], [btn("retarget", "対象を選び直す", "btn-quiet"), cancel], f);
     }
     case "turn": {
       const t = unitById(vm.board, s.uid);
-      return bar("pick", `回転: <b>${t === undefined ? "" : esc(cardName(vm.ctx, t.cardId))}</b>の向きを盤上の矢印で選ぶ(回せない向きは灰色)`, [], [cancel], f);
+      return bar("pick", `回転: <b>${t === undefined ? "" : esc(cardName(vm.ctx, t.cardId))}</b>の向きを盤面の矢印で選ぶ(回せない向きは灰色)`, [], [cancel], f);
     }
     case "reigu": {
       const card = cardOf(vm.ctx.pack, vm.hand[s.handIndex]);
@@ -405,7 +405,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       const kind = reiguTargeting(fxOf(vm.ctx, card.id));
       if (s.targetUid === null) {
         const what = kind === "unit-own-mode" ? "使う自分の式神" : kind === "unit-own-victim" ? "使う自分の式神(酒呑一門)" : "対象";
-        return bar("pick", `<b>${esc(card.nameJa)}</b>: ${what}を盤上で選ぶ`, [], [peekBtn(card.id), cancel], f);
+        return bar("pick", `<b>${esc(card.nameJa)}</b>: ${what}を盤面で選ぶ`, [], [peekBtn(card.id), cancel], f);
       }
       const retarget = btn("retarget", "対象を選び直す", "btn-quiet");
       if (kind === "unit-own-mode") return armBar(vm, legal, s, cancel, retarget);
@@ -413,7 +413,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       const t = unitById(vm.board, s.targetUid);
       const turning = entries.some((e) => e.action.kind === "reigu" && e.action.targetUid === s.targetUid && e.action.facing !== null);
       if (turning) {
-        return bar("pick", `<b>${esc(card.nameJa)}</b>: ${t === undefined ? "" : `<b>${esc(cardName(vm.ctx, t.cardId))}</b>の`}向きを盤上の矢印で選ぶ`, [], [retarget, cancel], f);
+        return bar("pick", `<b>${esc(card.nameJa)}</b>: ${t === undefined ? "" : `<b>${esc(cardName(vm.ctx, t.cardId))}</b>の`}向きを盤面の矢印で選ぶ`, [], [retarget, cancel], f);
       }
       const fc = reiguForecast(vm.ctx, vm.board, card.id, s.targetUid, vm.viewer);
       const lines = fc === null ? [] : reiguLines(vm, fc);
@@ -421,7 +421,7 @@ const mainBar = (vm: PromptVM, legal: LegalEntry[]): string => {
       return bar("confirm", `<b>${esc(card.nameJa)}</b>を使う:`, lines, [btn("confirm", `使う(霊力−${card.summonCost})`, risky ? "btn-red" : "btn-gold"), retarget, cancel], f);
     }
     default:
-      return bar("idle", `${raceNote(vm)}<span class="pr-how">札を出す・駒で攻撃する・駒を回す。終わったら「ターン終了」${kbd("(Enter)")}</span>`, [], [], f);
+      return bar("idle", `${raceNote(vm)}<span class="pr-how">札を出す・式神で攻撃する・式神を回す。終わったら「ターン終了」${kbd("(Enter)")}</span>`, [], [], f);
   }
 };
 

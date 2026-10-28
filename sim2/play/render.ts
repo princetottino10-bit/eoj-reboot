@@ -54,7 +54,7 @@ export const cardName = (ctx: Ctx, id: string): string => cardOf(ctx.pack, id).n
 export const occupiedOf = (ctx: Ctx, board: BoardView, p: PlayerId): number => controlCount(ctx, board, p);
 
 /**
- * Is p's 制圧チェック still standing? Under next_turn_start the engine keeps the
+ * Is p's チェック still standing? Under next_turn_start the engine keeps the
  * flag until p's turn start (where it is checked), so a check knocked below the
  * count in the other turn would still read as one: the screen shows it as broken.
  */
@@ -69,7 +69,7 @@ export const unitById = (board: BoardView, uid: number): Unit | undefined =>
 
 /** What the control flag means under a controlHold (default: the one in force). */
 export const controlLabel = (ctx: Ctx, hold: ControlHold = ctx.cfg.controlHold): string =>
-  hold === "next_turn_end" ? "制圧中" : "制圧チェック";
+  hold === "next_turn_end" ? "制圧中" : "チェック";
 
 /**
  * EXP-0913B counterMode "gap": the board cell of an AREA attacker's gap - the
@@ -171,7 +171,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
       const cardId = x.cardId ?? note?.cardId;
       const from = x.from ?? note?.from;
       const to = x.to ?? x.facing ?? note?.to;
-      const who = cardId === undefined ? "駒" : name(cardId);
+      const who = cardId === undefined ? "式神" : name(cardId);
       // a proxy rotate names its rotator here; the turned unit follows as an effect line
       if (from !== undefined && from === to) return { text: `${seat(e.player)}: ${who}の代理回転 (霊力-${e.cost})`, cls: "" };
       const dir = to === undefined ? "" : ` → ${FACING_LABEL[to]}向き`;

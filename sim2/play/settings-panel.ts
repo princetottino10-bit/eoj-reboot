@@ -327,7 +327,7 @@ export const openSettingsPanel = async (host: HTMLElement, opts: PanelOptions): 
       <div class="sp-main">
         ${navHtml()}
         <div class="sp-body">
-          ${opts.mode === "midgame" ? '<p class="sp-note">変更は次の操作から有効です(盤上の式神にもすぐ反映)。灰色の項目は次の試合から変えられます。</p>' : ""}
+          ${opts.mode === "midgame" ? '<p class="sp-note">変更は次の操作から有効です(盤面の式神にもすぐ反映)。灰色の項目は次の試合から変えられます。</p>' : ""}
           ${CONFIG_GROUPS.map((g) => groupHtml(g.id, g.label)).join("")}
           ${cardsHtml()}
         </div>

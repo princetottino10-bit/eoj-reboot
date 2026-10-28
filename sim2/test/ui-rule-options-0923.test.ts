@@ -49,7 +49,7 @@ test("占拠 in the HUD counts a HP 11+ unit as 2 under controlCount hp (and 1 u
   assert.equal(occupiedOf(hp, board, 0), 5);
   const np = nameplateHtml(hp, board, 0, NAMES, true);
   assert.equal(occText(np), `5/${hp.cfg.controlWin}`);
-  assert.match(np, /耐久11以上の駒は制圧力2/);
+  assert.match(np, /耐久11以上の式神は制圧力2/);
   const plain = r0923();
   assert.equal(occText(nameplateHtml(plain, boardView(bigBoard(plain)), 0, NAMES, true)), `4/${plain.cfg.controlWin}`);
 

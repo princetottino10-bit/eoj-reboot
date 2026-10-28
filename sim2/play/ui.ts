@@ -129,7 +129,7 @@ const table = createTable(tableEl, {
       again.addEventListener("click", () => void openSetup());
       box.appendChild(again);
       const cf = cfLink();
-      if (cf !== null) box.appendChild(cf);
+      if (cf !== null) box.prepend(cf);
     }
     if (G !== null && G.error !== "") {
       const e = document.createElement("span");

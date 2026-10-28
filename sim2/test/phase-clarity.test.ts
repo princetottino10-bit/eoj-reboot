@@ -61,7 +61,7 @@ test("the range diagram marks the piece's front with the printed card's triangle
   assert.match(tile, /class="pc-dir f1"/);
 });
 
-test("a 制圧チェック knocked below the count stops showing as one", async () => {
+test("a チェック knocked below the count stops showing as one", async () => {
   const { inCheck } = await import("../play/render.ts");
   const { nameplateHtml } = await import("../play/hud.ts");
   const c = makeCtx(presetConfig("r1007"), SK);
@@ -71,8 +71,8 @@ test("a 制圧チェック knocked below the count stops showing as one", async 
   assert.equal(inCheck(c, b, 1), false);
   assert.doesNotMatch(nameplateHtml(c, b, 1, ["あなた", "相手"], false), /is-ctl/);
   const p = promptHtml({ ...vm({}), ctx: c, board: b });
-  assert.doesNotMatch(p, /相手が制圧チェック中/);
-  assert.match(p, /相手の制圧チェックは崩れています/);
+  assert.doesNotMatch(p, /相手がチェック中/);
+  assert.match(p, /相手のチェックは崩れています/);
 });
 
 test("a piece says its 耐久 now in a tag of its own, marked when hurt", async () => {

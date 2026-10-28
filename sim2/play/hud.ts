@@ -43,9 +43,9 @@ const chipsHtml = (ctx: Ctx, board: BoardView, p: PlayerId): string => {
 /** How heavy units count, for the 占拠 tooltip ("" under controlCount cells). */
 const occTip = (ctx: Ctx): string =>
   ctx.cfg.controlCount === "hp"
-    ? `・耐久${ctx.cfg.controlCountThreshold}以上の駒は制圧力2`
+    ? `・耐久${ctx.cfg.controlCountThreshold}以上の式神は制圧力2`
     : ctx.cfg.controlCount === "cost"
-      ? `・召☆${ctx.cfg.controlCountThreshold}以上の駒は制圧力2`
+      ? `・召☆${ctx.cfg.controlCountThreshold}以上の式神は制圧力2`
       : "";
 
 /**
@@ -94,7 +94,7 @@ export const nameplateHtml = (ctx: Ctx, board: BoardView, p: PlayerId, names: Na
     }</span>
     ${ctx.cfg.lifeValueEnabled ? `<span class="np-stat np-life" data-stat="life" title="生命"><i>生命</i><b>${Math.max(0, ps.life)}</b></span>` : ""}
     <span class="np-stat np-mana" data-stat="mana" title="霊力(上限 ${ctx.cfg.manaCap})"><i>霊力</i><b>${ps.mana}</b></span>
-    <span class="np-stat np-occ${late ? " is-late" : ""}" data-need="${need}" title="総制圧力 / 制圧に必要な数${late ? "(終盤)" : ""}${occTip(ctx)}"><i>制圧</i><b>${occ}</b><small>/${need}</small></span>
+    <span class="np-stat np-occ${late ? " is-late" : ""}" data-need="${need}" title="総制圧力 / チェックに必要な総制圧力${late ? "(終盤)" : ""}${occTip(ctx)}"><i>総制圧力</i><b>${occ}</b><small>/${need}</small></span>
     ${pointsHtml(ctx, ps.controlPoints)}
     ${deckOutHtml(ctx, ps.reshuffleCount)}
     ${chipsHtml(ctx, board, p)}
@@ -227,7 +227,7 @@ export const detailHtml = (ctx: Ctx, board: BoardView, names: Names, focus: Focu
     const items = g.length === 0 ? '<li class="muted">(なし)</li>' : g.map(item).join("");
     return `<div class="dt dt-grave"><h3>${esc(names[focus.seat])}の墓地(${g.length}枚)</h3><ol>${items}</ol></div>`;
   }
-  return `<div class="dt dt-empty"><p>札や駒を選ぶと、ここに大きく表示します。</p></div>`;
+  return `<div class="dt dt-empty"><p>札や式神を選ぶと、ここに大きく表示します。</p></div>`;
 };
 
 // --------------------------------------------------------------------- log

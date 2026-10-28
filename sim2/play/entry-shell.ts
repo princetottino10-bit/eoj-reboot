@@ -48,7 +48,7 @@ export const PUBLIC_RULES_HTML = `<div class="entry-rules entry-rules-public">
       <span class="entry-public-note">はじめての方は、先に遊び方をどうぞ。</span>
       <a class="btn btn-quiet" href="${GUIDE_HREF}" target="_blank" rel="noopener">遊び方を読む</a>
     </div>
-    <p class="entry-public-fine">開発中のテスト版です。札の絵・盤・ルールは、製品版までに変わることがあります。</p>
+    <p class="entry-public-fine">開発中のテスト版です。札の絵・九宮盤・ルールは、製品版までに変わることがあります。</p>
   </div>`;
 
 /** The public block, with 「クラウドファンディング実施中 ▶ 支援ページへ」 at its foot once the server has a --cf-url. */
