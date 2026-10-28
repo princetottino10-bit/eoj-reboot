@@ -90,6 +90,16 @@ html[data-cf-url] .yy-result-actions .cf-link .cf-go { color: #1a1408; font-size
 }
 @media (prefers-reduced-motion: reduce) { html[data-cf-url] .yy-result-actions .cf-link { animation: none; } }
 html[data-cf-url] .entry-rules-public .cf-link { margin: 12px 0 0; max-width: none; }
+/* 「クラウドファンディング準備中」 until the URL is set (online/server.ts, play/site.ts CF_SOON_HTML): a quiet notice, not a button */
+[data-site="public"] .cf-soon {
+  display: flex; justify-content: center; box-sizing: border-box; margin: 18px auto 0; max-width: 520px; padding: 8px 16px;
+  border: 1px dashed rgba(215, 181, 101, 0.6); border-radius: 10px;
+  color: #d7b565; font-weight: 700; line-height: 1.4; letter-spacing: 0.06em;
+}
+[data-site="public"] .cf-soon .cf-tag { color: #d7b565; }
+[data-site="public"] .yy-result-actions .cf-soon { flex-basis: 100%; max-width: 440px; margin: 2px auto 6px; font-size: 0.9em; }
+[data-site="public"] .entry-rules-public .cf-soon { margin: 12px 0 0; max-width: none; }
+[data-site="public"] .w-hero-text .cf-soon { margin-left: 0; }
 /* on a phone the result sits on a small board: a slimmer banner keeps もう一戦 on it */
 @media (max-width: 700px) {
   html[data-cf-url] .yy-result-actions .cf-link { padding: 6px 10px; max-width: 300px; }

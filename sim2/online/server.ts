@@ -24,6 +24,7 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { isImagePath, serveFile, serveImage } from "../play/server.ts";
 import type { Served, ServedBytes } from "../play/server.ts";
+import { CF_SOON_HTML } from "../play/site.ts";
 import { isPlayablePack, isRulePresetId } from "../src/presets.ts";
 import { defaultSettings } from "../src/settings.ts";
 import { checkRecordDir, packFor, printedPack } from "./match.ts";
@@ -334,14 +335,17 @@ const escAttr = (s: string): string => s.replace(/&/g, "&amp;").replace(/"/g, "&
 
 /**
  * The public build's mark on an HTML page: data-site on <html> and the public style sheet. With a
- * crowdfunding URL, <html> also carries data-cf-url (which shows .cf-link) and every href="#cf" points there.
+ * crowdfunding URL, <html> also carries data-cf-url (which shows .cf-link) and every href="#cf" points there;
+ * without one each href="#cf" link becomes 「クラウドファンディング準備中」 (words, no link: .cf-soon).
  */
 export const markPublicHtml = (html: string, cfUrl: string | null = null): string => {
   const cf = cfUrl === null ? "" : ` data-cf-url="${escAttr(cfUrl)}"`;
   const marked = html
     .replace(/<html lang="ja">/, `<html lang="ja" data-site="public"${cf}>`)
     .replace(/<\/head>/, '<link rel="stylesheet" href="/play/site-public.css">\n</head>');
-  return cfUrl === null ? marked : marked.replaceAll('href="#cf"', `href="${escAttr(cfUrl)}"`);
+  return cfUrl === null
+    ? marked.replace(/<a class="cf-link" href="#cf"[^>]*>[\s\S]*?<\/a>/g, CF_SOON_HTML)
+    : marked.replaceAll('href="#cf"', `href="${escAttr(cfUrl)}"`);
 };
 
 /** Behind a TLS-terminating proxy (--trust-proxy) the site is HTTPS-only, so browsers may pin that. */

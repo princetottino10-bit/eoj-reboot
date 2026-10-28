@@ -110,8 +110,10 @@ test("entry shell: all three screens are built from it (and the online server se
   }
 });
 
-test("public entry screens: the crowdfunding link sits under the rules once a URL is set", () => {
-  assert.equal(publicRulesHtml(null), PUBLIC_RULES_HTML);
+test("public entry screens: the crowdfunding link sits under the rules once a URL is set (準備中 before)", () => {
+  const soon = publicRulesHtml(null);
+  assert.ok(soon.startsWith(PUBLIC_RULES_HTML.replace(/<\/div>$/, "")));
+  assert.ok(soon.includes("クラウドファンディング準備中") && !soon.includes('<a class="cf-link"'));
   const html = publicRulesHtml("https://camp-fire.jp/projects/992243?a=1&b=2");
   assert.ok(html.startsWith(PUBLIC_RULES_HTML.replace(/<\/div>$/, "")));
   assert.match(html, /<a class="cf-link" href="https:\/\/camp-fire.jp\/projects\/992243\?a=1&amp;b=2" target="_blank" rel="noopener">/);

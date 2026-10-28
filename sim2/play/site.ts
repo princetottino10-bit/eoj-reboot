@@ -29,10 +29,18 @@ const CF_LINK_INNER = '<span class="cf-tag">クラウドファンディング実
 export const cfLinkHtml = (url: string): string =>
   `<a class="cf-link" href="${url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")}" target="_blank" rel="noopener">${CF_LINK_INNER}</a>`;
 
-/** The same link for the end of a match, or null while there is no URL. */
-export const cfLink = (): HTMLAnchorElement | null => {
+/** Until the server has a --cf-url the public build shows 「クラウドファンディング準備中」 in its place: words, not a link. */
+export const CF_SOON_HTML = '<span class="cf-link cf-soon"><span class="cf-tag">クラウドファンディング準備中</span></span>';
+
+/** The same link for the end of a match (準備中 while there is no URL), or null off the public build. */
+export const cfLink = (): HTMLElement | null => {
+  if (!isPublicSite()) return null;
   const url = cfUrl();
-  if (url === null) return null;
+  if (url === null) {
+    const s = document.createElement("span");
+    s.innerHTML = CF_SOON_HTML;
+    return s.firstElementChild as HTMLElement;
+  }
   const a = document.createElement("a");
   a.className = "cf-link";
   a.href = url;

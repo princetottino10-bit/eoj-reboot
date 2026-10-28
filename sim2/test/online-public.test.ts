@@ -103,16 +103,17 @@ test("public build over HTTP: marked pages, /rules goes to /guide, records are n
   });
 });
 
-test("public build: the crowdfunding link is set in one place (--cf-url) and hidden until then", () => {
+test("public build: the crowdfunding link is set in one place (--cf-url) and reads 準備中 until then", () => {
   assert.equal(parseServerArgs(["--public"]).cfUrl, null);
   assert.equal(parseServerArgs(["--public", "--cf-url", "https://camp-fire.jp/projects/992243"]).cfUrl, "https://camp-fire.jp/projects/992243");
   assert.throws(() => parseServerArgs(["--cf-url", "javascript:alert(1)"]), /--cf-url/);
   assert.equal(newApp(DIR, { publicSite: true }).cfUrl, null);
   const page = '<!doctype html>\n<html lang="ja">\n<head>\n</head>\n<body><a class="cf-link" href="#cf">x</a></body></html>';
-  // no URL yet: no mark, the placeholder stays (the style sheet hides .cf-link)
+  // no URL yet: no mark, and the link becomes 「クラウドファンディング準備中」 (words, nothing to click)
   const off = markPublicHtml(page);
   assert.doesNotMatch(off, /data-cf-url/);
-  assert.match(off, /href="#cf"/);
+  assert.doesNotMatch(off, /href="#cf"|<a class="cf-link"/);
+  assert.ok(off.includes('<span class="cf-link cf-soon"><span class="cf-tag">クラウドファンディング準備中</span></span>'));
   const on = markPublicHtml(page, "https://camp-fire.jp/projects/992243?a=1&b=2");
   assert.match(on, /<html lang="ja" data-site="public" data-cf-url="https:\/\/camp-fire.jp\/projects\/992243\?a=1&amp;b=2">/);
   assert.match(on, /<a class="cf-link" href="https:\/\/camp-fire.jp\/projects\/992243\?a=1&amp;b=2">/);
@@ -129,7 +130,7 @@ test("public build over HTTP: the crowdfunding link reaches the pages only when 
       for (const p of ["/", "/guide"]) {
         const html = await (await fetch(`http://127.0.0.1:${addr.port}${p}`)).text();
         assert.match(html, /class="cf-link/, p);
-        if (cfUrl === null) assert.doesNotMatch(html, /camp-fire/, p);
+        if (cfUrl === null) assert.ok(!html.includes("camp-fire") && html.includes("クラウドファンディング準備中") && !html.includes("実施中"), p);
         else assert.ok(html.includes(`data-cf-url="${cfUrl}"`) && html.includes(`href="${cfUrl}"`), p);
       }
     } finally {
