@@ -367,8 +367,10 @@ const band = (c: Ctx, text: string, seat: number | null, cls: string, t: number,
   ], t, duration, "cubic-bezier(0.4, 0, 0.2, 1)");
 };
 
+// the viewer's plate holds the name twice (np-full + np-short 「あなた」): read the full one
 const nameOf = (c: Ctx, seat: number): string =>
-  c.host.root.querySelector(`.np[data-seat="${seat}"] .np-name`)?.textContent ?? (seat === 0 ? "先手" : "後手");
+  (c.host.root.querySelector(`.np[data-seat="${seat}"] .np-full`) ?? c.host.root.querySelector(`.np[data-seat="${seat}"] .np-name`))?.textContent ??
+  (seat === 0 ? "先手" : "後手");
 
 const chips = (c: Ctx, e: Extract<GameEvent, { t: "turnEnd" }>, t: number): number => {
   if (e.chipGained <= 0) return t;
