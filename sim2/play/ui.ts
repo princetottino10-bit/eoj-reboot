@@ -48,7 +48,7 @@ import {
   writeStoredGame,
 } from "./ai-store.ts";
 import type { AiKind, AiSetup, LoadedGame, StoredAiGame, Stores } from "./ai-store.ts";
-import { isPublicSite } from "./site.ts";
+import { cfLink, isPublicSite } from "./site.ts";
 import { aiOwes, decideAiMove, freshMemo, isPacedMove, playAiMove } from "./ai-seat.ts";
 import type { AiMemo } from "./ai-seat.ts";
 import { boardOf } from "./board-snapshot.ts";
@@ -128,6 +128,8 @@ const table = createTable(tableEl, {
       again.textContent = "もう一戦";
       again.addEventListener("click", () => void openSetup());
       box.appendChild(again);
+      const cf = cfLink();
+      if (cf !== null) box.appendChild(cf);
     }
     if (G !== null && G.error !== "") {
       const e = document.createElement("span");

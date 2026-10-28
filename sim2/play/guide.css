@@ -324,3 +324,7 @@ b { color: var(--gold-hi); font-weight: 700; }
   .g-name small { display: none; }
   .g-mark { width: 28px; height: 28px; font-size: 17px; }
 }
+
+/* 「クラウドファンディング実施中 ▶ 支援ページへ」 (href="#cf"): hidden here; play/site-public.css shows it
+   once the public server is given --cf-url. */
+.cf-link { display: none; }

@@ -14,6 +14,7 @@ import { createTable } from "../play/table.ts";
 import type { TableModel, TablePrompt } from "../play/table.ts";
 import { esc, seatWord } from "../play/render.ts";
 import type { Names } from "../play/render.ts";
+import { cfLink } from "../play/site.ts";
 import { createRoomTools } from "./room-tools.ts";
 import type { ClientInput, LogItem, StateMessage } from "./protocol.ts";
 import { chooseSeatToken, forgetToken, rememberToken, savedName, storedTokens, tabToken } from "./storage.ts";
@@ -228,6 +229,8 @@ const table = createTable($("table"), {
         note.textContent = noteText;
         box.appendChild(note);
       }
+      const cf = cfLink();
+      if (cf !== null) box.appendChild(cf);
       return;
     }
     const r = document.createElement("button");

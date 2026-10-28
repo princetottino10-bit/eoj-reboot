@@ -59,3 +59,18 @@
 
 /* two ways to play (no 観戦): the switch splits in two, not three with an empty third */
 [data-site="public"] .mode-switch { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* 「クラウドファンディング実施中 ▶ 支援ページへ」: shown only once the server is given --cf-url
+   (online/server.ts marks <html data-cf-url> and points href="#cf" there; the table adds it to the result, play/site.ts). */
+.cf-link { display: none; }
+html[data-cf-url] .cf-link {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 14px;
+  box-sizing: border-box; margin: 18px auto 0; max-width: 520px; padding: 12px 18px;
+  border: 1px solid #d7b565; border-radius: 10px;
+  background: linear-gradient(180deg, rgba(215, 181, 101, 0.18), rgba(215, 181, 101, 0.06));
+  color: #f5f1e2; text-decoration: none; font-weight: 700; line-height: 1.4;
+}
+html[data-cf-url] .cf-link:hover { background: rgba(215, 181, 101, 0.28); }
+.cf-link .cf-tag { color: #f5f1e2; }
+.cf-link .cf-go { color: #d7b565; white-space: nowrap; }
+html[data-cf-url] .yy-result-actions .cf-link { box-sizing: border-box; flex-basis: 100%; max-width: 420px; margin: 0 auto; padding: 8px 12px; font-size: 0.92em; background: rgba(24, 20, 14, 0.9); }

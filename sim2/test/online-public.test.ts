@@ -102,3 +102,38 @@ test("public build over HTTP: marked pages, /rules goes to /guide, records are n
     assert.equal((await fetch(`${base}/watch`)).status, 200);
   });
 });
+
+test("public build: the crowdfunding link is set in one place (--cf-url) and hidden until then", () => {
+  assert.equal(parseServerArgs(["--public"]).cfUrl, null);
+  assert.equal(parseServerArgs(["--public", "--cf-url", "https://camp-fire.jp/projects/992243"]).cfUrl, "https://camp-fire.jp/projects/992243");
+  assert.throws(() => parseServerArgs(["--cf-url", "javascript:alert(1)"]), /--cf-url/);
+  assert.equal(newApp(DIR, { publicSite: true }).cfUrl, null);
+  const page = '<!doctype html>\n<html lang="ja">\n<head>\n</head>\n<body><a class="cf-link" href="#cf">x</a></body></html>';
+  // no URL yet: no mark, the placeholder stays (the style sheet hides .cf-link)
+  const off = markPublicHtml(page);
+  assert.doesNotMatch(off, /data-cf-url/);
+  assert.match(off, /href="#cf"/);
+  const on = markPublicHtml(page, "https://camp-fire.jp/projects/992243?a=1&b=2");
+  assert.match(on, /<html lang="ja" data-site="public" data-cf-url="https:\/\/camp-fire.jp\/projects\/992243\?a=1&amp;b=2">/);
+  assert.match(on, /<a class="cf-link" href="https:\/\/camp-fire.jp\/projects\/992243\?a=1&amp;b=2">/);
+  assert.doesNotMatch(on, /href="#cf"/);
+});
+
+test("public build over HTTP: the crowdfunding link reaches the pages only when set", async () => {
+  for (const cfUrl of [null, "https://camp-fire.jp/projects/992243"]) {
+    const server = createOnlineServer(newApp(DIR, { publicSite: true, cfUrl }));
+    await new Promise<void>((r) => server.listen(0, "127.0.0.1", () => r()));
+    const addr = server.address();
+    assert.ok(addr !== null && typeof addr === "object");
+    try {
+      for (const p of ["/", "/guide"]) {
+        const html = await (await fetch(`http://127.0.0.1:${addr.port}${p}`)).text();
+        assert.match(html, /class="cf-link/, p);
+        if (cfUrl === null) assert.doesNotMatch(html, /camp-fire/, p);
+        else assert.ok(html.includes(`data-cf-url="${cfUrl}"`) && html.includes(`href="${cfUrl}"`), p);
+      }
+    } finally {
+      await new Promise<void>((r) => server.close(() => r()));
+    }
+  }
+});

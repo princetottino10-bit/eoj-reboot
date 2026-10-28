@@ -99,3 +99,4 @@
   .w-strip img { width: 132px; }
   .w-sec { padding-top: 40px; }
 }
+html[data-cf-url] .w-hero-text .cf-link { margin-left: 0; }
