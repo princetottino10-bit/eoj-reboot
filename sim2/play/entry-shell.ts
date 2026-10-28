@@ -13,7 +13,7 @@ import { esc } from "./cards-view.ts";
 import { modeSwitchHtml } from "./mode-switch.ts";
 import type { PlayMode } from "./mode-switch.ts";
 import { badgeHtml, diffFromPresetHtml } from "./settings-badge.ts";
-import { GUIDE_HREF, isPublicSite } from "./site.ts";
+import { cfLinkHtml, cfUrl, GUIDE_HREF, isPublicSite } from "./site.ts";
 import type { SettingsLook } from "./settings-badge.ts";
 
 /** Per mode: the subtitle under the title, the panel's heading, the gold button. */
@@ -51,9 +51,13 @@ export const PUBLIC_RULES_HTML = `<div class="entry-rules entry-rules-public">
     <p class="entry-public-fine">開発中のテスト版です。札の絵・盤・ルールは、製品版までに変わることがあります。</p>
   </div>`;
 
+/** The public block, with 「クラウドファンディング実施中 ▶ 支援ページへ」 at its foot once the server has a --cf-url. */
+export const publicRulesHtml = (cf: string | null): string =>
+  cf === null ? PUBLIC_RULES_HTML : PUBLIC_RULES_HTML.replace(/<\/div>$/, `  ${cfLinkHtml(cf)}\n  </div>`);
+
 export const rulesBlockHtml = (look: SettingsLook, href: string): string =>
   isPublicSite()
-    ? PUBLIC_RULES_HTML
+    ? publicRulesHtml(cfUrl())
     : `<div class="entry-rules">
     <span class="entry-label">ルールとカード</span>
     <div class="entry-rules-row">

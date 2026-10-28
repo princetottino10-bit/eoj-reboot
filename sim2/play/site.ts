@@ -23,7 +23,13 @@ export const cfUrl = (): string | null => {
   return url === undefined || url === "" ? null : url;
 };
 
-/** 「クラウドファンディング実施中 ▶ 支援ページへ」 for the end of a match, or null while there is no URL. */
+const CF_LINK_INNER = '<span class="cf-tag">クラウドファンディング実施中</span><span class="cf-go">支援ページへ ▶</span>';
+
+/** 「クラウドファンディング実施中 ▶ 支援ページへ」 as markup (play/site-public.css styles .cf-link). */
+export const cfLinkHtml = (url: string): string =>
+  `<a class="cf-link" href="${url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;")}" target="_blank" rel="noopener">${CF_LINK_INNER}</a>`;
+
+/** The same link for the end of a match, or null while there is no URL. */
 export const cfLink = (): HTMLAnchorElement | null => {
   const url = cfUrl();
   if (url === null) return null;
@@ -32,6 +38,6 @@ export const cfLink = (): HTMLAnchorElement | null => {
   a.href = url;
   a.target = "_blank";
   a.rel = "noopener";
-  a.innerHTML = '<span class="cf-tag">クラウドファンディング実施中</span><span class="cf-go">支援ページへ ▶</span>';
+  a.innerHTML = CF_LINK_INNER;
   return a;
 };

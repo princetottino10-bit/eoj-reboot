@@ -12,6 +12,8 @@ import {
   entryProblemHtml,
   entryTopHtml,
   moreHtml,
+  PUBLIC_RULES_HTML,
+  publicRulesHtml,
   quietButton,
   rulesBlockHtml,
 } from "../play/entry-shell.ts";
@@ -106,4 +108,12 @@ test("entry shell: all three screens are built from it (and the online server se
     assert.match(p, /<main id="entry" class="entry" hidden><\/main>\r?\n<div id="table" hidden><\/div>/, page);
     assert.ok(!p.includes("yy-start"), page);
   }
+});
+
+test("public entry screens: the crowdfunding link sits under the rules once a URL is set", () => {
+  assert.equal(publicRulesHtml(null), PUBLIC_RULES_HTML);
+  const html = publicRulesHtml("https://camp-fire.jp/projects/992243?a=1&b=2");
+  assert.ok(html.startsWith(PUBLIC_RULES_HTML.replace(/<\/div>$/, "")));
+  assert.match(html, /<a class="cf-link" href="https:\/\/camp-fire.jp\/projects\/992243\?a=1&amp;b=2" target="_blank" rel="noopener">/);
+  assert.match(html, /クラウドファンディング実施中/);
 });
