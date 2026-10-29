@@ -49,7 +49,7 @@ const loadPack = async (name: PlayablePack): Promise<CardPack> => {
 const heading = (title: string, sub: string): void => {
   $("pageTitle").textContent = title;
   $("pageSub").textContent = sub;
-  document.title = `陰陽符陣(仮) ${title}`;
+  document.title = `式神符陣 ${title}`;
 };
 
 const notice = (text: string): void => {

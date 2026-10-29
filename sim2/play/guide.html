@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>陰陽符陣(仮) 遊び方</title>
-<meta name="description" content="陰陽符陣(仮)の遊び方。九宮盤に式神を置き、置き方で盤を取り合う2人対戦ゲームのルールを、図とカード一覧つきでまとめました。">
+<title>式神符陣 遊び方</title>
+<meta name="description" content="式神符陣の遊び方。九宮盤に式神を置き、置き方で盤面を取り合う2人対戦ゲームのルールを、図とカード一覧つきでまとめました。">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%230b0b0e'/%3E%3Ccircle cx='32' cy='32' r='27.5' fill='none' stroke='%23d7b565' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='23' fill='%231b2340'/%3E%3Cpath d='M32 9A23 23 0 0 1 32 55A11.5 11.5 0 0 1 32 32A11.5 11.5 0 0 0 32 9Z' fill='%23f5f1e2'/%3E%3Ccircle cx='32' cy='43.5' r='4.4' fill='%231b2340'/%3E%3Ccircle cx='32' cy='20.5' r='4.4' fill='%23f5f1e2'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +13,7 @@
 </head>
 <body>
 <header class="g-head">
-  <a class="g-brand" href="/"><span class="g-mark" aria-hidden="true">符</span><span class="g-name">陰陽符陣<small>(仮)</small></span></a>
+  <a class="g-brand" href="/"><span class="g-mark" aria-hidden="true">符</span><span class="g-name">式神符陣</span></a>
   <nav class="g-links" aria-label="遊ぶ">
     <a href="/ai" class="is-gold">AIと対戦</a>
     <a href="/online">オンライン対戦</a>
@@ -23,8 +23,8 @@
 <div class="g-hero">
   <div class="g-hero-text">
     <p class="g-kicker">遊び方</p>
-    <h1>九つのマスに式神を置き、<br>盤を取り合う。</h1>
-    <p class="g-lead">陰陽符陣は、2人で遊ぶ対戦ゲームです。あなたは陰陽師。符から<b>式神</b>を呼び出し、3×3の<b>九宮盤</b>に並べます。置いたマスと向きで、式神が攻撃できる相手も、突かれる<b>隙</b>も変わります。どのマスに、どの向きで置くか。9マスの小さな盤面で、陣地を取り合います。</p>
+    <h1>九つのマスに式神を置き、<br>盤面を取り合う。</h1>
+    <p class="g-lead">式神符陣は、2人で遊ぶ対戦ゲームです。あなたは式神遣い。符から<b>式神</b>を召喚し、3×3の<b>九宮盤</b>に並べます。置いたマスと向きで、式神が攻撃できる相手も、突かれる<b>隙</b>も変わります。どのマスに、どの向きで置くか。9マスの小さな盤面で、陣地を取り合います。</p>
   </div>
   <div class="g-hero-cards" aria-hidden="true">
     <img src="/play/art/face/T-008.webp" alt="" width="600" height="850">
@@ -85,7 +85,7 @@
   <ul class="g-list">
     <li><b>カード 23枚 × 2人分</b> ── 1人分の山札は「玖龍一門」11枚と「酒呑一門」12枚。2人とも同じ23枚を使います。</li>
     <li><b>九宮盤</b> ── 3×3の盤。マスには陰・陽・空・太極の属性があります。</li>
-    <li>紙で遊ぶときは、式神の耐久と、自分の霊力を数えておくものを用意します。オンラインのテスト卓では画面が数えます。</li>
+    <li>紙で遊ぶときは、式神の耐久と、自分の霊力を数えておくものを用意します。ブラウザ版では画面が数えます。</li>
   </ul>
   <h3>準備の手順</h3>
   <ol class="g-steps is-plain">
@@ -117,7 +117,7 @@
     </div>
     <figcaption>
       <ol class="g-pins">
-        <li><b>召☆(召喚霊力)</b> 盤面に呼び出すときに払う霊力。</li>
+        <li><b>召☆(召喚霊力)</b> 召喚するときに払う霊力。</li>
         <li><b>攻☆(攻撃霊力)</b> 攻撃の命令をするたびに払う霊力。</li>
         <li><b>属性</b> 陰・陽・空のどれか。属性マスで耐久が増減します。</li>
         <li><b>霊力価</b> この式神を撃破した人が得る霊力。</li>
@@ -151,7 +151,7 @@
     <span class="g-arrow" aria-hidden="true">右へ回転 →</span>
     <div class="g-range-fig"><svg class="rg" viewBox="0 0 150 150" width="150" height="150" role="img" aria-label="間合の図"><defs><pattern id="st-b" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#1d1c22"/><rect width="4" height="8" fill="#e0b13a"/></pattern></defs><rect x="1" y="1" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="51" y="1" width="48" height="48" rx="3" fill="url(#st-b)" stroke="#6b6458" stroke-width="1"/><rect x="101" y="1" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="1" y="51" width="48" height="48" rx="3" fill="url(#st-b)" stroke="#6b6458" stroke-width="1"/><rect x="51" y="51" width="48" height="48" rx="3" fill="#f3eee1" stroke="#6b6458" stroke-width="1"/><polygon points="75,64 85.45,82.7 64.55,82.7" fill="#26262b" transform="rotate(90 75 75)"/><rect x="101" y="51" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><circle cx="125" cy="75" r="8.5" fill="#e0674f"/><rect x="1" y="101" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="51" y="101" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><rect x="101" y="101" width="48" height="48" rx="3" fill="#23222a" stroke="#6b6458" stroke-width="1"/><circle cx="125" cy="125" r="15" fill="none" stroke="#5fc49b" stroke-width="4.5"/><circle cx="125" cy="125" r="8.5" fill="#e0674f"/></svg><p class="g-cap">右を向いた鉈鬼</p></div>
   </div>
-  <p class="g-key"><b>間合の図は、式神の向きといっしょに回ります。</b>盤面に置いたカードの上辺が向いている方向が「前」です。盤の外にはみ出したマスは、ないものとして扱います。</p>
+  <p class="g-key"><b>間合の図は、式神の向きといっしょに回ります。</b>盤面に置いたカードの上辺が向いている方向が「前」です。九宮盤の外にはみ出したマスは、ないものとして扱います。</p>
   <ul class="g-list is-small">
     <li>一角鬼と茨木童子は<b>2つ前の列</b>にも届くので、図が1段高くなっています。</li>
     <li>玖龍街の間合は「周囲すべて」。盤面のどこにいても、ほかの8マスすべてに届きます。</li>
@@ -210,7 +210,7 @@
       <p class="g-flow-h">開始時</p>
       <ol>
         <li>自分が前のターンに使った<b>マヨヒガ</b>を取り除く。</li>
-        <li><b>チェック</b>していたら勝利の判定(<a href="#win">制圧と勝利</a>)。</li>
+        <li><b>チェック（王手）</b>していたら勝利の判定(<a href="#win">制圧と勝利</a>)。</li>
       </ol>
     </div>
     <div class="g-flow-step is-main">
@@ -227,7 +227,7 @@
     <div class="g-flow-step">
       <p class="g-flow-h">終了時</p>
       <ol>
-        <li><b>総制圧力</b>を数え、5以上なら<b>チェック</b>を宣言。</li>
+        <li><b>総制圧力</b>を数え、5以上なら<b>チェック（王手）</b>を宣言。</li>
         <li><b>収入</b>: 霊力を得る(6・7・8)。</li>
         <li>手札から好きな枚数を捨て、<b>5枚になるまで</b>引く。</li>
       </ol>
@@ -360,9 +360,9 @@
     <div><b class="pw is-0">0</b><span>マヨヒガで隠れている式神</span></div>
   </div>
   <p>自分の式神の制圧力の合計が<b>総制圧力</b>です。耐久は戦いの中で上下するので、制圧力も変わります。耐久12の式神が2ダメージを受けて10になれば、2から1に。回復して11に戻れば、また2です。属性マスのおかげで11以上になっても2と数えます。</p>
-  <h3>チェックと勝利</h3>
+  <h3>チェック（王手）と勝利</h3>
   <div class="g-wins">
-    <div class="g-win"><span class="g-win-n">1</span><p>自分のターンの<b>終了時</b>に総制圧力が<b>5以上</b>なら、<b>チェック</b>を宣言します。</p></div>
+    <div class="g-win"><span class="g-win-n">1</span><p>自分のターンの<b>終了時</b>に総制圧力が<b>5以上</b>なら、<b>チェック（王手）</b>を宣言します。</p></div>
     <div class="g-win"><span class="g-win-n">2</span><p>相手のターン。相手はあなたの総制圧力を減らして、チェックを崩しにきます。</p></div>
     <div class="g-win is-goal"><span class="g-win-n">3</span><p>次の自分のターンの<b>開始時</b>に、総制圧力がまだ<b>5以上</b>なら<b>勝利</b>です。</p></div>
   </div>
@@ -484,8 +484,9 @@
 </section>
 
 <footer class="g-foot">
-  <p>オンラインのテスト卓で、このルールのまま遊べます。</p>
+  <p>ブラウザ版で、このルールのまま遊べます。AIと対戦も、友だちとのオンライン対戦もできます。</p>
   <p class="g-foot-links"><a class="btn-gold" href="/ai">AIと対戦</a><a class="btn-quiet" href="/online">オンライン対戦</a></p>
+  <a class="cf-link" href="#cf" target="_blank" rel="noopener"><span class="cf-tag">クラウドファンディング実施中</span><span class="cf-go">支援ページへ ▶</span></a>
   <p class="g-small">開発中のため、カードの絵・数値・ルールは変わることがあります。</p>
 </footer>
 

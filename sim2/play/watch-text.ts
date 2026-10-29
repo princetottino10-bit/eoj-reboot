@@ -66,7 +66,7 @@ const attackLine = (e: Extract<GameEvent, { t: "attack" }>, seat: string, name: 
   }
   if (e.variant === "heal") {
     const h = e.hits[0];
-    return `${seat}: ${who}が味方の${h === undefined ? "駒" : name(h.cardId)}を${h === undefined ? 0 : -h.dmg}回復${cost(e.cost)}`;
+    return `${seat}: ${who}が味方の${h === undefined ? "式神" : name(h.cardId)}を${h === undefined ? 0 : -h.dmg}回復${cost(e.cost)}`;
   }
   const base = e.free === true ? "召喚攻撃" : "攻撃";
   const kind = e.variant === "konshin" ? `渾身の${base}` : e.variant === "regen" ? `${base}【再生】` : e.variant === "drink" ? `${base}【飲酒】` : e.aoe ? `範囲${base}` : base;
@@ -118,7 +118,7 @@ const actionLine = (ctx: Ctx, e: Ev, before: Before, name: (id: string) => strin
 
 /** The turn-end details: 「占拠3・チップ3枚・2枚補充」. */
 const turnEndBits = (e: Extract<GameEvent, { t: "turnEnd" }>): string => {
-  const bits = [`制圧数${e.occupied}`, `チップ${e.chips}枚`];
+  const bits = [`総制圧力${e.occupied}`, `チップ${e.chips}枚`];
   if (e.discarded > 0) bits.push(`${e.discarded}枚捨てて${e.drawn}枚補充`);
   else if (e.drawn > 0) bits.push(`${e.drawn}枚補充`);
   return bits.join("・");
@@ -176,7 +176,7 @@ export const narrateStep = (
   const name = (id: string): string => cardOf(ctx.pack, id).nameJa;
   const unitName = (uid: number): string => {
     const seen = before.units.get(uid) ?? after.units.find((u) => u.uid === uid);
-    return seen === undefined ? "駒" : name(seen.cardId);
+    return seen === undefined ? "式神" : name(seen.cardId);
   };
   // the step's own action first, then what it caused (the engine files an attack's effects before the attack)
   const head: WatchLine[] = inputLines(seat, inputs, unitName).map((text) => ({ text, tone: "main" }));

@@ -254,7 +254,7 @@ export const recordsHtml = (all: readonly RecordRow[], rules: string): string =>
     .join("");
   return `<!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>対局の記録 — 陰陽符陣(仮)</title>
+<title>対局の記録 — 式神符陣</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%230b0b0e'/%3E%3Ccircle cx='32' cy='32' r='27.5' fill='none' stroke='%23d7b565' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='23' fill='%231b2340'/%3E%3Cpath d='M32 9A23 23 0 0 1 32 55A11.5 11.5 0 0 1 32 32A11.5 11.5 0 0 0 32 9Z' fill='%23f5f1e2'/%3E%3Ccircle cx='32' cy='43.5' r='4.4' fill='%231b2340'/%3E%3Ccircle cx='32' cy='20.5' r='4.4' fill='%23f5f1e2'/%3E%3C/svg%3E">
 <style>
 :root { color-scheme: dark; --bg: #14151b; --text: #e8e2d4; --dim: #a39d90; --gold: #d8b766; --line: #2c2e38; }

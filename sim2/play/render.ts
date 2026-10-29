@@ -54,7 +54,7 @@ export const cardName = (ctx: Ctx, id: string): string => cardOf(ctx.pack, id).n
 export const occupiedOf = (ctx: Ctx, board: BoardView, p: PlayerId): number => controlCount(ctx, board, p);
 
 /**
- * Is p's 制圧チェック still standing? Under next_turn_start the engine keeps the
+ * Is p's チェック still standing? Under next_turn_start the engine keeps the
  * flag until p's turn start (where it is checked), so a check knocked below the
  * count in the other turn would still read as one: the screen shows it as broken.
  */
@@ -69,7 +69,7 @@ export const unitById = (board: BoardView, uid: number): Unit | undefined =>
 
 /** What the control flag means under a controlHold (default: the one in force). */
 export const controlLabel = (ctx: Ctx, hold: ControlHold = ctx.cfg.controlHold): string =>
-  hold === "next_turn_end" ? "制圧中" : "制圧チェック";
+  hold === "next_turn_end" ? "制圧中" : "チェック";
 
 /**
  * EXP-0913B counterMode "gap": the board cell of an AREA attacker's gap - the
@@ -171,7 +171,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
       const cardId = x.cardId ?? note?.cardId;
       const from = x.from ?? note?.from;
       const to = x.to ?? x.facing ?? note?.to;
-      const who = cardId === undefined ? "駒" : name(cardId);
+      const who = cardId === undefined ? "式神" : name(cardId);
       // a proxy rotate names its rotator here; the turned unit follows as an effect line
       if (from !== undefined && from === to) return { text: `${seat(e.player)}: ${who}の代理回転 (霊力-${e.cost})`, cls: "" };
       const dir = to === undefined ? "" : ` → ${FACING_LABEL[to]}向き`;
@@ -247,7 +247,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
       if (e.change === "gain") {
         const how = hold === "next_turn_end"
           ? `次の自ターン終了時まで${need}マス維持で勝利`
-          : `次の自ターン開始時に${need}マスなら勝利`;
+          : `次の自ターン開始時に総制圧力${need}以上なら勝利`;
         return { text: `◆ ${seat(e.player)}が${label} (${how})`, cls: "ctl" };
       }
       if (e.change === "lost") return { text: `◆ ${seat(e.player)}の${label}が崩れた`, cls: "ctl" };
@@ -265,7 +265,7 @@ export const describeEvent = (ctx: Ctx, names: Names, e: GameEvent | FlowEvent, 
     case "reshuffle":
       return { text: `${seat(e.player)}: 墓地を山札に戻してシャッフル(${e.count}回目)`, cls: "" };
     case "turnEnd": {
-      const bits = [`制圧数${e.occupied}`];
+      const bits = [`総制圧力${e.occupied}`];
       if (e.chipGained > 0) bits.push(`チップ+${e.chipGained}(計${e.chips})`);
       else if (e.chipGained < 0) bits.push(`チップ−${-e.chipGained}(計${e.chips})`);
       if (e.discarded > 0) bits.push(`${e.discarded}枚捨てて${e.drawn}枚補充`);
@@ -359,7 +359,7 @@ export const inheritSummaryLines = (ctx: Ctx, pv: InheritPreview): string[] => [
 
 /** 「占拠 4 対 3」: the winner's 占拠 first (先手's on a draw). */
 export const occVersus = (occ: readonly [number, number], winner: PlayerId | null): string =>
-  winner === 1 ? `制圧数 ${occ[1]} 対 ${occ[0]}` : `制圧数 ${occ[0]} 対 ${occ[1]}`;
+  winner === 1 ? `総制圧力 ${occ[1]} 対 ${occ[0]}` : `総制圧力 ${occ[0]} 対 ${occ[1]}`;
 
 /**
  * Result words for a finished board ("制圧勝利"); null while undecided (and on

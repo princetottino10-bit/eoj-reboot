@@ -125,7 +125,7 @@ test("words: the turn end joins the pass, the turn change is a key moment, mulli
     { t: "turnEnd", player: 0, round: 2, occupied: 3, chips: 3, chipGained: 1, reach: false, discarded: 1, drawn: 2, boardHp: 10, manaLeft: 1 },
     { t: "turnStart", player: 1, round: 2, income: 6 },
   ]);
-  assert.deepEqual(texts(end), ["先手: ターン終了 — 制圧数3・チップ3枚・1枚捨てて2枚補充", "── ラウンド2・後手の番(収入+6)"]);
+  assert.deepEqual(texts(end), ["先手: ターン終了 — 総制圧力3・チップ3枚・1枚捨てて2枚補充", "── ラウンド2・後手の番(収入+6)"]);
   assert.equal(end.level, "key");
   assert.equal(end.banner, "ラウンド2・後手の番");
   assert.equal(end.lines[1].tone, "turn");

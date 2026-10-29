@@ -1,7 +1,7 @@
 // The one page skeleton of the three entry screens — AIと対戦 (/ai),
 // オンライン対戦 (/), 観戦 (/watch) — before a game starts:
 //
-//   header (符 + 陰陽符陣(仮) + a one-line subtitle per mode)
+//   header (符 + 式神符陣 + a one-line subtitle per mode)
 //   the mode switch
 //   one panel: h2, the mode's own fields, the shared rules-and-cards block,
 //              one full-width gold button, quiet secondary buttons under it
@@ -13,7 +13,7 @@ import { esc } from "./cards-view.ts";
 import { modeSwitchHtml } from "./mode-switch.ts";
 import type { PlayMode } from "./mode-switch.ts";
 import { badgeHtml, diffFromPresetHtml } from "./settings-badge.ts";
-import { GUIDE_HREF, isPublicSite } from "./site.ts";
+import { CF_SOON_HTML, cfLinkHtml, cfUrl, GUIDE_HREF, isPublicSite } from "./site.ts";
 import type { SettingsLook } from "./settings-badge.ts";
 
 /** Per mode: the subtitle under the title, the panel's heading, the gold button. */
@@ -28,7 +28,7 @@ export const EDIT_RULES_LABEL = "ルールとカードを変える";
 
 /** The header: the same on the three screens but for the subtitle. */
 export const entryHeadHtml = (mode: PlayMode): string =>
-  `<header class="entry-head"><span class="brand-mark" aria-hidden="true">符</span><div class="entry-titles"><h1>陰陽符陣<small>(仮)</small></h1><p>${esc(
+  `<header class="entry-head"><span class="brand-mark" aria-hidden="true">符</span><div class="entry-titles"><h1>式神符陣</h1><p>${esc(
     ENTRY_TEXT[mode].sub,
   )}</p></div></header>`;
 
@@ -48,12 +48,16 @@ export const PUBLIC_RULES_HTML = `<div class="entry-rules entry-rules-public">
       <span class="entry-public-note">はじめての方は、先に遊び方をどうぞ。</span>
       <a class="btn btn-quiet" href="${GUIDE_HREF}" target="_blank" rel="noopener">遊び方を読む</a>
     </div>
-    <p class="entry-public-fine">開発中のテスト版です。札の絵・盤・ルールは、製品版までに変わることがあります。</p>
+    <p class="entry-public-fine">開発中のテスト版です。札の絵・九宮盤・ルールは、製品版までに変わることがあります。</p>
   </div>`;
+
+/** The public block, with 「クラウドファンディング実施中 ▶ 支援ページへ」 at its foot once the server has a --cf-url (準備中 until then). */
+export const publicRulesHtml = (cf: string | null): string =>
+  PUBLIC_RULES_HTML.replace(/<\/div>$/, `  ${cf === null ? CF_SOON_HTML : cfLinkHtml(cf)}\n  </div>`);
 
 export const rulesBlockHtml = (look: SettingsLook, href: string): string =>
   isPublicSite()
-    ? PUBLIC_RULES_HTML
+    ? publicRulesHtml(cfUrl())
     : `<div class="entry-rules">
     <span class="entry-label">ルールとカード</span>
     <div class="entry-rules-row">

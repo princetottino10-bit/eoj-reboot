@@ -1,4 +1,4 @@
-/* 陰陽符陣 トップ (/ in the public build) — what the game is, and the ways in.
+/* 式神符陣 トップ (/ in the public build) — what the game is, and the ways in.
    Rides on play/guide.css for the tokens, the header and the fonts. */
 
 .w-body { line-height: 1.8; }
@@ -99,3 +99,4 @@
   .w-strip img { width: 132px; }
   .w-sec { padding-top: 40px; }
 }
+html[data-cf-url] .w-hero-text .cf-link { margin-left: 0; }

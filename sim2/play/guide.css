@@ -1,4 +1,4 @@
-/* 陰陽符陣 遊び方 (/guide) — the rules page. Same night-lacquer-and-gold
+/* 式神符陣 遊び方 (/guide) — the rules page. Same night-lacquer-and-gold
    look as the table (play/table.css), but standalone: only the tokens it
    uses are repeated here, so the page never pulls in the table's layout. */
 
@@ -324,3 +324,7 @@ b { color: var(--gold-hi); font-weight: 700; }
   .g-name small { display: none; }
   .g-mark { width: 28px; height: 28px; font-size: 17px; }
 }
+
+/* 「クラウドファンディング実施中 ▶ 支援ページへ」 (href="#cf"): hidden here; play/site-public.css shows it
+   once the public server is given --cf-url. */
+.cf-link { display: none; }
