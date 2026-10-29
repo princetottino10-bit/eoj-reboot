@@ -20,7 +20,7 @@ test("server serves index.html at /", async () => {
   const r = await serve("/");
   assert.equal(r.code, 200);
   assert.match(r.type, /text\/html/);
-  assert.match(r.body, /<title>陰陽符陣/);
+  assert.match(r.body, /<title>式神符陣/);
   assert.match(r.body, /src="\/play\/ui\.ts"/);
 });
 
@@ -58,7 +58,7 @@ test("server answers over http", async () => {
   try {
     const html = await fetch(`${base}/`);
     assert.equal(html.status, 200);
-    assert.match(await html.text(), /陰陽符陣/);
+    assert.match(await html.text(), /式神符陣/);
     const js = await fetch(`${base}/play/ui.ts`);
     assert.equal(js.headers.get("content-type"), "text/javascript; charset=utf-8");
     assert.ok(!(await js.text()).includes("import type"));

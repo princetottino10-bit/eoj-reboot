@@ -110,7 +110,7 @@ test("board: lacquer cells with a raden disc of the cell's attribute; under a pi
   assert.match(html, /class="cell c-taiji has-unit"[^>]*[\s\S]*?class="raden chip"[^>]*><svg class="mk raden-mk"[^>]*><use href="#mk-taiji"\/>/);
   assert.match(html, /class="cell c-yin"[\s\S]*?<use href="#mk-yin"\/>/);
   assert.match(html, /class="cell c-empty"[\s\S]*?<use href="#mk-void"\/>/);
-  assert.match(html, /aria-label="太極のマス \/ あなたの駒 一目鬼\(耐久 \d+・上向き\)"/);
+  assert.match(html, /aria-label="太極のマス \/ あなたの式神 一目鬼\(耐久 \d+・上向き\)"/);
 });
 
 test("board: the looked-at unit's counter range and attack shape are marked like the card", () => {

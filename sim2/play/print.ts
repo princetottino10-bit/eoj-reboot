@@ -56,7 +56,7 @@ const main = async (): Promise<void> => {
   if (!res.ok) throw new Error(`パック ${pack} を読み込めません (${res.status})`);
   const ctx = makeCtx(presetConfig(rule), parsePack(await res.json()));
   const title = RULE_PRESETS[rule].label;
-  document.title = `陰陽符陣(仮) ${title} ${side === "back" ? "裏面" : "カード"}`;
+  document.title = `式神符陣 ${title} ${side === "back" ? "裏面" : "カード"}`;
   ensureMarks(document);
   watchArtErrors(document);
   root.innerHTML = printDocHtml(ctx, title, side);

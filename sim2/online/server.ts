@@ -24,6 +24,7 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { isImagePath, serveFile, serveImage } from "../play/server.ts";
 import type { Served, ServedBytes } from "../play/server.ts";
+import { CF_SOON_HTML } from "../play/site.ts";
 import { isPlayablePack, isRulePresetId } from "../src/presets.ts";
 import { defaultSettings } from "../src/settings.ts";
 import { checkRecordDir, packFor, printedPack } from "./match.ts";
@@ -89,10 +90,15 @@ export type OnlineApp = {
    * and every page is marked data-site="public" (play/site.ts) with play/site-public.css added.
    */
   publicSite: boolean;
+  /**
+   * The crowdfunding page the public build points players to (--cf-url), or null: until it is
+   * set the 「クラウドファンディング実施中」 links stay hidden (.cf-link, play/site.ts cfUrl).
+   */
+  cfUrl: string | null;
 };
 
 export const createOnlineApp = (
-  opts: Partial<LobbyOptions> & { trustProxy?: boolean; flyProxy?: boolean; publicSite?: boolean } = {},
+  opts: Partial<LobbyOptions> & { trustProxy?: boolean; flyProxy?: boolean; publicSite?: boolean; cfUrl?: string | null } = {},
 ): OnlineApp => {
   const lobby = createLobby({ ...opts, recordDir: opts.recordDir ?? DEFAULT_RECORD_DIR });
   return {
@@ -103,6 +109,7 @@ export const createOnlineApp = (
     startedAt: lobby.opts.now(),
     shuttingDown: false,
     publicSite: opts.publicSite === true,
+    cfUrl: opts.cfUrl ?? null,
   };
 };
 
@@ -324,9 +331,22 @@ export const publicHidden = (path: string): boolean =>
 export const targetFor = (path: string, publicSite: boolean): string =>
   publicSite && (path === "/" || path === "") ? "/play/welcome.html" : staticTarget(path);
 
-/** The public build's mark on an HTML page: data-site on <html> and the public style sheet. */
-export const markPublicHtml = (html: string): string =>
-  html.replace(/<html lang="ja">/, '<html lang="ja" data-site="public">').replace(/<\/head>/, '<link rel="stylesheet" href="/play/site-public.css">\n</head>');
+const escAttr = (s: string): string => s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/**
+ * The public build's mark on an HTML page: data-site on <html> and the public style sheet. With a
+ * crowdfunding URL, <html> also carries data-cf-url (which shows .cf-link) and every href="#cf" points there;
+ * without one each href="#cf" link becomes 「クラウドファンディング準備中」 (words, no link: .cf-soon).
+ */
+export const markPublicHtml = (html: string, cfUrl: string | null = null): string => {
+  const cf = cfUrl === null ? "" : ` data-cf-url="${escAttr(cfUrl)}"`;
+  const marked = html
+    .replace(/<html lang="ja">/, `<html lang="ja" data-site="public"${cf}>`)
+    .replace(/<\/head>/, '<link rel="stylesheet" href="/play/site-public.css">\n</head>');
+  return cfUrl === null
+    ? marked.replace(/<a class="cf-link" href="#cf"[^>]*>[\s\S]*?<\/a>/g, CF_SOON_HTML)
+    : marked.replaceAll('href="#cf"', `href="${escAttr(cfUrl)}"`);
+};
 
 /** Behind a TLS-terminating proxy (--trust-proxy) the site is HTTPS-only, so browsers may pin that. */
 const headersFor = (app: OnlineApp): Record<string, string> =>
@@ -376,7 +396,7 @@ const sendStatic = (
     "Cache-Control": served.code === 200 ? staticCacheControl(target) : "no-store",
     Vary: "Accept-Encoding",
   };
-  const body = app.publicSite && typeof served.body === "string" && target.endsWith(".html") ? markPublicHtml(served.body) : served.body;
+  const body = app.publicSite && typeof served.body === "string" && target.endsWith(".html") ? markPublicHtml(served.body, app.cfUrl) : served.body;
   const bytes = Buffer.byteLength(body);
   // SSE never comes through here; a body this small is not worth a gzip header,
   // and images (the only binary bodies) are compressed already
@@ -655,7 +675,7 @@ const argValue = (argv: string[], key: string): string | undefined => {
 
 export const parseServerArgs = (
   argv: string[],
-): { port: number; host: string; recordDir: string; trustProxy: boolean; publicSite: boolean } => {
+): { port: number; host: string; recordDir: string; trustProxy: boolean; publicSite: boolean; cfUrl: string | null } => {
   const portArg = argValue(argv, "--port");
   const port = portArg === undefined ? DEFAULT_PORT : Number(portArg);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
@@ -663,7 +683,9 @@ export const parseServerArgs = (
   }
   const host = argValue(argv, "--host") ?? DEFAULT_HOST;
   const recordDir = argValue(argv, "--record-dir") ?? DEFAULT_RECORD_DIR;
-  return { port, host, recordDir, trustProxy: argv.includes("--trust-proxy"), publicSite: argv.includes("--public") };
+  const cfUrl = argValue(argv, "--cf-url") ?? null;
+  if (cfUrl !== null && !/^https?:\/\/[^\s"<>]+$/.test(cfUrl)) throw new Error(`--cf-url must be an http(s) URL, got "${cfUrl}"`);
+  return { port, host, recordDir, trustProxy: argv.includes("--trust-proxy"), publicSite: argv.includes("--public"), cfUrl };
 };
 
 const isEntry = (): boolean => {
@@ -677,6 +699,7 @@ if (isEntry()) {
     recordDir: args.recordDir,
     trustProxy: args.trustProxy,
     publicSite: args.publicSite,
+    cfUrl: args.cfUrl,
     log: (line) => process.stdout.write(`${line}\n`),
     roomDir: join(args.recordDir, "rooms"),
   });
