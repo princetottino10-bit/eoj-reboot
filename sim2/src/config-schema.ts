@@ -128,6 +128,16 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     midGame: true,
   },
   {
+    key: "summonAttackTiming", group: "economy", kind: "choice",
+    choices: [
+      { value: "any_time", label: "そのターン中いつでも" },
+      { value: "right_after", label: "召喚してすぐだけ" },
+    ],
+    label: "召喚攻撃ができるとき",
+    desc: "召喚してすぐだけ(10/26案): 召喚(継承召喚も)した式神の、そのターンの攻撃は、召喚の直後にほかの行動をはさまずにするときだけできる。ほかの式神の召喚・攻撃・回転、霊具、その式神自身の回転を先にしたら、そのターンはもう攻撃できない。次の自分のターンからはふつうに攻撃できる",
+    midGame: true,
+  },
+  {
     key: "refundMode", group: "economy", kind: "choice",
     choices: [
       { value: "killer_half", label: "撃破した側" },

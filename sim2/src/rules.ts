@@ -349,6 +349,7 @@ export const isLegal = (ctx: Ctx, s: GameState, a: Action): boolean => {
   // attack
   const variant = a.variant ?? "normal";
   if (u.attackedThisTurn) return false;
+  if (summonAttackClosed(ctx, s, u)) return false;
   // 古箪笥 tm07b: no target, no range, no cost, no counter order
   if (isTansuVariant(variant)) return canUseVariant(ctx, u, variant) && a.targetUid === null && a.counterOrder === undefined;
   if (!canAttack(card)) return false;
@@ -392,6 +393,13 @@ const STRIKE_VARIANTS: readonly AttackVariant[] = ["konshin", "regen", "drink"];
 /** summonAttackForced: the attacks the obliged unit may make (heal and 古箪笥's effect excluded: never forced); [] = no obligation now. */
 const forcedAttacks = (all: Action[], uid: number | null | undefined): Action[] =>
   uid === null || uid === undefined ? [] : all.filter((a) => a.kind === "attack" && a.uid === uid && a.variant !== "heal" && !isTansuVariant(a.variant));
+
+/**
+ * summonAttackTiming "right_after" (10/26案): a unit summoned this turn whose
+ * 召喚攻撃 has lapsed, because some other action came between its summon and now.
+ */
+export const summonAttackClosed = (ctx: Ctx, s: GameState, u: Unit): boolean =>
+  ctx.cfg.summonAttackTiming === "right_after" && u.summonedThisTurn && u.uid !== s.summonAttackUid;
 
 export const legalActions = (ctx: Ctx, s: GameState): Action[] => {
   const all = allLegalActions(ctx, s);
@@ -476,8 +484,10 @@ const allLegalActions = (ctx: Ctx, s: GameState): Action[] => {
     if (u.owner !== p || isHidden(u)) continue;
     const card = cardOf(ctx.pack, u.cardId);
     if (!u.attackedThisTurn) {
-      // 古箪笥 tm07b: the attack command is the choice (cost 0, no target)
-      if (hasTansuAttack(ctx, u)) {
+      if (summonAttackClosed(ctx, s, u)) {
+        // 10/26案: no attack, but it may still turn
+      } else if (hasTansuAttack(ctx, u)) {
+        // 古箪笥 tm07b: the attack command is the choice (cost 0, no target)
         out.push({ kind: "attack", uid: u.uid, targetUid: null, variant: "tansuMana" });
         out.push({ kind: "attack", uid: u.uid, targetUid: null, variant: "tansuDraw" });
       } else if (canAttack(card) && ps.mana >= attackCostFor(ctx, u)) {
@@ -539,6 +549,8 @@ export const applyActionInPlace = (
   applyActionCore(ctx, s, a, events);
   // summonAttackForced: the fresh unit owes its attack; any other action settles the obligation
   const fresh = a.kind === "summon" || a.kind === "inherit" ? s.nextUid - 1 : null;
+  // 10/26案: only the unit this very action summoned keeps its 召喚攻撃 open
+  s.summonAttackUid = fresh;
   s.forcedAttackUid =
     ctx.cfg.summonAttackForced && fresh !== null && !s.ended && forcedAttacks(allLegalActions(ctx, s), fresh).length > 0 ? fresh : null;
   recheckControl(ctx, s, events);

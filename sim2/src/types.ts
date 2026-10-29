@@ -137,7 +137,15 @@ export type GameState = {
    * else happens this turn (null / absent = no such obligation).
    */
   forcedAttackUid?: number | null;
+  /**
+   * summonAttackTiming "right_after": the unit summoned by the action just
+   * taken, the only one whose 召喚攻撃 is still open (null / absent = none).
+   */
+  summonAttackUid?: number | null;
 };
+
+/** any_time: any time that turn. right_after: only as the very next action after its summon (10/26案). */
+export type SummonAttackTiming = "any_time" | "right_after";
 
 export type ChipMode = "one_per_turn" | "catch_up";
 
@@ -344,6 +352,8 @@ export type Config = {
   freeSummonAttackMinCost: number;
   /** A unit summoned (or inherit-summoned) with an enemy in range that it can pay to hit must attack at once. */
   summonAttackForced: boolean;
+  /** When a unit summoned this turn may make its 召喚攻撃 (10/26案: right_after). */
+  summonAttackTiming: SummonAttackTiming;
 };
 
 export const defaultConfig = (): Config => ({
@@ -412,6 +422,7 @@ export const defaultConfig = (): Config => ({
   freeSummonAttackInherit: false,
   freeSummonAttackMinCost: 0,
   summonAttackForced: false,
+  summonAttackTiming: "any_time",
 });
 
 /**
