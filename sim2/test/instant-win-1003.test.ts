@@ -177,7 +177,7 @@ test("units vs occupation: a big unit (HP 11+ under controlCount hp) is 2 for �
   const ro = applyAction(occ, s, a);
   assert.equal(ro.state.winner, 0, "占拠 5");
   assert.deepEqual(gameEnd(ro.events).cold, { count: 5, by: "occupation", timing: "immediate", placed: true });
-  assert.equal(resultHow("control", 0, ["先手", "後手"], undefined, gameEnd(ro.events).cold), "即勝ち(制圧数5)");
+  assert.equal(resultHow("control", 0, ["先手", "後手"], undefined, gameEnd(ro.events).cold), "即勝ち(総制圧力5)");
   const ru = applyAction(units, board(units), a);
   assert.equal(ru.state.ended, false, "4 units");
 });

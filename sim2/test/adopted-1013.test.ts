@@ -61,7 +61,8 @@ test("10/13 pack: 1006 with only 古箪笥's effect changed; the default for r10
     }
     assert.deepEqual(c, o, c.id);
   }
-  assert.equal(DEFAULT_RULE_PRESET, "r1007");
+  assert.equal(DEFAULT_RULE_PRESET, "r1026");
+  assert.equal(RULE_PRESETS.r1026.defaultPack, "adopted-1013");
   assert.equal(RULE_PRESETS.r1007.defaultPack, "adopted-1013");
   assert.equal(RULE_PRESETS.r1006.defaultPack, "adopted-1006");
   assert.equal(PLAYABLE_PACKS[0], "adopted-1013");

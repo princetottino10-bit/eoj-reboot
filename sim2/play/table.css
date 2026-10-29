@@ -1,4 +1,4 @@
-/* 陰陽符陣 table — "夜の陰陽寮、漆と金箔の盤".
+/* 式神符陣 table — "夜の陰陽寮、漆と金箔の盤".
    Shared by the local play page (play/index.html) and the online room
    (online/room.html). Colours and type live in the tokens below only. */
 
@@ -1350,7 +1350,7 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .pr-peek { display: none; }
 @media (max-width: 700px), (max-height: 520px) and (min-aspect-ratio: 4/3) {
   .pr-peek { display: inline-flex; }
-  /* with a 制圧チェック badge the round gives way, so 「あなたの番」 is never cut to 「あな」 */
+  /* with a チェック badge the round gives way, so 「あなたの番」 is never cut to 「あな」 */
   .turn:has(.turn-ctl) .turn-round { display: none; }
   .turn-who { flex-shrink: 0; }
   /* a short prompt keeps the board large: the recap on one line, the how-to line gives way to a race note */
@@ -1362,7 +1362,7 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .cell.can-attack { box-shadow: inset 0 0 0 0.6cqw var(--gold-hi), inset 0 0 4cqw oklch(85% 0.12 85 / 0.45); animation: can-attack 1.8s ease-in-out infinite; }
 @keyframes can-attack { 50% { box-shadow: inset 0 0 0 0.6cqw var(--gold), inset 0 0 1.5cqw oklch(85% 0.12 85 / 0.2); } }
 @media (prefers-reduced-motion: reduce) { .cell.can-attack { animation: none; } }
-/* whose 制圧チェック: the badge wears that side's colour (my blue / their red) */
+/* whose チェック: the badge wears that side's colour (my blue / their red) */
 .turn-ctl.o0 { background: var(--p0); color: #fff; }
 .turn-ctl.o1 { background: var(--p1); color: #fff; }
 /* 10/18 攻撃済み・回転済みを読める札に (was a small 「攻」 disc); the ring of can-attack stays still */
@@ -1395,7 +1395,7 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .coach { flex: 1 1 100%; box-sizing: border-box; }
 @media (min-width: 701px) { .coach { flex-basis: auto; max-width: 640px; margin-inline: auto; } .yy-prompt:has(.coach) { flex-direction: column; align-items: center; } }
 
-/* スマホの駒 (10/22, table.ts pieceTile): the piece as a tile — art upright on the left, the range on the right
+/* スマホの式神 (10/22, table.ts pieceTile): the piece as a tile — art upright on the left, the range on the right
    turned to the facing, 耐/攻 in a row, the name band in the side's colour */
 .pc-tile .pc-body {
   rotate: none; width: 94cqw; height: 94cqh; display: grid; grid-template-columns: 44% 56%; grid-template-rows: minmax(0, 1fr) auto auto;
@@ -1464,7 +1464,7 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .pt-cost.is-disc b { color: var(--gold-hi); }
 .ht-tile .pt-stats b { font-size: 18cqw; }
 
-/* 盤の駒を触ったときの間合 (10/25): on a phone the tiles cover their cells, so the range lies over them */
+/* 盤の式神を触ったときの間合 (10/25): on a phone the tiles cover their cells, so the range lies over them */
 @media (max-width: 700px), (max-height: 520px) and (min-aspect-ratio: 4/3) {
   .cell.rg-attack::before, .cell.rg-blind:not(.rg-attack)::before, .cell.rg-counter:not([class*="mk-"])::after { z-index: 4; }
   .cell.rg-attack::before { inset: 3cqw; border-width: 1.6cqw; background: oklch(60% 0.2 30 / 0.28); }
@@ -1476,9 +1476,12 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
   .cell.rg-counter:not([class*="mk-"])::after { inset: 3cqw; border: 1.6cqw solid #6fcf9e; border-radius: 50%; box-shadow: 0 0 3cqw oklch(80% 0.12 155 / 0.6); }
   .cell.rg-attack.rg-counter:not([class*="mk-"])::after { inset: 1cqw; }
 }
-/* 触っている駒 (10/25): on a tile, a thick gold ring with a glow, lifted a little; the other tiles step back */
+/* 触っている式神 (10/25): on a tile, a thick gold ring with a glow, lifted a little; the other tiles step back */
 .cell.is-selected .pc-tile .pc-body {
   box-shadow: 0 0 0 0.8cqw var(--own), 0 0 0 3.2cqw var(--gold-hi), 0 0 9cqw 2cqw oklch(85% 0.14 85 / 0.85), 0 3cqw 6cqw oklch(0% 0 0 / 0.7);
   scale: 1.05; transition: scale var(--t-mid) var(--ease-out);
 }
 .bd:has(.cell.is-selected .pc-tile) .cell:not(.is-selected) .pc-tile .pc-body { filter: brightness(0.72) saturate(0.8); }
+/* 「総制圧力」 is wider than the old 「制圧」: keep the stat label tight and my 「あなた」 on one line */
+.np-occ i { letter-spacing: 0; }
+.np.is-you .np-who { flex-shrink: 0; }

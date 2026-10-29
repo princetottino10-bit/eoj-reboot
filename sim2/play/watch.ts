@@ -158,7 +158,7 @@ const table = createTable(tableEl, {
   },
 });
 
-table.slots.header.innerHTML = `<div class="brand"><span class="brand-mark" aria-hidden="true">符</span><span class="brand-name">陰陽符陣<small>(仮)</small></span><span class="brand-sub">観戦</span></div>`;
+table.slots.header.innerHTML = `<div class="brand"><span class="brand-mark" aria-hidden="true">符</span><span class="brand-name">式神符陣</span><span class="brand-sub">観戦</span></div>`;
 table.slots.tools.innerHTML = `<div class="tools"><button type="button" class="rules-badge" id="rulesBadge" title="基準からの変更点"></button><button type="button" class="btn btn-quiet" id="restart">最初から</button><button type="button" class="btn btn-quiet" id="reSetup">設定を変える</button><a class="btn btn-quiet" href="/ai">AIと対戦へ</a></div>`;
 $("restart").addEventListener("click", () => restart());
 $("reSetup").addEventListener("click", () => void openSetup());

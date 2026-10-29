@@ -37,7 +37,7 @@ const SIDE_ROWS: readonly [keyof SideStats, string][] = [
   ["kills", "撃破"],
   ["lost", "失った式神"],
   ["damage", "与えたダメージ"],
-  ["maxOcc", "最大制圧数"],
+  ["maxOcc", "最大総制圧力"],
   ["manaSpent", "使った霊力"],
   ["reaches", "制圧中になった回数"],
 ];

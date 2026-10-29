@@ -24,6 +24,7 @@ import type {
   IncomeTiming,
   InstantWinCount,
   FreeSummonAttack,
+  SummonAttackTiming,
   InstantWinTiming,
   KillRewardBase,
   KillRewardCondition,
@@ -281,6 +282,7 @@ ${schemaHelpText()}
     freeSummonAttack: pick("free-summon-attack", ["off", "optional"] as const, base.freeSummonAttack) as FreeSummonAttack,
     freeSummonAttackInherit: onOff("free-summon-attack-inherit", base.freeSummonAttackInherit),
     freeSummonAttackMinCost: intIn(args, "free-summon-attack-min-cost", 0, 15, base.freeSummonAttackMinCost),
+    summonAttackTiming: pick("summon-attack-timing", ["any_time", "right_after"] as const, base.summonAttackTiming) as SummonAttackTiming,
   };
   const printed = loadPack(packPath(packName));
   const pack: CardPack = bundle === null ? printed : settingsPack(bundle, printed);
@@ -357,6 +359,7 @@ ${schemaHelpText()}
       freeSummonAttack: cfg.freeSummonAttack,
       freeSummonAttackInherit: cfg.freeSummonAttackInherit,
       freeSummonAttackMinCost: cfg.freeSummonAttackMinCost,
+      summonAttackTiming: cfg.summonAttackTiming,
     },
     elapsedMs: Math.round(elapsedMs),
   };

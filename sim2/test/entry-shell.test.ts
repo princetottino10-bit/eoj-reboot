@@ -12,6 +12,8 @@ import {
   entryProblemHtml,
   entryTopHtml,
   moreHtml,
+  PUBLIC_RULES_HTML,
+  publicRulesHtml,
   quietButton,
   rulesBlockHtml,
 } from "../play/entry-shell.ts";
@@ -33,7 +35,7 @@ test("entry shell: the same header on every screen, only the subtitle changes", 
   const heads = MODES.map((m) => entryHeadHtml(m));
   for (const [i, h] of heads.entries()) {
     assert.match(h, /^<header class="entry-head"><span class="brand-mark" aria-hidden="true">符<\/span>/);
-    assert.ok(h.includes("<h1>陰陽符陣<small>(仮)</small></h1>"));
+    assert.ok(h.includes("<h1>式神符陣</h1>"));
     assert.ok(h.includes(`<p>${ENTRY_TEXT[MODES[i] as PlayMode].sub}</p>`));
   }
   const strip = (h: string): string => h.replace(/<p>.*?<\/p>/, "");
@@ -106,4 +108,14 @@ test("entry shell: all three screens are built from it (and the online server se
     assert.match(p, /<main id="entry" class="entry" hidden><\/main>\r?\n<div id="table" hidden><\/div>/, page);
     assert.ok(!p.includes("yy-start"), page);
   }
+});
+
+test("public entry screens: the crowdfunding link sits under the rules once a URL is set (準備中 before)", () => {
+  const soon = publicRulesHtml(null);
+  assert.ok(soon.startsWith(PUBLIC_RULES_HTML.replace(/<\/div>$/, "")));
+  assert.ok(soon.includes("クラウドファンディング準備中") && !soon.includes('<a class="cf-link"'));
+  const html = publicRulesHtml("https://camp-fire.jp/projects/992243?a=1&b=2");
+  assert.ok(html.startsWith(PUBLIC_RULES_HTML.replace(/<\/div>$/, "")));
+  assert.match(html, /<a class="cf-link" href="https:\/\/camp-fire.jp\/projects\/992243\?a=1&amp;b=2" target="_blank" rel="noopener">/);
+  assert.match(html, /クラウドファンディング実施中/);
 });

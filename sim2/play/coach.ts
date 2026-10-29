@@ -29,9 +29,9 @@ export const coachStep = (c: CoachInput): CoachStep | null => {
 
 const TEXT: Record<CoachStep, [string, string]> = {
   hand: ["1", "手札の札を触る(光っている札が今使える札)"],
-  cell: ["2", "盤の光っているマスを触る"],
-  facing: ["3", "盤上の矢印で向きを選ぶ(矢印の先が前)"],
-  attack: ["4", "金の枠の駒を触り、丸いメニューの「攻」で攻撃"],
+  cell: ["2", "盤面の光っているマスを触る"],
+  facing: ["3", "盤面の矢印で向きを選ぶ(矢印の先が前)"],
+  attack: ["4", "金の枠の式神を触り、丸いメニューの「攻」で攻撃"],
   end: ["5", "することが終わったら「ターン終了」"],
 };
 
