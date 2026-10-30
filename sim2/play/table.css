@@ -1435,7 +1435,8 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 .cell-attr .ca-mk { width: 1em; height: 1em; }
 .cell-attr.a-yin { background: #1c2339; color: oklch(92% 0.02 260); box-shadow: inset 0 0 0 1px oklch(70% 0.05 260 / 0.7), 0 0.6cqw 1.6cqw oklch(0% 0 0 / 0.55); }
 .cell-attr.a-yang { background: oklch(93% 0.04 85); color: oklch(25% 0.03 60); }
-.cell-attr.a-empty { background: oklch(40% 0.04 200); color: oklch(95% 0.01 200); }
+/* 空は淡い水色に墨の字 (1030案: 札の召喚の丸・紙の盤の空のマスと同じ #a9d3e6。濃い青緑は陰の濃紺と見間違えた) */
+.cell-attr.a-empty { background: #a9d3e6; color: #26262b; }
 .cell-attr.a-taiji { background: linear-gradient(135deg, var(--gold-hi), var(--gold)); color: var(--ink); }
 /* 見比べ用 (10/22, ?piece=tile with sessionStorage yy-tile-shape=wide): a shorter tile, so a strip of the cell shows above it */
 :root[data-tile-shape="wide"] .pc-tile .pc-body { height: 70cqh; translate: 0 10cqh; }
