@@ -1,0 +1,2205 @@
+{
+  "aggro": [
+    {
+      "id": "aggro_01",
+      "name": "迅刃のレイ",
+      "faction": "aggro",
+      "element": "faust",
+      "schoolClass": "combat",
+      "hp": 1,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "damage",
+          "value": 2,
+          "description": "召喚時、自分に2ダメージ"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "buff_atk",
+          "value": 1,
+          "description": "ATK+1を得る"
+        }
+      ]
+    },
+    {
+      "id": "aggro_04",
+      "name": "雷鳴のライカ",
+      "faction": "aggro",
+      "element": "geist",
+      "schoolClass": "射撃",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": []
+    },
+    {
+      "id": "aggro_06",
+      "name": "崩蝕のエンマ",
+      "faction": "aggro",
+      "element": "nacht",
+      "schoolClass": "intel",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": []
+    },
+    {
+      "id": "aggro_09",
+      "name": "虚栄のゼロ",
+      "faction": "aggro",
+      "element": "nicht",
+      "schoolClass": "intel",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "discard_draw",
+          "value": 1,
+          "handCost": 1,
+          "description": "召喚時、手札を1枚捨てて2枚ドロー"
+        }
+      ]
+    },
+    {
+      "id": "aggro_02",
+      "name": "念連のナギ",
+      "faction": "aggro",
+      "element": "geist",
+      "schoolClass": "strategy",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_turn_start",
+          "target": "self",
+          "effect": "gain_mana",
+          "value": 1,
+          "handCost": 1,
+          "description": "ターン開始時、手札を1枚捨ててマナ+1（手札がなければ不発）"
+        }
+      ]
+    },
+    {
+      "id": "aggro_03",
+      "name": "烈火のカグラ",
+      "faction": "aggro",
+      "element": "faust",
+      "schoolClass": "combat",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "quickness"
+      ],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "push",
+          "value": 2,
+          "handCost": 1,
+          "description": "召喚時、手札を1枚捨てて敵1体を押し出す（壁なら2ダメージ。手札がなければ不発）"
+        }
+      ]
+    },
+    {
+      "id": "aggro_05",
+      "name": "蝕牙のドク",
+      "faction": "aggro",
+      "element": "nacht",
+      "schoolClass": "射撃",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "buff_atk",
+          "value": 1,
+          "condition": {
+            "type": "target_hp_lte",
+            "value": 0
+          },
+          "description": "攻撃後、敵を撃破していたらATK+1"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "debuff_atk",
+          "value": 1,
+          "description": "攻撃後、ATK-1"
+        }
+      ]
+    },
+    {
+      "id": "aggro_11",
+      "name": "連撃のハヤテ",
+      "faction": "aggro",
+      "element": "licht",
+      "schoolClass": "combat",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front_left",
+      "attackType": "physical",
+      "keywords": [
+        "quickness"
+      ],
+      "effects": []
+    },
+    {
+      "id": "aggro_07",
+      "name": "閃光のヒカリ",
+      "faction": "aggro",
+      "element": "licht",
+      "schoolClass": "medic",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 3,
+      "activateCost": 2,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_destroyed",
+          "target": "adjacent_allies",
+          "effect": "heal",
+          "value": 3
+        },
+        {
+          "trigger": "on_destroyed",
+          "target": "adjacent_allies",
+          "effect": "buff_atk",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "aggro_12",
+      "name": "爆裂のノヴァ",
+      "faction": "aggro",
+      "element": "nicht",
+      "schoolClass": "combat",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 3,
+      "activateCost": 3,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "damage",
+          "value": 0,
+          "handCost": 2,
+          "description": "召喚時、手札を最大2枚捨て、捨てた枚数だけ敵1体にダメージ"
+        }
+      ]
+    },
+    {
+      "id": "aggro_08",
+      "name": "光刃のセラ",
+      "faction": "aggro",
+      "element": "licht",
+      "schoolClass": "combat",
+      "hp": 6,
+      "atk": 4,
+      "manaCost": 5,
+      "activateCost": 3,
+      "attackRange": "front_row",
+      "attackType": "physical",
+      "keywords": [
+        "piercing"
+      ],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "gain_mana",
+          "value": 2,
+          "description": "攻撃時、マナ+2"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "rotate",
+          "value": 0,
+          "description": "攻撃後、自分の向きを任意に変更"
+        }
+      ]
+    },
+    {
+      "id": "aggro_10",
+      "name": "覇王のカイザー",
+      "faction": "aggro",
+      "element": "nicht",
+      "schoolClass": "strategy",
+      "hp": 7,
+      "atk": 4,
+      "manaCost": 5,
+      "activateCost": 3,
+      "attackRange": "front_back",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_ally",
+          "effect": "destroy_self",
+          "value": 0,
+          "description": "召喚時、味方1体を破壊する"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "copy_atk",
+          "value": 2,
+          "description": "破壊した味方のATKを自分に加算（最低+2）"
+        },
+        {
+          "trigger": "on_turn_start",
+          "target": "self",
+          "effect": "skip_draw",
+          "value": 99,
+          "description": "【選択】手札から任意の枚数をデッキに戻す。1枚以上戻したら攻撃コスト-2"
+        },
+        {
+          "trigger": "on_turn_start",
+          "target": "self",
+          "effect": "reduce_activate_cost",
+          "value": 2,
+          "description": ""
+        },
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "draw",
+          "value": 0,
+          "description": "カイザーの隣にキャラが召喚された時、1枚ドロー（パッシブ）"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "range_expand",
+          "value": 0,
+          "condition": {
+            "type": "hand_count_lte",
+            "value": 0
+          },
+          "description": "手札0枚の時、攻撃範囲が前後左右(十字)に拡張"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "draw",
+          "value": 1,
+          "description": "カイザーの隣接マスにキャラが召喚された時、1枚ドロー（パッシブ）"
+        }
+      ]
+    }
+  ],
+  "tank": [
+    {
+      "id": "tank_07",
+      "name": "癒しのミコト",
+      "faction": "tank",
+      "element": "licht",
+      "schoolClass": "medic",
+      "hp": 1,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_ally",
+          "effect": "heal",
+          "value": 1,
+          "description": "召喚時、隣接味方1体にHP1回復"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "draw",
+          "value": 1,
+          "description": "召喚時、1ドロー"
+        }
+      ]
+    },
+    {
+      "id": "tank_09",
+      "name": "虚壁のムゲン",
+      "faction": "tank",
+      "element": "nicht",
+      "schoolClass": "strategy",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "blindPattern": "back_sides",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_damaged",
+          "target": "self",
+          "effect": "grant_dodge",
+          "value": 0,
+          "condition": {
+            "type": "attacked_from_front"
+          },
+          "description": "正面から物理攻撃された時、【回避】（物理攻撃を受けない。魔法・貫通は通る）"
+        }
+      ]
+    },
+    {
+      "id": "tank_02",
+      "name": "剛拳のイワオ",
+      "faction": "tank",
+      "element": "faust",
+      "schoolClass": "combat",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "fortress"
+      ],
+      "effects": [
+        {
+          "trigger": "on_damaged",
+          "target": "target_enemy",
+          "effect": "damage",
+          "value": 0,
+          "description": "被ダメ時、受けた値と同じダメージを攻撃者に与える"
+        },
+        {
+          "trigger": "on_damaged",
+          "target": "self",
+          "effect": "buff_atk",
+          "value": 3,
+          "condition": {
+            "type": "hp_pct_lte",
+            "value": 50
+          },
+          "description": "HP50%以下になった時、ATK+3"
+        }
+      ]
+    },
+    {
+      "id": "tank_03",
+      "name": "念盾のアオイ",
+      "faction": "tank",
+      "element": "geist",
+      "schoolClass": "strategy",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "reflect"
+      ],
+      "effects": []
+    },
+    {
+      "id": "tank_05",
+      "name": "蝕耐のヴェノ",
+      "faction": "tank",
+      "element": "nacht",
+      "schoolClass": "combat",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "protection",
+        "damage_link"
+      ],
+      "effects": []
+    },
+    {
+      "id": "tank_12",
+      "name": "苔壁のモス",
+      "faction": "tank",
+      "element": "licht",
+      "schoolClass": "medic",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "gain_mana",
+          "value": 1,
+          "handCost": 1,
+          "description": "召喚時、手札を1枚捨ててマナ+1（手札がなければ不発）"
+        }
+      ]
+    },
+    {
+      "id": "tank_04",
+      "name": "念壁のシオン",
+      "faction": "tank",
+      "element": "geist",
+      "schoolClass": "intel",
+      "hp": 4,
+      "atk": 2,
+      "manaCost": 3,
+      "activateCost": 3,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "target_enemy",
+          "effect": "debuff_atk",
+          "value": 1,
+          "description": "攻撃後、対象のATK-1"
+        }
+      ]
+    },
+    {
+      "id": "tank_06",
+      "name": "蝕霧のカスミ",
+      "faction": "tank",
+      "element": "nacht",
+      "schoolClass": "intel",
+      "hp": 4,
+      "atk": 1,
+      "manaCost": 3,
+      "activateCost": 2,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "seal",
+          "value": 1,
+          "description": "召喚時、敵1体を1ターン封印"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "debuff_atk",
+          "value": 1,
+          "description": "その敵のATK-1"
+        }
+      ]
+    },
+    {
+      "id": "tank_01",
+      "name": "鉄壁のガルド",
+      "faction": "tank",
+      "element": "faust",
+      "schoolClass": "combat",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 4,
+      "activateCost": 2,
+      "attackRange": "front2_line",
+      "attackType": "physical",
+      "keywords": [
+        "protection",
+        "piercing",
+        "anchor"
+      ],
+      "effects": []
+    },
+    {
+      "id": "tank_11",
+      "name": "報復のガレス",
+      "faction": "tank",
+      "element": "nicht",
+      "schoolClass": "combat",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 4,
+      "activateCost": 3,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "protection",
+        "reflect"
+      ],
+      "effects": [
+        {
+          "trigger": "on_damaged",
+          "target": "self",
+          "effect": "buff_atk",
+          "value": 1,
+          "description": "被ダメ時、ATK+1"
+        }
+      ]
+    },
+    {
+      "id": "tank_08",
+      "name": "聖盾のルミナ",
+      "faction": "tank",
+      "element": "licht",
+      "schoolClass": "medic",
+      "hp": 6,
+      "atk": 4,
+      "manaCost": 5,
+      "activateCost": 3,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "protection",
+        "cover"
+      ],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "adjacent_allies",
+          "effect": "grant_protection",
+          "value": 1,
+          "description": "召喚時、隣接味方全員に【防護】を付与"
+        },
+        {
+          "trigger": "on_damaged",
+          "target": "adjacent_allies",
+          "effect": "buff_atk",
+          "value": 1,
+          "description": "【固有能力】カバーで味方の代わりにダメージを受けた時、守られた味方のATK+1"
+        }
+      ]
+    },
+    {
+      "id": "tank_10",
+      "name": "虚鎮のナギサ",
+      "faction": "tank",
+      "element": "nicht",
+      "schoolClass": "射撃",
+      "hp": 6,
+      "atk": 4,
+      "manaCost": 5,
+      "activateCost": 3,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "fortress",
+        "cover"
+      ],
+      "effects": [
+        {
+          "trigger": "on_destroyed",
+          "target": "all_allies",
+          "effect": "heal",
+          "value": 1,
+          "description": "撃破された時、味方全体HP+1"
+        },
+        {
+          "trigger": "on_destroyed",
+          "target": "all_allies",
+          "effect": "buff_atk",
+          "value": 1,
+          "description": "味方全体ATK+1"
+        },
+        {
+          "trigger": "on_turn_start",
+          "target": "self",
+          "effect": "damage",
+          "value": 1,
+          "description": "毎ターン開始時、自分に1ダメージ"
+        }
+      ]
+    }
+  ],
+  "control": [
+    {
+      "id": "control_06",
+      "name": "蝕変のアルマ",
+      "faction": "control",
+      "element": "nacht",
+      "schoolClass": "strategy",
+      "hp": 1,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "draw",
+          "value": 1,
+          "description": "召喚時、1ドロー"
+        }
+      ]
+    },
+    {
+      "id": "control_09",
+      "name": "虚空のスイ",
+      "faction": "control",
+      "element": "nicht",
+      "schoolClass": "射撃",
+      "hp": 1,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_discard",
+          "target": "self",
+          "effect": "gain_mana",
+          "value": 1,
+          "description": "手札を捨てるたびマナ+1"
+        },
+        {
+          "trigger": "on_destroyed",
+          "target": "self",
+          "effect": "draw",
+          "value": 1,
+          "description": "撃破された時、1ドロー"
+        }
+      ]
+    },
+    {
+      "id": "control_01",
+      "name": "惑心のシズク",
+      "faction": "control",
+      "element": "faust",
+      "schoolClass": "intel",
+      "hp": 2,
+      "atk": 0,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front_row",
+      "attackType": "magic",
+      "blindPattern": "all",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "adjacent_enemies",
+          "effect": "brainwash",
+          "value": 99,
+          "description": "召喚時、隣接する敵を洗脳（シズクがいる限り持続）"
+        }
+      ]
+    },
+    {
+      "id": "control_02",
+      "name": "地裂のドルン",
+      "faction": "control",
+      "element": "faust",
+      "schoolClass": "strategy",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "blindPattern": "all",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_cell",
+          "effect": "field_quake",
+          "value": 0,
+          "description": "召喚時、対象マスの属性を反転"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "target_enemy",
+          "effect": "brainwash",
+          "value": 99,
+          "condition": {
+            "type": "on_element",
+            "value": "nacht"
+          },
+          "description": "闇マスにいる時、攻撃時に対象を洗脳（ドルンがいる限り持続）"
+        }
+      ]
+    },
+    {
+      "id": "control_03",
+      "name": "念縛のリン",
+      "faction": "control",
+      "element": "geist",
+      "schoolClass": "intel",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "target_enemy",
+          "effect": "rotate",
+          "value": 2,
+          "description": "攻撃時、対象を180°回転"
+        }
+      ]
+    },
+    {
+      "id": "control_05",
+      "name": "蝕縛のヤミカ",
+      "faction": "control",
+      "element": "nacht",
+      "schoolClass": "intel",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 2,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "seal",
+          "value": 1,
+          "description": "召喚時、敵1体を1ターン封印する"
+        }
+      ]
+    },
+    {
+      "id": "control_12",
+      "name": "侵蝕のロア",
+      "faction": "control",
+      "element": "nicht",
+      "schoolClass": "intel",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "target_cell",
+          "effect": "element_corrupt",
+          "value": 0,
+          "description": "攻撃時、攻撃した敵がいるマスの属性と、盤面上の虚(nicht)マスの属性を入れ替える"
+        }
+      ]
+    },
+    {
+      "id": "control_04",
+      "name": "念断のゲッカ",
+      "faction": "control",
+      "element": "geist",
+      "schoolClass": "combat",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 3,
+      "activateCost": 2,
+      "attackRange": "front_left",
+      "attackType": "physical",
+      "keywords": [
+        "piercing"
+      ],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "target_enemy",
+          "effect": "debuff_atk",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "control_08",
+      "name": "光鎖のレティ",
+      "faction": "control",
+      "element": "licht",
+      "schoolClass": "combat",
+      "hp": 3,
+      "atk": 2,
+      "manaCost": 3,
+      "activateCost": 2,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "protection"
+      ],
+      "effects": [
+        {
+          "trigger": "on_damaged",
+          "target": "adjacent_enemies",
+          "effect": "brainwash",
+          "value": 99,
+          "condition": {
+            "type": "hp_lte",
+            "value": 1
+          },
+          "description": "HPが1になった時、隣接する敵を洗脳（レティがいる限り持続）"
+        }
+      ]
+    },
+    {
+      "id": "control_11",
+      "name": "時縛のクロノ",
+      "faction": "control",
+      "element": "nicht",
+      "schoolClass": "intel",
+      "hp": 4,
+      "atk": 2,
+      "manaCost": 4,
+      "activateCost": 3,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "seal",
+          "value": 1,
+          "description": "召喚時、敵1体を1ターン封印する"
+        }
+      ]
+    },
+    {
+      "id": "control_10",
+      "name": "虚無のカラン",
+      "faction": "control",
+      "element": "nicht",
+      "schoolClass": "strategy",
+      "hp": 6,
+      "atk": 4,
+      "manaCost": 5,
+      "activateCost": 3,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "freeze",
+          "value": 99,
+          "description": "召喚時、敵1体をカランがいる限り凍結"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "debuff_atk",
+          "value": 3,
+          "description": "対象のATK-3"
+        }
+      ]
+    },
+    {
+      "id": "control_07",
+      "name": "蝕心のミスズ",
+      "faction": "control",
+      "element": "licht",
+      "schoolClass": "medic",
+      "hp": 6,
+      "atk": 4,
+      "manaCost": 6,
+      "activateCost": 3,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "brainwash",
+          "value": 99,
+          "description": "召喚時、敵1体を洗脳（ミスズがいる限り持続）"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "all_enemies",
+          "effect": "damage",
+          "value": 0,
+          "description": "洗脳状態の敵全員に攻撃できる"
+        }
+      ]
+    }
+  ],
+  "synergy": [
+    {
+      "id": "synergy_01",
+      "name": "守紋のシルト",
+      "faction": "synergy",
+      "element": "faust",
+      "schoolClass": "strategy",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "gain_mana",
+          "value": 1,
+          "handCost": 1,
+          "description": "召喚時、手札を1枚捨ててマナ+1（手札がなければ不発）"
+        }
+      ]
+    },
+    {
+      "id": "synergy_02",
+      "name": "疾風のヴィント",
+      "faction": "synergy",
+      "element": "faust",
+      "schoolClass": "combat",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_ally",
+          "effect": "grant_quickness",
+          "value": 1,
+          "description": "召喚時、隣接味方1体に【先制】を与える（味方なしなら自分）"
+        }
+      ]
+    },
+    {
+      "id": "synergy_06",
+      "name": "蝕連のシュウ",
+      "faction": "synergy",
+      "element": "nacht",
+      "schoolClass": "combat",
+      "hp": 1,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_destroyed",
+          "target": "target_ally",
+          "effect": "grant_quickness",
+          "value": 1,
+          "description": "撃破された時、隣接味方1体に【先制】を与える"
+        }
+      ]
+    },
+    {
+      "id": "synergy_09",
+      "name": "幻霧のネーベル",
+      "faction": "synergy",
+      "element": "nicht",
+      "schoolClass": "intel",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "draw",
+          "value": 1,
+          "description": "召喚時、1ドロー"
+        }
+      ]
+    },
+    {
+      "id": "synergy_03",
+      "name": "紡絆のツムギ",
+      "faction": "synergy",
+      "element": "geist",
+      "schoolClass": "medic",
+      "hp": 3,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 2,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_ally",
+          "effect": "grant_dodge",
+          "value": 1,
+          "condition": {
+            "type": "ally_count_gte",
+            "value": 2
+          },
+          "description": "召喚時、味方2体以上なら隣接味方1体に【回避】を与える"
+        }
+      ]
+    },
+    {
+      "id": "synergy_04",
+      "name": "念波のコダマ",
+      "faction": "synergy",
+      "element": "geist",
+      "schoolClass": "intel",
+      "hp": 3,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_ally",
+          "effect": "grant_piercing",
+          "value": 1,
+          "description": "召喚時、自分または隣接味方1体に【貫通】を与える"
+        }
+      ]
+    },
+    {
+      "id": "synergy_05",
+      "name": "共鳴のハルカ",
+      "faction": "synergy",
+      "element": "nacht",
+      "schoolClass": "strategy",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 2,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_ally",
+          "effect": "pull",
+          "value": 0,
+          "description": "召喚時、味方1体を引き寄せる"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "target_ally",
+          "effect": "grant_protection",
+          "value": 1,
+          "description": "引き寄せた味方に【防護】を与える"
+        }
+      ]
+    },
+    {
+      "id": "synergy_11",
+      "name": "連陣のレン",
+      "faction": "synergy",
+      "element": "licht",
+      "schoolClass": "strategy",
+      "hp": 3,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "target_ally",
+          "effect": "grant_piercing",
+          "value": 1,
+          "condition": {
+            "type": "ally_count_gte",
+            "value": 2
+          },
+          "description": "攻撃時、隣接味方2体以上なら味方1体に【貫通】を与える"
+        }
+      ]
+    },
+    {
+      "id": "synergy_12",
+      "name": "遺志のユズリハ",
+      "faction": "synergy",
+      "element": "nicht",
+      "schoolClass": "strategy",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 2,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_destroyed",
+          "target": "target_ally",
+          "effect": "grant_protection",
+          "value": 1,
+          "description": "撃破された時、隣接味方1体に【防護】を与える"
+        }
+      ]
+    },
+    {
+      "id": "synergy_07",
+      "name": "護陣のミナト",
+      "faction": "synergy",
+      "element": "licht",
+      "schoolClass": "medic",
+      "hp": 4,
+      "atk": 2,
+      "manaCost": 4,
+      "activateCost": 2,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "adjacent_allies",
+          "effect": "heal",
+          "value": 1,
+          "description": "召喚時、隣接味方HP1回復"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "adjacent_allies",
+          "effect": "grant_protection",
+          "value": 1,
+          "condition": {
+            "type": "same_element_cell"
+          },
+          "description": "自属性マスにいるなら隣接味方全員に【防護】を与える"
+        }
+      ]
+    },
+    {
+      "id": "synergy_08",
+      "name": "光絆のアカリ",
+      "faction": "synergy",
+      "element": "licht",
+      "schoolClass": "strategy",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 4,
+      "activateCost": 2,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "grant_piercing",
+          "value": 1,
+          "condition": {
+            "type": "ally_count_gte",
+            "value": 2
+          },
+          "description": "召喚時、味方のマーカー2個以上なら【貫通】を得る"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "grant_quickness",
+          "value": 1,
+          "condition": {
+            "type": "ally_count_gte",
+            "value": 2
+          },
+          "description": "味方のマーカー2個以上なら【先制】を得る"
+        }
+      ]
+    },
+    {
+      "id": "synergy_10",
+      "name": "盟約のアルス",
+      "faction": "synergy",
+      "element": "nicht",
+      "schoolClass": "strategy",
+      "hp": 7,
+      "atk": 3,
+      "manaCost": 6,
+      "activateCost": 3,
+      "attackRange": "front_row",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "consume_markers",
+          "value": 0,
+          "description": "召喚時、味方のマーカーを全て自分に集める。2個以上:ATK+2、4個以上:さらにATK+2"
+        }
+      ]
+    }
+  ],
+  "snipe": [
+    {
+      "id": "snipe_01",
+      "name": "鋭眼のマルコ",
+      "faction": "snipe",
+      "element": "faust",
+      "schoolClass": "射撃",
+      "hp": 1,
+      "atk": 2,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "buff_atk",
+          "value": 1,
+          "condition": {
+            "type": "blind_spot"
+          },
+          "description": "死角から攻撃時、ATK+1"
+        }
+      ]
+    },
+    {
+      "id": "snipe_06",
+      "name": "蝕弾のニドル",
+      "faction": "snipe",
+      "element": "nacht",
+      "schoolClass": "intel",
+      "hp": 1,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "gain_mana",
+          "value": 1,
+          "handCost": 1,
+          "description": "召喚時、手札を1枚捨ててマナ+1（手札がなければ不発）"
+        }
+      ]
+    },
+    {
+      "id": "snipe_08",
+      "name": "継弾のフィーネ",
+      "faction": "snipe",
+      "element": "licht",
+      "schoolClass": "strategy",
+      "hp": 1,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_destroyed",
+          "target": "target_ally",
+          "effect": "grant_piercing",
+          "value": 1,
+          "description": "撃破された時、味方1体に【貫通】を与える"
+        },
+        {
+          "trigger": "on_destroyed",
+          "target": "self",
+          "effect": "draw",
+          "value": 1,
+          "description": "撃破された時、1ドロー"
+        }
+      ]
+    },
+    {
+      "id": "snipe_02",
+      "name": "旋弾のガウス",
+      "faction": "snipe",
+      "element": "faust",
+      "schoolClass": "combat",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "rotate",
+          "value": 1,
+          "description": "召喚時、敵1体を90°回転させる"
+        }
+      ]
+    },
+    {
+      "id": "snipe_03",
+      "name": "念弾のリーゼ",
+      "faction": "snipe",
+      "element": "geist",
+      "schoolClass": "射撃",
+      "hp": 3,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 2,
+      "attackRange": "front2_line",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "grant_piercing",
+          "value": 1,
+          "condition": {
+            "type": "blind_spot"
+          },
+          "description": "死角から攻撃時、【貫通】を得る"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "target_enemy",
+          "effect": "debuff_atk",
+          "value": 1,
+          "description": "攻撃時、対象ATK-1"
+        }
+      ]
+    },
+    {
+      "id": "snipe_07",
+      "name": "地脈のエリス",
+      "faction": "snipe",
+      "element": "licht",
+      "schoolClass": "medic",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 2,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "target_cell",
+          "effect": "element_corrupt",
+          "value": 0,
+          "description": "攻撃時、対象マスと虚マスの属性を入替える"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "gain_mana",
+          "value": 1,
+          "condition": {
+            "type": "same_element_cell"
+          },
+          "description": "自属性マスにいるならマナ+1"
+        }
+      ]
+    },
+    {
+      "id": "snipe_11",
+      "name": "暗撃のシャドウ",
+      "faction": "snipe",
+      "element": "nicht",
+      "schoolClass": "combat",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "buff_atk",
+          "value": 2,
+          "condition": {
+            "type": "blind_spot"
+          },
+          "description": "死角から攻撃時、ATK+2"
+        }
+      ]
+    },
+    {
+      "id": "snipe_04",
+      "name": "念穿のヴァルト",
+      "faction": "snipe",
+      "element": "geist",
+      "schoolClass": "intel",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 3,
+      "activateCost": 3,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "grant_piercing",
+          "value": 1,
+          "condition": {
+            "type": "same_element_cell"
+          },
+          "description": "自属性マスにいるなら【貫通】を得る"
+        }
+      ]
+    },
+    {
+      "id": "snipe_05",
+      "name": "穿孔のアッシュ",
+      "faction": "snipe",
+      "element": "nacht",
+      "schoolClass": "射撃",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 4,
+      "activateCost": 2,
+      "attackRange": "front2_line",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "grant_piercing",
+          "value": 1,
+          "condition": {
+            "type": "target_hp_lte",
+            "value": 2
+          },
+          "description": "対象HP2以下なら【貫通】を得る"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "draw",
+          "value": 1,
+          "description": "攻撃で敵を撃破したら1ドロー"
+        }
+      ]
+    },
+    {
+      "id": "snipe_12",
+      "name": "徹弾のブレイズ",
+      "faction": "snipe",
+      "element": "licht",
+      "schoolClass": "射撃",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 4,
+      "activateCost": 2,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "grant_piercing",
+          "value": 1,
+          "condition": {
+            "type": "enemy_count_gte",
+            "value": 3
+          },
+          "description": "敵が3体以上いるなら【貫通】を得る"
+        }
+      ]
+    },
+    {
+      "id": "snipe_09",
+      "name": "終焉のイグニス",
+      "faction": "snipe",
+      "element": "nicht",
+      "schoolClass": "射撃",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 5,
+      "activateCost": 3,
+      "attackRange": "snipe",
+      "attackType": "physical",
+      "blindPattern": "all",
+      "keywords": [
+        "stealth"
+      ],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "buff_atk",
+          "value": 2,
+          "condition": {
+            "type": "blind_spot"
+          },
+          "description": "死角から攻撃時、ATK+2"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "grant_piercing",
+          "value": 1,
+          "condition": {
+            "type": "same_element_cell"
+          },
+          "description": "自属性マスにいるなら【貫通】を得る"
+        }
+      ]
+    },
+    {
+      "id": "snipe_10",
+      "name": "虚眼のゼクス",
+      "faction": "snipe",
+      "element": "nicht",
+      "schoolClass": "combat",
+      "hp": 4,
+      "atk": 2,
+      "manaCost": 5,
+      "activateCost": 3,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "blindPattern": "all",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "buff_atk",
+          "value": 1,
+          "condition": {
+            "type": "same_element_cell"
+          },
+          "description": "自属性マスにいるならATK+1"
+        }
+      ]
+    }
+  ],
+  "trick": [
+    {
+      "id": "trick_01",
+      "name": "旋風のツバキ",
+      "faction": "trick",
+      "element": "faust",
+      "schoolClass": "combat",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "rotate",
+          "value": 1,
+          "description": "召喚時、敵1体を90°回転"
+        }
+      ]
+    },
+    {
+      "id": "trick_06",
+      "name": "蝕戯のピエロ",
+      "faction": "trick",
+      "element": "nacht",
+      "schoolClass": "strategy",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_attack",
+          "target": "target_cell",
+          "effect": "field_quake",
+          "value": 0,
+          "description": "攻撃時、対象マスの属性を反転"
+        }
+      ]
+    },
+    {
+      "id": "trick_08",
+      "name": "瞬光のハク",
+      "faction": "trick",
+      "element": "licht",
+      "schoolClass": "射撃",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "draw",
+          "value": 1,
+          "description": "召喚時、1ドロー"
+        }
+      ]
+    },
+    {
+      "id": "trick_09",
+      "name": "虚遁のカイト",
+      "faction": "trick",
+      "element": "nicht",
+      "schoolClass": "intel",
+      "hp": 2,
+      "atk": 1,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "self",
+          "effect": "gain_mana",
+          "value": 1,
+          "handCost": 1,
+          "description": "召喚時、手札を1枚捨ててマナ+1（手札がなければ不発）"
+        }
+      ]
+    },
+    {
+      "id": "trick_13",
+      "name": "瞬転のリップル",
+      "faction": "trick",
+      "element": "geist",
+      "schoolClass": "strategy",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 1,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_ally",
+          "effect": "swap",
+          "value": 0,
+          "description": "召喚時、味方1体と位置入替"
+        }
+      ]
+    },
+    {
+      "id": "trick_02",
+      "name": "拳舞のシュラ",
+      "faction": "trick",
+      "element": "faust",
+      "schoolClass": "combat",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front_back",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_damaged",
+          "target": "self",
+          "effect": "grant_dodge",
+          "value": 0,
+          "condition": {
+            "type": "attacked_from_non_blind"
+          },
+          "description": "死角以外から物理攻撃された時、【回避】（物理攻撃を受けない。魔法・貫通は通る）"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "target_enemy",
+          "effect": "rotate",
+          "value": 2,
+          "description": "攻撃時、対象を180°回転"
+        }
+      ]
+    },
+    {
+      "id": "trick_04",
+      "name": "幻影のシノブ",
+      "faction": "trick",
+      "element": "geist",
+      "schoolClass": "intel",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "debuff_atk",
+          "value": 1,
+          "description": "召喚時、敵1体のATK-1"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "target_enemy",
+          "effect": "rotate",
+          "value": 1,
+          "description": "攻撃時、敵を90°回転"
+        }
+      ]
+    },
+    {
+      "id": "trick_11",
+      "name": "策謀のルシア",
+      "faction": "trick",
+      "element": "licht",
+      "schoolClass": "strategy",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 2,
+      "activateCost": 1,
+      "attackRange": "magic",
+      "attackType": "magic",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "swap_enemies",
+          "value": 0,
+          "description": "召喚時、敵2体の位置を入替"
+        }
+      ]
+    },
+    {
+      "id": "trick_03",
+      "name": "転位のカゲロウ",
+      "faction": "trick",
+      "element": "geist",
+      "schoolClass": "intel",
+      "hp": 2,
+      "atk": 2,
+      "manaCost": 3,
+      "activateCost": 2,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "swap",
+          "value": 0,
+          "description": "召喚時、敵1体と位置入替"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "rotate",
+          "value": 2,
+          "description": "その敵を180°回転"
+        },
+        {
+          "trigger": "on_attack",
+          "target": "self",
+          "effect": "buff_atk",
+          "value": 2,
+          "condition": {
+            "type": "blind_spot"
+          },
+          "description": "死角から攻撃時、ATK+2"
+        }
+      ]
+    },
+    {
+      "id": "trick_05",
+      "name": "幻惑のマボロシ",
+      "faction": "trick",
+      "element": "nacht",
+      "schoolClass": "strategy",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 3,
+      "activateCost": 2,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "piercing"
+      ],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "swap",
+          "value": 0,
+          "description": "召喚時、敵1体と位置入替"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "rotate",
+          "value": 2,
+          "description": "その敵を180°回転"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "debuff_atk",
+          "value": 1,
+          "description": "ATK-1"
+        }
+      ]
+    },
+    {
+      "id": "trick_07",
+      "name": "光遁のミラージュ",
+      "faction": "trick",
+      "element": "licht",
+      "schoolClass": "medic",
+      "hp": 4,
+      "atk": 3,
+      "manaCost": 3,
+      "activateCost": 2,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "dodge"
+      ],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "push",
+          "value": 0,
+          "description": "召喚時、敵1体を押し出す"
+        }
+      ]
+    },
+    {
+      "id": "trick_10",
+      "name": "虚幻のジョーカー",
+      "faction": "trick",
+      "element": "nicht",
+      "schoolClass": "strategy",
+      "hp": 6,
+      "atk": 2,
+      "manaCost": 5,
+      "activateCost": 3,
+      "attackRange": "front1",
+      "attackType": "physical",
+      "keywords": [
+        "dodge"
+      ],
+      "effects": [
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "copy_atk",
+          "value": 0,
+          "description": "召喚時、最もATKが高い敵のATKを自分にコピー"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "debuff_atk",
+          "value": 99,
+          "description": "その敵のATKを0にする"
+        },
+        {
+          "trigger": "on_summon",
+          "target": "target_enemy",
+          "effect": "rotate",
+          "value": 2,
+          "description": "その敵を180°回転させる"
+        }
+      ]
+    }
+  ],
+  "items": [
+    {
+      "id": "item_02",
+      "name": "マナ結晶",
+      "manaCost": 0,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "self",
+          "effect": "gain_mana",
+          "value": 2,
+          "description": "マナ+2"
+        }
+      ]
+    },
+    {
+      "id": "item_01",
+      "name": "緊急補給",
+      "manaCost": 0,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "self",
+          "effect": "draw",
+          "value": 2,
+          "description": "2枚ドロー"
+        }
+      ]
+    },
+    {
+      "id": "item_self_bounce",
+      "name": "再起の印",
+      "manaCost": 1,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_ally",
+          "effect": "move",
+          "value": 0,
+          "description": "味方1体を手札に戻す（再召喚で効果再発動）"
+        }
+      ]
+    },
+    {
+      "id": "item_element_swap",
+      "name": "属性召喚",
+      "manaCost": 2,
+      "freeAction": true,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_ally",
+          "effect": "swap",
+          "value": 0,
+          "description": "属性一致で手札のキャラと場のキャラを入替える"
+        }
+      ]
+    },
+    {
+      "id": "item_20",
+      "name": "混乱ガス",
+      "manaCost": 1,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_enemy",
+          "effect": "rotate",
+          "value": 1,
+          "description": "敵1体の向きを90°回転"
+        }
+      ]
+    },
+    {
+      "id": "item_reactivate",
+      "name": "次元歪曲",
+      "manaCost": 1,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_ally",
+          "effect": "reduce_activate_cost",
+          "value": 99,
+          "description": "味方1体を再行動可能にする"
+        }
+      ]
+    },
+    {
+      "id": "item_04",
+      "name": "強化弾",
+      "manaCost": 1,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_ally",
+          "effect": "buff_atk",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "id": "item_grant_protection",
+      "name": "加護の紋章",
+      "manaCost": 1,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_ally",
+          "effect": "grant_protection",
+          "value": 1,
+          "description": "味方1体に【防護】を付与"
+        }
+      ]
+    },
+    {
+      "id": "item_grant_piercing",
+      "name": "貫通の矢",
+      "manaCost": 1,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_ally",
+          "effect": "grant_piercing",
+          "value": 1,
+          "description": "味方1体に【貫通】を付与"
+        }
+      ]
+    },
+    {
+      "id": "item_03",
+      "name": "応急キット",
+      "manaCost": 1,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_ally",
+          "effect": "heal",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "id": "item_bounce_enemy",
+      "name": "帰還の風",
+      "manaCost": 2,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_enemy",
+          "effect": "move",
+          "value": 0,
+          "description": "敵C2以下のキャラを持ち主の手札に戻す"
+        }
+      ]
+    },
+    {
+      "id": "item_14",
+      "name": "拘束鎖",
+      "manaCost": 2,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_enemy",
+          "effect": "rotate",
+          "value": 2
+        },
+        {
+          "trigger": "on_use",
+          "target": "target_enemy",
+          "effect": "direction_lock",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "id": "item_element_write",
+      "name": "地脈書換",
+      "manaCost": 1,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "target_cell",
+          "effect": "field_swap",
+          "value": 0,
+          "description": "任意のマスの属性を好きな属性に変更"
+        }
+      ]
+    },
+    {
+      "id": "item_25",
+      "name": "手札交換",
+      "manaCost": 1,
+      "effects": [
+        {
+          "trigger": "on_use",
+          "target": "self",
+          "effect": "discard_draw",
+          "value": 2,
+          "handCost": 2,
+          "description": "使用時: 手札を2枚捨てて3枚ドロー"
+        }
+      ]
+    }
+  ]
+}

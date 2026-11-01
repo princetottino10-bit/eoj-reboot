@@ -1,0 +1,172 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>術式 印刷キット — 3x3 Duel</title><style>
+@page{size:A4;margin:0}
+*{box-sizing:border-box}
+body{margin:0;background:#d7d9dc;color:#20242a;font-family:"Yu Gothic",Meiryo,sans-serif}
+.sheet{width:189mm;height:264mm;margin:10mm auto;background:#fff;display:grid;grid-template-columns:repeat(3,63mm);grid-template-rows:repeat(3,88mm);break-after:page}
+.card{width:63mm;height:88mm;border:1px solid #20242a;border-bottom:2.5mm solid var(--accent);background:var(--tint);padding:3mm;overflow:hidden;display:flex;flex-direction:column}
+.card header{display:flex;align-items:center;background:var(--accent);color:#fff;margin:-3mm -3mm 0;padding:2mm 3mm 1.5mm}
+.cost{width:11mm;height:11mm;border:1.5px solid #fff;border-radius:50%;background:#20242a;color:#fff;display:grid;place-items:center;line-height:1;flex:none}
+.cost b{font-size:17px;font-weight:800}
+.cost small{font-size:6px;letter-spacing:.5px}
+.title{margin-left:2mm;flex:1;min-width:0}
+.name{font-size:18px;font-weight:800;line-height:1.1;white-space:nowrap}
+.yomi{font-size:8px;opacity:.85;margin-top:.3mm}
+.kind{min-width:9mm;padding:.8mm 1.4mm;border-radius:2px;background:#fff;color:var(--accent);font-size:11px;font-weight:800;text-align:center;flex:none}
+.cost-note{margin-top:1.2mm;text-align:center;font-size:8.5px;font-weight:700;color:#fff;background:var(--accent);border-radius:1mm;padding:.8mm 1mm}
+.text{margin-top:2mm;font-size:11.5px;line-height:1.62;font-weight:600;background:rgba(255,255,255,.8);border:1px solid var(--accent);border-radius:1mm;padding:2mm;flex:1}
+.hint{margin-top:1.4mm;font-size:8px;color:#4c5660;text-align:center;font-style:italic}
+.foot{border-top:1px solid var(--accent);margin-top:1.4mm;padding-top:.8mm;text-align:center;font-size:6.6px;color:#38434c}
+/* 最終ページ: カードの余り + ルールシート */
+.sheet-mixed{width:189mm;height:264mm;margin:10mm auto;background:#fff;display:flex;flex-direction:column;break-after:page;overflow:hidden}
+.card-row{display:grid;grid-template-columns:repeat(3,63mm);grid-auto-rows:88mm;flex:none}
+.rules{flex:1;padding:3.5mm 4mm 0;min-height:0}
+.rules h1{font-size:14px;margin:0 0 1.5mm}
+.rules h2{font-size:9.5px;border-bottom:1.2px solid #27313a;padding-bottom:.7mm;margin:2.4mm 0 1mm}
+.rules p,.rules li{font-size:7.6px;line-height:1.45;margin:.4mm 0}
+.rules ul{margin:0;padding-left:4.5mm}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:0 6mm}
+.two-col h2{margin-top:0}
+.costlist{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:.6mm 4mm;margin:0;padding:0}
+.costlist li{display:flex;justify-content:space-between;gap:2mm;border-bottom:1px dotted #aeb6bd;font-size:8px;padding-bottom:.4mm}
+.costlist b{font-weight:800}
+.costlist .cond{font-size:6.6px;color:#4c5660}
+.calibration{display:flex;align-items:center;gap:4mm;margin-top:2.5mm}
+.calibration-line{display:block;width:50mm;border-top:1mm solid #20242a}
+.calibration p{margin:0;font-size:8px}
+.print-note{text-align:center;font-size:10px;color:#53606d;margin:5mm}
+@media print{body{background:#fff}.sheet,.rules{margin:0}.print-note{display:none}}</style></head><body>
+<div class="print-note">印刷設定: A4 / 実際のサイズ（100%）/ 拡大・縮小なし</div>
+<section class="sheet"><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>2</b><small>霊力</small></div><div class="title"><div class="name">旋</div><div class="yomi">せん</div></div><div class="kind">術式</div></header>
+
+<div class="text">盤上の式神1体を、任意の向きに変える。敵味方を問わない。すでに攻撃した式神にも使える。</div>
+<div class="hint">1ターンで180度回せる唯一の手段</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>3</b><small>霊力</small></div><div class="title"><div class="name">傀儡</div><div class="yomi">くぐつ</div></div><div class="kind">術式</div></header>
+
+<div class="text">敵の式神1体を任意の向きに変え、その式神に攻撃を1回行わせる。対象は使用者が選ぶ(敵味方問わず)。反撃は通常どおり発生する。</div>
+<div class="hint">相手の駒で相手を殴る</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>3</b><small>霊力</small></div><div class="title"><div class="name">相打ち</div><div class="yomi">あいうち</div></div><div class="kind">術式</div></header>
+
+<div class="text">攻撃範囲が互いに重なっている敵の式神2体を選ぶ。その2体に互いを攻撃させる。戦闘は通常規則で解決する。</div>
+<div class="hint">相手の配置ミスを咎める</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>3</b><small>霊力</small></div><div class="title"><div class="name">逆手</div><div class="yomi">さかて</div></div><div class="kind">術式</div></header>
+
+<div class="text">隣接する自分の式神1体と敵の式神1体の位置を入れ替える。向きは各自そのまま。</div>
+<div class="hint">占拠マスの総数は変わらない</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>2</b><small>霊力</small></div><div class="title"><div class="name">手繰り</div><div class="yomi">たぐり</div></div><div class="kind">術式</div></header>
+
+<div class="text">敵の式神1体を、自分の式神に上下左右で隣接する空きマスへ移動する。向きはそのまま。</div>
+<div class="hint">射程外の敵を間合いへ引き込む</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>4</b><small>霊力</small></div><div class="title"><div class="name">窮鼠</div><div class="yomi">きゅうそ</div></div><div class="kind">術式</div></header>
+<div class="cost-note">相手が4マス以上占拠中は 1</div>
+<div class="text">自分の式神1体を、任意の空きマスへ移動する。向きは自由に選ぶ。</div>
+<div class="hint">追い詰められている時だけ安い</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#a3324b;--tint:#f6dbe1">
+<header><div class="cost"><b>1</b><small>生命</small></div><div class="title"><div class="name">守り札</div><div class="yomi">まもりふだ</div></div><div class="kind">術式</div></header>
+
+<div class="text">自分の式神1体のHPを+3する(上限10)。</div>
+<div class="hint">霊力を使わないので召喚と両立できる</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>2</b><small>霊力</small></div><div class="title"><div class="name">大地の怒り</div><div class="yomi">だいちのいかり</div></div><div class="kind">術式</div></header>
+
+<div class="text">陰か陽を指定する。その属性のマスにいる全ての式神に2ダメージ。敵味方を問わない。</div>
+<div class="hint">2体以上に当てないと割に合わない</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>2</b><small>霊力</small></div><div class="title"><div class="name">楔</div><div class="yomi">くさび</div></div><div class="kind">術式</div></header>
+
+<div class="text">マス1つに楔を置く。そのマスへの召喚・移動、そのマスにいる式神の回転・攻撃はコスト+2。太極に置いた場合、召喚の霊力軽減は適用されない。</div>
+<div class="hint">禁止ではなく値上げ</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article></section><section class="sheet"><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>2</b><small>霊力</small></div><div class="title"><div class="name">地脈</div><div class="yomi">ちみゃく</div></div><div class="kind">術式</div></header>
+
+<div class="text">誰も乗っていないマス1つの属性を、陰・陽・空のいずれかに変える。太極は選べない。</div>
+<div class="hint">空きマス限定(HP再計算を起こさない)</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>0</b><small>霊力</small></div><div class="title"><div class="name">地鎮</div><div class="yomi">じちん</div></div><div class="kind">術式</div></header>
+
+<div class="text">自分の式神1体を撃破する。その式神がいたマスを、その式神と同じ属性に変える。</div>
+<div class="hint">生命価と盤面の頭数を先払いする</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>2</b><small>霊力</small></div><div class="title"><div class="name">旋</div><div class="yomi">せん</div></div><div class="kind">術式</div></header>
+
+<div class="text">盤上の式神1体を、任意の向きに変える。敵味方を問わない。すでに攻撃した式神にも使える。</div>
+<div class="hint">1ターンで180度回せる唯一の手段</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>3</b><small>霊力</small></div><div class="title"><div class="name">傀儡</div><div class="yomi">くぐつ</div></div><div class="kind">術式</div></header>
+
+<div class="text">敵の式神1体を任意の向きに変え、その式神に攻撃を1回行わせる。対象は使用者が選ぶ(敵味方問わず)。反撃は通常どおり発生する。</div>
+<div class="hint">相手の駒で相手を殴る</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>3</b><small>霊力</small></div><div class="title"><div class="name">相打ち</div><div class="yomi">あいうち</div></div><div class="kind">術式</div></header>
+
+<div class="text">攻撃範囲が互いに重なっている敵の式神2体を選ぶ。その2体に互いを攻撃させる。戦闘は通常規則で解決する。</div>
+<div class="hint">相手の配置ミスを咎める</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>3</b><small>霊力</small></div><div class="title"><div class="name">逆手</div><div class="yomi">さかて</div></div><div class="kind">術式</div></header>
+
+<div class="text">隣接する自分の式神1体と敵の式神1体の位置を入れ替える。向きは各自そのまま。</div>
+<div class="hint">占拠マスの総数は変わらない</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>2</b><small>霊力</small></div><div class="title"><div class="name">手繰り</div><div class="yomi">たぐり</div></div><div class="kind">術式</div></header>
+
+<div class="text">敵の式神1体を、自分の式神に上下左右で隣接する空きマスへ移動する。向きはそのまま。</div>
+<div class="hint">射程外の敵を間合いへ引き込む</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>4</b><small>霊力</small></div><div class="title"><div class="name">窮鼠</div><div class="yomi">きゅうそ</div></div><div class="kind">術式</div></header>
+<div class="cost-note">相手が4マス以上占拠中は 1</div>
+<div class="text">自分の式神1体を、任意の空きマスへ移動する。向きは自由に選ぶ。</div>
+<div class="hint">追い詰められている時だけ安い</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#a3324b;--tint:#f6dbe1">
+<header><div class="cost"><b>1</b><small>生命</small></div><div class="title"><div class="name">守り札</div><div class="yomi">まもりふだ</div></div><div class="kind">術式</div></header>
+
+<div class="text">自分の式神1体のHPを+3する(上限10)。</div>
+<div class="hint">霊力を使わないので召喚と両立できる</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article></section><section class="sheet"><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>2</b><small>霊力</small></div><div class="title"><div class="name">大地の怒り</div><div class="yomi">だいちのいかり</div></div><div class="kind">術式</div></header>
+
+<div class="text">陰か陽を指定する。その属性のマスにいる全ての式神に2ダメージ。敵味方を問わない。</div>
+<div class="hint">2体以上に当てないと割に合わない</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>2</b><small>霊力</small></div><div class="title"><div class="name">楔</div><div class="yomi">くさび</div></div><div class="kind">術式</div></header>
+
+<div class="text">マス1つに楔を置く。そのマスへの召喚・移動、そのマスにいる式神の回転・攻撃はコスト+2。太極に置いた場合、召喚の霊力軽減は適用されない。</div>
+<div class="hint">禁止ではなく値上げ</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>2</b><small>霊力</small></div><div class="title"><div class="name">地脈</div><div class="yomi">ちみゃく</div></div><div class="kind">術式</div></header>
+
+<div class="text">誰も乗っていないマス1つの属性を、陰・陽・空のいずれかに変える。太極は選べない。</div>
+<div class="hint">空きマス限定(HP再計算を起こさない)</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article><article class="card" style="--accent:#4a3a86;--tint:#e7e2f4">
+<header><div class="cost"><b>0</b><small>霊力</small></div><div class="title"><div class="name">地鎮</div><div class="yomi">じちん</div></div><div class="kind">術式</div></header>
+
+<div class="text">自分の式神1体を撃破する。その式神がいたマスを、その式神と同じ属性に変える。</div>
+<div class="hint">生命価と盤面の頭数を先払いする</div>
+<div class="foot">召喚より前に使用 / 1ターン1枚 / 召喚枠は使わない</div>
+</article></section>
+</body></html>

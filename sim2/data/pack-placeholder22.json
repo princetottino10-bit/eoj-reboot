@@ -1,0 +1,28 @@
+{
+  "packId": "placeholder22",
+  "note": "DESIGN.md Sec.4 synthetic pack. No card effects. Front = +y relative.",
+  "cards": [
+    { "id": "p01", "name": "S2A", "summonCost": 2, "attackCost": 1, "atk": 1, "hp": 2, "lifeValue": 1, "attribute": "yin",  "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p02", "name": "S2B", "summonCost": 2, "attackCost": 1, "atk": 1, "hp": 2, "lifeValue": 1, "attribute": "yang", "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p03", "name": "S2C", "summonCost": 2, "attackCost": 1, "atk": 1, "hp": 2, "lifeValue": 1, "attribute": "yin",  "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p04", "name": "S2D", "summonCost": 2, "attackCost": 1, "atk": 1, "hp": 2, "lifeValue": 1, "attribute": "yang", "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p05", "name": "S2E", "summonCost": 2, "attackCost": 1, "atk": 1, "hp": 2, "lifeValue": 1, "attribute": "yin",  "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p06", "name": "S2F", "summonCost": 2, "attackCost": 1, "atk": 1, "hp": 2, "lifeValue": 1, "attribute": "yang", "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p07", "name": "S3A", "summonCost": 3, "attackCost": 2, "atk": 2, "hp": 3, "lifeValue": 1, "attribute": "yin",  "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p08", "name": "S3B", "summonCost": 3, "attackCost": 2, "atk": 2, "hp": 3, "lifeValue": 1, "attribute": "yang", "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p09", "name": "S3C", "summonCost": 3, "attackCost": 2, "atk": 2, "hp": 3, "lifeValue": 1, "attribute": "yin",  "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p10", "name": "S3D", "summonCost": 3, "attackCost": 2, "atk": 2, "hp": 3, "lifeValue": 1, "attribute": "yang", "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p11", "name": "S3E", "summonCost": 3, "attackCost": 2, "atk": 2, "hp": 3, "lifeValue": 1, "attribute": "yin",  "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p12", "name": "S3F", "summonCost": 3, "attackCost": 2, "atk": 2, "hp": 3, "lifeValue": 1, "attribute": "yang", "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p13", "name": "S4A", "summonCost": 4, "attackCost": 2, "atk": 2, "hp": 5, "lifeValue": 1, "attribute": "yin",  "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p14", "name": "S4B", "summonCost": 4, "attackCost": 2, "atk": 2, "hp": 5, "lifeValue": 1, "attribute": "yang", "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p15", "name": "S4C", "summonCost": 4, "attackCost": 2, "atk": 2, "hp": 5, "lifeValue": 1, "attribute": "yin",  "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p16", "name": "S4Spear1", "summonCost": 4, "attackCost": 2, "atk": 2, "hp": 5, "lifeValue": 1, "attribute": "yang", "aoe": false, "attackRange": [{ "x": 0, "y": 1 }, { "x": 0, "y": 2 }], "blindSpots": [{ "x": -1, "y": 0 }, { "x": 1, "y": 0 }] },
+    { "id": "p17", "name": "S4Spear2", "summonCost": 4, "attackCost": 2, "atk": 2, "hp": 5, "lifeValue": 1, "attribute": "yin",  "aoe": false, "attackRange": [{ "x": 0, "y": 1 }, { "x": 0, "y": 2 }], "blindSpots": [{ "x": -1, "y": 0 }, { "x": 1, "y": 0 }] },
+    { "id": "p18", "name": "S5A", "summonCost": 5, "attackCost": 3, "atk": 3, "hp": 6, "lifeValue": 3, "attribute": "yang", "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p19", "name": "S5B", "summonCost": 5, "attackCost": 3, "atk": 3, "hp": 6, "lifeValue": 3, "attribute": "yin",  "aoe": false, "attackRange": [{ "x": 0, "y": 1 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p20", "name": "S5Aoe", "summonCost": 5, "attackCost": 3, "atk": 3, "hp": 6, "lifeValue": 3, "attribute": "yang", "aoe": true, "attackRange": [{ "x": 0, "y": 1 }, { "x": -1, "y": 0 }, { "x": 1, "y": 0 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p21", "name": "S6Aoe", "summonCost": 6, "attackCost": 3, "atk": 3, "hp": 7, "lifeValue": 3, "attribute": "yin",  "aoe": true, "attackRange": [{ "x": 0, "y": 1 }, { "x": -1, "y": 1 }, { "x": 1, "y": 1 }, { "x": -1, "y": 0 }, { "x": 1, "y": 0 }], "blindSpots": [{ "x": 0, "y": -1 }] },
+    { "id": "p22", "name": "S7A", "summonCost": 7, "attackCost": 4, "atk": 4, "hp": 8, "lifeValue": 4, "attribute": "yang", "aoe": false, "attackRange": [{ "x": 0, "y": 1 }, { "x": 0, "y": 2 }, { "x": -1, "y": 0 }, { "x": 1, "y": 0 }], "blindSpots": [{ "x": 0, "y": -1 }] }
+  ]
+}

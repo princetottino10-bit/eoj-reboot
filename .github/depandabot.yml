@@ -1,0 +1,28 @@
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configurationoptions-for-the-dependab-ot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/game/"
+    schedule:
+      interval: "weekly"
+      time: "08:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7
+      semver-major-days: 7
+      semver-minor-days: 7
+      semver-patch-days: 7
+
+  - package-ecosystem: "uv"
+    directory: "/card-gen/"
+    schedule:
+      interval: "weekly"
+      day: "sunday"
+      time: "08:00"
+      timezone: "Asia/Tokyo"
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 7

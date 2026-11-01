@@ -1,0 +1,1200 @@
+{
+  "generatedAt": "2026-07-19T02:43:43.923Z",
+  "status": "complete",
+  "decisionStatus": "proposal-unconfirmed",
+  "assumptions": {
+    "task": "C:\\Projects\\codex\\eoj-reboot\\docs\\codex-task-v4-probe.md",
+    "analysisMethod": "C:\\Projects\\codex\\eoj-reboot\\docs\\handoff-analysis-kpi.md",
+    "configuration": {
+      "name": "v4_probe_yinyang_taiji_dm2_weak1_lowhp",
+      "phase": "v4-probe",
+      "pureVanilla": true,
+      "curveName": "hybrid-high-heavy",
+      "distributionName": "lowmid",
+      "distribution": {
+        "2": 4,
+        "3": 4,
+        "4": 4,
+        "5": 2,
+        "6": 1,
+        "7": 1
+      },
+      "hp": "hybrid",
+      "atk": "high",
+      "react": "custom",
+      "rotationCost": "same",
+      "shapeTax": "none",
+      "lifeRule": "134",
+      "manaGain": 3,
+      "p0StartingMana": 3,
+      "p1StartingMana": 4,
+      "destroyManaGain": 2,
+      "oracle": true,
+      "checkSearchDepth": 6,
+      "deckCreatures": 16,
+      "fatigue": false,
+      "distributionsByOwner": null,
+      "distributionNamesByOwner": null,
+      "robustnessNote": null,
+      "sourcePrimaryRank": null,
+      "runId": "v4-probe",
+      "purpose": "Frozen v3.1 center: v3 body with heavy 2/3/3/3/3/4 reactivation and choice 2 rotate-attack rule.",
+      "reactLevelName": "heavy",
+      "reactCostCurve": {
+        "2": 2,
+        "3": 3,
+        "4": 3,
+        "5": 3,
+        "6": 3,
+        "7": 4
+      },
+      "rotateAttackRule": true,
+      "reactNeedOracle": true,
+      "itemCounts": null,
+      "v4Probe": true,
+      "shapeDeck0718": true,
+      "shapeDefinitions": [
+        {
+          "shape": "ashigaru",
+          "name": "足軽",
+          "count": 4,
+          "cost": 2,
+          "attackCells": [
+            [
+              1,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "kenshi",
+          "name": "剣士",
+          "count": 4,
+          "cost": 3,
+          "attackCells": [
+            [
+              1,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "kyuhei",
+          "name": "弓兵",
+          "count": 1,
+          "cost": 4,
+          "attackCells": [
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              -1
+            ]
+          ]
+        },
+        {
+          "shape": "fuhei",
+          "name": "斧兵",
+          "count": 1,
+          "cost": 4,
+          "attackCells": [
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              -1
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "juken",
+          "name": "重剣",
+          "count": 2,
+          "cost": 4,
+          "attackCells": [
+            [
+              1,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "souto",
+          "name": "双頭",
+          "count": 1,
+          "cost": 5,
+          "attackCells": [
+            [
+              1,
+              0
+            ],
+            [
+              -1,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              -1
+            ]
+          ]
+        },
+        {
+          "shape": "taiken",
+          "name": "大剣",
+          "count": 1,
+          "cost": 5,
+          "attackCells": [
+            [
+              1,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "senpu",
+          "name": "旋風",
+          "count": 1,
+          "cost": 6,
+          "attackCells": [
+            [
+              1,
+              -1
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ],
+            [
+              0,
+              -1
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "ryu",
+          "name": "竜",
+          "count": 1,
+          "cost": 7,
+          "attackCells": [
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              -1
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        }
+      ],
+      "counterFront1": false,
+      "hpOverrides": {
+        "2": 2,
+        "3": 3,
+        "4": 5
+      },
+      "pureAttributes": [
+        "yin",
+        "yang"
+      ],
+      "boardAttrs": [
+        "neutral",
+        "yin",
+        "neutral",
+        "yin",
+        "taiji",
+        "yang",
+        "neutral",
+        "yang",
+        "neutral"
+      ],
+      "taijiSummonDiscount": true,
+      "weakBonus": 1
+    },
+    "unchanged": "Victory timing, placement implementation, AI score weights, check state, and depth-6 return search are unchanged from the 7/18 print baseline."
+  },
+  "reproducibility": {
+    "command": "node scripts\\explore-stat-curves.cjs --v4-probe --seed 20260702",
+    "repoHead": "8d8da4914d1a9bfcb88bfc1227036c2b7695229c",
+    "scriptPath": "C:\\Projects\\codex\\eoj-reboot\\scripts\\explore-stat-curves.cjs",
+    "scriptSha256": "a8b758e209d9d4ea478376062c6b44cfd912867a8184d72ce066604a3346362d",
+    "games": 2000,
+    "seed": 20260702,
+    "oracle": true,
+    "checkSearchDepth": 6
+  },
+  "baseline": {
+    "source": "C:\\Projects\\codex\\eoj-reboot\\docs\\baselines\\shapes-0718-print-confirmation-results.json",
+    "summary": {
+      "games": 2000,
+      "avgRounds": 8.18175,
+      "medianRounds": 7.5,
+      "p90Rounds": 12,
+      "p0WinRate": 0.5095,
+      "territoryWinRate": 0.9915,
+      "lifeWinRate": 0.0065,
+      "timeoutRate": 0.002,
+      "avgBoard": 4.772267546674,
+      "check4PerGame": 2.8745,
+      "check4ReturnRate": 0.5218374804245693,
+      "check4WithHighCostPerGame": 1.216,
+      "check4WithHighCostReturnRate": 0.509046052631579,
+      "check4OracleChecksPerGame": 2.874,
+      "check4OracleReturnableRate": 0.5219206680584552,
+      "check4OracleHighCostChecksPerGame": 1.2165,
+      "check4OracleHighCostReturnableRate": 0.5092478421701603,
+      "check4OracleRealizationRate": 0.9998406124934748,
+      "check4HighCostOracleRealizationRate": 0.9996037498407035,
+      "checkSearchPlansPerGame": 1.5,
+      "checkSearchHighCostPlansPerGame": 0.6195,
+      "checkSearchSummonPlansPerGame": 0.9525,
+      "checkSearchAttackPlansPerGame": 0.547,
+      "checkSearchRotationPlansPerGame": 0.0005,
+      "checkSearchRotateAttackPlansPerGame": 0.0665,
+      "checkSearchItemPlansPerGame": 0,
+      "checkSearchRemovalItemPlansPerGame": 0,
+      "checkSearchMultiStepPlansPerGame": 0.09,
+      "checkSearchAvgPlanSteps": 1.0623333333333334,
+      "checkSearchItemPlanStepShare": 0,
+      "checkSearchItemPlanRate": 0,
+      "checkSearchRemovalItemPlanRate": 0,
+      "checkSearchOracleMissesPerGame": 0,
+      "checkSearchHighCostOracleMissesPerGame": 0,
+      "itemUsesPerGame": 0,
+      "itemUsePerGameByType": {
+        "removal": 0,
+        "economy": 0,
+        "buff": 0,
+        "draw": 0
+      },
+      "itemRemovalDamagePerGame": 0,
+      "itemRemovalKillsPerGame": 0,
+      "itemBuffHpGainedPerGame": 0,
+      "itemDrawCardsPerGame": 0,
+      "itemDeadPerGame": 0,
+      "itemInitialPerGame": 0,
+      "itemDeadRate": 0,
+      "itemDeadRateByType": {
+        "removal": 0,
+        "economy": 0,
+        "buff": 0,
+        "draw": 0
+      },
+      "checkSearchItemUsesPerGame": 0,
+      "killsPerGame": 4.4915,
+      "weakAttackRate": 0.3892762358868247,
+      "weakKillRate": 0.5042858733162641,
+      "manualAttacksPerGame": 3.6445,
+      "summonAttacksPerGame": 7.471,
+      "reactivationsPerGame": 4.0015,
+      "attackReactivationsPerGame": 3.6445,
+      "attackOnlyReactivationsPerGame": 2.81,
+      "rotationsPerGame": 0.357,
+      "rotateAttacksPerGame": 0.8345,
+      "rotationShare": 0.08921654379607648,
+      "winnerAttackOnlyReactsPerGame": 1.2925,
+      "winnerRotationOnlyReactsPerGame": 0.0465,
+      "winnerRotateAttacksPerGame": 0.3005,
+      "loserAttackOnlyReactsPerGame": 1.515,
+      "loserRotationOnlyReactsPerGame": 0.2415,
+      "loserRotateAttacksPerGame": 0.534,
+      "shapeStats": {
+        "ashigaru": {
+          "name": "足軽",
+          "kills": 1042,
+          "deaths": 2538,
+          "attackOnlyReacts": 898,
+          "rotateAttackReacts": 109,
+          "killsPerGame": 0.521,
+          "deathsPerGame": 1.269,
+          "attackOnlyReactsPerGame": 0.449,
+          "rotateAttackReactsPerGame": 0.0545
+        },
+        "kenshi": {
+          "name": "剣士",
+          "kills": 2570,
+          "deaths": 3844,
+          "attackOnlyReacts": 1792,
+          "rotateAttackReacts": 193,
+          "killsPerGame": 1.285,
+          "deathsPerGame": 1.922,
+          "attackOnlyReactsPerGame": 0.896,
+          "rotateAttackReactsPerGame": 0.0965
+        },
+        "kyuhei": {
+          "name": "弓兵",
+          "kills": 683,
+          "deaths": 583,
+          "attackOnlyReacts": 543,
+          "rotateAttackReacts": 25,
+          "killsPerGame": 0.3415,
+          "deathsPerGame": 0.2915,
+          "attackOnlyReactsPerGame": 0.2715,
+          "rotateAttackReactsPerGame": 0.0125
+        },
+        "fuhei": {
+          "name": "斧兵",
+          "kills": 709,
+          "deaths": 466,
+          "attackOnlyReacts": 106,
+          "rotateAttackReacts": 487,
+          "killsPerGame": 0.3545,
+          "deathsPerGame": 0.233,
+          "attackOnlyReactsPerGame": 0.053,
+          "rotateAttackReactsPerGame": 0.2435
+        },
+        "souto": {
+          "name": "双頭",
+          "kills": 829,
+          "deaths": 507,
+          "attackOnlyReacts": 489,
+          "rotateAttackReacts": 64,
+          "killsPerGame": 0.4145,
+          "deathsPerGame": 0.2535,
+          "attackOnlyReactsPerGame": 0.2445,
+          "rotateAttackReactsPerGame": 0.032
+        },
+        "senpu": {
+          "name": "旋風",
+          "kills": 638,
+          "deaths": 82,
+          "attackOnlyReacts": 130,
+          "rotateAttackReacts": 423,
+          "killsPerGame": 0.319,
+          "deathsPerGame": 0.041,
+          "attackOnlyReactsPerGame": 0.065,
+          "rotateAttackReactsPerGame": 0.2115
+        },
+        "ryu": {
+          "name": "竜",
+          "kills": 201,
+          "deaths": 35,
+          "attackOnlyReacts": 31,
+          "rotateAttackReacts": 66,
+          "killsPerGame": 0.1005,
+          "deathsPerGame": 0.0175,
+          "attackOnlyReactsPerGame": 0.0155,
+          "rotateAttackReactsPerGame": 0.033
+        },
+        "juken": {
+          "name": "重剣",
+          "kills": 1342,
+          "deaths": 647,
+          "attackOnlyReacts": 1010,
+          "rotateAttackReacts": 115,
+          "killsPerGame": 0.671,
+          "deathsPerGame": 0.3235,
+          "attackOnlyReactsPerGame": 0.505,
+          "rotateAttackReactsPerGame": 0.0575
+        },
+        "taiken": {
+          "name": "大剣",
+          "kills": 969,
+          "deaths": 281,
+          "attackOnlyReacts": 621,
+          "rotateAttackReacts": 187,
+          "killsPerGame": 0.4845,
+          "deathsPerGame": 0.1405,
+          "attackOnlyReactsPerGame": 0.3105,
+          "rotateAttackReactsPerGame": 0.0935
+        }
+      },
+      "reactivationOpportunityTurnsPerGame": 8.663,
+      "reactivationUnusedRate": 0.6259956135288006,
+      "checkReturnPlayerSlotsPerGame": 0.989,
+      "checkReturnPlayerWinRate": 0.5338725985844287,
+      "checkFailedPlayerSlotsPerGame": 1.093,
+      "checkFailedPlayerWinRate": 0.08737419945105215,
+      "checkResponseTurnsPerGame": 2.874,
+      "checkResponseReturnedTurnsPerGame": 1.5,
+      "checkResponseFailedTurnsPerGame": 1.374,
+      "checkResponseAttackReactsPerGame": 0.93,
+      "checkResponseAttackOnlyReactsPerGame": 0.6625,
+      "checkResponseRotationsPerGame": 0.1335,
+      "checkResponseRotateAttacksPerGame": 0.2675,
+      "checkResponseReturnedAttackReactsPerGame": 0.6425,
+      "checkResponseReturnedAttackOnlyReactsPerGame": 0.569,
+      "checkResponseReturnedRotationsPerGame": 0.001,
+      "checkResponseReturnedRotateAttacksPerGame": 0.0735,
+      "checkResponseFailedAttackReactsPerGame": 0.2875,
+      "checkResponseFailedAttackOnlyReactsPerGame": 0.0935,
+      "checkResponseFailedRotationsPerGame": 0.1325,
+      "checkResponseFailedRotateAttacksPerGame": 0.194,
+      "reactNeedChecksPerGame": 1.5,
+      "reactNeedCounts": {
+        "unneeded": 1812,
+        "attackRequired": 1187,
+        "rotationRequired": 0,
+        "eitherRequired": 1
+      },
+      "reactNeedReturnedCounts": {
+        "unneeded": 1812,
+        "attackRequired": 1187,
+        "rotationRequired": 0,
+        "eitherRequired": 1
+      },
+      "reactNeedPerGameByType": {
+        "unneeded": 0.906,
+        "attackRequired": 0.5935,
+        "rotationRequired": 0,
+        "eitherRequired": 0.0005
+      },
+      "reactNeedReturnedRateByType": {
+        "unneeded": 1,
+        "attackRequired": 1,
+        "rotationRequired": 0,
+        "eitherRequired": 1
+      },
+      "reactNeedRotateAttackRequiredPerGame": 0.063,
+      "reactNeedRotateAttackRequiredReturnRate": 1,
+      "manaOverflowPerGame": 0,
+      "manaCapHitsPerGame": 0.0005,
+      "manaIncomePerGame": 57.588,
+      "manaSpentPerGame": 52.49,
+      "manaUtilization": 0.9114746127665486,
+      "deckExhaustionsPerGame": 0.0495,
+      "deckEmptyGameRate": 0.04,
+      "firstDeckEmptyAvgRound": 13.6125,
+      "firstDeckEmptyMedianRound": 14,
+      "firstDeckEmptyP90Round": 15.5,
+      "deckReshufflesPerGame": 0.022,
+      "deckReshuffleGameRate": 0.02,
+      "firstDeckReshuffleAvgRound": 15.1375,
+      "firstDeckReshuffleMedianRound": 15,
+      "firstDeckReshuffleP90Round": 17,
+      "destroyManaGainedPerGame": 4.4915,
+      "fatigueDamagePerGame": 0,
+      "fatigueEventsPerGame": 0,
+      "fatigueWinRate": 0,
+      "fatigueShareOfLifeWins": 0,
+      "firstSummon": {
+        "reached": 4000,
+        "reachedRate": 1,
+        "missingRate": 0,
+        "avgRound": 0.25725,
+        "medianRound": 0.5,
+        "p90Round": 0.5
+      },
+      "board3": {
+        "reached": 3912,
+        "reachedRate": 0.978,
+        "missingRate": 0.022,
+        "avgRound": 3.5853783231083844,
+        "medianRound": 3.5,
+        "p90Round": 5.5
+      },
+      "summonDecisionTurnsPerGame": 15.4065,
+      "summonStalledTurnsPerGame": 3.418,
+      "summonStallRate": 0.22185441209878948,
+      "summonStallNoCardsRate": 0,
+      "summonStallManaRate": 0.22185441209878948,
+      "attrMatchSummonRate": 0.6417975052138669,
+      "attrBadSummonRate": 0.02392476291661748,
+      "killBandsPerGame": {
+        "low": 4.039,
+        "mid": 0.435,
+        "high": 0.0175
+      },
+      "matchupMatrix": {
+        "pure": {
+          "pure": {
+            "games": 2000,
+            "p0Wins": 1019,
+            "p1Wins": 979,
+            "draws": 2,
+            "territoryWins": 1983,
+            "lifeWins": 13,
+            "timeoutWins": 4,
+            "fatigueWins": 0,
+            "p0WinRate": 0.5095,
+            "p1WinRate": 0.4895,
+            "drawRate": 0.001,
+            "avgRounds": 8.18175,
+            "territoryWinRate": 0.9915,
+            "lifeWinRate": 0.0065,
+            "timeoutRate": 0.002,
+            "fatigueWinRate": 0
+          }
+        }
+      }
+    }
+  },
+  "run": {
+    "variant": {
+      "name": "v4_probe_yinyang_taiji_dm2_weak1_lowhp",
+      "phase": "v4-probe",
+      "pureVanilla": true,
+      "curveName": "hybrid-high-heavy",
+      "distributionName": "lowmid",
+      "distribution": {
+        "2": 4,
+        "3": 4,
+        "4": 4,
+        "5": 2,
+        "6": 1,
+        "7": 1
+      },
+      "hp": "hybrid",
+      "atk": "high",
+      "react": "custom",
+      "rotationCost": "same",
+      "shapeTax": "none",
+      "lifeRule": "134",
+      "manaGain": 3,
+      "p0StartingMana": 3,
+      "p1StartingMana": 4,
+      "destroyManaGain": 2,
+      "oracle": true,
+      "checkSearchDepth": 6,
+      "deckCreatures": 16,
+      "fatigue": false,
+      "distributionsByOwner": null,
+      "distributionNamesByOwner": null,
+      "robustnessNote": null,
+      "sourcePrimaryRank": null,
+      "runId": "v4-probe",
+      "purpose": "Frozen v3.1 center: v3 body with heavy 2/3/3/3/3/4 reactivation and choice 2 rotate-attack rule.",
+      "reactLevelName": "heavy",
+      "reactCostCurve": {
+        "2": 2,
+        "3": 3,
+        "4": 3,
+        "5": 3,
+        "6": 3,
+        "7": 4
+      },
+      "rotateAttackRule": true,
+      "reactNeedOracle": true,
+      "itemCounts": null,
+      "v4Probe": true,
+      "shapeDeck0718": true,
+      "shapeDefinitions": [
+        {
+          "shape": "ashigaru",
+          "name": "足軽",
+          "count": 4,
+          "cost": 2,
+          "attackCells": [
+            [
+              1,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "kenshi",
+          "name": "剣士",
+          "count": 4,
+          "cost": 3,
+          "attackCells": [
+            [
+              1,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "kyuhei",
+          "name": "弓兵",
+          "count": 1,
+          "cost": 4,
+          "attackCells": [
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              -1
+            ]
+          ]
+        },
+        {
+          "shape": "fuhei",
+          "name": "斧兵",
+          "count": 1,
+          "cost": 4,
+          "attackCells": [
+            [
+              1,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              -1
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "juken",
+          "name": "重剣",
+          "count": 2,
+          "cost": 4,
+          "attackCells": [
+            [
+              1,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "souto",
+          "name": "双頭",
+          "count": 1,
+          "cost": 5,
+          "attackCells": [
+            [
+              1,
+              0
+            ],
+            [
+              -1,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              -1
+            ]
+          ]
+        },
+        {
+          "shape": "taiken",
+          "name": "大剣",
+          "count": 1,
+          "cost": 5,
+          "attackCells": [
+            [
+              1,
+              0
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "senpu",
+          "name": "旋風",
+          "count": 1,
+          "cost": 6,
+          "attackCells": [
+            [
+              1,
+              -1
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              1
+            ],
+            [
+              0,
+              -1
+            ],
+            [
+              0,
+              1
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "ryu",
+          "name": "竜",
+          "count": 1,
+          "cost": 7,
+          "attackCells": [
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              0,
+              -1
+            ]
+          ],
+          "weaknessCells": [
+            [
+              -1,
+              0
+            ]
+          ]
+        }
+      ],
+      "counterFront1": false,
+      "hpOverrides": {
+        "2": 2,
+        "3": 3,
+        "4": 5
+      },
+      "pureAttributes": [
+        "yin",
+        "yang"
+      ],
+      "boardAttrs": [
+        "neutral",
+        "yin",
+        "neutral",
+        "yin",
+        "taiji",
+        "yang",
+        "neutral",
+        "yang",
+        "neutral"
+      ],
+      "taijiSummonDiscount": true,
+      "weakBonus": 1
+    },
+    "summary": {
+      "games": 2000,
+      "avgRounds": 12.06875,
+      "medianRounds": 11.5,
+      "p90Rounds": 16.5,
+      "p0WinRate": 0.573,
+      "territoryWinRate": 0.7715,
+      "lifeWinRate": 0.2155,
+      "timeoutRate": 0.013,
+      "avgBoard": 4.421460383221129,
+      "check4PerGame": 3.7085,
+      "check4ReturnRate": 0.6415800415800416,
+      "check4WithHighCostPerGame": 3.1785,
+      "check4WithHighCostReturnRate": 0.6235645744848198,
+      "check4OracleChecksPerGame": 3.707,
+      "check4OracleReturnableRate": 0.6512004316158618,
+      "check4OracleHighCostChecksPerGame": 3.2715,
+      "check4OracleHighCostReturnableRate": 0.6342656273880483,
+      "check4OracleRealizationRate": 0.9852266835696828,
+      "check4HighCostOracleRealizationRate": 0.9831284363504039,
+      "checkSearchPlansPerGame": 2.414,
+      "checkSearchHighCostPlansPerGame": 2.075,
+      "checkSearchSummonPlansPerGame": 1.277,
+      "checkSearchAttackPlansPerGame": 1.284,
+      "checkSearchRotationPlansPerGame": 0.003,
+      "checkSearchRotateAttackPlansPerGame": 0.172,
+      "checkSearchItemPlansPerGame": 0,
+      "checkSearchRemovalItemPlansPerGame": 0,
+      "checkSearchMultiStepPlansPerGame": 0.3905,
+      "checkSearchAvgPlanSteps": 1.1696354598177299,
+      "checkSearchItemPlanStepShare": 0,
+      "checkSearchItemPlanRate": 0,
+      "checkSearchRemovalItemPlanRate": 0,
+      "checkSearchOracleMissesPerGame": 0,
+      "checkSearchHighCostOracleMissesPerGame": 0,
+      "itemUsesPerGame": 0,
+      "itemUsePerGameByType": {
+        "removal": 0,
+        "economy": 0,
+        "buff": 0,
+        "draw": 0
+      },
+      "itemRemovalDamagePerGame": 0,
+      "itemRemovalKillsPerGame": 0,
+      "itemBuffHpGainedPerGame": 0,
+      "itemDrawCardsPerGame": 0,
+      "itemDeadPerGame": 0,
+      "itemInitialPerGame": 0,
+      "itemDeadRate": 0,
+      "itemDeadRateByType": {
+        "removal": 0,
+        "economy": 0,
+        "buff": 0,
+        "draw": 0
+      },
+      "checkSearchItemUsesPerGame": 0,
+      "killsPerGame": 11.34,
+      "weakAttackRate": 0.2667680117928874,
+      "weakKillRate": 0.247663139329806,
+      "manualAttacksPerGame": 8.9205,
+      "summonAttacksPerGame": 12.7875,
+      "reactivationsPerGame": 10.3325,
+      "attackReactivationsPerGame": 8.9205,
+      "attackOnlyReactivationsPerGame": 5.1235,
+      "rotationsPerGame": 1.412,
+      "rotateAttacksPerGame": 3.797,
+      "rotationShare": 0.13665618195015727,
+      "winnerAttackOnlyReactsPerGame": 2.4285,
+      "winnerRotationOnlyReactsPerGame": 0.427,
+      "winnerRotateAttacksPerGame": 1.859,
+      "loserAttackOnlyReactsPerGame": 2.6915,
+      "loserRotationOnlyReactsPerGame": 0.89,
+      "loserRotateAttacksPerGame": 1.934,
+      "shapeStats": {
+        "ashigaru": {
+          "name": "足軽",
+          "kills": 1058,
+          "deaths": 6518,
+          "attackOnlyReacts": 562,
+          "rotateAttackReacts": 104,
+          "killsPerGame": 0.529,
+          "deathsPerGame": 3.259,
+          "attackOnlyReactsPerGame": 0.281,
+          "rotateAttackReactsPerGame": 0.052
+        },
+        "kenshi": {
+          "name": "剣士",
+          "kills": 3230,
+          "deaths": 7126,
+          "attackOnlyReacts": 1979,
+          "rotateAttackReacts": 447,
+          "killsPerGame": 1.615,
+          "deathsPerGame": 3.563,
+          "attackOnlyReactsPerGame": 0.9895,
+          "rotateAttackReactsPerGame": 0.2235
+        },
+        "kyuhei": {
+          "name": "弓兵",
+          "kills": 1660,
+          "deaths": 1331,
+          "attackOnlyReacts": 1101,
+          "rotateAttackReacts": 205,
+          "killsPerGame": 0.83,
+          "deathsPerGame": 0.6655,
+          "attackOnlyReactsPerGame": 0.5505,
+          "rotateAttackReactsPerGame": 0.1025
+        },
+        "fuhei": {
+          "name": "斧兵",
+          "kills": 1457,
+          "deaths": 1243,
+          "attackOnlyReacts": 155,
+          "rotateAttackReacts": 1125,
+          "killsPerGame": 0.7285,
+          "deathsPerGame": 0.6215,
+          "attackOnlyReactsPerGame": 0.0775,
+          "rotateAttackReactsPerGame": 0.5625
+        },
+        "souto": {
+          "name": "双頭",
+          "kills": 2454,
+          "deaths": 1608,
+          "attackOnlyReacts": 1412,
+          "rotateAttackReacts": 399,
+          "killsPerGame": 1.227,
+          "deathsPerGame": 0.804,
+          "attackOnlyReactsPerGame": 0.706,
+          "rotateAttackReactsPerGame": 0.1995
+        },
+        "senpu": {
+          "name": "旋風",
+          "kills": 4757,
+          "deaths": 648,
+          "attackOnlyReacts": 847,
+          "rotateAttackReacts": 3437,
+          "killsPerGame": 2.3785,
+          "deathsPerGame": 0.324,
+          "attackOnlyReactsPerGame": 0.4235,
+          "rotateAttackReactsPerGame": 1.7185
+        },
+        "ryu": {
+          "name": "竜",
+          "kills": 2591,
+          "deaths": 421,
+          "attackOnlyReacts": 557,
+          "rotateAttackReacts": 999,
+          "killsPerGame": 1.2955,
+          "deathsPerGame": 0.2105,
+          "attackOnlyReactsPerGame": 0.2785,
+          "rotateAttackReactsPerGame": 0.4995
+        },
+        "juken": {
+          "name": "重剣",
+          "kills": 2736,
+          "deaths": 2357,
+          "attackOnlyReacts": 1848,
+          "rotateAttackReacts": 413,
+          "killsPerGame": 1.368,
+          "deathsPerGame": 1.1785,
+          "attackOnlyReactsPerGame": 0.924,
+          "rotateAttackReactsPerGame": 0.2065
+        },
+        "taiken": {
+          "name": "大剣",
+          "kills": 2737,
+          "deaths": 1428,
+          "attackOnlyReacts": 1786,
+          "rotateAttackReacts": 465,
+          "killsPerGame": 1.3685,
+          "deathsPerGame": 0.714,
+          "attackOnlyReactsPerGame": 0.893,
+          "rotateAttackReactsPerGame": 0.2325
+        }
+      },
+      "reactivationOpportunityTurnsPerGame": 13.618,
+      "reactivationUnusedRate": 0.4204361873990307,
+      "checkReturnPlayerSlotsPerGame": 0.8515,
+      "checkReturnPlayerWinRate": 0.2959483264826776,
+      "checkFailedPlayerSlotsPerGame": 0.9,
+      "checkFailedPlayerWinRate": 0.075,
+      "checkResponseTurnsPerGame": 3.707,
+      "checkResponseReturnedTurnsPerGame": 2.4055,
+      "checkResponseFailedTurnsPerGame": 1.3015,
+      "checkResponseAttackReactsPerGame": 2.16,
+      "checkResponseAttackOnlyReactsPerGame": 1.576,
+      "checkResponseRotationsPerGame": 0.263,
+      "checkResponseRotateAttacksPerGame": 0.584,
+      "checkResponseReturnedAttackReactsPerGame": 1.543,
+      "checkResponseReturnedAttackOnlyReactsPerGame": 1.357,
+      "checkResponseReturnedRotationsPerGame": 0.018,
+      "checkResponseReturnedRotateAttacksPerGame": 0.186,
+      "checkResponseFailedAttackReactsPerGame": 0.617,
+      "checkResponseFailedAttackOnlyReactsPerGame": 0.219,
+      "checkResponseFailedRotationsPerGame": 0.245,
+      "checkResponseFailedRotateAttacksPerGame": 0.398,
+      "reactNeedChecksPerGame": 2.414,
+      "reactNeedCounts": {
+        "unneeded": 1987,
+        "attackRequired": 2835,
+        "rotationRequired": 0,
+        "eitherRequired": 6
+      },
+      "reactNeedReturnedCounts": {
+        "unneeded": 1987,
+        "attackRequired": 2818,
+        "rotationRequired": 0,
+        "eitherRequired": 6
+      },
+      "reactNeedPerGameByType": {
+        "unneeded": 0.9935,
+        "attackRequired": 1.4175,
+        "rotationRequired": 0,
+        "eitherRequired": 0.003
+      },
+      "reactNeedReturnedRateByType": {
+        "unneeded": 1,
+        "attackRequired": 0.9940035273368607,
+        "rotationRequired": 0,
+        "eitherRequired": 1
+      },
+      "reactNeedRotateAttackRequiredPerGame": 0.1425,
+      "reactNeedRotateAttackRequiredReturnRate": 0.9929824561403509,
+      "manaOverflowPerGame": 0.225,
+      "manaCapHitsPerGame": 0.0815,
+      "manaIncomePerGame": 99.1315,
+      "manaSpentPerGame": 93.068,
+      "manaUtilization": 0.9388337713037733,
+      "deckExhaustionsPerGame": 0.5545,
+      "deckEmptyGameRate": 0.3955,
+      "firstDeckEmptyAvgRound": 12.074589127686473,
+      "firstDeckEmptyMedianRound": 12,
+      "firstDeckEmptyP90Round": 13.5,
+      "deckReshufflesPerGame": 0.361,
+      "deckReshuffleGameRate": 0.2825,
+      "firstDeckReshuffleAvgRound": 13.29646017699115,
+      "firstDeckReshuffleMedianRound": 13,
+      "firstDeckReshuffleP90Round": 15,
+      "destroyManaGainedPerGame": 22.68,
+      "fatigueDamagePerGame": 0,
+      "fatigueEventsPerGame": 0,
+      "fatigueWinRate": 0,
+      "fatigueShareOfLifeWins": 0,
+      "firstSummon": {
+        "reached": 4000,
+        "reachedRate": 1,
+        "missingRate": 0,
+        "avgRound": 0.25725,
+        "medianRound": 0.5,
+        "p90Round": 0.5
+      },
+      "board3": {
+        "reached": 3449,
+        "reachedRate": 0.86225,
+        "missingRate": 0.13775,
+        "avgRound": 5.089446216294578,
+        "medianRound": 4.5,
+        "p90Round": 9
+      },
+      "summonDecisionTurnsPerGame": 22.723,
+      "summonStalledTurnsPerGame": 5.7355,
+      "summonStallRate": 0.2524094529771597,
+      "summonStallNoCardsRate": 0,
+      "summonStallManaRate": 0.2524094529771597,
+      "attrMatchSummonRate": 0.4379218026660717,
+      "attrBadSummonRate": 0.02574042054771599,
+      "fifthSummonCounterDeathsPerGame": 0,
+      "fifthSummonCounterDeaths": 0,
+      "taijiOccupancyRate": 0.7531641636457794,
+      "taijiP0OccupancyRate": 0.4176074572760228,
+      "taijiP1OccupancyRate": 0.3355567063697566,
+      "taijiDiscountUsesPerGame": 4.6975,
+      "taijiDiscountUsesP0PerGame": 2.716,
+      "taijiDiscountUsesP1PerGame": 1.9815,
+      "taijiManaSavedPerGame": 4.6975,
+      "yinYangPositiveApplicationsPerGame": 7.8515,
+      "yinYangNegativeApplicationsPerGame": 0.4615,
+      "yinYangPositiveApplicationRate": 0.4379218026660717,
+      "yinYangNegativeApplicationRate": 0.02574042054771599,
+      "killBandsPerGame": {
+        "low": 9.2875,
+        "mid": 1.842,
+        "high": 0.2105
+      },
+      "matchupMatrix": {
+        "pure": {
+          "pure": {
+            "games": 2000,
+            "p0Wins": 1146,
+            "p1Wins": 851,
+            "draws": 3,
+            "territoryWins": 1543,
+            "lifeWins": 431,
+            "timeoutWins": 26,
+            "fatigueWins": 0,
+            "p0WinRate": 0.573,
+            "p1WinRate": 0.4255,
+            "drawRate": 0.0015,
+            "avgRounds": 12.06875,
+            "territoryWinRate": 0.7715,
+            "lifeWinRate": 0.2155,
+            "timeoutRate": 0.013,
+            "fatigueWinRate": 0
+          }
+        }
+      }
+    }
+  }
+}

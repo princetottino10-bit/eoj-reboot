@@ -1,0 +1,2317 @@
+{
+  "generatedAt": "2026-07-25T03:51:35.983Z",
+  "status": "proposal-material",
+  "source": {
+    "repository": "fenril058/3x3_duel",
+    "commit": "b2ca22a882c6bade591ee6d25f05780de21326fc",
+    "path": "data/test-cards.json",
+    "pack": "vanilla-4"
+  },
+  "question": "Change only C2/C3 HP in the Ver1 vanilla-4 configuration.",
+  "configurations": {
+    "V0": {
+      "c2Hp": 2,
+      "c3Hp": 2,
+      "source": "docs\\baselines\\ver1-baseline-results.json",
+      "rerun": false
+    },
+    "H-A": {
+      "c2Hp": 3,
+      "c3Hp": 3
+    },
+    "H-B": {
+      "c2Hp": 3,
+      "c3Hp": 4
+    }
+  },
+  "runs": {
+    "V0": {
+      "source": "docs\\baselines\\ver1-baseline-results.json",
+      "summary": {
+        "games": 2000,
+        "avgRounds": 12.61425,
+        "medianRounds": 12.5,
+        "p90Rounds": 14.5,
+        "p0WinRate": 0.497,
+        "territoryWinRate": 0.1175,
+        "lifeWinRate": 0.8805,
+        "timeoutRate": 0.002,
+        "avgBoard": 3.8489010444536933,
+        "check4PerGame": 2.4475,
+        "check4ReturnRate": 0.9064796259185037,
+        "check4WithHighCostPerGame": 1.8375,
+        "check4WithHighCostReturnRate": 0.8960544217687075,
+        "check4OracleChecksPerGame": 2.4475,
+        "check4OracleReturnableRate": 0.9141981613891726,
+        "check4OracleHighCostChecksPerGame": 2.018,
+        "check4OracleHighCostReturnableRate": 0.9053518334985133,
+        "check4OracleRealizationRate": 0.9915570433231454,
+        "check4HighCostOracleRealizationRate": 0.9897306092661478,
+        "checkSearchPlansPerGame": 2.2375,
+        "checkSearchHighCostPlansPerGame": 1.827,
+        "checkSearchSummonPlansPerGame": 1.782,
+        "checkSearchAttackPlansPerGame": 0.6895,
+        "checkSearchRotationPlansPerGame": 0,
+        "checkSearchRotateAttackPlansPerGame": 0.1375,
+        "checkSearchItemPlansPerGame": 0,
+        "checkSearchRemovalItemPlansPerGame": 0,
+        "checkSearchMultiStepPlansPerGame": 0.4605,
+        "checkSearchAvgPlanSteps": 1.226368715083799,
+        "checkSearchItemPlanStepShare": 0,
+        "checkSearchItemPlanRate": 0,
+        "checkSearchRemovalItemPlanRate": 0,
+        "checkSearchOracleMissesPerGame": 0,
+        "checkSearchHighCostOracleMissesPerGame": 0,
+        "itemUsesPerGame": 0,
+        "itemUsePerGameByType": {
+          "removal": 0,
+          "economy": 0,
+          "buff": 0,
+          "draw": 0
+        },
+        "itemRemovalDamagePerGame": 0,
+        "itemRemovalKillsPerGame": 0,
+        "itemBuffHpGainedPerGame": 0,
+        "itemDrawCardsPerGame": 0,
+        "itemDeadPerGame": 0,
+        "itemInitialPerGame": 0,
+        "itemDeadRate": 0,
+        "itemDeadRateByType": {
+          "removal": 0,
+          "economy": 0,
+          "buff": 0,
+          "draw": 0
+        },
+        "checkSearchItemUsesPerGame": 0,
+        "killsPerGame": 16.9325,
+        "weakAttackRate": 0.48245458730214935,
+        "weakKillRate": 0.48578178059943894,
+        "manualAttacksPerGame": 10.336,
+        "summonAttacksPerGame": 17.905,
+        "reactivationsPerGame": 11.2605,
+        "attackReactivationsPerGame": 10.336,
+        "attackOnlyReactivationsPerGame": 5.9345,
+        "rotationsPerGame": 0.9245,
+        "rotateAttacksPerGame": 4.4015,
+        "rotationShare": 0.08210115003774256,
+        "winnerAttackOnlyReactsPerGame": 3.589,
+        "winnerRotationOnlyReactsPerGame": 0.159,
+        "winnerRotateAttacksPerGame": 2.1885,
+        "loserAttackOnlyReactsPerGame": 2.3365,
+        "loserRotationOnlyReactsPerGame": 0.4125,
+        "loserRotateAttacksPerGame": 2.201,
+        "shapeStats": {
+          "ashigaru": {
+            "name": "足軽",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "kenshi": {
+            "name": "剣士",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "kyuhei": {
+            "name": "弓兵",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "fuhei": {
+            "name": "斧兵",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "souto": {
+            "name": "双頭",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "senpu": {
+            "name": "旋風",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "ryu": {
+            "name": "竜",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          }
+        },
+        "reactivationOpportunityTurnsPerGame": 13.019,
+        "reactivationUnusedRate": 0.31857285505799215,
+        "checkReturnPlayerSlotsPerGame": 0.669,
+        "checkReturnPlayerWinRate": 0.3333333333333333,
+        "checkFailedPlayerSlotsPerGame": 0.188,
+        "checkFailedPlayerWinRate": 0.07712765957446809,
+        "checkResponseTurnsPerGame": 2.4475,
+        "checkResponseReturnedTurnsPerGame": 2.221,
+        "checkResponseFailedTurnsPerGame": 0.2265,
+        "checkResponseAttackReactsPerGame": 1.1005,
+        "checkResponseAttackOnlyReactsPerGame": 0.8425,
+        "checkResponseRotationsPerGame": 0.052,
+        "checkResponseRotateAttacksPerGame": 0.258,
+        "checkResponseReturnedAttackReactsPerGame": 0.9625,
+        "checkResponseReturnedAttackOnlyReactsPerGame": 0.8055,
+        "checkResponseReturnedRotationsPerGame": 0.007,
+        "checkResponseReturnedRotateAttacksPerGame": 0.157,
+        "checkResponseFailedAttackReactsPerGame": 0.138,
+        "checkResponseFailedAttackOnlyReactsPerGame": 0.037,
+        "checkResponseFailedRotationsPerGame": 0.045,
+        "checkResponseFailedRotateAttacksPerGame": 0.101,
+        "reactNeedChecksPerGame": 0,
+        "reactNeedCounts": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedReturnedCounts": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedPerGameByType": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedReturnedRateByType": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedRotateAttackRequiredPerGame": 0,
+        "reactNeedRotateAttackRequiredReturnRate": 0,
+        "manaOverflowPerGame": 0,
+        "manaCapHitsPerGame": 0,
+        "manaIncomePerGame": 113.5565,
+        "manaSpentPerGame": 105.6745,
+        "manaUtilization": 0.9305896183838002,
+        "deckExhaustionsPerGame": 1.08,
+        "deckEmptyGameRate": 0.6915,
+        "firstDeckEmptyAvgRound": 10.697396963123644,
+        "firstDeckEmptyMedianRound": 10.5,
+        "firstDeckEmptyP90Round": 11.5,
+        "deckReshufflesPerGame": 0.635,
+        "deckReshuffleGameRate": 0.4525,
+        "firstDeckReshuffleAvgRound": 11.726519337016574,
+        "firstDeckReshuffleMedianRound": 11.5,
+        "firstDeckReshuffleP90Round": 12.5,
+        "destroyManaGainedPerGame": 33.865,
+        "fatigueDamagePerGame": 0,
+        "fatigueEventsPerGame": 0,
+        "fatigueWinRate": 0,
+        "fatigueShareOfLifeWins": 0,
+        "firstSummon": {
+          "reached": 4000,
+          "reachedRate": 1,
+          "missingRate": 0,
+          "avgRound": 0.25,
+          "medianRound": 0.5,
+          "p90Round": 0.5
+        },
+        "board3": {
+          "reached": 3400,
+          "reachedRate": 0.85,
+          "missingRate": 0.15,
+          "avgRound": 6.098382352941177,
+          "medianRound": 5.5,
+          "p90Round": 9.5
+        },
+        "summonDecisionTurnsPerGame": 22.9435,
+        "summonStalledTurnsPerGame": 2.979,
+        "summonStallRate": 0.12984069562185369,
+        "summonStallNoCardsRate": 0,
+        "summonStallManaRate": 0.12984069562185369,
+        "attrMatchSummonRate": 0.49898776111162235,
+        "attrBadSummonRate": 0.013320143553878715,
+        "fifthSummonCounterDeathsPerGame": 0,
+        "fifthSummonCounterDeaths": 0,
+        "taijiOccupancyRate": 0.5876885268644588,
+        "taijiP0OccupancyRate": 0.28442039756624454,
+        "taijiP1OccupancyRate": 0.30326812929821434,
+        "taijiDiscountUsesPerGame": 5.306,
+        "taijiDiscountUsesP0PerGame": 2.5155,
+        "taijiDiscountUsesP1PerGame": 2.7905,
+        "taijiManaSavedPerGame": 5.306,
+        "yinYangPositiveApplicationsPerGame": 10.845,
+        "yinYangNegativeApplicationsPerGame": 0.2895,
+        "lethalAttributeSummonsPerGame": 0.0005,
+        "yinYangPositiveApplicationRate": 0.49898776111162235,
+        "yinYangNegativeApplicationRate": 0.013320143553878715,
+        "killBandsPerGame": {
+          "low": 12.883,
+          "mid": 3.281,
+          "high": 0.7685
+        },
+        "matchupMatrix": {
+          "pure": {
+            "pure": {
+              "games": 2000,
+              "p0Wins": 994,
+              "p1Wins": 1002,
+              "draws": 4,
+              "territoryWins": 235,
+              "lifeWins": 1761,
+              "timeoutWins": 4,
+              "fatigueWins": 0,
+              "p0WinRate": 0.497,
+              "p1WinRate": 0.501,
+              "drawRate": 0.002,
+              "avgRounds": 12.61425,
+              "territoryWinRate": 0.1175,
+              "lifeWinRate": 0.8805,
+              "timeoutRate": 0.002,
+              "fatigueWinRate": 0
+            }
+          }
+        }
+      }
+    },
+    "H-A": {
+      "variant": {
+        "name": "H-A_c2hp3_c3hp3",
+        "phase": "ver1-hp-sweep",
+        "pureVanilla": true,
+        "fixedDeckCards": [
+          {
+            "id": "vanilla4_onibi1",
+            "code": "TV4-01",
+            "name": "鬼火",
+            "cost": 2,
+            "hp": 3,
+            "atk": 1,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_onibi1"
+          },
+          {
+            "id": "vanilla4_onibi2",
+            "code": "TV4-02",
+            "name": "鬼火",
+            "cost": 2,
+            "hp": 3,
+            "atk": 1,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_onibi2"
+          },
+          {
+            "id": "vanilla4_onibi3",
+            "code": "TV4-03",
+            "name": "鬼火",
+            "cost": 2,
+            "hp": 3,
+            "atk": 1,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_onibi3"
+          },
+          {
+            "id": "vanilla4_onibi4",
+            "code": "TV4-04",
+            "name": "鬼火",
+            "cost": 2,
+            "hp": 3,
+            "atk": 1,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_onibi4"
+          },
+          {
+            "id": "vanilla4_kooni1",
+            "code": "TV4-05",
+            "name": "子鬼",
+            "cost": 3,
+            "hp": 3,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_kooni1"
+          },
+          {
+            "id": "vanilla4_kooni2",
+            "code": "TV4-06",
+            "name": "子鬼",
+            "cost": 3,
+            "hp": 3,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_kooni2"
+          },
+          {
+            "id": "vanilla4_kooni3",
+            "code": "TV4-07",
+            "name": "子鬼",
+            "cost": 3,
+            "hp": 3,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_kooni3"
+          },
+          {
+            "id": "vanilla4_kooni4",
+            "code": "TV4-08",
+            "name": "子鬼",
+            "cost": 3,
+            "hp": 3,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_kooni4"
+          },
+          {
+            "id": "vanilla4_yarirei",
+            "code": "TV4-09",
+            "name": "槍霊",
+            "cost": 4,
+            "hp": 5,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                0,
+                -1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 2,
+            "shape": "vanilla4_yarirei"
+          },
+          {
+            "id": "vanilla4_naginatarei",
+            "code": "TV4-10",
+            "name": "薙刀霊",
+            "cost": 4,
+            "hp": 5,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                -1
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                -1
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 3,
+            "shape": "vanilla4_naginatarei"
+          },
+          {
+            "id": "vanilla4_oni1",
+            "code": "TV4-11",
+            "name": "鬼",
+            "cost": 4,
+            "hp": 5,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_oni1"
+          },
+          {
+            "id": "vanilla4_oni2",
+            "code": "TV4-12",
+            "name": "鬼",
+            "cost": 4,
+            "hp": 5,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_oni2"
+          },
+          {
+            "id": "vanilla4_ryoumen",
+            "code": "TV4-13",
+            "name": "両面",
+            "cost": 5,
+            "hp": 6,
+            "atk": 3,
+            "reactivation_cost": 3,
+            "life_value": 3,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                -1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                -1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                0,
+                -1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 3,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 2,
+            "shape": "vanilla4_ryoumen"
+          },
+          {
+            "id": "vanilla4_niou",
+            "code": "TV4-14",
+            "name": "仁王",
+            "cost": 5,
+            "hp": 6,
+            "atk": 3,
+            "reactivation_cost": 3,
+            "life_value": 3,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 3,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_niou"
+          },
+          {
+            "id": "vanilla4_kyuubi",
+            "code": "TV4-15",
+            "name": "九尾",
+            "cost": 6,
+            "hp": 7,
+            "atk": 3,
+            "reactivation_cost": 3,
+            "life_value": 3,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                -1
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                -1
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                -1
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                -1
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 3,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 5,
+            "shape": "vanilla4_kyuubi"
+          },
+          {
+            "id": "vanilla4_ryuu",
+            "code": "TV4-16",
+            "name": "龍",
+            "cost": 7,
+            "hp": 8,
+            "atk": 4,
+            "reactivation_cost": 3,
+            "life_value": 4,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                0,
+                -1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                0,
+                -1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 3,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 4,
+            "shape": "vanilla4_ryuu"
+          }
+        ],
+        "boardAttrs": [
+          "neutral",
+          "yin",
+          "neutral",
+          "yin",
+          "taiji",
+          "yang",
+          "neutral",
+          "yang",
+          "neutral"
+        ],
+        "manaGain": 3,
+        "p0StartingMana": 3,
+        "p1StartingMana": 4,
+        "lifeTotal": 15,
+        "lifeRule": "134",
+        "destroyManaGain": 2,
+        "weakBonus": 2,
+        "v4Probe": true,
+        "taijiSummonDiscount": true,
+        "rotateAttackRule": true,
+        "anyAdjacentSummon": true,
+        "fatigue": false,
+        "oracle": true,
+        "checkSearchDepth": 6,
+        "legacyEngine": false
+      },
+      "summary": {
+        "games": 2000,
+        "avgRounds": 13.0085,
+        "medianRounds": 12.5,
+        "p90Rounds": 15,
+        "p0WinRate": 0.5035,
+        "territoryWinRate": 0.313,
+        "lifeWinRate": 0.681,
+        "timeoutRate": 0.006,
+        "avgBoard": 4.432025214282969,
+        "check4PerGame": 3.8845,
+        "check4ReturnRate": 0.8418325606763022,
+        "check4WithHighCostPerGame": 2.9825,
+        "check4WithHighCostReturnRate": 0.8303436714165968,
+        "check4OracleChecksPerGame": 3.884,
+        "check4OracleReturnableRate": 0.850669412976313,
+        "check4OracleHighCostChecksPerGame": 3.177,
+        "check4OracleHighCostReturnableRate": 0.84073024866226,
+        "check4OracleRealizationRate": 0.9896118842817063,
+        "check4HighCostOracleRealizationRate": 0.9876457671623093,
+        "checkSearchPlansPerGame": 3.304,
+        "checkSearchHighCostPlansPerGame": 2.671,
+        "checkSearchSummonPlansPerGame": 2.518,
+        "checkSearchAttackPlansPerGame": 1.2055,
+        "checkSearchRotationPlansPerGame": 0,
+        "checkSearchRotateAttackPlansPerGame": 0.2815,
+        "checkSearchItemPlansPerGame": 0,
+        "checkSearchRemovalItemPlansPerGame": 0,
+        "checkSearchMultiStepPlansPerGame": 0.862,
+        "checkSearchAvgPlanSteps": 1.2881355932203389,
+        "checkSearchItemPlanStepShare": 0,
+        "checkSearchItemPlanRate": 0,
+        "checkSearchRemovalItemPlanRate": 0,
+        "checkSearchOracleMissesPerGame": 0,
+        "checkSearchHighCostOracleMissesPerGame": 0,
+        "itemUsesPerGame": 0,
+        "itemUsePerGameByType": {
+          "removal": 0,
+          "economy": 0,
+          "buff": 0,
+          "draw": 0
+        },
+        "itemRemovalDamagePerGame": 0,
+        "itemRemovalKillsPerGame": 0,
+        "itemBuffHpGainedPerGame": 0,
+        "itemDrawCardsPerGame": 0,
+        "itemDeadPerGame": 0,
+        "itemInitialPerGame": 0,
+        "itemDeadRate": 0,
+        "itemDeadRateByType": {
+          "removal": 0,
+          "economy": 0,
+          "buff": 0,
+          "draw": 0
+        },
+        "checkSearchItemUsesPerGame": 0,
+        "killsPerGame": 15.6875,
+        "weakAttackRate": 0.45941363838750554,
+        "weakKillRate": 0.488191235059761,
+        "manualAttacksPerGame": 10.784,
+        "summonAttacksPerGame": 18.413,
+        "reactivationsPerGame": 12.644,
+        "attackReactivationsPerGame": 10.784,
+        "attackOnlyReactivationsPerGame": 7.0205,
+        "rotationsPerGame": 1.86,
+        "rotateAttacksPerGame": 3.7635,
+        "rotationShare": 0.14710534640936412,
+        "winnerAttackOnlyReactsPerGame": 3.992,
+        "winnerRotationOnlyReactsPerGame": 0.223,
+        "winnerRotateAttacksPerGame": 1.8055,
+        "loserAttackOnlyReactsPerGame": 3.001,
+        "loserRotationOnlyReactsPerGame": 0.55,
+        "loserRotateAttacksPerGame": 1.9425,
+        "shapeStats": {
+          "ashigaru": {
+            "name": "足軽",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "kenshi": {
+            "name": "剣士",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "kyuhei": {
+            "name": "弓兵",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "fuhei": {
+            "name": "斧兵",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "souto": {
+            "name": "双頭",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "senpu": {
+            "name": "旋風",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "ryu": {
+            "name": "竜",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          }
+        },
+        "reactivationOpportunityTurnsPerGame": 14.615,
+        "reactivationUnusedRate": 0.32736914129319195,
+        "checkReturnPlayerSlotsPerGame": 1.001,
+        "checkReturnPlayerWinRate": 0.36813186813186816,
+        "checkFailedPlayerSlotsPerGame": 0.4615,
+        "checkFailedPlayerWinRate": 0.09642470205850487,
+        "checkResponseTurnsPerGame": 3.884,
+        "checkResponseReturnedTurnsPerGame": 3.2815,
+        "checkResponseFailedTurnsPerGame": 0.6025,
+        "checkResponseAttackReactsPerGame": 2.1215,
+        "checkResponseAttackOnlyReactsPerGame": 1.497,
+        "checkResponseRotationsPerGame": 0.1505,
+        "checkResponseRotateAttacksPerGame": 0.6245,
+        "checkResponseReturnedAttackReactsPerGame": 1.736,
+        "checkResponseReturnedAttackOnlyReactsPerGame": 1.4255,
+        "checkResponseReturnedRotationsPerGame": 0.01,
+        "checkResponseReturnedRotateAttacksPerGame": 0.3105,
+        "checkResponseFailedAttackReactsPerGame": 0.3855,
+        "checkResponseFailedAttackOnlyReactsPerGame": 0.0715,
+        "checkResponseFailedRotationsPerGame": 0.1405,
+        "checkResponseFailedRotateAttacksPerGame": 0.314,
+        "reactNeedChecksPerGame": 0,
+        "reactNeedCounts": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedReturnedCounts": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedPerGameByType": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedReturnedRateByType": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedRotateAttackRequiredPerGame": 0,
+        "reactNeedRotateAttackRequiredReturnRate": 0,
+        "manaOverflowPerGame": 0,
+        "manaCapHitsPerGame": 0,
+        "manaIncomePerGame": 113.444,
+        "manaSpentPerGame": 106.422,
+        "manaUtilization": 0.9381016184196608,
+        "deckExhaustionsPerGame": 1.0195,
+        "deckEmptyGameRate": 0.6495,
+        "firstDeckEmptyAvgRound": 10.895688991531948,
+        "firstDeckEmptyMedianRound": 11,
+        "firstDeckEmptyP90Round": 12,
+        "deckReshufflesPerGame": 0.623,
+        "deckReshuffleGameRate": 0.454,
+        "firstDeckReshuffleAvgRound": 11.939977973568283,
+        "firstDeckReshuffleMedianRound": 12,
+        "firstDeckReshuffleP90Round": 13,
+        "destroyManaGainedPerGame": 31.375,
+        "fatigueDamagePerGame": 0,
+        "fatigueEventsPerGame": 0,
+        "fatigueWinRate": 0,
+        "fatigueShareOfLifeWins": 0,
+        "firstSummon": {
+          "reached": 4000,
+          "reachedRate": 1,
+          "missingRate": 0,
+          "avgRound": 0.25,
+          "medianRound": 0.5,
+          "p90Round": 0.5
+        },
+        "board3": {
+          "reached": 3666,
+          "reachedRate": 0.9165,
+          "missingRate": 0.0835,
+          "avgRound": 5.040916530278232,
+          "medianRound": 4.5,
+          "p90Round": 8.5
+        },
+        "summonDecisionTurnsPerGame": 23.1245,
+        "summonStalledTurnsPerGame": 4.219,
+        "summonStallRate": 0.18244718804730914,
+        "summonStallNoCardsRate": 0,
+        "summonStallManaRate": 0.18244718804730914,
+        "attrMatchSummonRate": 0.47661542774377424,
+        "attrBadSummonRate": 0.028360510208849228,
+        "fifthSummonCounterDeathsPerGame": 0,
+        "fifthSummonCounterDeaths": 0,
+        "taijiOccupancyRate": 0.6481723488488296,
+        "taijiP0OccupancyRate": 0.33481954106930084,
+        "taijiP1OccupancyRate": 0.3133528077795288,
+        "taijiDiscountUsesPerGame": 5.374,
+        "taijiDiscountUsesP0PerGame": 2.5745,
+        "taijiDiscountUsesP1PerGame": 2.7995,
+        "taijiManaSavedPerGame": 5.374,
+        "yinYangPositiveApplicationsPerGame": 10.201,
+        "yinYangNegativeApplicationsPerGame": 0.607,
+        "lethalAttributeSummonsPerGame": 0,
+        "yinYangPositiveApplicationRate": 0.47661542774377424,
+        "yinYangNegativeApplicationRate": 0.028360510208849228,
+        "killBandsPerGame": {
+          "low": 12.0185,
+          "mid": 3.0775,
+          "high": 0.5915
+        },
+        "matchupMatrix": {
+          "pure": {
+            "pure": {
+              "games": 2000,
+              "p0Wins": 1007,
+              "p1Wins": 981,
+              "draws": 12,
+              "territoryWins": 626,
+              "lifeWins": 1362,
+              "timeoutWins": 12,
+              "fatigueWins": 0,
+              "p0WinRate": 0.5035,
+              "p1WinRate": 0.4905,
+              "drawRate": 0.006,
+              "avgRounds": 13.0085,
+              "territoryWinRate": 0.313,
+              "lifeWinRate": 0.681,
+              "timeoutRate": 0.006,
+              "fatigueWinRate": 0
+            }
+          }
+        }
+      }
+    },
+    "H-B": {
+      "variant": {
+        "name": "H-B_c2hp3_c3hp4",
+        "phase": "ver1-hp-sweep",
+        "pureVanilla": true,
+        "fixedDeckCards": [
+          {
+            "id": "vanilla4_onibi1",
+            "code": "TV4-01",
+            "name": "鬼火",
+            "cost": 2,
+            "hp": 3,
+            "atk": 1,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_onibi1"
+          },
+          {
+            "id": "vanilla4_onibi2",
+            "code": "TV4-02",
+            "name": "鬼火",
+            "cost": 2,
+            "hp": 3,
+            "atk": 1,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_onibi2"
+          },
+          {
+            "id": "vanilla4_onibi3",
+            "code": "TV4-03",
+            "name": "鬼火",
+            "cost": 2,
+            "hp": 3,
+            "atk": 1,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_onibi3"
+          },
+          {
+            "id": "vanilla4_onibi4",
+            "code": "TV4-04",
+            "name": "鬼火",
+            "cost": 2,
+            "hp": 3,
+            "atk": 1,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_onibi4"
+          },
+          {
+            "id": "vanilla4_kooni1",
+            "code": "TV4-05",
+            "name": "子鬼",
+            "cost": 3,
+            "hp": 4,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_kooni1"
+          },
+          {
+            "id": "vanilla4_kooni2",
+            "code": "TV4-06",
+            "name": "子鬼",
+            "cost": 3,
+            "hp": 4,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_kooni2"
+          },
+          {
+            "id": "vanilla4_kooni3",
+            "code": "TV4-07",
+            "name": "子鬼",
+            "cost": 3,
+            "hp": 4,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_kooni3"
+          },
+          {
+            "id": "vanilla4_kooni4",
+            "code": "TV4-08",
+            "name": "子鬼",
+            "cost": 3,
+            "hp": 4,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_kooni4"
+          },
+          {
+            "id": "vanilla4_yarirei",
+            "code": "TV4-09",
+            "name": "槍霊",
+            "cost": 4,
+            "hp": 5,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                0,
+                -1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 2,
+            "shape": "vanilla4_yarirei"
+          },
+          {
+            "id": "vanilla4_naginatarei",
+            "code": "TV4-10",
+            "name": "薙刀霊",
+            "cost": 4,
+            "hp": 5,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                -1
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                -1
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 3,
+            "shape": "vanilla4_naginatarei"
+          },
+          {
+            "id": "vanilla4_oni1",
+            "code": "TV4-11",
+            "name": "鬼",
+            "cost": 4,
+            "hp": 5,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_oni1"
+          },
+          {
+            "id": "vanilla4_oni2",
+            "code": "TV4-12",
+            "name": "鬼",
+            "cost": 4,
+            "hp": 5,
+            "atk": 2,
+            "reactivation_cost": 2,
+            "life_value": 1,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 2,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_oni2"
+          },
+          {
+            "id": "vanilla4_ryoumen",
+            "code": "TV4-13",
+            "name": "両面",
+            "cost": 5,
+            "hp": 6,
+            "atk": 3,
+            "reactivation_cost": 3,
+            "life_value": 3,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                -1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                -1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                0,
+                -1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 3,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 2,
+            "shape": "vanilla4_ryoumen"
+          },
+          {
+            "id": "vanilla4_niou",
+            "code": "TV4-14",
+            "name": "仁王",
+            "cost": 5,
+            "hp": 6,
+            "atk": 3,
+            "reactivation_cost": 3,
+            "life_value": 3,
+            "attribute": "yin",
+            "attack_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 3,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 1,
+            "shape": "vanilla4_niou"
+          },
+          {
+            "id": "vanilla4_kyuubi",
+            "code": "TV4-15",
+            "name": "九尾",
+            "cost": 6,
+            "hp": 7,
+            "atk": 3,
+            "reactivation_cost": 3,
+            "life_value": 3,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                -1
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                -1
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                1,
+                -1
+              ],
+              [
+                0,
+                1
+              ],
+              [
+                0,
+                -1
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 3,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 5,
+            "shape": "vanilla4_kyuubi"
+          },
+          {
+            "id": "vanilla4_ryuu",
+            "code": "TV4-16",
+            "name": "龍",
+            "cost": 7,
+            "hp": 8,
+            "atk": 4,
+            "reactivation_cost": 3,
+            "life_value": 4,
+            "attribute": "yang",
+            "attack_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                0,
+                -1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "counter_cells": [
+              [
+                1,
+                0
+              ],
+              [
+                2,
+                0
+              ],
+              [
+                0,
+                -1
+              ],
+              [
+                0,
+                1
+              ]
+            ],
+            "weakness_cells": [
+              [
+                -1,
+                0
+              ]
+            ],
+            "faction": "pure",
+            "rotation_cost": 3,
+            "attack_type": "physical",
+            "attack_mode": "choice",
+            "attack_target_count": 1,
+            "attack_range_count": 4,
+            "shape": "vanilla4_ryuu"
+          }
+        ],
+        "boardAttrs": [
+          "neutral",
+          "yin",
+          "neutral",
+          "yin",
+          "taiji",
+          "yang",
+          "neutral",
+          "yang",
+          "neutral"
+        ],
+        "manaGain": 3,
+        "p0StartingMana": 3,
+        "p1StartingMana": 4,
+        "lifeTotal": 15,
+        "lifeRule": "134",
+        "destroyManaGain": 2,
+        "weakBonus": 2,
+        "v4Probe": true,
+        "taijiSummonDiscount": true,
+        "rotateAttackRule": true,
+        "anyAdjacentSummon": true,
+        "fatigue": false,
+        "oracle": true,
+        "checkSearchDepth": 6,
+        "legacyEngine": false
+      },
+      "summary": {
+        "games": 2000,
+        "avgRounds": 12.55375,
+        "medianRounds": 12.5,
+        "p90Rounds": 15,
+        "p0WinRate": 0.514,
+        "territoryWinRate": 0.456,
+        "lifeWinRate": 0.5395,
+        "timeoutRate": 0.0045,
+        "avgBoard": 4.565587971721597,
+        "check4PerGame": 4.381,
+        "check4ReturnRate": 0.805923802699152,
+        "check4WithHighCostPerGame": 3.2305,
+        "check4WithHighCostReturnRate": 0.7862559975236032,
+        "check4OracleChecksPerGame": 4.381,
+        "check4OracleReturnableRate": 0.814540059347181,
+        "check4OracleHighCostChecksPerGame": 3.3965,
+        "check4OracleHighCostReturnableRate": 0.796702487855145,
+        "check4OracleRealizationRate": 0.9894219362827477,
+        "check4HighCostOracleRealizationRate": 0.9868878402028524,
+        "checkSearchPlansPerGame": 3.5685,
+        "checkSearchHighCostPlansPerGame": 2.706,
+        "checkSearchSummonPlansPerGame": 2.64,
+        "checkSearchAttackPlansPerGame": 1.443,
+        "checkSearchRotationPlansPerGame": 0,
+        "checkSearchRotateAttackPlansPerGame": 0.2975,
+        "checkSearchItemPlansPerGame": 0,
+        "checkSearchRemovalItemPlansPerGame": 0,
+        "checkSearchMultiStepPlansPerGame": 1.0385,
+        "checkSearchAvgPlanSteps": 1.3175003502872356,
+        "checkSearchItemPlanStepShare": 0,
+        "checkSearchItemPlanRate": 0,
+        "checkSearchRemovalItemPlanRate": 0,
+        "checkSearchOracleMissesPerGame": 0,
+        "checkSearchHighCostOracleMissesPerGame": 0,
+        "itemUsesPerGame": 0,
+        "itemUsePerGameByType": {
+          "removal": 0,
+          "economy": 0,
+          "buff": 0,
+          "draw": 0
+        },
+        "itemRemovalDamagePerGame": 0,
+        "itemRemovalKillsPerGame": 0,
+        "itemBuffHpGainedPerGame": 0,
+        "itemDrawCardsPerGame": 0,
+        "itemDeadPerGame": 0,
+        "itemInitialPerGame": 0,
+        "itemDeadRate": 0,
+        "itemDeadRateByType": {
+          "removal": 0,
+          "economy": 0,
+          "buff": 0,
+          "draw": 0
+        },
+        "checkSearchItemUsesPerGame": 0,
+        "killsPerGame": 14.539,
+        "weakAttackRate": 0.4465229412382319,
+        "weakKillRate": 0.48318316252837196,
+        "manualAttacksPerGame": 10.911,
+        "summonAttacksPerGame": 17.662,
+        "reactivationsPerGame": 12.5365,
+        "attackReactivationsPerGame": 10.911,
+        "attackOnlyReactivationsPerGame": 7.497,
+        "rotationsPerGame": 1.6255,
+        "rotateAttacksPerGame": 3.414,
+        "rotationShare": 0.129661388744865,
+        "winnerAttackOnlyReactsPerGame": 4.1155,
+        "winnerRotationOnlyReactsPerGame": 0.247,
+        "winnerRotateAttacksPerGame": 1.5665,
+        "loserAttackOnlyReactsPerGame": 3.3565,
+        "loserRotationOnlyReactsPerGame": 0.5615,
+        "loserRotateAttacksPerGame": 1.8385,
+        "shapeStats": {
+          "ashigaru": {
+            "name": "足軽",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "kenshi": {
+            "name": "剣士",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "kyuhei": {
+            "name": "弓兵",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "fuhei": {
+            "name": "斧兵",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "souto": {
+            "name": "双頭",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "senpu": {
+            "name": "旋風",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          },
+          "ryu": {
+            "name": "竜",
+            "kills": 0,
+            "deaths": 0,
+            "attackOnlyReacts": 0,
+            "rotateAttackReacts": 0,
+            "killsPerGame": 0,
+            "deathsPerGame": 0,
+            "attackOnlyReactsPerGame": 0,
+            "rotateAttackReactsPerGame": 0
+          }
+        },
+        "reactivationOpportunityTurnsPerGame": 14.191,
+        "reactivationUnusedRate": 0.32975125079275597,
+        "checkReturnPlayerSlotsPerGame": 1.101,
+        "checkReturnPlayerWinRate": 0.35876475930971846,
+        "checkFailedPlayerSlotsPerGame": 0.633,
+        "checkFailedPlayerWinRate": 0.08451816745655608,
+        "checkResponseTurnsPerGame": 4.381,
+        "checkResponseReturnedTurnsPerGame": 3.547,
+        "checkResponseFailedTurnsPerGame": 0.834,
+        "checkResponseAttackReactsPerGame": 2.5985,
+        "checkResponseAttackOnlyReactsPerGame": 1.827,
+        "checkResponseRotationsPerGame": 0.2045,
+        "checkResponseRotateAttacksPerGame": 0.7715,
+        "checkResponseReturnedAttackReactsPerGame": 2.069,
+        "checkResponseReturnedAttackOnlyReactsPerGame": 1.7285,
+        "checkResponseReturnedRotationsPerGame": 0.011,
+        "checkResponseReturnedRotateAttacksPerGame": 0.3405,
+        "checkResponseFailedAttackReactsPerGame": 0.5295,
+        "checkResponseFailedAttackOnlyReactsPerGame": 0.0985,
+        "checkResponseFailedRotationsPerGame": 0.1935,
+        "checkResponseFailedRotateAttacksPerGame": 0.431,
+        "reactNeedChecksPerGame": 0,
+        "reactNeedCounts": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedReturnedCounts": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedPerGameByType": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedReturnedRateByType": {
+          "unneeded": 0,
+          "attackRequired": 0,
+          "rotationRequired": 0,
+          "eitherRequired": 0
+        },
+        "reactNeedRotateAttackRequiredPerGame": 0,
+        "reactNeedRotateAttackRequiredReturnRate": 0,
+        "manaOverflowPerGame": 0,
+        "manaCapHitsPerGame": 0,
+        "manaIncomePerGame": 108.414,
+        "manaSpentPerGame": 101.9135,
+        "manaUtilization": 0.9400400317302193,
+        "deckExhaustionsPerGame": 0.8925,
+        "deckEmptyGameRate": 0.5825,
+        "firstDeckEmptyAvgRound": 10.972961373390557,
+        "firstDeckEmptyMedianRound": 11,
+        "firstDeckEmptyP90Round": 12,
+        "deckReshufflesPerGame": 0.533,
+        "deckReshuffleGameRate": 0.3875,
+        "firstDeckReshuffleAvgRound": 12.05225806451613,
+        "firstDeckReshuffleMedianRound": 12,
+        "firstDeckReshuffleP90Round": 13.5,
+        "destroyManaGainedPerGame": 29.078,
+        "fatigueDamagePerGame": 0,
+        "fatigueEventsPerGame": 0,
+        "fatigueWinRate": 0,
+        "fatigueShareOfLifeWins": 0,
+        "firstSummon": {
+          "reached": 4000,
+          "reachedRate": 1,
+          "missingRate": 0,
+          "avgRound": 0.25,
+          "medianRound": 0.5,
+          "p90Round": 0.5
+        },
+        "board3": {
+          "reached": 3677,
+          "reachedRate": 0.91925,
+          "missingRate": 0.08075,
+          "avgRound": 4.594506391079684,
+          "medianRound": 4,
+          "p90Round": 7.5
+        },
+        "summonDecisionTurnsPerGame": 22.165,
+        "summonStalledTurnsPerGame": 4.072,
+        "summonStallRate": 0.18371306113241598,
+        "summonStallNoCardsRate": 0,
+        "summonStallManaRate": 0.18371306113241598,
+        "attrMatchSummonRate": 0.4726526671494086,
+        "attrBadSummonRate": 0.029350712044412263,
+        "fifthSummonCounterDeathsPerGame": 0,
+        "fifthSummonCounterDeaths": 0,
+        "taijiOccupancyRate": 0.6560390321617047,
+        "taijiP0OccupancyRate": 0.3596734043612466,
+        "taijiP1OccupancyRate": 0.29636562780045805,
+        "taijiDiscountUsesPerGame": 5.32,
+        "taijiDiscountUsesP0PerGame": 2.674,
+        "taijiDiscountUsesP1PerGame": 2.646,
+        "taijiManaSavedPerGame": 5.32,
+        "yinYangPositiveApplicationsPerGame": 9.791,
+        "yinYangNegativeApplicationsPerGame": 0.608,
+        "lethalAttributeSummonsPerGame": 0,
+        "yinYangPositiveApplicationRate": 0.4726526671494086,
+        "yinYangNegativeApplicationRate": 0.029350712044412263,
+        "killBandsPerGame": {
+          "low": 11.168,
+          "mid": 2.838,
+          "high": 0.533
+        },
+        "matchupMatrix": {
+          "pure": {
+            "pure": {
+              "games": 2000,
+              "p0Wins": 1028,
+              "p1Wins": 963,
+              "draws": 9,
+              "territoryWins": 912,
+              "lifeWins": 1079,
+              "timeoutWins": 9,
+              "fatigueWins": 0,
+              "p0WinRate": 0.514,
+              "p1WinRate": 0.4815,
+              "drawRate": 0.0045,
+              "avgRounds": 12.55375,
+              "territoryWinRate": 0.456,
+              "lifeWinRate": 0.5395,
+              "timeoutRate": 0.0045,
+              "fatigueWinRate": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "reproducibility": {
+    "command": "node scripts\\explore-stat-curves.cjs --ver1-hp-sweep --ver1-hp-sweep-samples 2000 --seed 20260702",
+    "repoHead": "8901871ed63031376607ee9ebbfb683ff999a924",
+    "scriptPath": "C:\\Projects\\codex\\eoj-reboot\\scripts\\explore-stat-curves.cjs",
+    "scriptSha256": "37ba9c938b634799e4ece65f0081b10d5a3ea5ca08afa63950be8f0c03e7fa64",
+    "cardFixturePath": "C:\\Projects\\codex\\eoj-reboot\\data\\ver1-vanilla4.json",
+    "cardFixtureSha256": "77794325616062756482889fe618d74f015950acd78c8f5f157739b298b361ea",
+    "v0JsonPath": "C:\\Projects\\codex\\eoj-reboot\\docs\\baselines\\ver1-baseline-results.json",
+    "v0JsonSha256": "2290c6a7caf691652b00ca87b264aa92ad4d65105194d2d807f8ff69de484378",
+    "gamesPerVariant": 2000,
+    "seed": 20260702,
+    "seedFormula": "seed + gameIndex * 9176",
+    "oracle": true,
+    "checkSearchDepth": 6,
+    "legacyEngine": false
+  }
+}

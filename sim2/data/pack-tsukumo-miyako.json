@@ -1,0 +1,733 @@
+{
+  "packId": "tsukumo-miyako",
+  "note": "Tsukumogami + Kyo-oni, 22 cards. Card effect text is NOT implemented in v1. reigu are unplayable dead cards. Relative coords: front = +y.",
+  "cards": [
+    {
+      "id": "tm01",
+      "name": "Toro-no-Sei",
+      "kind": "shikigami",
+      "summonCost": 2,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 2,
+      "lifeValue": 1,
+      "attribute": "yang",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "灯籠の精"
+    },
+    {
+      "id": "tm02",
+      "name": "Chochin-Obake",
+      "kind": "shikigami",
+      "summonCost": 2,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 2,
+      "lifeValue": 1,
+      "attribute": "yin",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "提灯お化け"
+    },
+    {
+      "id": "tm03",
+      "name": "Kage-Oni",
+      "kind": "shikigami",
+      "summonCost": 2,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 2,
+      "lifeValue": 1,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "影鬼"
+    },
+    {
+      "id": "tm04",
+      "name": "Ko-Oni",
+      "kind": "shikigami",
+      "summonCost": 2,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 2,
+      "lifeValue": 1,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "小鬼"
+    },
+    {
+      "id": "tm05",
+      "name": "Kanabo-Oni",
+      "kind": "shikigami",
+      "summonCost": 3,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 3,
+      "lifeValue": 2,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": true,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "金棒鬼"
+    },
+    {
+      "id": "tm06",
+      "name": "Meoto-Men",
+      "kind": "shikigami",
+      "summonCost": 3,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 4,
+      "lifeValue": 2,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "夫婦面"
+    },
+    {
+      "id": "tm07",
+      "name": "Furu-Tansu",
+      "kind": "shikigami",
+      "summonCost": 3,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 5,
+      "lifeValue": 2,
+      "attribute": "yang",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "古箪笥"
+    },
+    {
+      "id": "tm08",
+      "name": "Ikkaku-Oni",
+      "kind": "shikigami",
+      "summonCost": 3,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 4,
+      "lifeValue": 2,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": true,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 2
+        },
+        {
+          "x": 0,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "nameJa": "一角鬼"
+    },
+    {
+      "id": "tm09",
+      "name": "Kubihiki-no-Onimusume",
+      "kind": "shikigami",
+      "summonCost": 4,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 5,
+      "lifeValue": 2,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "首引の鬼娘"
+    },
+    {
+      "id": "tm10",
+      "name": "Hitotsume-Oni",
+      "kind": "shikigami",
+      "summonCost": 4,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 6,
+      "lifeValue": 2,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": true,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "一目鬼"
+    },
+    {
+      "id": "tm11",
+      "name": "Ungaikyo",
+      "kind": "shikigami",
+      "summonCost": 4,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 5,
+      "lifeValue": 2,
+      "attribute": "none",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": -1,
+          "y": -1
+        },
+        {
+          "x": 0,
+          "y": -1
+        },
+        {
+          "x": 1,
+          "y": -1
+        }
+      ],
+      "nameJa": "雲外鏡"
+    },
+    {
+      "id": "tm12",
+      "name": "Shomakyo",
+      "kind": "shikigami",
+      "summonCost": 5,
+      "attackCost": 2,
+      "atk": 2,
+      "hp": 5,
+      "lifeValue": 3,
+      "attribute": "none",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": -1,
+          "y": -1
+        },
+        {
+          "x": 0,
+          "y": -1
+        },
+        {
+          "x": 1,
+          "y": -1
+        }
+      ],
+      "nameJa": "照魔鏡"
+    },
+    {
+      "id": "tm13",
+      "name": "Karakuri-Ningyo",
+      "kind": "shikigami",
+      "summonCost": 5,
+      "attackCost": 3,
+      "atk": 3,
+      "hp": 6,
+      "lifeValue": 3,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": false,
+      "attackRange": [
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": -1,
+          "y": -1
+        },
+        {
+          "x": 1,
+          "y": -1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "nameJa": "絡繰人形"
+    },
+    {
+      "id": "tm14",
+      "name": "Ryomen",
+      "kind": "shikigami",
+      "summonCost": 5,
+      "attackCost": 3,
+      "atk": 3,
+      "hp": 6,
+      "lifeValue": 3,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": true,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "blindSpots": [],
+      "nameJa": "両面"
+    },
+    {
+      "id": "tm15",
+      "name": "Ibaraki-Doji",
+      "kind": "shikigami",
+      "summonCost": 6,
+      "attackCost": 3,
+      "atk": 3,
+      "hp": 6,
+      "lifeValue": 3,
+      "attribute": "yin",
+      "attackType": "phys",
+      "aoe": true,
+      "attackRange": [
+        {
+          "x": 0,
+          "y": 2
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 0
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": -1,
+          "y": 0
+        }
+      ],
+      "nameJa": "茨木童子"
+    },
+    {
+      "id": "tm16",
+      "name": "Shuten-Doji",
+      "kind": "shikigami",
+      "summonCost": 7,
+      "attackCost": 3,
+      "atk": 3,
+      "hp": 8,
+      "lifeValue": 4,
+      "attribute": "yang",
+      "attackType": "phys",
+      "aoe": true,
+      "attackRange": [
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        }
+      ],
+      "blindSpots": [
+        {
+          "x": 0,
+          "y": -1
+        }
+      ],
+      "nameJa": "酒呑童子"
+    },
+    {
+      "id": "tm17",
+      "name": "Kuryugai",
+      "kind": "shikigami",
+      "summonCost": 7,
+      "attackCost": 1,
+      "atk": 1,
+      "hp": 10,
+      "lifeValue": 4,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": true,
+      "counterRange": [],
+      "blindSpots": [],
+      "attackRange": [
+        {
+          "x": -2,
+          "y": -2
+        },
+        {
+          "x": -1,
+          "y": -2
+        },
+        {
+          "x": 0,
+          "y": -2
+        },
+        {
+          "x": 1,
+          "y": -2
+        },
+        {
+          "x": 2,
+          "y": -2
+        },
+        {
+          "x": -2,
+          "y": -1
+        },
+        {
+          "x": -1,
+          "y": -1
+        },
+        {
+          "x": 0,
+          "y": -1
+        },
+        {
+          "x": 1,
+          "y": -1
+        },
+        {
+          "x": 2,
+          "y": -1
+        },
+        {
+          "x": -2,
+          "y": 0
+        },
+        {
+          "x": -1,
+          "y": 0
+        },
+        {
+          "x": 1,
+          "y": 0
+        },
+        {
+          "x": 2,
+          "y": 0
+        },
+        {
+          "x": -2,
+          "y": 1
+        },
+        {
+          "x": -1,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 1
+        },
+        {
+          "x": 1,
+          "y": 1
+        },
+        {
+          "x": 2,
+          "y": 1
+        },
+        {
+          "x": -2,
+          "y": 2
+        },
+        {
+          "x": -1,
+          "y": 2
+        },
+        {
+          "x": 0,
+          "y": 2
+        },
+        {
+          "x": 1,
+          "y": 2
+        },
+        {
+          "x": 2,
+          "y": 2
+        }
+      ],
+      "nameJa": "玖龍街"
+    },
+    {
+      "id": "tm18",
+      "name": "Yanari",
+      "kind": "reigu",
+      "summonCost": 1,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "家鳴り"
+    },
+    {
+      "id": "tm19",
+      "name": "Mayoiga",
+      "kind": "reigu",
+      "summonCost": 2,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "マヨヒガ"
+    },
+    {
+      "id": "tm20",
+      "name": "Biwa-Bokuboku",
+      "kind": "reigu",
+      "summonCost": 3,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "琵琶牧々"
+    },
+    {
+      "id": "tm21",
+      "name": "Oni-no-Sake",
+      "kind": "reigu",
+      "summonCost": 3,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "鬼の酒"
+    },
+    {
+      "id": "tm22",
+      "name": "Enma-Gokusotsubo",
+      "kind": "reigu",
+      "summonCost": 3,
+      "attackCost": 0,
+      "atk": 0,
+      "hp": 0,
+      "lifeValue": 0,
+      "attribute": "none",
+      "attackType": "jutsu",
+      "aoe": false,
+      "attackRange": [],
+      "blindSpots": [],
+      "nameJa": "閻魔獄卒棒"
+    }
+  ]
+}

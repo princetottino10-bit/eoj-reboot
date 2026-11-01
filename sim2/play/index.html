@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>陰陽符陣(仮) 対戦テスト卓</title>
+<style>
+  :root {
+    --ink: #23201c;
+    --line: #c9bfae;
+    --paper: #f6f1e6;
+    --panel: #fffdf7;
+    --p0: #1d5f9c;
+    --p1: #a83a2c;
+    --yin: #dfe4ee;
+    --yang: #f5e3d0;
+    --taiji: #e8e2d2;
+    --empty: #fbf8f1;
+    --hl: #2f8f5b;
+    --warn: #a83a2c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 16px;
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    background: var(--paper); color: var(--ink); font-size: 14px;
+  }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  h2 { font-size: 14px; margin: 0 0 6px; }
+  #app { display: grid; grid-template-columns: minmax(420px, 1fr) 340px; gap: 16px; align-items: start; max-width: 1180px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; margin-bottom: 12px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .stat { white-space: nowrap; }
+  .stat b { font-variant-numeric: tabular-nums; }
+  .seat0 { border-left: 5px solid var(--p0); }
+  .seat1 { border-left: 5px solid var(--p1); }
+  .turnmark { background: #fff6cc; }
+
+  #board { display: grid; grid-template-columns: repeat(3, 116px); grid-template-rows: repeat(3, 116px); gap: 6px; margin: 8px 0; }
+  .cell { border: 1px solid var(--line); border-radius: 3px; position: relative; padding: 4px; cursor: default; text-align: left; font: inherit; }
+  .cell.yin { background: var(--yin); }
+  .cell.yang { background: var(--yang); }
+  .cell.taiji { background: var(--taiji); }
+  .cell.empty { background: var(--empty); }
+  .cell .attr { position: absolute; top: 2px; right: 4px; font-size: 10px; color: #8a8172; }
+  .cell.pick { outline: 3px solid var(--hl); cursor: pointer; }
+  .cell.target { outline: 3px solid var(--warn); cursor: pointer; }
+  .cell.inrange { box-shadow: inset 0 0 0 3px rgba(47,143,91,.45); }
+  .cell.inblind { box-shadow: inset 0 0 0 3px rgba(168,58,44,.5); }
+  .cell.selected { outline: 3px solid #6b5b3e; }
+  .cell.clickable { cursor: pointer; }
+
+  .unit { font-size: 12px; line-height: 1.35; }
+  .unit .nm { font-weight: bold; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .unit.o0 { color: var(--p0); }
+  .unit.o1 { color: var(--p1); }
+  .unit .arrow { font-size: 20px; line-height: 1; }
+  .unit .done { color: #8a8172; }
+
+  #hand { display: flex; gap: 8px; flex-wrap: wrap; }
+  .card { border: 1px solid var(--line); border-radius: 4px; background: #fff; width: 104px; padding: 6px; cursor: pointer; font-size: 11px; font-family: inherit; text-align: left; color: inherit; }
+  .card:hover:not(:disabled) { border-color: var(--hl); }
+  .card.sel { outline: 2px solid var(--hl); }
+  .card.dead { opacity: .45; cursor: not-allowed; }
+  .card .nm { font-weight: bold; font-size: 11px; display: block; margin-bottom: 2px; }
+  .mini { display: grid; grid-template-columns: repeat(5, 11px); grid-template-rows: repeat(5, 11px); gap: 1px; margin-top: 4px; }
+  .mini div { background: #eee; border-radius: 1px; }
+  .mini .self { background: #6b5b3e; }
+  .mini .rng { background: var(--hl); }
+  .mini .bld { background: var(--warn); }
+
+  button { font: inherit; padding: 4px 10px; border: 1px solid var(--line); background: #fff; border-radius: 3px; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--hl); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.primary { background: #2f8f5b; color: #fff; border-color: #2f8f5b; }
+  button.danger { background: #a83a2c; color: #fff; border-color: #a83a2c; }
+
+  #log { height: 340px; overflow-y: auto; background: #fffdf7; border: 1px solid var(--line); border-radius: 4px; padding: 8px; font-size: 12px; line-height: 1.6; }
+  #log div { border-bottom: 1px dotted #e6ddcc; padding: 1px 0; }
+  #log .hl { color: var(--hl); font-weight: bold; }
+  #log .wr { color: var(--warn); font-weight: bold; }
+  /* card effects: the loudest thing in the log */
+  #log .fx {
+    color: #7a3ea8; font-weight: bold;
+    background: #f3ecfa; border-left: 3px solid #7a3ea8;
+    padding: 2px 6px; margin: 2px 0; border-radius: 2px;
+  }
+  #log .reigu { color: #1d5f9c; font-weight: bold; background: #e8f0f8; border-left: 3px solid #1d5f9c; padding: 2px 6px; margin: 2px 0; border-radius: 2px; }
+
+  .fx { display: block; margin-top: 4px; font-size: 10px; line-height: 1.4; color: #5b3e6b; background: #f3ecfa; border-radius: 2px; padding: 3px 4px; }
+  .fx.none { color: #a89f90; background: none; padding: 0; }
+  .fx.off { color: #8a8172; background: #efece6; }
+  #selinfo { margin-top: 4px; font-size: 12px; }
+  #selinfo .fx { display: block; max-width: 640px; font-size: 12px; }
+  #banner { min-height: 28px; padding: 5px 10px; border-radius: 3px; font-weight: bold; }
+  #banner.on { background: #fff2b2; border: 1px solid #d9c46a; }
+  #hint { min-height: 20px; color: #6b5b3e; }
+  label { user-select: none; }
+  .discard-item { display: block; padding: 2px 0; }
+  .muted { color: #8a8172; }
+</style>
+</head>
+<body>
+<h1>陰陽符陣(仮) 対戦テスト卓 <span class="muted" style="font-size:12px">2026-08-28ルール / sim2エンジン直結</span></h1>
+<div id="app">
+  <div>
+    <div id="setup" class="panel"></div>
+    <div id="banner"></div>
+    <div id="oppPanel" class="panel"></div>
+    <div id="boardWrap" class="panel">
+      <div id="board"></div>
+      <div id="hint"></div>
+      <div id="selinfo"></div>
+      <div id="controls" class="row" style="margin-top:8px"></div>
+    </div>
+    <div id="selfPanel" class="panel"></div>
+    <div class="panel">
+      <h2>手札</h2>
+      <div id="hand"></div>
+    </div>
+  </div>
+  <div>
+    <div class="panel"><h2>ログ</h2><div id="log"></div></div>
+    <div class="panel" id="legend">
+      <h2>凡例</h2>
+      <div>マス: <span style="background:var(--yin);padding:0 6px">陰</span>
+        <span style="background:var(--yang);padding:0 6px">陽</span>
+        <span style="background:var(--taiji);padding:0 6px">太極</span>
+        <span style="background:var(--empty);padding:0 6px;border:1px solid var(--line)">空</span></div>
+      <div style="margin-top:4px">選択中ユニットの <span style="color:var(--hl)">緑枠=攻撃範囲</span> /
+        <span style="color:var(--warn)">赤枠=死角</span></div>
+      <div style="margin-top:4px">数値は「実効HP/最大HP・ATK」。矢印が向き。</div>
+    </div>
+  </div>
+</div>
+<script type="module" src="/play/ui.ts"></script>
+</body>
+</html>
