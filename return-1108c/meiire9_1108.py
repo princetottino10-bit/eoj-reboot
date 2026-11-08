@@ -16,9 +16,9 @@ K=[('06','玖龍街',['T-008_玖龍街_祭りの夜']),('07','首引の姫鬼',[
 # 卓だけの絵に、本体の絵から切り出した箱を小さくして札の左に置く。札は縦いっぱい。
 BG=Image.open(f'{WK}/u_EMPTY.png').convert('RGB').resize((W,H),Image.LANCZOS)
 _b=Image.open(f'{WK}/u_HONTAI.png').convert('RGB').resize((W,H),Image.LANCZOS).crop((430,48,881,527))
-_k=0.62; _b=_b.resize((round(_b.width*_k),round(_b.height*_k)),Image.LANCZOS)
+_k=0.52; _b=_b.resize((round(_b.width*_k),round(_b.height*_k)),Image.LANCZOS)
 _m=Image.new('L',_b.size,0); ImageDraw.Draw(_m).rectangle((14,14,_b.width-14,_b.height-14),fill=255); _m=_m.filter(ImageFilter.GaussianBlur(8))
-BOX=(_b,_m); BOXX,BOXY=282,298
+BOX=(_b,_m); BOXX,BOXY=296,222
 x=np.linspace(1,0,W); a=np.zeros((H,W),np.float32); a[:]=np.clip((x-0.40)/0.60,0,1)**1.1*0.72
 BG.paste(BOX[0],(BOXX,BOXY),BOX[1])
 BG=Image.composite(Image.new('RGB',(W,H),(8,9,14)),BG,Image.fromarray((a*255).astype('uint8')))
@@ -37,6 +37,18 @@ def build(no,nm,cards):
         r=im.rotate(ang,resample=Image.BICUBIC,expand=True); x0=cx-r.width//2; y0=cy-r.height//2
         aa=Image.new('L',(W,H),0); aa.paste(r.split()[3].point(lambda q:int(q*.7)),(x0+8,y0+14)); s=Image.new('RGBA',(W,H),(0,0,0,0)); s.putalpha(aa.filter(ImageFilter.GaussianBlur(10)))
         Lc.alpha_composite(s); Lc.alpha_composite(r,(x0,y0))
+    # ミラーデッキ(2P用の一門デッキ)の札を箱の手前に扇で
+    Vd='/mnt/project-files/visuals-1030/札_最新_1030/表/'; Sd='/mnt/project-files/support-text-1106/01_完成_印刷用(裁ち落とし込み)/'
+    Lm=Image.new('RGBA',(W,H),(0,0,0,0))
+    for k,f in enumerate([Vd+'O-003_鎖鬼.png',Vd+'O-001_影鬼.png',Vd+'T-001_灯籠の精.png',Vd+'T-006_僵尸公主.png']):
+        im=Image.open(f).convert('RGBA').crop((41,41,907,1268)); Q=4
+        m=Image.new('L',(866*Q,1227*Q),0); ImageDraw.Draw(m).rounded_rectangle((0,0,866*Q-1,1227*Q-1),radius=41*Q,fill=255); im.putalpha(m.resize((866,1227),Image.LANCZOS))
+        cw=84; ch=round(1227*cw/866); im=im.resize((cw,ch),Image.LANCZOS)
+        ang=(-1.5+k)*11; pad=Image.new('RGBA',(cw,ch*2),(0,0,0,0)); pad.alpha_composite(im,(0,0))
+        r=pad.rotate(-ang,resample=Image.BICUBIC,expand=True); x0=404-r.width//2; y0=436-r.height//2+ch//2
+        sa=Image.new('L',(W,H),0); sa.paste(r.split()[3].point(lambda q:int(q*.6)),(x0+5,y0+8)); s_=Image.new('RGBA',(W,H),(0,0,0,0)); s_.putalpha(sa.filter(ImageFilter.GaussianBlur(6)))
+        Lm.alpha_composite(s_); Lm.alpha_composite(r,(x0,y0))
+    layers.append(('ミラーデッキの札(見本)',Lm))
     layers.append(('名入れの札(見本)',Lc))
     txt('見出し1',['名入れ式神プラン'],MIN,36,GOLD,(36,34),lh=1.2)
     tw=ImageFont.truetype(MIN,36).getlength('名入れ式神プラン'); Lb=Image.new('RGBA',(W,H),(0,0,0,0)); ImageDraw.Draw(Lb).rectangle((36+tw+12,40,36+tw+15,76),fill=GOLD+(255,)); layers.append(('見出し1_縦線',Lb))
