@@ -6,31 +6,34 @@ from psd_tools.api.layers import PixelLayer
 O='/mnt/project-files/kv-rill-1108/main/'
 W,H=1500,1000
 art=Image.open('/mnt/project-files/cf-final-1105/式神符陣_CF素材_1105/03_編集用_層PNG/仮の箱絵_A5横_新ロゴ_1108/00_背景_文字なし.png').convert('RGB')
-bg=art.crop((270,320,270+1675,320+1117)).resize((W,H),Image.LANCZOS).convert('RGBA')
+bg=art.crop((270,312,270+1682,312+1121)).resize((W,H),Image.LANCZOS)
+from PIL import ImageEnhance
+bg=ImageEnhance.Brightness(bg).enhance(1.08).convert('RGBA')  # 今のCFの画像と同じ明るさに
 def lay(): return Image.new('RGBA',(W,H),(0,0,0,0))
 def shadow(alpha,dx,dy,blur,op):
     s=lay(); a=Image.new('L',(W,H),0); a.paste(alpha.point(lambda q:int(q*op)),(dx,dy)); s.putalpha(a.filter(ImageFilter.GaussianBlur(blur))); return s
 layers=[]
 # KVの小窓(白い縁・角丸)
 kv=Image.open('/mnt/project-files/kv-rill-1108/KV_りるさん_盤と箱ひとつ_新ロゴ_1108.jpg').convert('RGBA')
-kw=515; kh=round(kv.height*kw/kv.width); kv=kv.resize((kw,kh),Image.LANCZOS); b=9; r=16; Q=4
+import os as _o; kw=int(_o.environ.get('KW','574')); kh=round(kv.height*kw/kv.width); kv=kv.resize((kw,kh),Image.LANCZOS); b=9; r=16; Q=4
 fr=Image.new('RGBA',(kw+2*b,kh+2*b),(0,0,0,0))
 m=Image.new('L',(fr.width*Q,fr.height*Q),0); ImageDraw.Draw(m).rounded_rectangle((0,0,fr.width*Q-1,fr.height*Q-1),r*Q,fill=255); m=m.resize(fr.size,Image.LANCZOS)
 fr.paste((250,247,240,255),(0,0),m)
 mi=Image.new('L',(kw*Q,kh*Q),0); ImageDraw.Draw(mi).rounded_rectangle((0,0,kw*Q-1,kh*Q-1),(r-5)*Q,fill=255); fr.paste(kv,(b,b),mi.resize((kw,kh),Image.LANCZOS))
 x0,y0=46,H-fr.height-17
+CXY=(_o.environ.get('CX'),_o.environ.get('CY'))
 L=lay(); a=Image.new('L',(W,H),0); a.paste(fr.split()[3],(x0,y0))
 L.alpha_composite(shadow(a,6,12,14,.75)); L.alpha_composite(fr,(x0,y0)); layers.append(('KVの小窓',L))
 # 札1枚(首引の姫鬼・裁ち線で切った版)
 c=Image.open('/mnt/project-files/support-text-1106/01_完成_印刷用(裁ち落とし込み)/札_首引の姫鬼_効果文1106.png').convert('RGBA').crop((41,41,907,1268))
 m=Image.new('L',(866*Q,1227*Q),0); ImageDraw.Draw(m).rounded_rectangle((0,0,866*Q-1,1227*Q-1),41*Q,fill=255); c.putalpha(m.resize((866,1227),Image.LANCZOS))
-cw=250; c=c.resize((cw,round(1227*cw/866)),Image.LANCZOS).rotate(-10,resample=Image.BICUBIC,expand=True)
-cx,cy=566,598
+cw=228; c=c.resize((cw,round(1227*cw/866)),Image.LANCZOS).rotate(-12,resample=Image.BICUBIC,expand=True)
+cx,cy=int(_o.environ.get("CX","576")),int(_o.environ.get("CY","631"))
 L=lay(); a=Image.new('L',(W,H),0); a.paste(c.split()[3],(cx,cy))
 L.alpha_composite(shadow(a,8,14,14,.75)); L.alpha_composite(c,(cx,cy)); layers.append(('札_首引の姫鬼',L))
 comp=bg.copy()
 for _,l in layers: comp.alpha_composite(l)
-name='CFメイン画像_KV小窓_新ロゴ_1108'
+name=_o.environ.get('NAME','CFメイン画像_KV小窓_新ロゴ_1108')
 comp.convert('RGB').save(O+name+'.jpg',quality=93)
 psd=PSDImage.new('RGB',(W,H)); p=PixelLayer.frompil(bg,psd,'bg',0,0); p.name='背景(箱絵の2人)'; psd.append(p)
 for nm,l in layers:
