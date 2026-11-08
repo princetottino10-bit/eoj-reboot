@@ -36,8 +36,8 @@ sh=Image.new('L',(W,H),0); ImageDraw.Draw(sh).polygon([(x-14,y+18) for x,y in [T
 S=lay(); S.putalpha(sh)
 layers.append(('盤の影',S)); layers.append(('盤のふちの光',glow)); layers.append(('九宮盤と札(本物)',pb))
 # 3 新ロゴ
-lh=200; lg=LOGO.resize((round(LOGO.width*lh/LOGO.height),lh),Image.LANCZOS)
-Lg=lay(); Lg.alpha_composite(lg,(52,590)); layers.append(('題字ロゴ(新ロゴ)',Lg))
+lh=262; lg=LOGO.resize((round(LOGO.width*lh/LOGO.height),lh),Image.LANCZOS)
+Lg=lay(); Lg.alpha_composite(lg,(300-lg.width//2,566)); layers.append(('題字ロゴ(新ロゴ)',Lg))
 def text_layer(items):
     T=lay(); d=ImageDraw.Draw(T)
     for x,y,s,f,col,anc in items:
@@ -46,14 +46,14 @@ def text_layer(items):
         d=ImageDraw.Draw(T); d.text((x,y),s,font=f,fill=col,anchor=anc)
     return T
 cx=300
-layers.append(('肩書き',text_layer([(cx,812,'式神召喚タクティカルカードゲーム',font(GO,30),CREAM,'mm')])))
+layers.append(('肩書き',text_layer([(cx,846,'式神召喚タクティカルカードゲーム',font(GO,30),CREAM,'mm')])))
 # 4 「箱ひとつで遊べる」の札
 B=lay(); d=ImageDraw.Draw(B)
-box=(40,856,560,1030)
+box=(40,878,560,1052)
 d.rounded_rectangle(box,18,fill=(12,12,18,235),outline=GOLD+(255,),width=3)
 d.rounded_rectangle((box[0]+8,box[1]+8,box[2]-8,box[3]-8),12,outline=GOLD+(110,),width=1)
-B.alpha_composite(text_layer([(cx,918,'箱ひとつで遊べる',font(MIN,64),GOLD,'mm'),
-                              (cx,985,'カードの買い足しなし｜2人対戦｜30〜40分',font(GO,25),CREAM,'mm')]))
+B.alpha_composite(text_layer([(cx,940,'箱ひとつで遊べる',font(MIN,64),GOLD,'mm'),
+                              (cx,1007,'カードの買い足しなし｜2人対戦｜30〜40分',font(GO,25),CREAM,'mm')]))
 layers.append(('箱ひとつで遊べる',B))
 layers.append(('注記',text_layer([(W-24,H-20,'※試作のデザインです。製品版と異なる場合があります',font(GO,20),(235,230,220),'rs')])))
 comp=SRC.copy()
