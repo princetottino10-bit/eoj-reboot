@@ -5,7 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, rmSync } from "node:fs";
 import { DEFAULT_RULE_PRESET, RULE_PRESETS } from "../src/presets.ts";
-import { createOnlineServer, markPublicHtml, parseServerArgs, publicHidden, PUBLIC_NO_CHANGES, staticTarget, targetFor } from "../online/server.ts";
+import { byteRange, createOnlineServer, markPublicHtml, parseServerArgs, publicHidden, PUBLIC_NO_CHANGES, staticTarget, targetFor } from "../online/server.ts";
 import { call, newApp, seatTwo, send, testRecordDir } from "./online-api-helpers.ts";
 
 const DIR = testRecordDir("public");
@@ -93,6 +93,25 @@ test("public build over HTTP: marked pages, /rules goes to /guide, records are n
     assert.equal((await fetch(`${base}/play/site-public.css`)).status, 200);
     assert.equal((await fetch(`${base}/play/art/face/back.webp`)).status, 200);
     assert.equal((await fetch(`${base}/play/art/board/taiji.webp`)).status, 200);
+    // the how-to video on the front page: served as video/mp4, in parts when asked (Safari only plays it that way)
+    const whole = await fetch(`${base}/play/art/video/howto.mp4`);
+    assert.equal(whole.status, 200);
+    assert.equal(whole.headers.get("content-type"), "video/mp4");
+    assert.equal(whole.headers.get("accept-ranges"), "bytes");
+    const size = (await whole.arrayBuffer()).byteLength;
+    const head = await fetch(`${base}/play/art/video/howto.mp4`, { headers: { Range: "bytes=0-1" } });
+    assert.equal(head.status, 206);
+    assert.equal(head.headers.get("content-range"), `bytes 0-1/${size}`);
+    assert.equal((await head.arrayBuffer()).byteLength, 2);
+    const tail = await fetch(`${base}/play/art/video/howto.mp4`, { headers: { Range: `bytes=${size - 10}-` } });
+    assert.equal(tail.status, 206);
+    assert.equal(tail.headers.get("content-range"), `bytes ${size - 10}-${size - 1}/${size}`);
+    assert.equal((await tail.arrayBuffer()).byteLength, 10);
+    const past = await fetch(`${base}/play/art/video/howto.mp4`, { headers: { Range: `bytes=${size}-` } });
+    assert.equal(past.status, 416);
+    assert.equal(past.headers.get("content-range"), `bytes */${size}`);
+    await past.arrayBuffer();
+    assert.equal((await fetch(`${base}/play/art/video/howto-poster.webp`)).status, 200);
   });
   await run(false, async (base) => {
     const html = await (await fetch(`${base}/ai`)).text();
@@ -137,4 +156,18 @@ test("public build over HTTP: the crowdfunding link reaches the pages only when 
       await new Promise<void>((r) => server.close(() => r()));
     }
   }
+});
+
+test("byte ranges for the art and the video", () => {
+  assert.equal(byteRange(undefined, 100), null);
+  assert.deepEqual(byteRange("bytes=0-", 100), { start: 0, end: 99 });
+  assert.deepEqual(byteRange("bytes=10-19", 100), { start: 10, end: 19 });
+  assert.deepEqual(byteRange("bytes=90-500", 100), { start: 90, end: 99 });
+  assert.deepEqual(byteRange("bytes=-5", 100), { start: 95, end: 99 });
+  assert.deepEqual(byteRange("bytes=-500", 100), { start: 0, end: 99 });
+  assert.equal(byteRange("bytes=100-", 100), "unsatisfiable");
+  assert.equal(byteRange("bytes=-0", 100), "unsatisfiable");
+  assert.equal(byteRange("bytes=0-1,5-6", 100), null);
+  assert.equal(byteRange("items=0-1", 100), null);
+  assert.equal(byteRange("bytes=9-3", 100), null);
 });

@@ -278,7 +278,7 @@ const PLAY_BROWSER = /^play\/(?!server\.ts$)[a-z-]+\.(ts|css)$/;
 const PLAY_VENDOR = /^play\/vendor\/three\/(?:three\.module|three\.core|OrbitControls|postprocessing\/[A-Za-z]+|shaders\/[A-Za-z]+)\.js$/;
 
 /** Card art cut from the print kit: play/art/<set>/<file>.webp|.jpg, nothing deeper. */
-const PLAY_ART = /^play\/art\/[a-z0-9-]+\/[A-Za-z0-9-]+\.(webp|jpg)$/;
+const PLAY_ART = /^play\/art\/[a-z0-9-]+\/[A-Za-z0-9-]+\.(webp|jpg|mp4)$/;
 
 /** Engine modules and pack data are public; of online/ and play/ only the browser files. */
 export const onlineStaticAllowed = (rel: string): boolean => {
@@ -396,6 +396,25 @@ const sendStatic = (
     "Cache-Control": served.code === 200 ? staticCacheControl(target) : "no-store",
     Vary: "Accept-Encoding",
   };
+  if (served.code === 200 && typeof served.body !== "string") {
+    // binary files (art, the how-to video) answer byte ranges: Safari plays a video only that way
+    headers["Accept-Ranges"] = "bytes";
+    const part = byteRange(req.headers.range, served.body.length);
+    if (part === "unsatisfiable") {
+      res.writeHead(416, { ...headers, "Content-Range": `bytes */${served.body.length}`, "Content-Length": "0" });
+      res.end();
+      return;
+    }
+    if (part !== null) {
+      const chunk = served.body.subarray(part.start, part.end + 1);
+      headers["Content-Range"] = `bytes ${part.start}-${part.end}/${served.body.length}`;
+      headers["Content-Length"] = String(chunk.length);
+      res.writeHead(206, headers);
+      if (headOnly) res.end();
+      else res.end(chunk);
+      return;
+    }
+  }
   const body = app.publicSite && typeof served.body === "string" && target.endsWith(".html") ? markPublicHtml(served.body, app.cfUrl) : served.body;
   const bytes = Buffer.byteLength(body);
   // SSE never comes through here; a body this small is not worth a gzip header,
@@ -406,6 +425,26 @@ const sendStatic = (
   res.writeHead(served.code, headers);
   if (headOnly) res.end();
   else res.end(gz ?? body);
+};
+
+/**
+ * One `Range: bytes=a-b` (or `a-`, or `-n` for the last n bytes) against a body of `size` bytes:
+ * the inclusive span, null to send the whole body (no header, several ranges, or not bytes), or
+ * "unsatisfiable" when it starts past the end.
+ */
+export const byteRange = (header: string | undefined, size: number): { start: number; end: number } | null | "unsatisfiable" => {
+  if (header === undefined) return null;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (m === null || (m[1] === "" && m[2] === "")) return null;
+  if (m[1] === "") {
+    const n = Number(m[2]);
+    if (n === 0) return "unsatisfiable";
+    return { start: Math.max(0, size - n), end: size - 1 };
+  }
+  const start = Number(m[1]);
+  if (start >= size) return "unsatisfiable";
+  const end = m[2] === "" ? size - 1 : Math.min(Number(m[2]), size - 1);
+  return end < start ? null : { start, end };
 };
 
 /** A stream whose reader stopped reading is dropped once this much is queued for it. */

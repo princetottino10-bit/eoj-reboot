@@ -104,3 +104,52 @@ html[data-cf-url] .w-hero-text .cf-link { margin-left: 0; }
 /* the full title logo above the hero's kicker (11/08) */
 .w-logo { display: block; width: min(420px, 92%); height: auto; margin: 0 0 6px -10px; filter: drop-shadow(0 6px 22px oklch(0% 0 0 / 0.55)); }
 @media (max-width: 920px) { .w-logo { margin-left: 0; width: min(340px, 86%); } }
+
+/* ------------------------------------------------------------ 11/08: the CF launch (facts, video, points, the product) */
+.w-facts { list-style: none; margin: -12px 0 26px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.w-facts li { font-size: 13.5px; padding: 3px 12px; border: 1px solid var(--gold-line); border-radius: 999px; color: var(--text); background: oklch(100% 0 0 / 0.03); }
+.w-note a + a { margin-left: 0; }
+
+.w-video { position: relative; max-width: 960px; border-radius: 10px; overflow: hidden; border: 1px solid var(--gold-line); box-shadow: 0 24px 50px oklch(0% 0 0 / 0.55); background: #000; }
+.w-video video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+
+.w-points { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.w-points li { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px; align-items: center; padding: 20px; background: var(--lacquer); border: 1px solid var(--gold-line); border-radius: 10px; }
+.w-points .w-step-num { grid-row: span 2; }
+.w-point-sub { margin: 0; font-size: 14px; color: var(--text-dim); }
+.w-point-main { margin: 0; font-family: var(--font-mincho); font-weight: 800; font-size: 18px; letter-spacing: 0.04em; line-height: 1.5; color: var(--text); }
+
+.w-cf { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 36px; align-items: center; }
+.w-cf-list { margin: 0 0 14px; padding: 0; list-style: none; display: grid; gap: 8px; }
+.w-cf-list li { font-size: 15px; color: var(--text-dim); padding-left: 14px; border-left: 2px solid var(--gold-dim); }
+.w-cf-list b { color: var(--gold-hi); }
+.w-cf-meta { margin: 0 0 20px; font-size: 14px; color: var(--text); letter-spacing: 0.08em; }
+.w-cf-btn { display: none; }
+html[data-cf-url] .w-cf-btn {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 2px; text-decoration: none; padding: 14px 34px; border-radius: 6px;
+  font-family: var(--font-mincho); font-weight: 800; font-size: 21px; letter-spacing: 0.08em; line-height: 1.3;
+  color: var(--bg-deep); background: linear-gradient(180deg, var(--gold-hi), var(--gold) 70%, var(--gold-dim));
+  box-shadow: 0 10px 30px oklch(80% 0.12 85 / 0.25), inset 0 1px 0 oklch(100% 0 0 / 0.5); transition: transform 0.15s ease;
+}
+html[data-cf-url] .w-cf-btn:hover { transform: translateY(-2px); }
+.w-cf-btn small { font-family: var(--font-gothic); font-weight: 500; font-size: 12px; letter-spacing: 0.02em; opacity: 0.8; }
+.w-cf-soon { display: inline-block; margin: 0; padding: 8px 16px; border: 1px dashed var(--gold-line); border-radius: 8px; color: var(--gold); font-weight: 700; letter-spacing: 0.06em; }
+html[data-cf-url] .w-cf-soon { display: none; }
+.w-cf-art { margin: 0; }
+.w-cf-art img { display: block; width: 100%; height: auto; border-radius: 10px; border: 1px solid var(--gold-line); box-shadow: 0 24px 50px oklch(0% 0 0 / 0.55); }
+.w-cf-art figcaption { margin-top: 6px; font-size: 12px; color: var(--text-dim); text-align: right; }
+
+/* the header's 支援ページ and the footer's link only once there is a URL */
+.w-nav-cf, .w-foot-cf { display: none; }
+html[data-cf-url] .w-nav-cf { display: inline-block; }
+html[data-cf-url] .w-foot-cf { display: inline; margin-left: 0.6em; }
+
+@media (max-width: 920px) {
+  .w-points { grid-template-columns: minmax(0, 1fr); }
+  .w-cf { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 680px) {
+  .w-nav-video { display: none; }
+  .w-point-main { font-size: 16px; letter-spacing: 0.02em; }
+  html[data-cf-url] .w-cf-btn { display: flex; }
+}

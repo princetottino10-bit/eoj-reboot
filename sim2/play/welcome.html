@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>式神符陣 ブラウザ版</title>
-<meta name="description" content="九つのマスに式神を置き、盤面を取り合う2人対戦ゲーム「式神符陣」。ブラウザで、AIと対戦したり、招待URLで友だちと遊べます。">
+<meta name="description" content="式神召喚タクティカルカードゲーム「式神符陣」のブラウザ版。九つのマスに式神を置き、盤面を奪い合う2人対戦。登録なし・無料で、AIや友だちと遊べます。製品版はクラウドファンディングで支援を募っています。">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%230b0b0e'/%3E%3Ccircle cx='32' cy='32' r='27.5' fill='none' stroke='%23d7b565' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='23' fill='%231b2340'/%3E%3Cpath d='M32 9A23 23 0 0 1 32 55A11.5 11.5 0 0 1 32 32A11.5 11.5 0 0 0 32 9Z' fill='%23f5f1e2'/%3E%3Ccircle cx='32' cy='43.5' r='4.4' fill='%231b2340'/%3E%3Ccircle cx='32' cy='20.5' r='4.4' fill='%23f5f1e2'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,9 @@
 <header class="g-head">
   <a class="g-brand" href="/"><img class="g-logo" src="/play/art/site/logo-head.webp" alt="式神符陣" width="640" height="232"></a>
   <nav class="g-links" aria-label="遊ぶ">
+    <a href="#w-video" class="w-nav-video">動画</a>
     <a href="/guide">遊び方</a>
+    <a href="#cf" class="w-nav-cf" target="_blank" rel="noopener">支援ページ</a>
     <a href="/ai" class="is-gold">AIと対戦</a>
   </nav>
 </header>
@@ -25,14 +27,15 @@
 <section class="w-hero">
   <div class="w-hero-text">
     <img class="w-logo" src="/play/art/site/logo.webp" alt="式神符陣" width="1000" height="675">
-    <p class="g-kicker">2人対戦の式神召喚ゲーム</p>
-    <h1>九つのマスに、<br>式神を置く。</h1>
+    <p class="g-kicker">式神召喚タクティカルカードゲーム</p>
+    <h1>攻めて崩すか、<br>置いて築くか。</h1>
     <p class="w-lead">符から式神を召喚し、3×3の<b>九宮盤</b>へ。どのマスに、どの向きで置くか。その一手で、攻め筋も、突かれる<b>隙</b>も変わります。先に盤面を<b>制圧</b>した式神遣いの勝ちです。</p>
+    <ul class="w-facts" aria-label="ゲームの概要"><li>2人対戦</li><li>1局 30～40分</li><li>ブラウザ版は登録なし・無料</li></ul>
     <div class="w-cta">
       <a class="w-btn-main" href="/ai">AIと対戦する<small>ひとりで、すぐに遊べます</small></a>
       <a class="w-btn-sub" href="/online">友だちとオンライン対戦<small>部屋を作り、招待URLを送ります</small></a>
     </div>
-    <p class="w-note">登録なし・ブラウザだけで遊べます。<a href="/guide">はじめての方は遊び方へ</a></p>
+    <p class="w-note">はじめての方は<a href="#w-video">3分の遊び方動画</a>か<a href="/guide">遊び方</a>へ</p>
     <a class="cf-link" href="#cf" target="_blank" rel="noopener"><span class="cf-tag">クラウドファンディング実施中</span><span class="cf-go">支援ページへ ▶</span></a>
   </div>
   <div class="w-hero-art" aria-hidden="true">
@@ -40,6 +43,25 @@
     <img class="w-card w-card-a" src="/play/art/face/O-009.webp" alt="" width="600" height="850">
     <img class="w-card w-card-b" src="/play/art/face/T-006.webp" alt="" width="600" height="850">
   </div>
+</section>
+
+<section class="w-sec w-video-sec" id="w-video" aria-labelledby="w-video-h">
+  <h2 id="w-video-h"><span class="w-sec-kicker">遊び方動画</span>3分でわかる、式神符陣。</h2>
+  <p class="w-sec-lead">鎖鬼が、勝利条件からターンの流れまで、ひと通り案内します。</p>
+  <div class="w-video">
+    <video controls playsinline preload="none" poster="/play/art/video/howto-poster.webp" width="1280" height="720">
+      <source src="/play/art/video/howto.mp4" type="video/mp4">
+    </video>
+  </div>
+</section>
+
+<section class="w-sec" aria-labelledby="w-points">
+  <h2 id="w-points"><span class="w-sec-kicker">どんなゲームか</span>九宮争奪。</h2>
+  <ol class="w-points">
+    <li><span class="w-step-num">一</span><p class="w-point-sub">たった9マスに、深い戦術</p><p class="w-point-main">攻めて崩すか、置いて築くか。</p></li>
+    <li><span class="w-step-num">二</span><p class="w-point-sub">向きひとつで生まれる勝機</p><p class="w-point-main">その隙を、待っていた。</p></li>
+    <li><span class="w-step-num">三</span><p class="w-point-sub">式神を操り、盤面を奪い合う</p><p class="w-point-main">倒すだけでは、勝てない。</p></li>
+  </ol>
 </section>
 
 <section class="w-sec" aria-labelledby="w-how">
@@ -66,7 +88,7 @@
 
 <section class="w-sec" aria-labelledby="w-cards">
   <h2 id="w-cards"><span class="w-sec-kicker">式神たち</span>鬼と付喪神、23枚の山札。</h2>
-  <p class="w-sec-lead">山札は、鬼の<b>酒呑一門</b>12枚と、付喪神の<b>玖龍一門</b>11枚。2人とも同じ23枚で戦います。</p>
+  <p class="w-sec-lead">ブラウザ版の山札は、鬼の<b>酒呑一門</b>12枚と、付喪神の<b>玖龍一門</b>11枚。2人とも同じ23枚で戦います。</p>
   <div class="w-strip" role="list">
     <img role="listitem" src="/play/art/face/O-001.webp" alt="影鬼" width="600" height="850" loading="lazy">
     <img role="listitem" src="/play/art/face/T-001.webp" alt="灯籠の精" width="600" height="850" loading="lazy">
@@ -78,6 +100,25 @@
     <img role="listitem" src="/play/art/face/T-008.webp" alt="玖龍街" width="600" height="850" loading="lazy">
   </div>
   <p class="w-more"><a href="/guide#cards">全23枚を見る</a></p>
+</section>
+
+<section class="w-sec w-cf" id="w-cf" aria-labelledby="w-cf-h">
+  <div class="w-cf-text">
+    <h2 id="w-cf-h"><span class="w-sec-kicker">製品版</span>箱ひとつで遊べる、<br>式神符陣。</h2>
+    <p class="w-sec-lead">紙のカードと九宮盤で遊ぶ製品版を、クラウドファンディング（CAMPFIRE）で作ります。カードの買い足しはありません。</p>
+    <ul class="w-cf-list">
+      <li><b>一門デッキ×4</b>　式神・霊具のカード 約48枚。ブラウザ版の酒呑一門・玖龍一門に、近日公開の一門が2つ加わります。</li>
+      <li><b>九宮盤×1</b>　A3サイズ2枚で1組</li>
+      <li><b>コマ一式・説明書</b>　A5サイズの箱入り</li>
+    </ul>
+    <p class="w-cf-meta">2人対戦｜12歳以上｜30～40分</p>
+    <a class="w-cf-btn" href="#cf" target="_blank" rel="noopener">支援ページを見る<small>CAMPFIRE で支援する</small></a>
+    <p class="w-cf-soon">クラウドファンディング準備中</p>
+  </div>
+  <figure class="w-cf-art">
+    <img src="/play/art/site/set.webp" alt="製品版のセット内容。九宮盤、酒呑一門と玖龍一門のカード、近日公開の一門2つ、A5サイズの箱、説明書、コマ一式" width="1200" height="800" loading="lazy">
+    <figcaption>試作のデザインです。製品版と異なる場合があります。</figcaption>
+  </figure>
 </section>
 
 <section class="w-final">
@@ -92,7 +133,7 @@
 </main>
 
 <footer class="w-foot">
-  <p>開発中のテスト版です。札の絵・九宮盤・ルールは、製品版までに変わることがあります。</p>
+  <p>開発中のテスト版です。札の絵・九宮盤・ルールは、製品版までに変わることがあります。<a href="#cf" class="w-foot-cf" target="_blank" rel="noopener">クラウドファンディングの支援ページ</a></p>
 </footer>
 </body>
 </html>

@@ -15,11 +15,10 @@ primary_region = "nrt"
   dockerfile = "Dockerfile"
 
 # 「クラウドファンディング実施中 ▶ 支援ページへ」 (top page, rules page, before and at the end of a
-# match): once the CAMPFIRE page is public, add to the line below
-#   --cf-url https://camp-fire.jp/projects/992243/view
-# Without the flag the links stay hidden.
+# match, and the front page's 製品版 section) go to the CAMPFIRE page given by --cf-url below.
+# Without the flag they read 「クラウドファンディング準備中」 instead.
 [processes]
-  app = "node --experimental-strip-types online/server.ts --host 0.0.0.0 --port 8080 --trust-proxy --record-dir /app/out/online --public"
+  app = "node --experimental-strip-types online/server.ts --host 0.0.0.0 --port 8080 --trust-proxy --record-dir /app/out/online --public --cf-url https://camp-fire.jp/projects/992243/view"
 
 [mounts]
   source = "records"
@@ -28,9 +27,9 @@ primary_region = "nrt"
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = "off"
+  auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 1
+  min_machines_running = 0
   processes = ["app"]
 
   [http_service.concurrency]

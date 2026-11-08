@@ -25,6 +25,8 @@ const TYPES: Record<string, string> = {
 const IMAGE_TYPES: Record<string, string> = {
   ".webp": "image/webp",
   ".jpg": "image/jpeg",
+  // the how-to video on the public front page (play/art/video/)
+  ".mp4": "video/mp4",
 };
 const ART_PREFIX = "play/art/";
 
