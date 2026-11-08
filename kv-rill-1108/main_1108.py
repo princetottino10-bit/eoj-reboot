@@ -13,7 +13,7 @@ def shadow(alpha,dx,dy,blur,op):
 layers=[]
 # KVの小窓(白い縁・角丸)
 kv=Image.open('/mnt/project-files/kv-rill-1108/KV_りるさん_盤と箱ひとつ_新ロゴ_1108.jpg').convert('RGBA')
-kw=560; kh=round(kv.height*kw/kv.width); kv=kv.resize((kw,kh),Image.LANCZOS); b=9; r=16; Q=4
+kw=446; kh=round(kv.height*kw/kv.width); kv=kv.resize((kw,kh),Image.LANCZOS); b=9; r=16; Q=4
 fr=Image.new('RGBA',(kw+2*b,kh+2*b),(0,0,0,0))
 m=Image.new('L',(fr.width*Q,fr.height*Q),0); ImageDraw.Draw(m).rounded_rectangle((0,0,fr.width*Q-1,fr.height*Q-1),r*Q,fill=255); m=m.resize(fr.size,Image.LANCZOS)
 fr.paste((250,247,240,255),(0,0),m)
@@ -24,8 +24,8 @@ L.alpha_composite(shadow(a,6,12,14,.75)); L.alpha_composite(fr,(x0,y0)); layers.
 # 札1枚(首引の姫鬼・裁ち線で切った版)
 c=Image.open('/mnt/project-files/support-text-1106/01_完成_印刷用(裁ち落とし込み)/札_首引の姫鬼_効果文1106.png').convert('RGBA').crop((41,41,907,1268))
 m=Image.new('L',(866*Q,1227*Q),0); ImageDraw.Draw(m).rounded_rectangle((0,0,866*Q-1,1227*Q-1),41*Q,fill=255); c.putalpha(m.resize((866,1227),Image.LANCZOS))
-cw=236; c=c.resize((cw,round(1227*cw/866)),Image.LANCZOS).rotate(-8,resample=Image.BICUBIC,expand=True)
-cx,cy=x0+fr.width-50,H-c.height-24
+cw=196; c=c.resize((cw,round(1227*cw/866)),Image.LANCZOS).rotate(-8,resample=Image.BICUBIC,expand=True)
+cx,cy=x0+fr.width-42,H-c.height-26
 L=lay(); a=Image.new('L',(W,H),0); a.paste(c.split()[3],(cx,cy))
 L.alpha_composite(shadow(a,8,14,14,.75)); L.alpha_composite(c,(cx,cy)); layers.append(('札_首引の姫鬼',L))
 comp=bg.copy()
