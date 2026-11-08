@@ -328,3 +328,7 @@ b { color: var(--gold-hi); font-weight: 700; }
 /* 「クラウドファンディング実施中 ▶ 支援ページへ」 (href="#cf"): hidden here; play/site-public.css shows it
    once the public server is given --cf-url. */
 .cf-link { display: none; }
+
+/* the header's title logo (11/08) in place of 符 + 式神符陣 */
+.g-logo { display: block; height: 42px; width: auto; }
+@media (max-width: 680px) { .g-logo { height: 34px; } }

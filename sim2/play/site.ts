@@ -14,6 +14,13 @@ export const faceUrl = (printId: string): string => `/play/art/face/${encodeURIC
 /** The printed card back. */
 export const BACK_URL = "/play/art/face/back.webp";
 
+/** The title logo, cropped to its four letters for headers (play/art/site/logo-head.webp, from the 11/08 logo). */
+export const LOGO_HEAD_URL = "/play/art/site/logo-head.webp";
+
+/** The title logo as an <img> for a header; `cls` sizes it (alt carries the name for screen readers). */
+export const logoHeadHtml = (cls: string): string =>
+  `<img class="${cls}" src="${LOGO_HEAD_URL}" alt="式神符陣" width="640" height="232">`;
+
 /** Where the public build sends people for the rules. */
 export const GUIDE_HREF = "/guide";
 

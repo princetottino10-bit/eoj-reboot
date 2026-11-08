@@ -1486,3 +1486,9 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 /* 「総制圧力」 is wider than the old 「制圧」: keep the stat label tight and my 「あなた」 on one line */
 .np-occ i { letter-spacing: 0; }
 .np.is-you .np-who { flex-shrink: 0; }
+
+/* ------------------------------------------------------------ title logo (11/08) */
+/* The header's 符 + 式神符陣 became the title logo (play/art/site/logo-head.webp). */
+.brand-logo { display: block; height: 38px; width: auto; align-self: center; }
+@media (max-width: 720px) { .brand-logo { height: 30px; } }
+@media (max-height: 520px) and (min-aspect-ratio: 4/3) { .brand-logo { height: 24px; } }

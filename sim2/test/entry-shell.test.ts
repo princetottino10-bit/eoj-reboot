@@ -34,8 +34,8 @@ const look = () => {
 test("entry shell: the same header on every screen, only the subtitle changes", () => {
   const heads = MODES.map((m) => entryHeadHtml(m));
   for (const [i, h] of heads.entries()) {
-    assert.match(h, /^<header class="entry-head"><span class="brand-mark" aria-hidden="true">符<\/span>/);
-    assert.ok(h.includes("<h1>式神符陣</h1>"));
+    assert.match(h, /^<header class="entry-head"><div class="entry-titles"><h1><img class="entry-logo" src="\/play\/art\/site\/logo-head\.webp" alt="式神符陣"/);
+    assert.ok(!h.includes("brand-mark"));
     assert.ok(h.includes(`<p>${ENTRY_TEXT[MODES[i] as PlayMode].sub}</p>`));
   }
   const strip = (h: string): string => h.replace(/<p>.*?<\/p>/, "");

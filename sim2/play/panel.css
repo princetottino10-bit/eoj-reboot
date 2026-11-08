@@ -575,3 +575,7 @@ a.btn { text-decoration: none; }
   .mode-item { min-height: 44px; padding: 4px 6px; }
   .mode-hint { display: none; }
 }
+
+/* the entry screens' title: the title logo in place of 符 + 式神符陣 (11/08) */
+.entry-logo { display: block; height: 64px; width: auto; max-width: 100%; }
+@media (max-width: 480px) { .entry-logo { height: 52px; } }

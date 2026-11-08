@@ -1,7 +1,7 @@
 // The one page skeleton of the three entry screens — AIと対戦 (/ai),
 // オンライン対戦 (/), 観戦 (/watch) — before a game starts:
 //
-//   header (符 + 式神符陣 + a one-line subtitle per mode)
+//   header (the title logo + a one-line subtitle per mode)
 //   the mode switch
 //   one panel: h2, the mode's own fields, the shared rules-and-cards block,
 //              one full-width gold button, quiet secondary buttons under it
@@ -13,7 +13,7 @@ import { esc } from "./cards-view.ts";
 import { modeSwitchHtml } from "./mode-switch.ts";
 import type { PlayMode } from "./mode-switch.ts";
 import { badgeHtml, diffFromPresetHtml } from "./settings-badge.ts";
-import { CF_SOON_HTML, cfLinkHtml, cfUrl, GUIDE_HREF, isPublicSite } from "./site.ts";
+import { CF_SOON_HTML, cfLinkHtml, cfUrl, GUIDE_HREF, isPublicSite, logoHeadHtml } from "./site.ts";
 import type { SettingsLook } from "./settings-badge.ts";
 
 /** Per mode: the subtitle under the title, the panel's heading, the gold button. */
@@ -28,7 +28,7 @@ export const EDIT_RULES_LABEL = "ルールとカードを変える";
 
 /** The header: the same on the three screens but for the subtitle. */
 export const entryHeadHtml = (mode: PlayMode): string =>
-  `<header class="entry-head"><span class="brand-mark" aria-hidden="true">符</span><div class="entry-titles"><h1>式神符陣</h1><p>${esc(
+  `<header class="entry-head"><div class="entry-titles"><h1>${logoHeadHtml("entry-logo")}</h1><p>${esc(
     ENTRY_TEXT[mode].sub,
   )}</p></div></header>`;
 
