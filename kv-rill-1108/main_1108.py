@@ -6,7 +6,7 @@ from psd_tools.api.layers import PixelLayer
 O='/mnt/project-files/kv-rill-1108/main/'
 W,H=1500,1000
 art=Image.open('/mnt/project-files/cf-final-1105/式神符陣_CF素材_1105/03_編集用_層PNG/仮の箱絵_A5横_新ロゴ_1108/00_背景_文字なし.png').convert('RGB')
-bg=art.crop((0,0,2100,1400)).resize((W,H),Image.LANCZOS).convert('RGBA')
+bg=art.crop((230,190,230+1731,190+1154)).resize((W,H),Image.LANCZOS).convert('RGBA')
 def lay(): return Image.new('RGBA',(W,H),(0,0,0,0))
 def shadow(alpha,dx,dy,blur,op):
     s=lay(); a=Image.new('L',(W,H),0); a.paste(alpha.point(lambda q:int(q*op)),(dx,dy)); s.putalpha(a.filter(ImageFilter.GaussianBlur(blur))); return s
@@ -24,8 +24,8 @@ L.alpha_composite(shadow(a,6,12,14,.75)); L.alpha_composite(fr,(x0,y0)); layers.
 # 札1枚(首引の姫鬼・裁ち線で切った版)
 c=Image.open('/mnt/project-files/support-text-1106/01_完成_印刷用(裁ち落とし込み)/札_首引の姫鬼_効果文1106.png').convert('RGBA').crop((41,41,907,1268))
 m=Image.new('L',(866*Q,1227*Q),0); ImageDraw.Draw(m).rounded_rectangle((0,0,866*Q-1,1227*Q-1),41*Q,fill=255); c.putalpha(m.resize((866,1227),Image.LANCZOS))
-cw=210; c=c.resize((cw,round(1227*cw/866)),Image.LANCZOS).rotate(-8,resample=Image.BICUBIC,expand=True)
-cx,cy=x0+fr.width-40,H-c.height-22
+cw=236; c=c.resize((cw,round(1227*cw/866)),Image.LANCZOS).rotate(-8,resample=Image.BICUBIC,expand=True)
+cx,cy=x0+fr.width-50,H-c.height-24
 L=lay(); a=Image.new('L',(W,H),0); a.paste(c.split()[3],(cx,cy))
 L.alpha_composite(shadow(a,8,14,14,.75)); L.alpha_composite(c,(cx,cy)); layers.append(('札_首引の姫鬼',L))
 comp=bg.copy()
