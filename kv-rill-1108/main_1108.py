@@ -6,7 +6,7 @@ from psd_tools.api.layers import PixelLayer
 O='/mnt/project-files/kv-rill-1108/main/'
 W,H=1500,1000
 art=Image.open('/mnt/project-files/cf-final-1105/式神符陣_CF素材_1105/03_編集用_層PNG/仮の箱絵_A5横_新ロゴ_1108/00_背景_文字なし.png').convert('RGB')
-bg=art.crop((230,190,230+1731,190+1154)).resize((W,H),Image.LANCZOS).convert('RGBA')
+bg=art.crop((270,320,270+1675,320+1117)).resize((W,H),Image.LANCZOS).convert('RGBA')
 def lay(): return Image.new('RGBA',(W,H),(0,0,0,0))
 def shadow(alpha,dx,dy,blur,op):
     s=lay(); a=Image.new('L',(W,H),0); a.paste(alpha.point(lambda q:int(q*op)),(dx,dy)); s.putalpha(a.filter(ImageFilter.GaussianBlur(blur))); return s
