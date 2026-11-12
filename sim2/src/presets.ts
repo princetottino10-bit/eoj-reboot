@@ -92,7 +92,7 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
     label: "10/26案",
     experiment: "",
     defaultPack: "adopted-1013",
-    note: "10/26案: 10/7決定から1つ変えたもの。召喚攻撃(召喚したターンの攻撃)は、召喚(継承召喚も)してすぐ、ほかの行動をはさまずにするときだけできる。ほかの式神の召喚・攻撃・回転、霊具、その式神自身の回転を先にしたら、その式神はそのターン攻撃できない(次の自分のターンからは、ふつうに攻撃できる)。ほかは10/7決定と同じ。",
+    note: "10/26案: 10/7決定から1つ変えたもの。召喚攻撃(召喚したターンの攻撃)は、召喚(継承召喚も)してすぐ、ほかの行動をはさまずにするときだけできる。ほかの式神の召喚・攻撃・回転、霊具を先にしたら、その式神はそのターン攻撃できない(次の自分のターンからは、ふつうに攻撃できる)。召喚したターンは、その式神は回転できない。ほかは10/7決定と同じ。",
     overrides: {} as Partial<Config>,
   },
   r1007: {
@@ -206,7 +206,8 @@ export const RULE_PRESETS: Record<RulePresetId, RulePreset> = {
 RULE_PRESETS.r1006.overrides = RULE_PRESETS.r1003.overrides;
 RULE_PRESETS.r1007.overrides = { ...RULE_PRESETS.r1003.overrides, incomeMode: "current", chipIncomeSteps: [4, 5], taijiDiscount: 1 };
 // 10/26案 = 10/7決定 + the 召喚攻撃 only right after its summon
-RULE_PRESETS.r1026.overrides = { ...RULE_PRESETS.r1007.overrides, summonAttackTiming: "right_after" };
+// 11/13: no rotate on the summon turn either (本人「前からそうだった」: the 10/26案 always meant it)
+RULE_PRESETS.r1026.overrides = { ...RULE_PRESETS.r1007.overrides, summonAttackTiming: "right_after", rotateOnSummonTurn: false };
 
 /** Packs selectable from the play UI and the online lobby. */
 export const PLAYABLE_PACKS = ["adopted-1013", "adopted-1006", "adopted-1006a", "adopted-1004", "adopted-1003", "adopted-0922", "shuten-kyuryu", "tsukumo-miyako", "kyubi-ryu"] as const;

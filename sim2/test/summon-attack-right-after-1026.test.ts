@@ -63,7 +63,7 @@ test("1026案: r1026 is 10/7決定 + right_after, the default and first offered;
   assert.ok(OFFERED_RULE_IDS.includes("r1007"), "10/7決定 stays selectable");
   assert.equal(RULE_PRESETS.r1026.label, "10/26案");
   assert.equal(RULE_PRESETS.r1026.defaultPack, RULE_PRESETS.r1007.defaultPack);
-  assert.deepEqual(presetConfig("r1026"), { ...presetConfig("r1007"), summonAttackTiming: "right_after" });
+  assert.deepEqual(presetConfig("r1026"), { ...presetConfig("r1007"), summonAttackTiming: "right_after", rotateOnSummonTurn: false });
   for (const id of RULE_PRESET_IDS) if (id !== "r1026") assert.equal(presetConfig(id).summonAttackTiming, "any_time", id);
   const f = CONFIG_SCHEMA.find((x) => x.key === "summonAttackTiming");
   assert.ok(f !== undefined && f.kind === "choice");
