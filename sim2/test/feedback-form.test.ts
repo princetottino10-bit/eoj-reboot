@@ -1,14 +1,12 @@
 // 11/12 感想フォーム: the 開発機能版 (not the public build) offers 「感想を送る」
-// at the end of a match, opening the Google form with the scene, the device
-// and the changed settings already filled in, so players only write their
-// thoughts.
+// at the end of a match, opening the Google form with the scene and the
+// changed settings already filled in. The device is not filled in (11/13).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   FEEDBACK_ENTRY,
   FEEDBACK_FORM_URL,
-  deviceOf,
   feedbackFormUrl,
   feedbackSettingsText,
 } from "../play/feedback-form.ts";
@@ -20,29 +18,14 @@ import { RULE_PRESETS } from "../src/presets.ts";
 const src = (f: string): string => readFileSync(new URL(`../${f}`, import.meta.url), "utf8");
 const params = (url: string): URLSearchParams => new URL(url).searchParams;
 
-test("the form URL pre-fills scene, device and settings by entry id", () => {
-  const url = feedbackFormUrl({ scene: "AI対戦", device: "PC", settings: "基準のまま" });
+test("the form URL pre-fills scene and settings by entry id, never the device", () => {
+  const url = feedbackFormUrl({ scene: "AI対戦", settings: "基準のまま" });
   assert.ok(url.startsWith(FEEDBACK_FORM_URL + "?"));
   const p = params(url);
   assert.equal(p.get("usp"), "pp_url");
   assert.equal(p.get(`entry.${FEEDBACK_ENTRY.scene}`), "AI対戦");
-  assert.equal(p.get(`entry.${FEEDBACK_ENTRY.device}`), "PC");
   assert.equal(p.get(`entry.${FEEDBACK_ENTRY.settings}`), "基準のまま");
-});
-
-test("an unknown device is left blank rather than guessed", () => {
-  const p = params(feedbackFormUrl({ scene: "オンライン対戦", device: null, settings: "x" }));
-  assert.equal(p.has(`entry.${FEEDBACK_ENTRY.device}`), false);
-});
-
-test("devices map to the form's three choices", () => {
-  assert.equal(deviceOf("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)", 5), "iPhone・iPad");
-  assert.equal(deviceOf("Mozilla/5.0 (iPad; CPU OS 16_0 like Mac OS X)", 5), "iPhone・iPad");
-  // iPadOS 13+ says Macintosh; only the touch points tell
-  assert.equal(deviceOf("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", 5), "iPhone・iPad");
-  assert.equal(deviceOf("Mozilla/5.0 (Linux; Android 14; Pixel 8)", 5), "Android");
-  assert.equal(deviceOf("Mozilla/5.0 (Windows NT 10.0; Win64; x64)", 0), "PC");
-  assert.equal(deviceOf("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", 0), "PC");
+  assert.deepEqual([...p.keys()].sort(), ["entry." + FEEDBACK_ENTRY.scene, "entry." + FEEDBACK_ENTRY.settings, "usp"].sort());
 });
 
 test("untouched settings say so, with the rule's name", () => {
@@ -73,6 +56,7 @@ test("the end of a match offers the form only off the public build (AI and onlin
   assert.match(mod, /isPublicSite\(\)/);
 });
 
-test("the supporter welcome page links the form", () => {
-  assert.ok(src("play/supporter.html").includes(FEEDBACK_FORM_URL));
+test("the supporter welcome page points to the in-game button", () => {
+  const html = src("play/supporter.html");
+  assert.ok(html.includes("ご意見・ご感想は、ゲーム内の「感想を送る」ボタンからお知らせください。"));
 });

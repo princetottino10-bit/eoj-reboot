@@ -1,8 +1,8 @@
 // 11/12 感想フォーム (Googleフォーム「『式神符陣』開発機能版 ご感想・ご意見フォーム」).
 // The 開発機能版 offers 「感想を送る」 at the end of a match and opens the form
-// with the scene, the device and the changed rules / cards already filled in
-// (the form's pre-fill URL: ?usp=pp_url&entry.N=value), so a player only
-// writes what they thought. Never on the public build.
+// with the scene and the changed rules / cards already filled in (the form's
+// pre-fill URL: ?usp=pp_url&entry.N=value). The device is left to the player
+// (11/13 チームの判断: 自動で入れるのは気持ち悪い). Never on the public build.
 import { cardChangeLines } from "./settings-badge.ts";
 import { isPublicSite } from "./site.ts";
 import { shareHref } from "./rules-url.ts";
@@ -20,19 +20,8 @@ export const FEEDBACK_FORM_URL =
 export const FEEDBACK_ENTRY = {
   scene: "1038255780",
   settings: "4898987",
-  device: "356440219",
 } as const;
 
-/** The form's choices for 「利用した端末・環境」. */
-export type FeedbackDevice = "iPhone・iPad" | "Android" | "PC";
-
-export const deviceOf = (userAgent: string, maxTouchPoints: number): FeedbackDevice => {
-  if (/iPhone|iPad|iPod/.test(userAgent)) return "iPhone・iPad";
-  if (/Android/.test(userAgent)) return "Android";
-  // iPadOS 13+ reports a Mac; a Mac has no touch screen
-  if (/Macintosh/.test(userAgent) && maxTouchPoints > 1) return "iPhone・iPad";
-  return "PC";
-};
 
 /**
  * 「変更したルールや設定」 in words: the rule's name, each change from it,
@@ -48,12 +37,11 @@ export const feedbackSettingsText = (s: GameSettings, printed: CardPack, origin:
   return [label, ...lines.map((l) => `・${l}`), `共有URL: ${shareHref(origin, { for: "standalone", s: null }, encodeSettings(s))}`].join("\n");
 };
 
-export type FeedbackFill = { scene: string; device: FeedbackDevice | null; settings: string };
+export type FeedbackFill = { scene: string; settings: string };
 
 export const feedbackFormUrl = (f: FeedbackFill): string => {
   const q = new URLSearchParams({ usp: "pp_url" });
   q.set(`entry.${FEEDBACK_ENTRY.scene}`, f.scene);
-  if (f.device !== null) q.set(`entry.${FEEDBACK_ENTRY.device}`, f.device);
   q.set(`entry.${FEEDBACK_ENTRY.settings}`, f.settings);
   return `${FEEDBACK_FORM_URL}?${q.toString()}`;
 };
@@ -69,7 +57,6 @@ export const feedbackLink = (scene: string, settings: GameSettings, printed: Car
   a.title = "ルールの変更点は自動で入ります";
   a.href = feedbackFormUrl({
     scene,
-    device: deviceOf(navigator.userAgent, navigator.maxTouchPoints ?? 0),
     settings: feedbackSettingsText(settings, printed, location.origin),
   });
   return a;
