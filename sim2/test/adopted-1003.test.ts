@@ -155,7 +155,7 @@ test("r1003 = 10/3テスト案: the numbers, and it is the default for new rooms
   const d = defaultSettings();
   assert.equal(d.rule, "r1026");
   assert.equal(d.pack, "adopted-1013");
-  assert.deepEqual(settingsConfig(d), { ...cfg, incomeMode: "current", chipIncomeSteps: [4, 5], taijiDiscount: 1, summonAttackTiming: "right_after" });
+  assert.deepEqual(settingsConfig(d), { ...cfg, incomeMode: "current", chipIncomeSteps: [4, 5], taijiDiscount: 1, summonAttackTiming: "right_after", rotateOnSummonTurn: false });
   // the preset table does not move through a returned config
   cfg.chipIncomeSteps.push(9);
   assert.deepEqual(RULE_PRESETS.r1003.overrides.chipIncomeSteps, [4, 5, 5]);

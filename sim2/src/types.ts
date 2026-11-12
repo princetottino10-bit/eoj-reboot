@@ -354,6 +354,8 @@ export type Config = {
   summonAttackForced: boolean;
   /** When a unit summoned this turn may make its 召喚攻撃 (10/26案: right_after). */
   summonAttackTiming: SummonAttackTiming;
+  /** false (10/26案): a unit cannot take a rotate command on the turn it was summoned (inherit-summon too). */
+  rotateOnSummonTurn: boolean;
 };
 
 export const defaultConfig = (): Config => ({
@@ -423,6 +425,7 @@ export const defaultConfig = (): Config => ({
   freeSummonAttackMinCost: 0,
   summonAttackForced: false,
   summonAttackTiming: "any_time",
+  rotateOnSummonTurn: true,
 });
 
 /**
