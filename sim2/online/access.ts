@@ -151,7 +151,7 @@ export const loginPage = (opts: { next: string; error?: string }): string => `<!
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>式神符陣 支援者向けブラウザ版</title>
+<title>式神符陣 開発機能版アプリ</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
 <style>
 :root { color-scheme: dark; --bg: #0b0b0e; --panel: #15161c; --line: #3a3526; --gold: #d7b565; --text: #f5f1e2; --sub: #b9b3a3; --err: #ff9b8a; }
@@ -173,7 +173,7 @@ small { display: block; margin-top: 18px; color: var(--sub); font-size: .78rem; 
 <body>
 <main>
 <img class="logo" src="/play/art/site/logo.webp" alt="式神符陣" width="1000" height="675">
-<h1>支援者向けブラウザ版</h1>
+<h1>開発機能版アプリ</h1>
 <p>クラウドファンディングでお送りした<br>パスワードを入れてください。</p>
 ${opts.error === undefined ? "" : `<p class="err" role="alert">${esc(opts.error)}</p>\n`}<form method="post" action="/login">
 <input type="hidden" name="next" value="${esc(opts.next)}">
