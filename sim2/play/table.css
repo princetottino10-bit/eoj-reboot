@@ -37,7 +37,8 @@
   --lq-void: linear-gradient(160deg, #1e1b18, #131110);
   --lq-yin: linear-gradient(160deg, #1c2339, #10131d);
   --lq-yang: linear-gradient(160deg, #3b2418, #20140d);
-  --lq-taiji: radial-gradient(circle at 50% 50%, #241e16, #0f0d0b 72%);
+  /* 11/10: the 太極 cell takes the 空 ground (the paper board's 1110a decision) */
+  --lq-taiji: var(--lq-void);
   /* the placeholder face: ink-wash ground (shikigami: indigo, reigu: umber) */
   --glyph-ground: radial-gradient(120% 80% at 50% 110%, oklch(78% 0.1 85 / 0.14), transparent 60%), radial-gradient(120% 90% at 50% 26%, #2b3453 0%, #161b2b 55%, #0c0e15 100%);
   --glyph-ground-reigu: radial-gradient(120% 80% at 50% 110%, oklch(78% 0.1 85 / 0.18), transparent 60%), radial-gradient(120% 90% at 50% 26%, #4a3a26 0%, #2a2016 55%, #120e0a 100%);

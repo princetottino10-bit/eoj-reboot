@@ -138,6 +138,12 @@ export const CONFIG_SCHEMA: readonly ConfigField[] = [
     midGame: true,
   },
   {
+    key: "rotateOnSummonTurn", group: "economy", kind: "bool",
+    label: "召喚したターンの回転", words: ["できる", "できない"],
+    desc: "できない(10/26案): 召喚(継承召喚も)した式神は、そのターンは回転の命令を受けられない(玖龍街の代わりの回転も)。次の自分のターンからふつうに回転できる",
+    midGame: true,
+  },
+  {
     key: "refundMode", group: "economy", kind: "choice",
     choices: [
       { value: "killer_half", label: "撃破した側" },

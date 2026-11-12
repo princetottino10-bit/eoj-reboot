@@ -17,6 +17,9 @@
 //                                    propose (now | next) / answer / withdraw (settings changes)
 //   POST /api/rooms/:code/close      (Bearer token, a seat) deletes the room
 //   GET  /healthz                    { ok, rooms, streams, uptime } for the host's health check
+//
+// With ACCESS_PASSWORD_HASH and ACCESS_COOKIE_SECRET set (online/access.ts), everything but
+// /healthz needs the login cookie: GET/POST /login, GET /logout.
 import { createServer } from "node:http";
 import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import { dirname, join, normalize } from "node:path";
@@ -25,6 +28,8 @@ import { gzipSync } from "node:zlib";
 import { isImagePath, serveFile, serveImage } from "../play/server.ts";
 import type { Served, ServedBytes } from "../play/server.ts";
 import { CF_SOON_HTML } from "../play/site.ts";
+import { accessExempt, accessGateFromEnv, CLEAR_COOKIE, hasAccess, issueCookie, loginPage, safeNext, TOO_MANY_TRIES, tryLogin, WRONG_PASSWORD } from "./access.ts";
+import type { AccessGate } from "./access.ts";
 import { isPlayablePack, isRulePresetId } from "../src/presets.ts";
 import { defaultSettings } from "../src/settings.ts";
 import { checkRecordDir, packFor, printedPack } from "./match.ts";
@@ -95,10 +100,12 @@ export type OnlineApp = {
    * set the 「クラウドファンディング実施中」 links stay hidden (.cf-link, play/site.ts cfUrl).
    */
   cfUrl: string | null;
+  /** The supporters' password gate (online/access.ts), or null for an open site. */
+  access: AccessGate | null;
 };
 
 export const createOnlineApp = (
-  opts: Partial<LobbyOptions> & { trustProxy?: boolean; flyProxy?: boolean; publicSite?: boolean; cfUrl?: string | null } = {},
+  opts: Partial<LobbyOptions> & { trustProxy?: boolean; flyProxy?: boolean; publicSite?: boolean; cfUrl?: string | null; access?: AccessGate | null } = {},
 ): OnlineApp => {
   const lobby = createLobby({ ...opts, recordDir: opts.recordDir ?? DEFAULT_RECORD_DIR });
   return {
@@ -110,6 +117,7 @@ export const createOnlineApp = (
     shuttingDown: false,
     publicSite: opts.publicSite === true,
     cfUrl: opts.cfUrl ?? null,
+    access: opts.access ?? null,
   };
 };
 
@@ -262,6 +270,8 @@ const STATIC_FILES = new Set([
   "play/guide.html",
   // the public build's front page (/ under --public): what the game is, and the ways in
   "play/welcome.html",
+  // the supporters' front page (/ behind the password gate, online/access.ts)
+  "play/supporter.html",
   "online/lobby.html",
   "online/room.html",
   "online/lobby.ts",
@@ -555,6 +565,71 @@ const openStream = (app: OnlineApp, req: IncomingMessage, res: ServerResponse, c
   res.on("close", close);
 };
 
+const sendHtml = (app: OnlineApp, res: ServerResponse, status: number, html: string, headOnly: boolean, extra: Record<string, string> = {}): void => {
+  res.writeHead(status, {
+    ...headersFor(app),
+    ...extra,
+    "Content-Type": "text/html; charset=utf-8",
+    "Content-Length": String(Buffer.byteLength(html)),
+  });
+  if (headOnly) res.end();
+  else res.end(html);
+};
+
+const redirect = (app: OnlineApp, res: ServerResponse, location: string, status = 302, extra: Record<string, string> = {}): void => {
+  res.writeHead(status, { ...headersFor(app), ...extra, Location: location, "Content-Length": "0" });
+  res.end();
+};
+
+/**
+ * The password gate (online/access.ts). Handles /login and /logout, and turns away every other
+ * request without the cookie: pages go to /login (and come back after), the API and SSE get 401.
+ * Returns true when it has answered the request.
+ */
+const accessGate = async (
+  app: OnlineApp,
+  gate: AccessGate,
+  req: IncomingMessage,
+  res: ServerResponse,
+  path: string,
+  search: string,
+  method: string,
+  ip: string,
+): Promise<boolean> => {
+  const headOnly = method === "HEAD";
+  if (path === "/login") {
+    if (method === "GET" || method === "HEAD") {
+      const next = safeNext(new URLSearchParams(search).get("next"));
+      if (hasAccess(gate, req.headers.cookie)) redirect(app, res, next);
+      else sendHtml(app, res, 200, loginPage({ next }), headOnly);
+      return true;
+    }
+    if (method !== "POST") {
+      sendJson(res, err(405, "method not allowed"), app);
+      return true;
+    }
+    const body = await readBody(req);
+    const form = new URLSearchParams(body.text ?? "");
+    const next = safeNext(form.get("next"));
+    const result = await tryLogin(gate, ip, form.get("password") ?? "");
+    if (result === "ok") redirect(app, res, next, 303, { "Set-Cookie": issueCookie(gate) });
+    else if (result === "limited") sendHtml(app, res, 429, loginPage({ next, error: TOO_MANY_TRIES }), false);
+    else sendHtml(app, res, 401, loginPage({ next, error: WRONG_PASSWORD }), false);
+    return true;
+  }
+  if (path === "/logout") {
+    redirect(app, res, "/login", 303, { "Set-Cookie": CLEAR_COOKIE });
+    return true;
+  }
+  if (accessExempt(path) || hasAccess(gate, req.headers.cookie)) return false;
+  if (path.startsWith("/api/") || (method !== "GET" && method !== "HEAD")) {
+    sendJson(res, err(401, "ログインしてください"), app, headOnly);
+  } else {
+    redirect(app, res, `/login?next=${encodeURIComponent(path + search)}`);
+  }
+  return true;
+};
+
 const route = async (app: OnlineApp, req: IncomingMessage, res: ServerResponse): Promise<void> => {
   const url = new URL(req.url ?? "/", "http://localhost");
   const path = url.pathname;
@@ -571,6 +646,7 @@ const route = async (app: OnlineApp, req: IncomingMessage, res: ServerResponse):
     sendJson(res, err(429, "アクセスが多すぎます。少し待ってください"), app);
     return;
   }
+  if (app.access !== null && (await accessGate(app, app.access, req, res, path, url.search, method, ip))) return;
   if (stream !== null) {
     if (method !== "GET") {
       sendJson(res, err(405, "method not allowed"), app);
@@ -619,7 +695,7 @@ const route = async (app: OnlineApp, req: IncomingMessage, res: ServerResponse):
     sendStatic(app, req, res, path, rec, method === "HEAD");
     return;
   }
-  const target = targetFor(path, app.publicSite);
+  const target = app.access !== null && !app.publicSite && (path === "/" || path === "") ? "/play/supporter.html" : targetFor(path, app.publicSite);
   const served = isImagePath(target) ? await serveImage(target, onlineStaticAllowed) : await serveFile(target, onlineStaticAllowed);
   sendStatic(app, req, res, target, served, method === "HEAD");
 };
@@ -739,6 +815,8 @@ if (isEntry()) {
     trustProxy: args.trustProxy,
     publicSite: args.publicSite,
     cfUrl: args.cfUrl,
+    // the supporters' password, from fly secrets; a half-set pair stops the start-up (never silently open)
+    access: accessGateFromEnv(process.env),
     log: (line) => process.stdout.write(`${line}\n`),
     roomDir: join(args.recordDir, "rooms"),
   });
@@ -760,6 +838,7 @@ if (isEntry()) {
   }
   server.listen(args.port, args.host, () => {
     const shown = args.host === "0.0.0.0" ? "localhost" : args.host;
-    process.stdout.write(`sim2 online: http://${shown}:${args.port}/  (records: ${args.recordDir}${rec.ok ? "" : " — UNWRITABLE"})\n`);
+    const gated = app.access === null ? "" : "  [password required]";
+    process.stdout.write(`sim2 online: http://${shown}:${args.port}/  (records: ${args.recordDir}${rec.ok ? "" : " — UNWRITABLE"})${gated}\n`);
   });
 }

@@ -329,6 +329,7 @@ export const isLegal = (ctx: Ctx, s: GameState, a: Action): boolean => {
   const u = unitByUid(s, a.uid);
   if (u === undefined || u.owner !== p || isHidden(u)) return false;
   const card = cardOf(ctx.pack, u.cardId);
+  if ((a.kind === "rotate" || a.kind === "proxyRotate") && rotateBarredBySummon(ctx, u)) return false;
   if (a.kind === "rotate") {
     if (u.attackedThisTurn) return false; // 3.3: attacking ends the unit's turn
     if (u.rotatedThisTurn) return false;
@@ -400,6 +401,9 @@ const forcedAttacks = (all: Action[], uid: number | null | undefined): Action[] 
  */
 export const summonAttackClosed = (ctx: Ctx, s: GameState, u: Unit): boolean =>
   ctx.cfg.summonAttackTiming === "right_after" && u.summonedThisTurn && u.uid !== s.summonAttackUid;
+
+/** rotateOnSummonTurn false (10/26案): no rotate command, its own or a proxy one, on the turn the unit was summoned. */
+export const rotateBarredBySummon = (ctx: Ctx, u: Unit): boolean => ctx.cfg.rotateOnSummonTurn === false && u.summonedThisTurn;
 
 export const legalActions = (ctx: Ctx, s: GameState): Action[] => {
   const all = allLegalActions(ctx, s);
@@ -512,7 +516,7 @@ const allLegalActions = (ctx: Ctx, s: GameState): Action[] => {
           }
         }
       }
-      if (!u.rotatedThisTurn && ps.mana >= rotateCostOf(ctx, u)) {
+      if (!u.rotatedThisTurn && !rotateBarredBySummon(ctx, u) && ps.mana >= rotateCostOf(ctx, u)) {
         if (!rotateCommandLocked(ctx, s, p)) {
           out.push({ kind: "rotate", uid: u.uid, facing: turnFacing(u.facing, 1) });
           out.push({ kind: "rotate", uid: u.uid, facing: turnFacing(u.facing, -1) });
