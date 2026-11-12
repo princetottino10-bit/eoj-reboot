@@ -215,7 +215,7 @@ test("access over http: behind the gate / is the supporters' front page, the lob
     const top = await fetch(`${base}/`, { headers: { cookie } });
     assert.equal(top.status, 200);
     const html = await top.text();
-    assert.match(html, /ありがとうございます。<\/span><\/h1>/);
+    assert.match(html, /ありがとうございます！！<\/span><\/h1>/);
     for (const href of ["/ai", "/online", "/guide", "/rules", "/watch", "/logout"]) assert.ok(html.includes(`href="${href}"`), href);
     const lobby = await fetch(`${base}/online`, { headers: { cookie } });
     assert.match(await lobby.text(), /<title>式神符陣 オンライン対戦/);
