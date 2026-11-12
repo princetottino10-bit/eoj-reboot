@@ -270,6 +270,8 @@ const STATIC_FILES = new Set([
   "play/guide.html",
   // the public build's front page (/ under --public): what the game is, and the ways in
   "play/welcome.html",
+  // the supporters' front page (/ behind the password gate, online/access.ts)
+  "play/supporter.html",
   "online/lobby.html",
   "online/room.html",
   "online/lobby.ts",
@@ -693,7 +695,7 @@ const route = async (app: OnlineApp, req: IncomingMessage, res: ServerResponse):
     sendStatic(app, req, res, path, rec, method === "HEAD");
     return;
   }
-  const target = targetFor(path, app.publicSite);
+  const target = app.access !== null && !app.publicSite && (path === "/" || path === "") ? "/play/supporter.html" : targetFor(path, app.publicSite);
   const served = isImagePath(target) ? await serveImage(target, onlineStaticAllowed) : await serveFile(target, onlineStaticAllowed);
   sendStatic(app, req, res, target, served, method === "HEAD");
 };

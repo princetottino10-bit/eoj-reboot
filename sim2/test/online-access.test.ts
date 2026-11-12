@@ -208,9 +208,24 @@ test("access over http: too many wrong passwords get 429", async () => {
   });
 });
 
+test("access over http: behind the gate / is the supporters' front page, the lobby stays at /online", async () => {
+  await withServer(async (base) => {
+    const ok = await login(base, PASSWORD);
+    const cookie = (ok.headers.get("set-cookie") ?? "").split(";")[0];
+    const top = await fetch(`${base}/`, { headers: { cookie } });
+    assert.equal(top.status, 200);
+    const html = await top.text();
+    assert.match(html, /ありがとうございます。<\/span><\/h1>/);
+    for (const href of ["/ai", "/online", "/guide", "/rules", "/watch", "/logout"]) assert.ok(html.includes(`href="${href}"`), href);
+    const lobby = await fetch(`${base}/online`, { headers: { cookie } });
+    assert.match(await lobby.text(), /<title>式神符陣 オンライン対戦/);
+  });
+});
+
 test("access over http: without a gate nothing changes", async () => {
   await withServer(async (base) => {
     assert.equal((await fetch(`${base}/ai`)).status, 200);
     assert.equal((await fetch(`${base}/login`)).status, 404);
+    assert.match(await (await fetch(`${base}/`)).text(), /<title>式神符陣 オンライン対戦/, "the team's / is still the lobby");
   }, false);
 });
