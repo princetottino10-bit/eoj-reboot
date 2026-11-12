@@ -149,12 +149,12 @@ test("r1003 = 10/3テスト案: the numbers, and it is the default for new rooms
   // 10/26案 (10/7決定 + 召喚攻撃は召喚してすぐだけ) since 10/26
   assert.equal(DEFAULT_RULE_PRESET, "r1026");
   assert.equal(RULE_PRESET_IDS[0], "r1026");
-  // 10/13: the default cards are 10/13案 (10/6案その2 with the new 古箪笥)
-  assert.equal(PLAYABLE_PACKS[0], "adopted-1013");
+  // 10/13: the default cards are 10/13案 (10/6案その2 with the new 古箪笥); 11/13: 11/13案 (霊力価を直した版)
+  assert.equal(PLAYABLE_PACKS[0], "adopted-1113");
   assert.deepEqual(presetConfig("r1006"), presetConfig("r1003"));
   const d = defaultSettings();
   assert.equal(d.rule, "r1026");
-  assert.equal(d.pack, "adopted-1013");
+  assert.equal(d.pack, "adopted-1113");
   assert.deepEqual(settingsConfig(d), { ...cfg, incomeMode: "current", chipIncomeSteps: [4, 5], taijiDiscount: 1, summonAttackTiming: "right_after", rotateOnSummonTurn: false });
   // the preset table does not move through a returned config
   cfg.chipIncomeSteps.push(9);

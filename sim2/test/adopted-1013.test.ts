@@ -62,12 +62,13 @@ test("10/13 pack: 1006 with only 古箪笥's effect changed; the default for r10
     assert.deepEqual(c, o, c.id);
   }
   assert.equal(DEFAULT_RULE_PRESET, "r1026");
-  assert.equal(RULE_PRESETS.r1026.defaultPack, "adopted-1013");
-  assert.equal(RULE_PRESETS.r1007.defaultPack, "adopted-1013");
+  // 11/13: 10/26案・10/7決定の既定は霊力価を直した11/13案 (adopted-1113)
+  assert.equal(RULE_PRESETS.r1026.defaultPack, "adopted-1113");
+  assert.equal(RULE_PRESETS.r1007.defaultPack, "adopted-1113");
   assert.equal(RULE_PRESETS.r1006.defaultPack, "adopted-1006");
-  assert.equal(PLAYABLE_PACKS[0], "adopted-1013");
+  assert.equal(PLAYABLE_PACKS[0], "adopted-1113");
   assert.ok((PLAYABLE_PACKS as readonly string[]).includes("adopted-1006"));
-  assert.equal(defaultSettings().pack, "adopted-1013");
+  assert.equal(defaultSettings().pack, "adopted-1113");
   assert.match(packLabel("adopted-1013"), /10\/13/);
 });
 
