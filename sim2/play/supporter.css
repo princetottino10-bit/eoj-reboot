@@ -8,3 +8,6 @@
 .s-letter h2 { margin-top: 0; }
 .s-letter p { margin: 0 0 1.1em; color: var(--text); font-size: 16.5px; line-height: 2; }
 .s-letter .s-sign { margin: 1.6em 0 0; text-align: right; font-family: var(--font-mincho); font-weight: 700; color: var(--gold); letter-spacing: 0.08em; }
+.s-hero h1 .s-big { color: var(--gold-hi); }
+.s-letter .s-shout { font-family: var(--font-mincho); font-size: clamp(18px, 2.6vw, 24px); line-height: 1.7; text-align: center; margin: 0.4em 0 1.4em; }
+.s-letter .s-shout strong { display: inline-block; margin-top: 4px; font-weight: 800; font-size: 1.25em; color: var(--gold-hi); letter-spacing: 0.04em; text-shadow: 0 2px 18px oklch(80% 0.12 85 / 0.35); }
