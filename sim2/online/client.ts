@@ -15,6 +15,7 @@ import type { TableModel, TablePrompt } from "../play/table.ts";
 import { esc, seatWord } from "../play/render.ts";
 import type { Names } from "../play/render.ts";
 import { cfLink } from "../play/site.ts";
+import { feedbackLink } from "../play/feedback-form.ts";
 import { createRoomTools } from "./room-tools.ts";
 import type { ClientInput, LogItem, StateMessage } from "./protocol.ts";
 import { chooseSeatToken, forgetToken, rememberToken, savedName, storedTokens, tabToken } from "./storage.ts";
@@ -231,6 +232,11 @@ const table = createTable($("table"), {
       }
       const cf = cfLink();
       if (cf !== null) box.prepend(cf);
+      const g = msg.game;
+      if (shownPrinted !== null && isPlayablePack(g.pack)) {
+        const fb = feedbackLink("オンライン対戦", { rule: g.rule, pack: g.pack, config: diffPatch(presetConfig(g.rule), g.config), cards: g.cards }, shownPrinted);
+        if (fb !== null) box.appendChild(fb);
+      }
       return;
     }
     const r = document.createElement("button");
@@ -393,6 +399,9 @@ const trackAway = (msg: StateMessage): void => {
   if (awayTimer === null) awayTimer = setInterval(renderAway, 2000);
 };
 
+/** The printed pack of the match on the table (for 「感想を送る」). */
+let shownPrinted: CardPack | null = null;
+
 const renderGame = async (msg: StateMessage): Promise<void> => {
   const g = msg.game;
   if (g === null) return;
@@ -404,6 +413,7 @@ const renderGame = async (msg: StateMessage): Promise<void> => {
     return;
   }
   if (last !== msg) return; // a newer message arrived while loading
+  shownPrinted = printed;
   const names = namesOf(msg);
   const model: TableModel = {
     key: `${msg.room.code}-${g.matchNo}`,

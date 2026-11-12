@@ -18,6 +18,7 @@ import { presetConfig } from "../src/presets.ts";
 import type { PlayablePack } from "../src/presets.ts";
 import { decodeSettings, defaultSettings, encodeSettings, settingsConfig, settingsHash, settingsPack, upgradeLegacyPack } from "../src/settings.ts";
 import { settingsLabel } from "../src/setting-presets.ts";
+import { feedbackLink } from "./feedback-form.ts";
 import { summaryLine } from "../src/match-summary.ts";
 import { addHistory, clearHistory, downloadText, historyCsv, historyHtml, readHistory } from "./result-history.ts";
 import { summaryOfView } from "./result-stats.ts";
@@ -130,6 +131,8 @@ const table = createTable(tableEl, {
       box.appendChild(again);
       const cf = cfLink();
       if (cf !== null) box.prepend(cf);
+      const fb = G === null ? null : feedbackLink("AI対戦", settingsInForce(G), G.printed);
+      if (fb !== null) box.appendChild(fb);
     }
     if (G !== null && G.error !== "") {
       const e = document.createElement("span");
