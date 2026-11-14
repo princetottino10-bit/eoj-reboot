@@ -112,6 +112,16 @@ html[data-cf-url] .w-hero-text .cf-link { margin-left: 0; }
 
 .w-video { position: relative; max-width: 960px; border-radius: 10px; overflow: hidden; border: 1px solid var(--gold-line); box-shadow: 0 24px 50px oklch(0% 0 0 / 0.55); background: #000; }
 .w-video video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+/* 11/14: the video is the first thing under the header; the board/cards/logo hero follows it */
+.w-video-first { border-top: 0; padding-top: 28px; }
+.w-video-first + .w-hero { border-top: 1px solid oklch(100% 0 0 / 0.06); }
+.w-nav-video { display: none; }
+@media (max-width: 680px) {
+  .w-video-first { padding-top: 16px; }
+  .w-video-first h2 { font-size: 22px; margin-bottom: 12px; }
+  .w-video-first .w-sec-kicker { font-size: 12.5px; }
+  .w-video-first .w-sec-lead { font-size: 14px; margin-bottom: 14px; }
+}
 
 .w-points { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .w-points li { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 14px; align-items: center; padding: 20px; background: var(--lacquer); border: 1px solid var(--gold-line); border-radius: 10px; }
